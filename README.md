@@ -2,7 +2,7 @@
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest. It fetches a test user token from LocalTest, targets an org and app, posts one or more data elements, and shows the full request and response log for every call it made.
 
-The interface has three columns: the test user on the left, the target app and payload in the middle, and the run log on the right.
+The interface has three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the run log on the right. It both posts data and reads it back, see [Reading data back](#reading-data-back).
 
 ## Quick start
 
@@ -41,7 +41,7 @@ One editor card per data element, holding the data type, the content type, and t
 
 ### Run log
 
-Every call in order with method, URL, status, duration, and both bodies, plus a link that opens the created instance in the app.
+Every call in order with method, URL, status, duration, and both bodies, plus a link that opens the instance in the app. Posts and reads share the log, and it shows whichever request ran last.
 
 ## Destinations
 
@@ -94,6 +94,18 @@ POST /dibk/et-v4/instances/510001/{guid}/data?dataType=ET  400, max count reache
 
 The tool detects the existing element and sends `PUT .../data/{dataElementId}` instead. When this happens the run log says "Replace" rather than "Add". `runService.test.ts` covers the behaviour for both the create path and the existing instance path.
 
+## Reading data back
+
+The **Fetch** panel does two GET requests against an instance you already have.
+
+**Get instance** calls `GET /{org}/{app}/instances/{party}/{guid}`. Besides logging the whole response it reads the instance's `data` array and fills the data element select, so you do not have to copy a dataGuid by hand.
+
+**Get data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size. The first is preselected after reading an instance, so fetching one is a single click.
+
+The party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping. The request goes out with `Accept: */*`, because asking for JSON would stop Altinn returning stored XML. XML comes back verbatim and JSON comes back parsed.
+
+Both requests appear in the run log alongside posts, with method, URL, status, timing, and body.
+
 ## API
 
 The backend is usable on its own, which is useful for scripting a data load.
@@ -113,7 +125,8 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET` | `/api/app/metadata` | `?tokenId&org&app` |
 | `GET` | `/api/app/parties` | `?tokenId&org&app` |
 | `POST` | `/api/runs` | The orchestrator, described below |
-| `GET` | `/api/instances` | `?tokenId&org&app&instanceOwnerPartyId&instanceGuid` |
+| `GET` | `/api/instances` | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid` |
+| `GET` | `/api/instances/data-element` | Get one data element. Same query plus `&dataGuid` |
 | `PUT` | `/api/instances/process/next` | Advance an existing instance |
 
 ```bash
@@ -143,7 +156,7 @@ curl -s localhost:4000/api/runs -H 'content-type: application/json' -d "{
 
 `mode` is `sequential` by default, and can also be `multipart` or `existing`.
 
-A run that fails still returns `200`, with `ok` set to `false`, a `failedAt` reason, and the step log up to the point of failure. This keeps the whole log available to the UI instead of collapsing it into one error. Malformed requests return `400`.
+A request that fails still returns `200`, with `ok` set to `false`, a `failedAt` reason, and the step log up to the point of failure. This applies to `/api/runs` and to both read endpoints, and keeps the whole log available to the UI instead of collapsing it into one error. Malformed requests return `400`.
 
 ## Scripts
 
@@ -163,6 +176,9 @@ server/src
   routes.ts           endpoints and zod schemas
   runService.ts       orchestrates create, upload, validate, advance
   runService.test.ts
+  readService.ts      get instance and get data element
+  readService.test.ts
+  stepRecorder.ts     shared request logging for both flows
   multipart.ts        hand-written multipart body, see the note below
   examples.ts         reads examples/, with a path traversal guard
   examples.test.ts
@@ -174,7 +190,7 @@ server/src
   urls.ts             app url building
 web/src
   App.tsx             state and wiring
-  components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, RunLog
+  components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, RunLog
   styles.css          all the styling
 ```
 
