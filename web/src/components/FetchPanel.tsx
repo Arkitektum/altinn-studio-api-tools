@@ -1,0 +1,145 @@
+import { ErrorNotice } from './Notice';
+import { Panel } from './Panel';
+import type { DataElementSummary } from '../types';
+
+interface FetchPanelProps {
+  appHost: string;
+  org: string;
+  app: string;
+  instanceOwnerPartyId: string;
+  onPartyChange: (next: string) => void;
+  instanceGuid: string;
+  onInstanceGuidChange: (next: string) => void;
+  /** Data elements from the last successful instance read, for the data guid select. */
+  dataElements: DataElementSummary[];
+  dataGuid: string;
+  onDataGuidChange: (next: string) => void;
+  onGetInstance: () => void;
+  onGetDataElement: () => void;
+  busy: boolean;
+  hasToken: boolean;
+  error: unknown;
+}
+
+function describeElement(element: DataElementSummary): string {
+  const bits = [element.dataType];
+  if (element.filename) bits.push(element.filename);
+  if (element.contentType) bits.push(element.contentType);
+  if (element.size !== null) {
+    bits.push(element.size < 1024 ? `${element.size} B` : `${Math.round(element.size / 1024)} kB`);
+  }
+  return bits.join(' · ');
+}
+
+export function FetchPanel({
+  appHost,
+  org,
+  app,
+  instanceOwnerPartyId,
+  onPartyChange,
+  instanceGuid,
+  onInstanceGuidChange,
+  dataElements,
+  dataGuid,
+  onDataGuidChange,
+  onGetInstance,
+  onGetDataElement,
+  busy,
+  hasToken,
+  error,
+}: FetchPanelProps) {
+  const base = `${appHost}/${org || '{org}'}/${app || '{app}'}`;
+  const party = instanceOwnerPartyId || '{partyId}';
+  const guid = instanceGuid || '{instanceGuid}';
+
+  const canGetInstance = hasToken && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
+  const selected = dataElements.find((element) => element.id === dataGuid);
+
+  return (
+    <Panel title="Fetch">
+      <div className="grid grid--2">
+        <div className="field">
+          <label htmlFor="fetchParty">Instance owner party id</label>
+          <input
+            id="fetchParty"
+            type="text"
+            value={instanceOwnerPartyId}
+            onChange={(event) => onPartyChange(event.target.value.trim())}
+            placeholder="510001"
+            autoComplete="off"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="fetchGuid">Instance guid</label>
+          <input
+            id="fetchGuid"
+            type="text"
+            value={instanceGuid}
+            onChange={(event) => onInstanceGuidChange(event.target.value.trim())}
+            placeholder="99d0632c-5917-448c-8ab6-a5d3b681376b"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+      </div>
+
+      <div className="row" style={{ marginTop: 12 }}>
+        <button type="button" className="btn" onClick={onGetInstance} disabled={busy || !canGetInstance}>
+          {busy && <span className="btn__spinner" />}
+          Get instance
+        </button>
+        {!hasToken && <span className="field__hint">Get a token first.</span>}
+      </div>
+
+      <p className="field__hint" style={{ marginTop: 8 }}>
+        GET {base}/instances/{party}/{guid}
+      </p>
+
+      <div className="field" style={{ marginTop: 16 }}>
+        <label htmlFor="dataGuid">Data element</label>
+        <select
+          id="dataGuid"
+          value={dataGuid}
+          onChange={(event) => onDataGuidChange(event.target.value)}
+          disabled={dataElements.length === 0}
+        >
+          <option value="">
+            {dataElements.length === 0
+              ? 'Get the instance to list its data elements'
+              : `Pick one of ${dataElements.length}`}
+          </option>
+          {dataElements.map((element) => (
+            <option key={element.id} value={element.id}>
+              {describeElement(element)}
+            </option>
+          ))}
+        </select>
+        {selected && <p className="field__hint">{selected.id}</p>}
+      </div>
+
+      <div className="row" style={{ marginTop: 12 }}>
+        <button
+          type="button"
+          className="btn"
+          onClick={onGetDataElement}
+          disabled={busy || !canGetInstance || !dataGuid}
+        >
+          {busy && <span className="btn__spinner" />}
+          Get data element
+        </button>
+      </div>
+
+      {dataGuid && (
+        <p className="field__hint" style={{ marginTop: 8 }}>
+          GET {base}/instances/{party}/{guid}/data/{dataGuid}
+        </p>
+      )}
+
+      {error ? (
+        <div style={{ marginTop: 12 }}>
+          <ErrorNotice error={error} />
+        </div>
+      ) : null}
+    </Panel>
+  );
+}

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
+import { preferredContentType } from './lib/contentType';
 import { isExpired } from './lib/format';
 import { useLocalStorage } from './lib/useLocalStorage';
 import { ErrorNotice } from './components/Notice';
+import { FetchPanel } from './components/FetchPanel';
 import { PayloadPanel } from './components/PayloadPanel';
 import { RunLog } from './components/RunLog';
 import { TargetPanel } from './components/TargetPanel';
@@ -12,9 +14,13 @@ import type {
   AppParty,
   CatalogueApp,
   DataElementInput,
+  DataElementSummary,
   ExampleGroup,
   LocaltestStatus,
+  LogResult,
   PublicToken,
+  ReadDataElementResult,
+  ReadInstanceResult,
   RunMode,
   RunResult,
   SavedApp,
@@ -28,6 +34,54 @@ function splitPastedInstanceId(value: string): { partyId?: string; guid: string 
   const match = /^(\d+)\/(.+)$/.exec(value.trim());
   if (match?.[1] && match[2]) return { partyId: match[1], guid: match[2].trim() };
   return { guid: value.trim() };
+}
+
+function logFromRun(result: RunResult): LogResult {
+  const rows: { label: string; value: string }[] = [{ label: 'Mode', value: result.mode }];
+  if (result.instanceOwnerPartyId) {
+    rows.push({ label: 'Party', value: result.instanceOwnerPartyId });
+  }
+  if (result.instanceGuid) rows.push({ label: 'Instance', value: result.instanceGuid });
+  return {
+    ok: result.ok,
+    steps: result.steps,
+    failedAt: result.failedAt,
+    title: 'Posted',
+    rows,
+    instanceUrl: result.instanceUrl,
+  };
+}
+
+function logFromInstance(result: ReadInstanceResult): LogResult {
+  const rows = [
+    { label: 'Party', value: result.instanceOwnerPartyId },
+    { label: 'Instance', value: result.instanceGuid },
+  ];
+  if (result.ok) {
+    rows.push({ label: 'Data elements', value: String(result.dataElements.length) });
+  }
+  return {
+    ok: result.ok,
+    steps: result.steps,
+    failedAt: result.failedAt,
+    title: 'Fetched instance',
+    rows,
+    // Offering to open an instance that could not be read would just 404 again.
+    instanceUrl: result.ok ? result.instanceUrl : null,
+  };
+}
+
+function logFromDataElement(result: ReadDataElementResult): LogResult {
+  return {
+    ok: result.ok,
+    steps: result.steps,
+    failedAt: result.failedAt,
+    title: 'Fetched data element',
+    rows: [
+      { label: 'Data guid', value: result.dataGuid },
+      ...(result.contentType ? [{ label: 'Content type', value: result.contentType }] : []),
+    ],
+  };
 }
 
 export function App() {
@@ -57,9 +111,15 @@ export function App() {
   const [probing, setProbing] = useState(false);
   const [probeError, setProbeError] = useState<unknown>(null);
 
-  const [result, setResult] = useState<RunResult | null>(null);
+  // One log for whichever request ran last, posting or reading.
+  const [log, setLog] = useState<LogResult | null>(null);
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState<unknown>(null);
+
+  const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
+  const [dataGuid, setDataGuid] = useState('');
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<unknown>(null);
 
   // Ticks once a second so token expiry counts down live.
   const [now, setNow] = useState(() => Date.now());
@@ -171,10 +231,27 @@ export function App() {
       } catch {
         setParties([]);
       }
-      // Preselect the app's form data type on first probe.
-      const formType = (meta.metadata.dataTypes ?? []).find((type) => type.appLogic);
-      if (formType && dataElements.length === 1 && !dataElements[0]?.dataType) {
-        setDataElements([{ ...EMPTY_ELEMENT, dataType: formType.id }]);
+      const types = meta.metadata.dataTypes ?? [];
+
+      // Preselect the app's form data type if no type has been chosen yet.
+      const formType = types.find((type) => type.appLogic);
+      let next = dataElements;
+      if (formType && next.length === 1 && !next[0]?.dataType) {
+        next = [{ ...EMPTY_ELEMENT, dataType: formType.id }];
+      }
+
+      // The app has now declared its content types, so fill in any element still without one.
+      // This also covers types chosen from the catalogue before the app was probed.
+      next = next.map((element) => {
+        if (!element.dataType || element.contentType) return element;
+        const contentType = preferredContentType(
+          types.find((type) => type.id === element.dataType)?.allowedContentTypes ?? [],
+        );
+        return contentType ? { ...element, contentType } : element;
+      });
+
+      if (next.some((element, index) => element !== dataElements[index])) {
+        setDataElements(next);
       }
     } catch (error) {
       setProbeError(error);
@@ -187,7 +264,7 @@ export function App() {
     if (!activeTokenId) return;
     setRunning(true);
     setRunError(null);
-    setResult(null);
+    setLog(null);
     try {
       const payload = await api.postRun({
         tokenId: activeTokenId,
@@ -204,7 +281,7 @@ export function App() {
         validate,
         advanceProcess,
       });
-      setResult(payload);
+      setLog(logFromRun(payload));
       rememberApp({ org, app });
       // Chain naturally into "now post more data to that instance".
       if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
@@ -212,6 +289,55 @@ export function App() {
       setRunError(error);
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function getInstance() {
+    if (!activeTokenId) return;
+    setFetching(true);
+    setFetchError(null);
+    try {
+      const read = await api.getInstance({
+        tokenId: activeTokenId,
+        org,
+        app,
+        instanceOwnerPartyId,
+        instanceGuid,
+      });
+      setLog(logFromInstance(read));
+      setInstanceDataElements(read.dataElements);
+      // Preselect one so fetching a data element is a single click.
+      if (read.dataElements.length > 0 && !read.dataElements.some((el) => el.id === dataGuid)) {
+        setDataGuid(read.dataElements[0]?.id ?? '');
+      }
+    } catch (error) {
+      setFetchError(error);
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  async function getDataElement() {
+    if (!activeTokenId || !dataGuid) return;
+    setFetching(true);
+    setFetchError(null);
+    try {
+      setLog(
+        logFromDataElement(
+          await api.getDataElement({
+            tokenId: activeTokenId,
+            org,
+            app,
+            instanceOwnerPartyId,
+            instanceGuid,
+            dataGuid,
+          }),
+        ),
+      );
+    } catch (error) {
+      setFetchError(error);
+    } finally {
+      setFetching(false);
     }
   }
 
@@ -347,10 +473,32 @@ export function App() {
                   : `Post to ${org || 'org'}/${app || 'app'}`}
             </button>
           </section>
+
+          <FetchPanel
+            appHost={appHost}
+            org={org}
+            app={app}
+            instanceOwnerPartyId={instanceOwnerPartyId}
+            onPartyChange={setInstanceOwnerPartyId}
+            instanceGuid={instanceGuid}
+            onInstanceGuidChange={(value) => {
+              const { partyId, guid } = splitPastedInstanceId(value);
+              setInstanceGuid(guid);
+              if (partyId) setInstanceOwnerPartyId(partyId);
+            }}
+            dataElements={instanceDataElements}
+            dataGuid={dataGuid}
+            onDataGuidChange={setDataGuid}
+            onGetInstance={() => void getInstance()}
+            onGetDataElement={() => void getDataElement()}
+            busy={fetching}
+            hasToken={tokenUsable}
+            error={fetchError}
+          />
         </div>
 
         <div className="column column--log">
-          <RunLog result={result} running={running} />
+          <RunLog result={log} running={running || fetching} />
         </div>
       </div>
     </div>

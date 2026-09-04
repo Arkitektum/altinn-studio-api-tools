@@ -7,6 +7,7 @@ import { createTestUserToken } from './localtestClient.js';
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from './tokenStore.js';
 import { fetchApplicationMetadata, fetchInstantiableParties } from './appService.js';
 import { postDataToApp } from './runService.js';
+import { readDataElement, readInstance } from './readService.js';
 import { altinnFetch, describeFailure } from './altinnClient.js';
 import { appCatalogue } from './appCatalogue.js';
 import { listExamples, readExample } from './examples.js';
@@ -191,21 +192,28 @@ router.post(
   }),
 );
 
+// ---------------------------------------------------------------- reading data
+
 router.get(
   '/instances',
   asyncHandler(async (req, res) => {
     const query = instanceLookupSchema.parse(req.query);
     const token = requireToken(query.tokenId);
-    const url = `${appBaseUrl(query.org, query.app)}/instances/${query.instanceOwnerPartyId}/${
-      query.instanceGuid
-    }`;
-    const response = await altinnFetch({ url, token: token.token });
-    if (!response.ok) {
-      throw new HttpError(response.status, `Could not read instance: ${describeFailure(response)}`, {
-        url,
-      });
-    }
-    res.json(response.body);
+    // 200 with ok:false on an Altinn error, matching /api/runs, so the caller keeps the log.
+    res.json(await readInstance(token.token, query));
+  }),
+);
+
+const readDataElementSchema = instanceLookupSchema.extend({
+  dataGuid: z.string().trim().min(1, 'dataGuid is required'),
+});
+
+router.get(
+  '/instances/data-element',
+  asyncHandler(async (req, res) => {
+    const query = readDataElementSchema.parse(req.query);
+    const token = requireToken(query.tokenId);
+    res.json(await readDataElement(token.token, query));
   }),
 );
 

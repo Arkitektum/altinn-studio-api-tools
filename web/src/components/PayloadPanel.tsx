@@ -1,3 +1,4 @@
+import { contentTypeOptions, preferredContentType } from '../lib/contentType';
 import { ExamplePicker } from './ExamplePicker';
 import { Panel } from './Panel';
 import type { AppDataType, DataElementInput, ExampleGroup } from '../types';
@@ -39,6 +40,36 @@ export function PayloadPanel({
 }: PayloadPanelProps) {
   function update(index: number, patch: Partial<DataElementInput>) {
     onChange(dataElements.map((element, i) => (i === index ? { ...element, ...patch } : element)));
+  }
+
+  function hasExamples(dataType: string): boolean {
+    return exampleGroups.some(
+      (group) => group.dataType === dataType && group.files.length > 0,
+    );
+  }
+
+  /**
+   * Content belongs to one data type, so whatever is in the editor goes stale as soon as the
+   * type changes. If the new type has example files the picker can replace it, but if it has
+   * none there is nothing to replace it with, so drop it rather than leave the wrong payload
+   * sitting under the new type.
+   *
+   * The content type is re-derived from what the new type declares, for the same reason.
+   */
+  function changeDataType(index: number, dataType: string) {
+    const element = dataElements[index];
+    if (!element) return;
+
+    const declared = dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? [];
+    const patch: Partial<DataElementInput> = {
+      dataType,
+      contentType: preferredContentType(declared),
+    };
+    if (element.content && !hasExamples(dataType)) {
+      patch.content = '';
+      patch.exampleName = undefined;
+    }
+    update(index, patch);
   }
 
   function add() {
@@ -112,7 +143,7 @@ export function PayloadPanel({
                     <select
                       id={`dataType-${index}`}
                       value={element.dataType}
-                      onChange={(event) => update(index, { dataType: event.target.value })}
+                      onChange={(event) => changeDataType(index, event.target.value)}
                     >
                       <option value="">Select data type</option>
                       {dataTypes.map((type) => (
@@ -129,6 +160,9 @@ export function PayloadPanel({
                         list={`dataTypeOptions-${index}`}
                         value={element.dataType}
                         onChange={(event) => update(index, { dataType: event.target.value.trim() })}
+                        // Typed input settles on blur. Reacting per keystroke would clear the
+                        // content while the name is still half typed.
+                        onBlur={(event) => changeDataType(index, event.target.value.trim())}
                         placeholder="ET"
                         autoComplete="off"
                       />
@@ -143,22 +177,38 @@ export function PayloadPanel({
                 </div>
                 <div className="field">
                   <label htmlFor={`contentType-${index}`}>Content type</label>
-                  <input
+                  <select
                     id={`contentType-${index}`}
-                    type="text"
                     value={element.contentType ?? ''}
                     onChange={(event) =>
-                      update(index, { contentType: event.target.value.trim() || undefined })
+                      update(index, { contentType: event.target.value || undefined })
                     }
-                    placeholder={known?.allowedContentTypes?.[0] ?? 'auto-detect'}
-                    autoComplete="off"
-                  />
+                  >
+                    <option value="">Auto</option>
+                    {contentTypeOptions(
+                      known?.allowedContentTypes ?? [],
+                      element.contentType,
+                    ).map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  {!element.contentType && (
+                    <p className="field__hint">
+                      The server picks from the types the app allows, or detects it from the
+                      payload.
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="field">
                 <label>Example data</label>
                 <ExamplePicker
+                  // Remount on a data type change so the picker does not keep showing a file
+                  // that belonged to the previous type.
+                  key={element.dataType}
                   dataType={element.dataType}
                   group={exampleGroups.find((entry) => entry.dataType === element.dataType)}
                   onLoad={(content, fileName) =>
@@ -210,11 +260,7 @@ export function PayloadPanel({
                       {known.appLogic.classRef.split('.').pop()}
                     </span>
                   )}
-                  {(known.allowedContentTypes ?? []).map((type) => (
-                    <span key={type} className="badge">
-                      {type}
-                    </span>
-                  ))}
+                  {/* The allowed content types are the options in the select above. */}
                   <span>{describeDataType(known)}</span>
                 </div>
               )}

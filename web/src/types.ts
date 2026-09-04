@@ -140,3 +140,48 @@ export interface ExampleContent {
   sizeBytes: number;
   name: string;
 }
+
+// ---------------------------------------------------------------- reading
+
+export interface DataElementSummary {
+  id: string;
+  dataType: string;
+  contentType: string | null;
+  filename: string | null;
+  size: number | null;
+  lastChanged: string | null;
+}
+
+export interface ReadInstanceResult {
+  ok: boolean;
+  steps: RunStep[];
+  failedAt: string | null;
+  instanceOwnerPartyId: string;
+  instanceGuid: string;
+  instanceUrl: string;
+  instance: unknown;
+  dataElements: DataElementSummary[];
+}
+
+export interface ReadDataElementResult {
+  ok: boolean;
+  steps: RunStep[];
+  failedAt: string | null;
+  dataGuid: string;
+  contentType: string | null;
+  content: unknown;
+}
+
+/**
+ * What the run log renders. Both the posting and the reading flows build one of these, so the
+ * log does not need to know which produced it.
+ */
+export interface LogResult {
+  ok: boolean;
+  steps: RunStep[];
+  failedAt: string | null;
+  /** Heading shown when the request succeeded. */
+  title: string;
+  rows: { label: string; value: string }[];
+  instanceUrl?: string | null;
+}

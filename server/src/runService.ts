@@ -1,4 +1,5 @@
-import { altinnFetch, describeFailure, type AltinnResponse } from './altinnClient.js';
+import { altinnFetch, describeFailure } from './altinnClient.js';
+import { StepRecorder, type RunStep } from './stepRecorder.js';
 import { buildMultipart, type MultipartPart } from './multipart.js';
 import { appBaseUrl, instanceUiUrl } from './urls.js';
 import {
@@ -8,6 +9,8 @@ import {
   type AppDataType,
   type ApplicationMetadata,
 } from './appService.js';
+
+export type { RunStep };
 
 /**
  * - `sequential` POST /instances, then upsert each data element one request at a time.
@@ -38,19 +41,6 @@ export interface RunRequest {
   validate?: boolean;
   /** Move the process to the next task/step after upload (submits the form). */
   advanceProcess?: boolean;
-}
-
-export interface RunStep {
-  index: number;
-  name: string;
-  method: string;
-  url: string;
-  status: number | null;
-  ok: boolean;
-  durationMs: number;
-  requestPreview?: string;
-  response?: unknown;
-  error?: string;
 }
 
 export interface RunResult {
@@ -92,48 +82,6 @@ function splitInstanceId(instance: Instance): { partyId: string | null; guid: st
     return { partyId: partyId ?? null, guid: guid ?? null };
   }
   return { partyId: instance.instanceOwner?.partyId ?? null, guid: null };
-}
-
-class StepRecorder {
-  readonly steps: RunStep[] = [];
-
-  async run(
-    name: string,
-    method: string,
-    url: string,
-    call: () => Promise<AltinnResponse>,
-    requestPreview?: string,
-  ): Promise<AltinnResponse> {
-    const startedAt = performance.now();
-    const response = await call();
-    const step: RunStep = {
-      index: this.steps.length + 1,
-      name,
-      method,
-      url,
-      status: response.status,
-      ok: response.ok,
-      durationMs: Math.round(performance.now() - startedAt),
-      response: response.body,
-    };
-    if (requestPreview !== undefined) step.requestPreview = requestPreview;
-    if (!response.ok) step.error = describeFailure(response);
-    this.steps.push(step);
-    return response;
-  }
-
-  note(name: string, error: string, durationMs = 0): void {
-    this.steps.push({
-      index: this.steps.length + 1,
-      name,
-      method: '-',
-      url: '-',
-      status: null,
-      ok: false,
-      durationMs,
-      error,
-    });
-  }
 }
 
 /** Posts test data to a locally running Altinn app and returns a step-by-step log. */

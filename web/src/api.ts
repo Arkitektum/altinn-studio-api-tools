@@ -7,6 +7,8 @@ import type {
   ExamplesResponse,
   LocaltestStatus,
   PublicToken,
+  ReadDataElementResult,
+  ReadInstanceResult,
   RunResult,
   ServerConfig,
 } from './types';
@@ -98,4 +100,21 @@ export const api = {
     request<AppParty[]>(`/app/parties?${new URLSearchParams(params)}`),
 
   postRun: (input: Record<string, unknown>) => request<RunResult>('/runs', jsonBody(input)),
+
+  getInstance: (params: {
+    tokenId: string;
+    org: string;
+    app: string;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+  }) => request<ReadInstanceResult>(`/instances?${new URLSearchParams(params)}`),
+
+  getDataElement: (params: {
+    tokenId: string;
+    org: string;
+    app: string;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    dataGuid: string;
+  }) => request<ReadDataElementResult>(`/instances/data-element?${new URLSearchParams(params)}`),
 };

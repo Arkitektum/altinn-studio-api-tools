@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { prettyJson } from '../lib/format';
 import { Panel } from './Panel';
-import type { RunResult, RunStep } from '../types';
+import type { LogResult, RunStep } from '../types';
 
 interface RunLogProps {
-  result: RunResult | null;
+  result: LogResult | null;
   running: boolean;
 }
 
@@ -20,16 +20,16 @@ export function RunLog({ result, running }: RunLogProps) {
           </span>
         ) : result ? (
           <span className={`badge ${result.ok ? 'badge--ok' : 'badge--bad'}`}>
-            {result.steps.length} steps
+            {result.steps.length} {result.steps.length === 1 ? 'step' : 'steps'}
           </span>
         ) : undefined
       }
     >
       {!result && !running && (
         <div className="log-empty">
-          <strong>No run yet</strong>
-          Every request this tool makes to Altinn is recorded here: method, URL, status, timing, and
-          both bodies.
+          <strong>No requests yet</strong>
+          Every request this tool makes to Altinn is recorded here: method, URL, status, timing,
+          and both bodies.
         </div>
       )}
 
@@ -47,12 +47,14 @@ export function RunLog({ result, running }: RunLogProps) {
   );
 }
 
-function Verdict({ result }: { result: RunResult }) {
+function Verdict({ result }: { result: LogResult }) {
+  const totalMs = result.steps.reduce((sum, step) => sum + step.durationMs, 0);
+
   return (
     <div className={`verdict ${result.ok ? 'verdict--ok' : 'verdict--bad'}`}>
       <div className="verdict__title">
         <span className={`led ${result.ok ? 'led--ok' : 'led--bad'}`} />
-        {result.ok ? 'Posted' : 'Failed'}
+        {result.ok ? result.title : 'Failed'}
       </div>
 
       {result.failedAt && (
@@ -62,28 +64,20 @@ function Verdict({ result }: { result: RunResult }) {
       )}
 
       <dl className="verdict__rows">
-        <dt>Mode</dt>
-        <dd>{result.mode}</dd>
-        {result.instanceOwnerPartyId && (
-          <>
-            <dt>Party</dt>
-            <dd>{result.instanceOwnerPartyId}</dd>
-          </>
-        )}
-        {result.instanceGuid && (
-          <>
-            <dt>Instance</dt>
-            <dd>{result.instanceGuid}</dd>
-          </>
-        )}
+        {result.rows.map((row) => (
+          <div key={row.label} style={{ display: 'contents' }}>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
         <dt>Total</dt>
-        <dd>{result.steps.reduce((sum, step) => sum + step.durationMs, 0)} ms</dd>
+        <dd>{totalMs} ms</dd>
       </dl>
 
       {result.instanceUrl && (
         <div style={{ marginTop: 10 }}>
           <a href={result.instanceUrl} target="_blank" rel="noreferrer">
-            Open instance in the app →
+            Open instance in the app
           </a>
         </div>
       )}
