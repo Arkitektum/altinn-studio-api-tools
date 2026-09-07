@@ -106,12 +106,6 @@ export interface RunResult {
     failedAt: string | null;
 }
 
-/** A target app the operator has used before, persisted locally for one-click recall. */
-export interface SavedApp {
-    org: string;
-    app: string;
-}
-
 // ---------------------------------------------------------------- catalogue & examples
 
 export interface CatalogueSubform {

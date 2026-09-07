@@ -30,7 +30,6 @@ import type {
     RunMode,
     RunResult,
     RunStep,
-    SavedApp,
     ServerConfig,
     ValidateResult
 } from "./types";
@@ -202,7 +201,6 @@ export function App() {
     const [mode, setMode] = useLocalStorage<RunMode>("mode", "sequential");
     const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>("dataElements", [EMPTY_ELEMENT]);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
-    const [savedApps, setSavedApps] = useLocalStorage<SavedApp[]>("savedApps", []);
 
     const [metadata, setMetadata] = useState<AppMetadataResponse | null>(null);
     const [parties, setParties] = useState<AppParty[]>([]);
@@ -339,14 +337,6 @@ export function App() {
         setProbeError(null);
     }, [org, app]);
 
-    const rememberApp = useCallback(
-        (target: SavedApp) => {
-            const exists = savedApps.some((saved) => saved.org === target.org && saved.app === target.app);
-            if (!exists) setSavedApps([target, ...savedApps].slice(0, 24));
-        },
-        [savedApps, setSavedApps]
-    );
-
     async function probe() {
         if (!activeTokenId) return;
         setProbing(true);
@@ -355,7 +345,6 @@ export function App() {
         try {
             const meta = await api.getAppMetadata(params);
             setMetadata(meta);
-            rememberApp({ org, app });
             // Parties are a bonus: not every token is allowed to list them.
             try {
                 setParties(await api.getAppParties(params));
@@ -454,7 +443,6 @@ export function App() {
                 validate: false,
                 advanceProcess
             });
-            rememberApp({ org, app });
             // Chain naturally into "now post more data to that instance".
             if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
 
@@ -611,14 +599,6 @@ export function App() {
                                 setDataElements([{ dataType: entry.dataType, content: "" }]);
                             }
                         }}
-                        savedApps={savedApps}
-                        onPickSavedApp={(saved) => {
-                            setOrg(saved.org);
-                            setApp(saved.app);
-                        }}
-                        onForgetSavedApp={(target) =>
-                            setSavedApps(savedApps.filter((saved) => !(saved.org === target.org && saved.app === target.app)))
-                        }
                         metadata={metadata}
                         parties={parties}
                         onProbe={() => void probe()}

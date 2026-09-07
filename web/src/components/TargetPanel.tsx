@@ -1,7 +1,7 @@
 import { partyLabel } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { AppMetadataResponse, AppParty, CatalogueApp, RunMode, SavedApp } from "../types";
+import type { AppMetadataResponse, AppParty, CatalogueApp, RunMode } from "../types";
 
 interface TargetPanelProps {
     appHost: string;
@@ -15,9 +15,6 @@ interface TargetPanelProps {
     onInstanceGuidChange: (next: string) => void;
     mode: RunMode;
     onModeChange: (next: RunMode) => void;
-    savedApps: SavedApp[];
-    onPickSavedApp: (saved: SavedApp) => void;
-    onForgetSavedApp: (saved: SavedApp) => void;
     metadata: AppMetadataResponse | null;
     parties: AppParty[];
     onProbe: () => void;
@@ -59,9 +56,6 @@ export function TargetPanel({
     onInstanceGuidChange,
     mode,
     onModeChange,
-    savedApps,
-    onPickSavedApp,
-    onForgetSavedApp,
     metadata,
     parties,
     onProbe,
@@ -91,29 +85,6 @@ export function TargetPanel({
             title="Target"
             aside={metadata ? <span className="badge badge--ok">{metadata.metadata.dataTypes?.length ?? 0} data types</span> : undefined}
         >
-            {savedApps.length > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                    <span className="legend">Recent apps</span>
-                    <div className="chips">
-                        {savedApps.map((saved) => (
-                            <span key={`${saved.org}/${saved.app}`} className="chip" data-current={saved.org === org && saved.app === app}>
-                                <button type="button" className="chip__pick" onClick={() => onPickSavedApp(saved)}>
-                                    {saved.org}/{saved.app}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="chip__drop"
-                                    onClick={() => onForgetSavedApp(saved)}
-                                    aria-label={`Forget ${saved.org}/${saved.app}`}
-                                >
-                                    ×
-                                </button>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             <div className="field" style={{ marginBottom: 12 }}>
                 <label htmlFor="knownApp">Known app</label>
                 <select

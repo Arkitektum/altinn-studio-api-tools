@@ -35,7 +35,7 @@ Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{user
 
 ### Target
 
-Enter org and app, then press **Probe app**. This reads `/api/v1/applicationmetadata` to fill the data type picker, and `/api/v1/parties?allowedToInstantiateFilter=true` to fill the party picker with subunits flattened, so you do not have to guess a party id that would return 403. Apps you have used before appear as one-click chips. A **Will call** line shows the exact URL that is about to be requested.
+Enter org and app, then press **Probe app**. This reads `/api/v1/applicationmetadata` to fill the data type picker, and `/api/v1/parties?allowedToInstantiateFilter=true` to fill the party picker with subunits flattened, so you do not have to guess a party id that would return 403. A **Will call** line shows the exact URL that is about to be requested.
 
 ### Payload
 
