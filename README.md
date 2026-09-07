@@ -39,6 +39,8 @@ Enter org and app, then press **Probe app**. This reads `/api/v1/applicationmeta
 
 One editor card per data element, holding the data type, the content type, and the body. The content type defaults to what the app declares in `allowedContentTypes`, falling back to detection from the payload itself. Each element has an example data picker that loads a shipped XML file for its data type, so the common case needs no pasting. See [Example data](#example-data).
 
+Elements collapse to a single row, so a payload with several of them stays readable. Adding an element collapses the ones already there and leaves the new one open, and **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
+
 The data type picker is grouped as **Main form**, **Sub forms** and **Attachments**, read from the app's `mainFormDataType` and `subFormDataTypes`. Anything the app declares that is not one of those counts as an attachment. Four data types the app produces itself are left out, since they are not something you post: `Signatur`, `FoedselsnummerTiltakshaver`, `Valideringsrapport` and `ref-data-as-pdf`. A hidden type that is already selected on an element stays selectable, so switching between apps never blanks a selection.
 
 Apps that declare neither field fall back to grouping by app logic, where a single-instance form data type is the main form and any other is a subform. `web/src/lib/dataTypeGroups.test.ts` covers both paths.

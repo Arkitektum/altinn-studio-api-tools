@@ -366,6 +366,7 @@ export function App() {
                 instanceOwnerPartyId,
                 mode,
                 ...(mode === "existing" ? { instanceGuid } : {}),
+                // Only the wire fields. exampleName and collapsed are UI state.
                 dataElements: dataElements.map((element) => ({
                     dataType: element.dataType,
                     content: element.content,

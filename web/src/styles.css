@@ -40,6 +40,10 @@
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
+    /* Chromium ignores padding-right when placing the native select arrow, so the arrow is
+       drawn here instead and can be positioned properly. */
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a2a9b1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
     --radius: 5px;
     --rail: 300px;
     --log: 430px;
@@ -280,6 +284,19 @@ textarea:disabled {
 
 select {
     cursor: pointer;
+    appearance: none;
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    /* Keeps long option text off the arrow. */
+    padding-right: 30px;
+}
+
+/* Specificity: select:disabled sets the background shorthand, which would drop the arrow. */
+select:disabled {
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 12px center;
 }
 
 textarea {
@@ -698,6 +715,47 @@ textarea {
     border-radius: 4px 4px 0 0;
 }
 
+/* The bar doubles as the collapse toggle. */
+.element__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Exclude the empty state, so hovering does not grey out its warning. */
+.element__toggle:hover .element__summary:not(.element__summary--empty) {
+    color: var(--text-muted);
+}
+
+.element__chevron {
+    width: 12px;
+    flex: 0 0 auto;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--text-muted);
+}
+
+.element__summary {
+    font-size: 12px;
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* An element with nothing in it blocks the post, so say so rather than whispering it. */
+.element__summary--empty {
+    color: var(--warn);
+}
+
 .element__ord {
     font-size: 12px;
     color: var(--text-muted);
@@ -708,6 +766,12 @@ textarea {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+/* An explicit display beats the user agent's [hidden] rule, so restate it for the collapsed
+   body. Hiding rather than unmounting keeps the example picker's state intact. */
+.element__body[hidden] {
+    display: none;
 }
 
 .element__type {

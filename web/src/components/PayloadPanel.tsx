@@ -19,6 +19,17 @@ interface PayloadPanelProps {
     onAdvanceProcessChange: (next: boolean) => void;
 }
 
+/** What a collapsed element shows about itself, so nothing is hidden that you need. */
+function describeContent(element: DataElementInput): string {
+    if (!element.content) return "no content";
+    if (element.encoding === "base64") {
+        const bytes = Math.ceil((element.content.length * 3) / 4);
+        return [element.filename, `${bytes.toLocaleString("nb")} bytes`].filter(Boolean).join(" · ");
+    }
+    const chars = `${element.content.length.toLocaleString("nb")} characters`;
+    return element.exampleName ? `${chars} · ${element.exampleName}` : chars;
+}
+
 function describeDataType(dataType: AppDataType): string {
     const bits: string[] = [];
     if (dataType.appLogic) bits.push("form data");
@@ -62,13 +73,23 @@ export function PayloadPanel({
         });
     }
 
+    function setCollapsed(index: number, collapsed: boolean) {
+        update(index, { collapsed });
+    }
+
+    function setAllCollapsed(collapsed: boolean) {
+        onChange(dataElements.map((element) => ({ ...element, collapsed })));
+    }
+
     function add() {
         // Offer a data type that is not already in the list, so adding is one click. Follows the
         // picker order, which keeps it off the app-produced types.
         const used = new Set(dataElements.map((element) => element.dataType));
         const candidates = dataTypes.length > 0 ? groupedDataTypeIds(groupDataTypes(dataTypes, metadata)) : suggestedDataTypes;
         const next = candidates.find((id) => !used.has(id));
-        onChange([...dataElements, { dataType: next ?? "", content: "" }]);
+        // Collapse what is already there, so the list stays short and the new element is the one
+        // in front of you.
+        onChange([...dataElements.map((element) => ({ ...element, collapsed: true })), { dataType: next ?? "", content: "" }]);
     }
 
     function remove(index: number) {
@@ -85,37 +106,67 @@ export function PayloadPanel({
         }
     }
 
+    const allCollapsed = dataElements.length > 0 && dataElements.every((element) => element.collapsed);
+
     return (
-        <Panel title="Payload" aside={<span className="badge">{dataElements.length} element(s)</span>}>
+        <Panel
+            title="Payload"
+            aside={
+                <span className="row" style={{ gap: 6 }}>
+                    {dataElements.length > 1 && (
+                        <button type="button" className="btn btn--ghost btn--tiny" onClick={() => setAllCollapsed(!allCollapsed)}>
+                            {allCollapsed ? "Expand all" : "Collapse all"}
+                        </button>
+                    )}
+                    <span className="badge">{dataElements.length} element(s)</span>
+                </span>
+            }
+        >
             {dataElements.map((element, index) => {
                 const known = dataTypes.find((type) => type.id === element.dataType);
                 return (
                     <div className="element" key={index}>
                         <div className="element__bar">
-                            <span className="element__ord">{index + 1}</span>
-                            {element.dataType && <span className="badge">{element.dataType}</span>}
+                            <button
+                                type="button"
+                                className="element__toggle"
+                                onClick={() => setCollapsed(index, !element.collapsed)}
+                                aria-expanded={!element.collapsed}
+                                title={element.collapsed ? "Expand" : "Collapse"}
+                            >
+                                <span className="element__chevron" aria-hidden="true">
+                                    {element.collapsed ? "\u25b6" : "\u25bc"}
+                                </span>
+                                <span className="element__ord">{index + 1}</span>
+                                {element.dataType && <span className="badge">{element.dataType}</span>}
+                                <span className={`element__summary${element.content ? "" : " element__summary--empty"}`}>
+                                    {describeContent(element)}
+                                </span>
+                            </button>
                             <span className="spacer" />
                             {/* Only useful for JSON payloads, since the shipped examples are all XML. */}
-                            {/^\s*[[{]/.test(element.content) && (
+                            {!element.collapsed && /^\s*[[{]/.test(element.content) && (
                                 <button type="button" className="btn btn--ghost btn--tiny" onClick={() => formatJson(index)}>
                                     Format JSON
                                 </button>
                             )}
-                            <button
-                                type="button"
-                                className="btn btn--ghost btn--tiny"
-                                onClick={() =>
-                                    update(index, {
-                                        content: "",
-                                        encoding: undefined,
-                                        filename: undefined,
-                                        exampleName: undefined
-                                    })
-                                }
-                                disabled={!element.content}
-                            >
-                                Clear
-                            </button>
+                            {!element.collapsed && (
+                                <button
+                                    type="button"
+                                    className="btn btn--ghost btn--tiny"
+                                    onClick={() =>
+                                        update(index, {
+                                            content: "",
+                                            encoding: undefined,
+                                            filename: undefined,
+                                            exampleName: undefined
+                                        })
+                                    }
+                                    disabled={!element.content}
+                                >
+                                    Clear
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 className="btn btn--ghost btn--tiny btn--danger"
@@ -126,7 +177,7 @@ export function PayloadPanel({
                             </button>
                         </div>
 
-                        <div className="element__body">
+                        <div className="element__body" hidden={element.collapsed}>
                             <div className="element__type">
                                 <div className="field">
                                     <label htmlFor={`dataType-${index}`}>Data type</label>
