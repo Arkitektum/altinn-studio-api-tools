@@ -4,6 +4,8 @@ A local web tool for posting test data into Altinn 3 apps running under Altinn S
 
 The interface has three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the validation results and run log on the right. It both posts data and reads it back, see [Reading data back](#reading-data-back).
 
+Panels appear as they become usable rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload, the post button and Fetch arrive once you have a token and an app to aim at. Validation and the run log arrive with their first content, and the data element controls in Fetch appear once an instance read has listed some. The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
+
 ## Quick start
 
 Have localtest running, with apps on `local.altinn.cloud:8000` and LocalTest on `localhost:5101`, then:

@@ -3,6 +3,7 @@ import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired, severityLabel } from "./lib/format";
 import { useLocalStorage } from "./lib/useLocalStorage";
+import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
@@ -244,7 +245,13 @@ export function App() {
             const { partyId, guid } = splitPastedInstanceId(value);
             // Issues describe one instance. Pointing at another one makes them stale, not wrong,
             // which is the more misleading of the two.
-            if (guid !== instanceGuid) clearValidations();
+            if (guid !== instanceGuid) {
+                clearValidations();
+                // The data element list came from the old instance, so it would offer guids that
+                // are not in this one.
+                setInstanceDataElements([]);
+                setDataGuid("");
+            }
             setInstanceGuid(guid);
             if (partyId) setInstanceOwnerPartyId(partyId);
         },
@@ -537,6 +544,16 @@ export function App() {
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
+    // Panels you cannot use yet are left out rather than shown dead.
+    const sections = visibleSections({
+        hasToken: tokenUsable,
+        org,
+        app,
+        validationCount: validations.length,
+        runCount: logs.length,
+        busy: running || fetching
+    });
+
     return (
         <div className="shell">
             <header className="masthead">
@@ -611,64 +628,71 @@ export function App() {
                         elementCount={dataElements.length}
                     />
 
-                    <PayloadPanel
-                        dataElements={dataElements}
-                        onChange={setDataElements}
-                        dataTypes={dataTypes}
-                        metadata={metadata?.metadata ?? null}
-                        suggestedDataTypes={suggestedDataTypes}
-                        exampleGroups={exampleGroups}
-                        advanceProcess={advanceProcess}
-                        onAdvanceProcessChange={setAdvanceProcess}
-                    />
+                    {/* Nothing here can be aimed anywhere without a token and an app. */}
+                    {sections.requests && (
+                        <>
+                            <PayloadPanel
+                                dataElements={dataElements}
+                                onChange={setDataElements}
+                                dataTypes={dataTypes}
+                                metadata={metadata?.metadata ?? null}
+                                suggestedDataTypes={suggestedDataTypes}
+                                exampleGroups={exampleGroups}
+                                advanceProcess={advanceProcess}
+                                onAdvanceProcessChange={setAdvanceProcess}
+                            />
 
-                    <section className="panel">
-                        {blockers.length > 0 && (
-                            <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                Needs {blockers.join(", ")}.
-                            </div>
-                        )}
-                        {runError ? (
-                            <div style={{ marginBottom: 12 }}>
-                                <ErrorNotice error={runError} />
-                            </div>
-                        ) : null}
-                        <button
-                            type="button"
-                            className="btn btn--primary btn--fire"
-                            onClick={() => void run()}
-                            disabled={running || blockers.length > 0}
-                        >
-                            {running && <span className="btn__spinner" />}
-                            {running ? "Posting…" : mode === "existing" ? "Post data to instance" : `Post to ${org || "org"}/${app || "app"}`}
-                        </button>
-                    </section>
+                            <section className="panel">
+                                {blockers.length > 0 && (
+                                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                                        Needs {blockers.join(", ")}.
+                                    </div>
+                                )}
+                                {runError ? (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <ErrorNotice error={runError} />
+                                    </div>
+                                ) : null}
+                                <button
+                                    type="button"
+                                    className="btn btn--primary btn--fire"
+                                    onClick={() => void run()}
+                                    disabled={running || blockers.length > 0}
+                                >
+                                    {running && <span className="btn__spinner" />}
+                                    {running ? "Posting…" : mode === "existing" ? "Post data to instance" : `Post to ${org || "org"}/${app || "app"}`}
+                                </button>
+                            </section>
 
-                    <FetchPanel
-                        appHost={appHost}
-                        org={org}
-                        app={app}
-                        instanceOwnerPartyId={instanceOwnerPartyId}
-                        onPartyChange={setInstanceOwnerPartyId}
-                        instanceGuid={instanceGuid}
-                        onInstanceGuidChange={changeInstanceGuid}
-                        dataElements={instanceDataElements}
-                        dataGuid={dataGuid}
-                        onDataGuidChange={setDataGuid}
-                        onGetInstance={() => void getInstance()}
-                        onGetDataElement={() => void getDataElement()}
-                        onValidateInstance={() => void runValidation("instance")}
-                        onValidateDataElement={() => void runValidation("dataElement")}
-                        busy={fetching}
-                        hasToken={tokenUsable}
-                        error={fetchError}
-                    />
+                            <FetchPanel
+                                appHost={appHost}
+                                org={org}
+                                app={app}
+                                instanceOwnerPartyId={instanceOwnerPartyId}
+                                onPartyChange={setInstanceOwnerPartyId}
+                                instanceGuid={instanceGuid}
+                                onInstanceGuidChange={changeInstanceGuid}
+                                dataElements={instanceDataElements}
+                                dataGuid={dataGuid}
+                                onDataGuidChange={setDataGuid}
+                                onGetInstance={() => void getInstance()}
+                                onGetDataElement={() => void getDataElement()}
+                                onValidateInstance={() => void runValidation("instance")}
+                                onValidateDataElement={() => void runValidation("dataElement")}
+                                busy={fetching}
+                                hasToken={tokenUsable}
+                                error={fetchError}
+                            />
+                        </>
+                    )}
                 </div>
 
-                <div className="column column--log">
-                    <ValidationPanel validations={validations} onClear={clearValidations} />
-                    <RunLog entries={logs} running={running || fetching} onClear={() => setLogs([])} />
-                </div>
+                {(sections.validation || sections.log) && (
+                    <div className="column column--log">
+                        {sections.validation && <ValidationPanel validations={validations} onClear={clearValidations} />}
+                        {sections.log && <RunLog entries={logs} running={running || fetching} onClear={() => setLogs([])} />}
+                    </div>
+                )}
             </div>
         </div>
     );

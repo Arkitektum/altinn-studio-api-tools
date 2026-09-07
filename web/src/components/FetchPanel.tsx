@@ -100,7 +100,6 @@ export function FetchPanel({
                 <button type="button" className="btn" onClick={onValidateInstance} disabled={busy || !canGetInstance}>
                     Validate instance
                 </button>
-                {!hasToken && <span className="field__hint">Get a token first.</span>}
             </div>
 
             <p className="field__hint" style={{ marginTop: 8 }}>
@@ -109,42 +108,40 @@ export function FetchPanel({
                 <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
             </p>
 
-            <div className="field" style={{ marginTop: 16 }}>
-                <label htmlFor="dataGuid">Data element</label>
-                <select
-                    id="dataGuid"
-                    value={dataGuid}
-                    onChange={(event) => onDataGuidChange(event.target.value)}
-                    disabled={dataElements.length === 0}
-                >
-                    <option value="">
-                        {dataElements.length === 0 ? "Get the instance to list its data elements" : `Pick one of ${dataElements.length}`}
-                    </option>
-                    {dataElements.map((element) => (
-                        <option key={element.id} value={element.id}>
-                            {describeElement(element)}
-                        </option>
-                    ))}
-                </select>
-                {selected && <p className="field__hint">{selected.id}</p>}
-            </div>
+            {/* There is nothing to pick from until an instance read has listed its data elements. */}
+            {dataElements.length > 0 && (
+                <>
+                    <div className="field" style={{ marginTop: 16 }}>
+                        <label htmlFor="dataGuid">Data element</label>
+                        <select id="dataGuid" value={dataGuid} onChange={(event) => onDataGuidChange(event.target.value)}>
+                            <option value="">Pick one of {dataElements.length}</option>
+                            {dataElements.map((element) => (
+                                <option key={element.id} value={element.id}>
+                                    {describeElement(element)}
+                                </option>
+                            ))}
+                        </select>
+                        {selected && <p className="field__hint">{selected.id}</p>}
+                    </div>
 
-            <div className="row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" onClick={onGetDataElement} disabled={busy || !canGetInstance || !dataGuid}>
-                    {busy && <span className="btn__spinner" />}
-                    Get data element
-                </button>
-                <button type="button" className="btn" onClick={onValidateDataElement} disabled={busy || !canGetInstance || !dataGuid}>
-                    Validate data element
-                </button>
-            </div>
+                    <div className="row" style={{ marginTop: 12 }}>
+                        <button type="button" className="btn" onClick={onGetDataElement} disabled={busy || !canGetInstance || !dataGuid}>
+                            {busy && <span className="btn__spinner" />}
+                            Get data element
+                        </button>
+                        <button type="button" className="btn" onClick={onValidateDataElement} disabled={busy || !canGetInstance || !dataGuid}>
+                            Validate data element
+                        </button>
+                    </div>
 
-            {dataGuid && (
-                <p className="field__hint" style={{ marginTop: 8 }}>
-                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}
-                    <br />
-                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
-                </p>
+                    {dataGuid && (
+                        <p className="field__hint" style={{ marginTop: 8 }}>
+                            <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}
+                            <br />
+                            <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
+                        </p>
+                    )}
+                </>
             )}
 
             {error ? (
