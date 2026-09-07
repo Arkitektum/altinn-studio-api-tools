@@ -96,7 +96,7 @@ The tool detects the existing element and sends `PUT .../data/{dataElementId}` i
 
 ## Reading data back
 
-The **Fetch** panel does two GET requests against an instance you already have.
+The **Fetch** panel does four GET requests against an instance you already have, paired as get and validate for the instance and for one data element.
 
 **Get instance** calls `GET /{org}/{app}/instances/{party}/{guid}`. Besides logging the whole response it reads the instance's `data` array and fills the data element select, so you do not have to copy a dataGuid by hand.
 
@@ -104,7 +104,11 @@ The **Fetch** panel does two GET requests against an instance you already have.
 
 The party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping. The request goes out with `Accept: */*`, because asking for JSON would stop Altinn returning stored XML. XML comes back verbatim and JSON comes back parsed.
 
-Both requests appear in the run log alongside posts, with method, URL, status, timing, and body.
+**Validate instance** calls `GET /{org}/{app}/instances/{party}/{guid}/validate` and **Validate data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes. The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`.
+
+All four requests appear in the run log alongside posts, with method, URL, status, timing, and body.
+
+The post flow has its own validate option, which runs the instance validation as a step straight after upload. The Fetch panel is for validating on demand, without posting anything.
 
 ## API
 
@@ -127,6 +131,8 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `POST` | `/api/runs` | The orchestrator, described below |
 | `GET` | `/api/instances` | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid` |
 | `GET` | `/api/instances/data-element` | Get one data element. Same query plus `&dataGuid` |
+| `GET` | `/api/instances/validate` | Validate an instance. Same query as `/api/instances` |
+| `GET` | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid` |
 | `PUT` | `/api/instances/process/next` | Advance an existing instance |
 
 ```bash
@@ -156,7 +162,7 @@ curl -s localhost:4000/api/runs -H 'content-type: application/json' -d "{
 
 `mode` is `sequential` by default, and can also be `multipart` or `existing`.
 
-A request that fails still returns `200`, with `ok` set to `false`, a `failedAt` reason, and the step log up to the point of failure. This applies to `/api/runs` and to both read endpoints, and keeps the whole log available to the UI instead of collapsing it into one error. Malformed requests return `400`.
+A request that fails still returns `200`, with `ok` set to `false`, a `failedAt` reason, and the step log up to the point of failure. This applies to `/api/runs` and to all four read endpoints, and keeps the whole log available to the UI instead of collapsing it into one error. Malformed requests return `400`.
 
 ## Scripts
 
@@ -176,7 +182,7 @@ server/src
   routes.ts           endpoints and zod schemas
   runService.ts       orchestrates create, upload, validate, advance
   runService.test.ts
-  readService.ts      get instance and get data element
+  readService.ts      get and validate, for instances and data elements
   readService.test.ts
   stepRecorder.ts     shared request logging for both flows
   multipart.ts        hand-written multipart body, see the note below

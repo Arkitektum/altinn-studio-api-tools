@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
-import { readDataElement, readInstance } from './readService.js';
+import {
+  readDataElement,
+  readInstance,
+  severityLabel,
+  validateDataElement,
+  validateInstance,
+} from './readService.js';
 
 const APP_BASE = 'http://local.altinn.cloud:8000/dibk/et-v4';
 const GUID = '99d0632c-5917-448c-8ab6-a5d3b681376b';
@@ -161,5 +167,103 @@ describe('readDataElement', () => {
     assert.equal(result.failedAt, 'Could not read the data element.');
     assert.equal(result.content, null);
     assert.equal(result.steps[0]?.error, 'Data element not found');
+  });
+});
+
+const ISSUES = [
+  { severity: 1, code: 'required', description: 'Feltet er obligatorisk.', field: 'tiltakshaver' },
+  { severity: 1, code: 'required', description: 'Mangler kommunenummer.', field: 'eiendom' },
+  { severity: 2, code: 'advice', description: 'Anbefalt felt mangler.', field: 'epost' },
+  { severity: 3, code: 'info', description: 'Til informasjon.' },
+  'not-an-object',
+];
+
+describe('validateInstance', () => {
+  it('validates the instance and counts issues by severity', async () => {
+    const stub = stubAltinn(() => ({
+      body: JSON.stringify(ISSUES),
+      contentType: 'application/json',
+    }));
+    active = stub;
+
+    const result = await validateInstance('test-token', target);
+
+    assert.equal(result.ok, true);
+    assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/validate`);
+    assert.equal(result.steps[0]?.name, 'Validate instance');
+    assert.equal(result.dataGuid, null);
+    // The malformed entry is dropped rather than counted.
+    assert.equal(result.issues.length, 4);
+    assert.deepEqual(result.counts, { errors: 2, warnings: 1, other: 1 });
+    assert.equal(result.issues[0]?.field, 'tiltakshaver');
+  });
+
+  it('reports a clean instance as no issues', async () => {
+    const stub = stubAltinn(() => ({ body: '[]', contentType: 'application/json' }));
+    active = stub;
+
+    const result = await validateInstance('test-token', target);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.issues, []);
+    assert.deepEqual(result.counts, { errors: 0, warnings: 0, other: 0 });
+  });
+
+  it('reports a failure without throwing', async () => {
+    const stub = stubAltinn(() => ({
+      status: 404,
+      body: JSON.stringify({ detail: 'Not found' }),
+      contentType: 'application/json',
+    }));
+    active = stub;
+
+    const result = await validateInstance('test-token', target);
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'Could not validate the instance.');
+    assert.deepEqual(result.counts, { errors: 0, warnings: 0, other: 0 });
+  });
+});
+
+describe('validateDataElement', () => {
+  it('validates one data element and keeps its guid', async () => {
+    const stub = stubAltinn(() => ({
+      body: JSON.stringify([ISSUES[0]]),
+      contentType: 'application/json',
+    }));
+    active = stub;
+
+    const result = await validateDataElement('test-token', { ...target, dataGuid: DATA_GUID });
+
+    assert.equal(result.ok, true);
+    assert.equal(
+      stub.calls[0]?.url,
+      `${APP_BASE}/instances/510001/${GUID}/data/${DATA_GUID}/validate`,
+    );
+    assert.equal(result.steps[0]?.name, 'Validate data element');
+    assert.equal(result.dataGuid, DATA_GUID);
+    assert.deepEqual(result.counts, { errors: 1, warnings: 0, other: 0 });
+  });
+
+  it('reports an unknown data guid without throwing', async () => {
+    const stub = stubAltinn(() => ({
+      status: 404,
+      body: JSON.stringify({ detail: 'Data element not found' }),
+      contentType: 'application/json',
+    }));
+    active = stub;
+
+    const result = await validateDataElement('test-token', { ...target, dataGuid: 'nope' });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'Could not validate the data element.');
+  });
+});
+
+describe('severityLabel', () => {
+  it('names the severities Altinn uses', () => {
+    assert.equal(severityLabel(1), 'error');
+    assert.equal(severityLabel(2), 'warning');
+    assert.equal(severityLabel(3), 'info');
+    assert.equal(severityLabel(4), 'fixed');
+    assert.equal(severityLabel(5), 'success');
+    assert.equal(severityLabel(9), 'severity 9');
   });
 });

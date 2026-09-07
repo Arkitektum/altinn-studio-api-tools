@@ -41,6 +41,45 @@ export interface ReadDataElementResult {
   content: unknown;
 }
 
+/** One entry of Altinn's validation response. */
+export interface ValidationIssue {
+  severity: number;
+  code: string | null;
+  description: string | null;
+  field: string | null;
+  dataElementId: string | null;
+  source: string | null;
+}
+
+export interface ValidationCounts {
+  errors: number;
+  warnings: number;
+  other: number;
+}
+
+export interface ValidateResult {
+  ok: boolean;
+  steps: RunStep[];
+  failedAt: string | null;
+  /** Set when validating a single data element rather than the whole instance. */
+  dataGuid: string | null;
+  issues: ValidationIssue[];
+  counts: ValidationCounts;
+}
+
+/** Altinn's ValidationIssueSeverity. */
+const SEVERITY_LABELS: Record<number, string> = {
+  1: 'error',
+  2: 'warning',
+  3: 'info',
+  4: 'fixed',
+  5: 'success',
+};
+
+export function severityLabel(severity: number): string {
+  return SEVERITY_LABELS[severity] ?? `severity ${severity}`;
+}
+
 function toSummary(value: unknown): DataElementSummary | null {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;
@@ -119,5 +158,81 @@ export async function readDataElement(
     dataGuid: request.dataGuid,
     contentType: response.contentType,
     content: response.ok ? response.body : null,
+  };
+}
+
+function toIssue(value: unknown): ValidationIssue | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const asString = (key: string): string | null =>
+    typeof record[key] === 'string' ? (record[key] as string) : null;
+  return {
+    severity: typeof record['severity'] === 'number' ? record['severity'] : 0,
+    code: asString('code'),
+    description: asString('description'),
+    field: asString('field'),
+    dataElementId: asString('dataElementId'),
+    source: asString('source'),
+  };
+}
+
+/** Altinn answers with an array of issues, empty when everything passes. */
+function summariseIssues(body: unknown): { issues: ValidationIssue[]; counts: ValidationCounts } {
+  const issues = Array.isArray(body)
+    ? body.map(toIssue).filter((issue): issue is ValidationIssue => issue !== null)
+    : [];
+  return {
+    issues,
+    counts: {
+      errors: issues.filter((issue) => issue.severity === 1).length,
+      warnings: issues.filter((issue) => issue.severity === 2).length,
+      other: issues.filter((issue) => issue.severity !== 1 && issue.severity !== 2).length,
+    },
+  };
+}
+
+/** GET {app}/instances/{party}/{guid}/validate */
+export async function validateInstance(
+  token: string,
+  request: ReadRequest,
+): Promise<ValidateResult> {
+  const recorder = new StepRecorder();
+  const url = `${appBaseUrl(request.org, request.app)}/instances/${
+    request.instanceOwnerPartyId
+  }/${request.instanceGuid}/validate`;
+
+  const response = await recorder.run('Validate instance', 'GET', url, () =>
+    altinnFetch({ url, token }),
+  );
+
+  return {
+    ok: response.ok,
+    steps: recorder.steps,
+    failedAt: response.ok ? null : 'Could not validate the instance.',
+    dataGuid: null,
+    ...summariseIssues(response.ok ? response.body : null),
+  };
+}
+
+/** GET {app}/instances/{party}/{guid}/data/{dataGuid}/validate */
+export async function validateDataElement(
+  token: string,
+  request: ReadRequest & { dataGuid: string },
+): Promise<ValidateResult> {
+  const recorder = new StepRecorder();
+  const url = `${appBaseUrl(request.org, request.app)}/instances/${
+    request.instanceOwnerPartyId
+  }/${request.instanceGuid}/data/${request.dataGuid}/validate`;
+
+  const response = await recorder.run('Validate data element', 'GET', url, () =>
+    altinnFetch({ url, token }),
+  );
+
+  return {
+    ok: response.ok,
+    steps: recorder.steps,
+    failedAt: response.ok ? null : 'Could not validate the data element.',
+    dataGuid: request.dataGuid,
+    ...summariseIssues(response.ok ? response.body : null),
   };
 }

@@ -11,6 +11,7 @@ import type {
   ReadInstanceResult,
   RunResult,
   ServerConfig,
+  ValidateResult,
 } from './types';
 
 export class ApiError extends Error {
@@ -117,4 +118,21 @@ export const api = {
     instanceGuid: string;
     dataGuid: string;
   }) => request<ReadDataElementResult>(`/instances/data-element?${new URLSearchParams(params)}`),
+
+  validateInstance: (params: {
+    tokenId: string;
+    org: string;
+    app: string;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+  }) => request<ValidateResult>(`/instances/validate?${new URLSearchParams(params)}`),
+
+  validateDataElement: (params: {
+    tokenId: string;
+    org: string;
+    app: string;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    dataGuid: string;
+  }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`),
 };

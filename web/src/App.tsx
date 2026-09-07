@@ -25,6 +25,7 @@ import type {
   RunResult,
   SavedApp,
   ServerConfig,
+  ValidateResult,
 } from './types';
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: '', content: '' };
@@ -81,6 +82,33 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
       { label: 'Data guid', value: result.dataGuid },
       ...(result.contentType ? [{ label: 'Content type', value: result.contentType }] : []),
     ],
+  };
+}
+
+function logFromValidation(result: ValidateResult): LogResult {
+  const { errors, warnings, other } = result.counts;
+  const rows: { label: string; value: string }[] = [];
+  if (result.dataGuid) rows.push({ label: 'Data guid', value: result.dataGuid });
+  // On a failed request there is no issue list, and "none" would read as "validated clean".
+  if (result.ok) {
+    rows.push({
+      label: 'Issues',
+      value:
+        result.issues.length === 0
+          ? 'none'
+          : [
+              `${errors} error${errors === 1 ? '' : 's'}`,
+              `${warnings} warning${warnings === 1 ? '' : 's'}`,
+              ...(other > 0 ? [`${other} other`] : []),
+            ].join(', '),
+    });
+  }
+  return {
+    ok: result.ok,
+    steps: result.steps,
+    failedAt: result.failedAt,
+    title: result.dataGuid ? 'Validated data element' : 'Validated instance',
+    rows,
   };
 }
 
@@ -341,6 +369,28 @@ export function App() {
     }
   }
 
+  // Named runValidation to avoid shadowing the `validate` option used by the post flow.
+  async function runValidation(scope: 'instance' | 'dataElement') {
+    if (!activeTokenId) return;
+    if (scope === 'dataElement' && !dataGuid) return;
+    setFetching(true);
+    setFetchError(null);
+    const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid };
+    try {
+      setLog(
+        logFromValidation(
+          scope === 'instance'
+            ? await api.validateInstance(params)
+            : await api.validateDataElement({ ...params, dataGuid }),
+        ),
+      );
+    } catch (error) {
+      setFetchError(error);
+    } finally {
+      setFetching(false);
+    }
+  }
+
   const blockers: string[] = [];
   if (!tokenUsable) blockers.push('a valid token');
   if (!org) blockers.push('an org');
@@ -491,6 +541,8 @@ export function App() {
             onDataGuidChange={setDataGuid}
             onGetInstance={() => void getInstance()}
             onGetDataElement={() => void getDataElement()}
+            onValidateInstance={() => void runValidation('instance')}
+            onValidateDataElement={() => void runValidation('dataElement')}
             busy={fetching}
             hasToken={tokenUsable}
             error={fetchError}

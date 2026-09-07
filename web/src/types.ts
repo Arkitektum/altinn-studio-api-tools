@@ -185,3 +185,28 @@ export interface LogResult {
   rows: { label: string; value: string }[];
   instanceUrl?: string | null;
 }
+
+export interface ValidationIssue {
+  severity: number;
+  code: string | null;
+  description: string | null;
+  field: string | null;
+  dataElementId: string | null;
+  source: string | null;
+}
+
+export interface ValidationCounts {
+  errors: number;
+  warnings: number;
+  other: number;
+}
+
+export interface ValidateResult {
+  ok: boolean;
+  steps: RunStep[];
+  failedAt: string | null;
+  /** Set when validating a single data element rather than the whole instance. */
+  dataGuid: string | null;
+  issues: ValidationIssue[];
+  counts: ValidationCounts;
+}

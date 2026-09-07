@@ -16,6 +16,8 @@ interface FetchPanelProps {
   onDataGuidChange: (next: string) => void;
   onGetInstance: () => void;
   onGetDataElement: () => void;
+  onValidateInstance: () => void;
+  onValidateDataElement: () => void;
   busy: boolean;
   hasToken: boolean;
   error: unknown;
@@ -44,6 +46,8 @@ export function FetchPanel({
   onDataGuidChange,
   onGetInstance,
   onGetDataElement,
+  onValidateInstance,
+  onValidateDataElement,
   busy,
   hasToken,
   error,
@@ -88,11 +92,21 @@ export function FetchPanel({
           {busy && <span className="btn__spinner" />}
           Get instance
         </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={onValidateInstance}
+          disabled={busy || !canGetInstance}
+        >
+          Validate instance
+        </button>
         {!hasToken && <span className="field__hint">Get a token first.</span>}
       </div>
 
       <p className="field__hint" style={{ marginTop: 8 }}>
         GET {base}/instances/{party}/{guid}
+        <br />
+        GET {base}/instances/{party}/{guid}/validate
       </p>
 
       <div className="field" style={{ marginTop: 16 }}>
@@ -127,11 +141,21 @@ export function FetchPanel({
           {busy && <span className="btn__spinner" />}
           Get data element
         </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={onValidateDataElement}
+          disabled={busy || !canGetInstance || !dataGuid}
+        >
+          Validate data element
+        </button>
       </div>
 
       {dataGuid && (
         <p className="field__hint" style={{ marginTop: 8 }}>
           GET {base}/instances/{party}/{guid}/data/{dataGuid}
+          <br />
+          GET {base}/instances/{party}/{guid}/data/{dataGuid}/validate
         </p>
       )}
 
