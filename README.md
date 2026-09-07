@@ -167,6 +167,8 @@ The **Fetch** panel does four GET requests against an instance you already have,
 
 The party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping. The request goes out with `Accept: */*`, because asking for JSON would stop Altinn returning stored XML. XML comes back verbatim and JSON comes back parsed.
 
+Validation results are listed out rather than left as raw JSON. Issues are grouped by severity with the worst first, each one showing its code, the data type it belongs to, the description and the field path, on a severity coloured card. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code. This appears both for the validation that runs automatically after a post and for the two validate buttons.
+
 **Validate instance** calls `GET /{org}/{app}/instances/{party}/{guid}/validate` and **Validate data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes. The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`.
 
 All four requests appear in the run log alongside posts, with method, URL, status, timing, and body.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
-import { isExpired } from "./lib/format";
+import { isExpired, severityLabel } from "./lib/format";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
@@ -17,6 +17,7 @@ import type {
     DataElementSummary,
     ExampleGroup,
     LocaltestStatus,
+    LogIssue,
     LogResult,
     PublicToken,
     ReadDataElementResult,
@@ -70,8 +71,29 @@ function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult 
         failedAt: result.failedAt,
         title: "Posted",
         rows,
-        instanceUrl: result.instanceUrl
+        instanceUrl: result.instanceUrl,
+        issues: toLogIssues(followUp.validation, followUp.instance?.dataElements ?? [])
     };
+}
+
+/**
+ * Prepares validation issues for the log: sorted by severity, with data element ids resolved to
+ * data type names where the instance read told us what they are.
+ */
+function toLogIssues(result: ValidateResult | null, dataElements: DataElementSummary[]): LogIssue[] {
+    if (!result?.ok) return [];
+    const names = new Map(dataElements.map((element) => [element.id, element.dataType]));
+    return [...result.issues]
+        .sort((a, b) => a.severity - b.severity)
+        .map((issue) => ({
+            severity: issue.severity,
+            severityLabel: severityLabel(issue.severity),
+            description: issue.description ?? "",
+            code: issue.code,
+            field: issue.field,
+            dataElement: issue.dataElementId ? (names.get(issue.dataElementId) ?? issue.dataElementId) : null,
+            source: issue.source
+        }));
 }
 
 /** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
@@ -132,7 +154,7 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
     };
 }
 
-function logFromValidation(result: ValidateResult): LogResult {
+function logFromValidation(result: ValidateResult, dataElements: DataElementSummary[]): LogResult {
     const rows: LogResult["rows"] = [];
     if (result.dataGuid) rows.push({ label: "Data guid", value: result.dataGuid });
     // On a failed request there is no issue list, and "none" would read as "validated clean".
@@ -142,7 +164,8 @@ function logFromValidation(result: ValidateResult): LogResult {
         steps: result.steps,
         failedAt: result.failedAt,
         title: result.dataGuid ? "Validated data element" : "Validated instance",
-        rows
+        rows,
+        issues: toLogIssues(result, dataElements)
     };
 }
 
@@ -448,9 +471,9 @@ export function App() {
         setFetchError(null);
         const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid };
         try {
-            setLog(
-                logFromValidation(scope === "instance" ? await api.validateInstance(params) : await api.validateDataElement({ ...params, dataGuid }))
-            );
+            const result = scope === "instance" ? await api.validateInstance(params) : await api.validateDataElement({ ...params, dataGuid });
+            // The instance read is what lets an issue name its data type instead of a guid.
+            setLog(logFromValidation(result, instanceDataElements));
         } catch (error) {
             setFetchError(error);
         } finally {

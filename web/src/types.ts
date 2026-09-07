@@ -192,6 +192,18 @@ export interface ReadDataElementResult {
     content: string | null;
 }
 
+/** A validation issue, ready to render. Ids are resolved to names before it gets here. */
+export interface LogIssue {
+    severity: number;
+    severityLabel: string;
+    description: string;
+    code: string | null;
+    field: string | null;
+    /** Data type name where the id could be resolved, otherwise the raw id. */
+    dataElement: string | null;
+    source: string | null;
+}
+
 /**
  * What the run log renders. Both the posting and the reading flows build one of these, so the
  * log does not need to know which produced it.
@@ -204,6 +216,8 @@ export interface LogResult {
     title: string;
     rows: { label: string; value: string; tone?: "ok" | "warn" | "bad" }[];
     instanceUrl?: string | null;
+    /** Validation issues to list out, most severe first. */
+    issues?: LogIssue[];
 }
 
 export interface ValidationIssue {

@@ -51,7 +51,8 @@
 
     --radius: 5px;
     --rail: 300px;
-    --log: 430px;
+    /* Wider than it was, because the log now carries validation descriptions. */
+    --log: 480px;
     --header-h: 45px;
 }
 
@@ -525,6 +526,12 @@ textarea {
     color: var(--bad);
 }
 
+.badge--warn {
+    border-color: var(--warn-border);
+    background: var(--warn-bg);
+    color: var(--warn);
+}
+
 .badge--signal,
 .badge--info {
     border-color: var(--accent-border);
@@ -853,6 +860,73 @@ textarea {
 /* Nothing loaded yet, so this select is the action that unblocks the post. */
 .example__row--empty select {
     border-color: var(--accent-border);
+}
+
+/* ------------------------------------------------------------------ validation issues */
+
+.issues {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.issues__head {
+    margin-bottom: 6px;
+}
+
+/* A severity coloured edge, so a long list can be skimmed by seriousness. */
+.issue {
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+}
+
+.issue--bad {
+    border-left-color: var(--bad);
+    background: var(--bad-bg);
+}
+
+.issue--warn {
+    border-left-color: var(--warn);
+    background: var(--warn-bg);
+}
+
+.issue--info {
+    border-left-color: var(--accent);
+    background: var(--accent-bg);
+}
+
+.issue__top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.issue__code {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.issue__description {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+/* The JSON pointer into the form data, which can be long. */
+.issue__field {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    overflow-wrap: anywhere;
 }
 
 /* ------------------------------------------------------------------ run log */

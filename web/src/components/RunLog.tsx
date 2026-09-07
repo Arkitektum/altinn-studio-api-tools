@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { prettyJson } from "../lib/format";
 import { Panel } from "./Panel";
-import type { LogResult, RunStep } from "../types";
+import type { LogIssue, LogResult, RunStep } from "../types";
 
 interface RunLogProps {
     result: LogResult | null;
@@ -35,6 +35,7 @@ export function RunLog({ result, running }: RunLogProps) {
             {result && (
                 <>
                     <Verdict result={result} />
+                    {result.issues && result.issues.length > 0 && <Issues issues={result.issues} />}
                     <div className="tape">
                         {result.steps.map((step, position) => (
                             <Step key={`${position}-${step.name}`} step={step} />
@@ -90,6 +91,61 @@ function statusTone(status: number): "ok" | "info" | "warn" | "bad" {
     if (status < 400) return "info";
     if (status < 500) return "warn";
     return "bad";
+}
+
+/**
+ * Validation issues, grouped by severity. The code is the line to scan and the description the
+ * line to read, so the code leads and the description sits under it.
+ */
+function Issues({ issues }: { issues: LogIssue[] }) {
+    const bySeverity = new Map<number, LogIssue[]>();
+    for (const issue of issues) {
+        const bucket = bySeverity.get(issue.severity);
+        if (bucket) bucket.push(issue);
+        else bySeverity.set(issue.severity, [issue]);
+    }
+
+    return (
+        <div className="issues">
+            {[...bySeverity.entries()].map(([severity, group]) => (
+                <div key={severity}>
+                    <div className="issues__head">
+                        <span className={`badge ${severityBadge(severity)}`}>
+                            {group.length} {group[0]?.severityLabel}
+                            {group.length === 1 ? "" : "s"}
+                        </span>
+                    </div>
+                    {group.map((issue, position) => (
+                        <div key={`${issue.code}-${issue.field}-${position}`} className={`issue issue--${severityTone(severity)}`}>
+                            <div className="issue__top">
+                                {issue.code && (
+                                    <span className="issue__code" title={issue.source ?? undefined}>
+                                        {issue.code}
+                                    </span>
+                                )}
+                                {issue.dataElement && <span className="badge">{issue.dataElement}</span>}
+                            </div>
+                            {issue.description && <p className="issue__description">{issue.description}</p>}
+                            {issue.field && <div className="issue__field">{issue.field}</div>}
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+/** Errors read as bad, warnings as warn, anything else as neutral information. */
+function severityTone(severity: number): "bad" | "warn" | "info" {
+    if (severity === 1) return "bad";
+    if (severity === 2) return "warn";
+    return "info";
+}
+
+function severityBadge(severity: number): string {
+    if (severity === 1) return "badge--bad";
+    if (severity === 2) return "badge--warn";
+    return "badge--info";
 }
 
 function Step({ step }: { step: RunStep }) {

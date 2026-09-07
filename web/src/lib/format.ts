@@ -62,3 +62,16 @@ export function partyLabel(party: { partyId: number; name?: string; orgNumber?: 
     const identifier = party.orgNumber || party.ssn;
     return `${party.partyId} · ${party.name ?? "unnamed"}${identifier ? ` (${identifier})` : ""}`;
 }
+
+/** Altinn's ValidationIssueSeverity. Mirrors severityLabel on the server. */
+const SEVERITY_LABELS: Record<number, string> = {
+    1: "error",
+    2: "warning",
+    3: "info",
+    4: "fixed",
+    5: "success"
+};
+
+export function severityLabel(severity: number): string {
+    return SEVERITY_LABELS[severity] ?? `severity ${severity}`;
+}
