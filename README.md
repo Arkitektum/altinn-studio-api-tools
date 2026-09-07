@@ -49,11 +49,11 @@ Every call in order with method, URL, status, duration, and both bodies, plus a 
 
 ## Destinations
 
-| Destination | Calls |
-| --- | --- |
-| New instance, one request per data element (default) | `POST /{org}/{app}/instances?instanceOwnerPartyId={party}`, then one request per data element |
-| New instance, all data in one request | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
-| Existing instance | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}` |
+| Destination                                          | Calls                                                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| New instance, one request per data element (default) | `POST /{org}/{app}/instances?instanceOwnerPartyId={party}`, then one request per data element        |
+| New instance, all data in one request                | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
+| Existing instance                                    | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}`                                    |
 
 After a run the instance guid is carried into the existing instance field, so creating an instance and then posting more data onto it takes two clicks. Pasting a full `510001/99d0632c-...` pair into that field splits the party id out for you.
 
@@ -91,31 +91,31 @@ It expects `forms/{dataType}/*.xml`, `subforms/{dataType}/*.xml` and `attachment
 
 Attachment data types are keyed not by data type but by the content types they accept, so one dummy file serves every attachment type that accepts it. `examples/attachments/` holds one dummy per format:
 
-| File | Content types | Sent as |
-| --- | --- | --- |
-| `dummy.pdf` | `application/pdf` | base64 |
-| `dummy.docx` | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | base64 |
-| `dummy.xlsx` | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` | base64 |
-| `dummy.odt` | `application/vnd.oasis.opendocument.text` | base64 |
-| `dummy.ods` | `application/vnd.oasis.opendocument.spreadsheet` | base64 |
-| `dummy.rtf` | `application/rtf`, `text/rtf` | text |
-| `dummy.png` | `image/png` | base64 |
-| `dummy.jpg` | `image/jpeg` | base64 |
-| `dummy.gif` | `image/gif` | base64 |
-| `dummy.bmp` | `image/bmp`, `image/x-ms-bmp` | base64 |
-| `dummy.webp` | `image/webp` | base64 |
-| `dummy.tif` | `image/tiff` | base64 |
-| `dummy.svg` | `image/svg+xml` | text |
-| `dummy.gml` | `application/gml+xml` | text |
-| `dummy.geojson` | `application/geo+json`, `application/vnd.geo+json` | text |
-| `dummy.xml` | `application/xml`, `text/xml` | text |
-| `dummy.json` | `application/json`, `text/json` | text |
-| `dummy.csv` | `text/csv`, `application/csv` | text |
-| `dummy.html` | `text/html` | text |
-| `dummy.md` | `text/markdown` | text |
-| `dummy.txt` | `text/plain` | text |
-| `dummy.zip` | `application/zip`, `application/x-zip-compressed` | base64 |
-| `dummy.bin` | `application/octet-stream` | base64 |
+| File            | Content types                                                             | Sent as |
+| --------------- | ------------------------------------------------------------------------- | ------- |
+| `dummy.pdf`     | `application/pdf`                                                         | base64  |
+| `dummy.docx`    | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | base64  |
+| `dummy.xlsx`    | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`       | base64  |
+| `dummy.odt`     | `application/vnd.oasis.opendocument.text`                                 | base64  |
+| `dummy.ods`     | `application/vnd.oasis.opendocument.spreadsheet`                          | base64  |
+| `dummy.rtf`     | `application/rtf`, `text/rtf`                                             | text    |
+| `dummy.png`     | `image/png`                                                               | base64  |
+| `dummy.jpg`     | `image/jpeg`                                                              | base64  |
+| `dummy.gif`     | `image/gif`                                                               | base64  |
+| `dummy.bmp`     | `image/bmp`, `image/x-ms-bmp`                                             | base64  |
+| `dummy.webp`    | `image/webp`                                                              | base64  |
+| `dummy.tif`     | `image/tiff`                                                              | base64  |
+| `dummy.svg`     | `image/svg+xml`                                                           | text    |
+| `dummy.gml`     | `application/gml+xml`                                                     | text    |
+| `dummy.geojson` | `application/geo+json`, `application/vnd.geo+json`                        | text    |
+| `dummy.xml`     | `application/xml`, `text/xml`                                             | text    |
+| `dummy.json`    | `application/json`, `text/json`                                           | text    |
+| `dummy.csv`     | `text/csv`, `application/csv`                                             | text    |
+| `dummy.html`    | `text/html`                                                               | text    |
+| `dummy.md`      | `text/markdown`                                                           | text    |
+| `dummy.txt`     | `text/plain`                                                              | text    |
+| `dummy.zip`     | `application/zip`, `application/x-zip-compressed`                         | base64  |
+| `dummy.bin`     | `application/octet-stream`                                                | base64  |
 
 The picker offers the dummies matching the data type's `allowedContentTypes`, in the order the app declares them, so the first declared one is what loads automatically. Where a format has several content type spellings, the file is offered under each and posted as the one the app asked for, so an app declaring `text/xml` gets `text/xml` rather than `application/xml`.
 
@@ -175,26 +175,26 @@ Posting already runs the instance get and validate automatically, so the buttons
 
 The backend is usable on its own, which is useful for scripting a data load.
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `GET` | `/api/health` | |
-| `GET` | `/api/config` | Resolved `appHost` and `localtestUrl` |
-| `GET` | `/api/localtest/status` | Whether LocalTest is reachable |
-| `GET` | `/api/catalogue` | Known org and app pairs with their data types and subforms |
-| `GET` | `/api/examples` | Example files grouped by data type |
-| `GET` | `/api/examples/file` | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml` |
-| `POST` | `/api/tokens/test-user` | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}` |
-| `POST` | `/api/tokens/raw` | Takes `{token}` to store a token you already have |
-| `GET` | `/api/tokens` | Claims only, never the bearer token |
-| `DELETE` | `/api/tokens/:id` | |
-| `GET` | `/api/app/metadata` | `?tokenId&org&app` |
-| `GET` | `/api/app/parties` | `?tokenId&org&app` |
-| `POST` | `/api/runs` | The orchestrator, described below |
-| `GET` | `/api/instances` | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid` |
-| `GET` | `/api/instances/data-element` | Get one data element. Same query plus `&dataGuid` |
-| `GET` | `/api/instances/validate` | Validate an instance. Same query as `/api/instances` |
-| `GET` | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid` |
-| `PUT` | `/api/instances/process/next` | Advance an existing instance |
+| Method   | Path                                   | Notes                                                                 |
+| -------- | -------------------------------------- | --------------------------------------------------------------------- |
+| `GET`    | `/api/health`                          |                                                                       |
+| `GET`    | `/api/config`                          | Resolved `appHost` and `localtestUrl`                                 |
+| `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                        |
+| `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms            |
+| `GET`    | `/api/examples`                        | Example files grouped by data type                                    |
+| `GET`    | `/api/examples/file`                   | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml`        |
+| `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`          |
+| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have                     |
+| `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                   |
+| `DELETE` | `/api/tokens/:id`                      |                                                                       |
+| `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                    |
+| `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                    |
+| `POST`   | `/api/runs`                            | The orchestrator, described below                                     |
+| `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid` |
+| `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                     |
+| `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                  |
+| `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                |
+| `PUT`    | `/api/instances/process/next`          | Advance an existing instance                                          |
 
 ```bash
 TOKEN_ID=$(curl -s localhost:4000/api/tokens/test-user \
@@ -227,13 +227,23 @@ A request that fails still returns `200`, with `ok` set to `false`, a `failedAt`
 
 ## Scripts
 
-| Command | |
-| --- | --- |
-| `npm run dev` | Both servers with prefixed output |
-| `npm test` | Server and web tests, stubbed Altinn, no network |
+| Command                           |                                                          |
+| --------------------------------- | -------------------------------------------------------- |
+| `npm run dev`                     | Both servers with prefixed output                        |
+| `npm test`                        | Server and web tests, stubbed Altinn, no network         |
 | `npm run gaps --workspace server` | Which content types your apps declare that have no dummy |
-| `npm run typecheck` | Both workspaces |
-| `npm run build` | Compile the server and bundle the UI |
+| `npm run typecheck`               | Both workspaces                                          |
+| `npm run build`                   | Compile the server and bundle the UI                     |
+| `npm run format`                  | Format everything with Prettier                          |
+| `npm run format:check`            | Fail if anything is unformatted, for CI                  |
+
+## Formatting
+
+Prettier owns the formatting, configured in `.prettierrc`: four space indent, double quotes, semicolons, no trailing commas, and a 150 column print width. Run `npm run format` to apply it and `npm run format:check` to verify.
+
+`.prettierignore` keeps Prettier away from `examples/`. Those files are fixtures that get posted byte for byte, and reformatting the JSON and GeoJSON dummies would change the very bytes the tests assert on.
+
+One thing to know: `server/src/appCatalogue.ts` is generated, so if you regenerate it from the `altinnStudioApps` registry, run `npm run format` afterwards.
 
 ## Project layout
 

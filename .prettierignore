@@ -1,0 +1,10 @@
+node_modules/
+dist/
+package-lock.json
+
+# Test fixtures. The json and geojson dummies are real payloads, and reformatting them would
+# change files whose whole point is to be posted byte for byte.
+examples/
+
+# Scratch directory for data dropped in from elsewhere.
+temp/

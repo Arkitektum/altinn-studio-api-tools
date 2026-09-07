@@ -1,25 +1,28 @@
 {
-  "name": "altinn-studio-api-tools",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Get Altinn test tokens and post test data to Altinn 3 apps",
-  "workspaces": [
-    "server",
-    "web"
-  ],
-  "scripts": {
-    "dev": "concurrently -n server,web -c yellow,cyan \"npm:dev:server\" \"npm:dev:web\"",
-    "dev:server": "npm run dev --workspace server",
-    "dev:web": "npm run dev --workspace web",
-    "build": "npm run build --workspace server && npm run build --workspace web",
-    "start": "npm run start --workspace server",
-    "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
-    "test": "npm run test --workspace server && npm run test --workspace web"
-  },
-  "engines": {
-    "node": ">=20.11"
-  },
-  "devDependencies": {
-    "concurrently": "^10.0.5"
-  }
+    "name": "altinn-studio-api-tools",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Get Altinn test tokens and post test data to Altinn 3 apps",
+    "workspaces": [
+        "server",
+        "web"
+    ],
+    "scripts": {
+        "dev": "concurrently -n server,web -c yellow,cyan \"npm:dev:server\" \"npm:dev:web\"",
+        "dev:server": "npm run dev --workspace server",
+        "dev:web": "npm run dev --workspace web",
+        "build": "npm run build --workspace server && npm run build --workspace web",
+        "start": "npm run start --workspace server",
+        "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
+        "test": "npm run test --workspace server && npm run test --workspace web",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "engines": {
+        "node": ">=20.11"
+    },
+    "devDependencies": {
+        "concurrently": "^10.0.5",
+        "prettier": "^3.9.6"
+    }
 }
