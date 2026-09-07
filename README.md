@@ -47,11 +47,13 @@ Apps that declare neither field fall back to grouping by app logic, where a sing
 
 ### Validation
 
-Its own panel, separate from the run log, holding the issues from the most recent validation. Issues are grouped by severity with the worst first, and each group folds. Errors start open because they are what blocks a submission, while warnings and anything else start folded with their counts still showing.
+Its own panel, separate from the run log, holding one result per thing validated: the instance, and each data element you have validated. Results are grouped by target so several can be on screen at once, with the instance first and the data elements after it by name. Validating the same target again replaces its result rather than adding another, so what you see is always current.
+
+Every result starts folded, showing its label, its worst severity and a count. Expanded issue lists run long enough to push the run log off screen, so the headers are the default view and you open the one you want. Inside an open result, issues are grouped by severity with the worst first and each group folds too. Errors start open because they are what blocks a submission, while warnings and anything else start folded with their counts still showing.
 
 Each issue shows its code, the data type it belongs to, the description and the field path, on a severity coloured card. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code.
 
-The panel only changes when something validates. Fetching an instance or a data element afterwards leaves the issues on screen, so they stay readable while you fix the payload.
+The panel only changes when something validates. Fetching an instance or a data element afterwards leaves the issues on screen, so they stay readable while you fix the payload. Issues describe one instance, so changing the instance guid clears them rather than leaving results that no longer apply, and **Clear results** empties the panel by hand. Posting creates a new instance, which likewise drops the previous instance's results.
 
 ### Run log
 

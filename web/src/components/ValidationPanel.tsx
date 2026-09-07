@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Panel } from "./Panel";
-import type { LogEntry, LogIssue } from "../types";
+import type { LogIssue, ValidationView } from "../types";
 
 interface ValidationPanelProps {
-    /** The newest run that included a validation, or null before anything has validated. */
-    entry: LogEntry | null;
+    /** Latest result per target, instance first. Empty before anything has validated. */
+    validations: ValidationView[];
+    onClear: () => void;
 }
 
 /** Errors read as bad, warnings as warn, anything else as neutral information. */
@@ -18,33 +19,98 @@ function badgeClass(severity: number): string {
     return `badge badge--${severityTone(severity)}`;
 }
 
-export function ValidationPanel({ entry }: ValidationPanelProps) {
-    const validation = entry?.result.validation;
+/** Worst severity present, so a folded block still says whether it is blocking. */
+function summarise(issues: LogIssue[]): { text: string; tone: "ok" | "warn" | "bad" } {
+    if (issues.length === 0) return { text: "clean", tone: "ok" };
+    const errors = issues.filter((issue) => issue.severity === 1).length;
+    const warnings = issues.filter((issue) => issue.severity === 2).length;
+    const other = issues.length - errors - warnings;
+
+    const parts: string[] = [];
+    if (errors > 0) parts.push(`${errors} error${errors === 1 ? "" : "s"}`);
+    if (warnings > 0) parts.push(`${warnings} warning${warnings === 1 ? "" : "s"}`);
+    if (other > 0) parts.push(`${other} other`);
+    return { text: parts.join(", "), tone: errors > 0 ? "bad" : warnings > 0 ? "warn" : "ok" };
+}
+
+export function ValidationPanel({ validations, onClear }: ValidationPanelProps) {
+    // Every result starts folded. Expanded issue lists run long enough to push the run log off
+    // screen, so the counts in the headers are the default view and you open what you want.
+    const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({});
+    const isOpen = (key: string) => openKeys[key] ?? false;
+
+    // Forget which blocks were open once the results they belonged to are gone, otherwise the next
+    // validation of the same target would come back already expanded.
+    const empty = validations.length === 0;
+    useEffect(() => {
+        if (empty) setOpenKeys({});
+    }, [empty]);
 
     return (
         <Panel
             title="Validation"
             aside={
-                validation ? (
-                    <span className="badge">
-                        {validation.scope} · {entry?.at}
+                validations.length > 0 ? (
+                    <span className="row" style={{ gap: 6 }}>
+                        {/* Named apart from the run log's Clear history, which does something else. */}
+                        <button type="button" className="btn btn--ghost btn--tiny" onClick={onClear}>
+                            Clear results
+                        </button>
+                        <span className="badge">
+                            {validations.length} result{validations.length === 1 ? "" : "s"}
+                        </span>
                     </span>
                 ) : undefined
             }
         >
-            {!validation && (
+            {validations.length === 0 && (
                 <div className="log-empty">
                     <strong>Nothing validated yet</strong>
-                    Posting validates the instance automatically, and the two validate buttons below do it on demand.
+                    Posting validates the instance automatically, and the two validate buttons below do it on demand. The latest result for the
+                    instance and for each data element is kept here.
                 </div>
             )}
 
-            {validation && validation.issues.length === 0 && (
-                <div className="notice notice--ok">No issues. The {validation.scope} validates cleanly.</div>
-            )}
+            {validations.length > 0 && (
+                <div className="results">
+                    {validations.map((validation) => {
+                        const open = isOpen(validation.key);
+                        const summary = summarise(validation.issues);
 
-            {/* Keyed on the run, so expanding a group does not carry over to the next validation. */}
-            {validation && validation.issues.length > 0 && <Groups key={entry?.id} issues={validation.issues} />}
+                        return (
+                            <div key={validation.key} className={`result result--${summary.tone}`}>
+                                <button
+                                    type="button"
+                                    className="result__head"
+                                    aria-expanded={open}
+                                    onClick={() => setOpenKeys((current) => ({ ...current, [validation.key]: !open }))}
+                                >
+                                    <span className="element__chevron" aria-hidden="true">
+                                        {open ? "▼" : "▶"}
+                                    </span>
+                                    <span className="result__label" title={validation.scope === "data element" ? validation.label : undefined}>
+                                        {validation.label}
+                                    </span>
+                                    <span className={`badge badge--${summary.tone}`}>{summary.text}</span>
+                                    <span className="spacer" />
+                                    <span className="result__meta">{validation.at}</span>
+                                </button>
+
+                                {open && (
+                                    <div className="result__body">
+                                        {validation.issues.length === 0 ? (
+                                            <div className="notice notice--ok">No issues. The {validation.scope} validates cleanly.</div>
+                                        ) : (
+                                            /* Keyed on the run, so the severity folds reset when this target validates again. */
+                                            <Groups key={validation.runId} issues={validation.issues} />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </Panel>
     );
 }

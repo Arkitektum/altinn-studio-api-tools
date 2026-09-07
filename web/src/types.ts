@@ -218,9 +218,29 @@ export interface LogResult {
     instanceUrl?: string | null;
     /**
      * Present when the run included a validation, even when it found nothing. Absent means no
-     * validation ran, which is what keeps an earlier result on screen.
+     * validation ran, which is what keeps earlier results on screen.
      */
-    validation?: { scope: string; issues: LogIssue[] };
+    validation?: ValidationResult;
+}
+
+/** One validation, identified so that re-validating the same target replaces it. */
+export interface ValidationResult {
+    /** "instance", or "data:{guid}". One result is kept per key. */
+    key: string;
+    /** The instance these issues belong to. Changing instance drops results from the old one. */
+    instanceGuid: string;
+    scope: "instance" | "data element";
+    /** Data type name where known, otherwise the guid. */
+    label: string;
+    issues: LogIssue[];
+}
+
+/** A validation result as shown in the panel, with the run it came from. */
+export interface ValidationView extends ValidationResult {
+    /** Time the run finished. */
+    at: string;
+    /** Id of the run, used to reset the fold state when the same target is validated again. */
+    runId: string;
 }
 
 /** One entry in the run history. */
@@ -250,6 +270,8 @@ export interface ValidateResult {
     ok: boolean;
     steps: RunStep[];
     failedAt: string | null;
+    /** The instance that was validated. Results are only meaningful for this instance. */
+    instanceGuid: string;
     /** Set when validating a single data element rather than the whole instance. */
     dataGuid: string | null;
     issues: ValidationIssue[];

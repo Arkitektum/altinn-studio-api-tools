@@ -63,6 +63,8 @@ export interface ValidateResult {
     ok: boolean;
     steps: RunStep[];
     failedAt: string | null;
+    /** The instance that was validated. Results are only meaningful for this instance. */
+    instanceGuid: string;
     /** Set when validating a single data element rather than the whole instance. */
     dataGuid: string | null;
     issues: ValidationIssue[];
@@ -181,6 +183,7 @@ export async function validateInstance(token: string, request: ReadRequest): Pro
         ok: response.ok,
         steps: recorder.steps,
         failedAt: response.ok ? null : "Could not validate the instance.",
+        instanceGuid: request.instanceGuid,
         dataGuid: null,
         ...summariseIssues(response.ok ? response.body : null)
     };
@@ -199,6 +202,7 @@ export async function validateDataElement(token: string, request: ReadRequest & 
         ok: response.ok,
         steps: recorder.steps,
         failedAt: response.ok ? null : "Could not validate the data element.",
+        instanceGuid: request.instanceGuid,
         dataGuid: request.dataGuid,
         ...summariseIssues(response.ok ? response.body : null)
     };

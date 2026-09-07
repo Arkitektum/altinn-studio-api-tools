@@ -3,6 +3,7 @@ import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired, severityLabel } from "./lib/format";
 import { useLocalStorage } from "./lib/useLocalStorage";
+import { upsertValidation } from "./lib/validations";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
@@ -21,6 +22,7 @@ import type {
     LogEntry,
     LogIssue,
     LogResult,
+    ValidationView,
     PublicToken,
     ReadDataElementResult,
     ReadInstanceResult,
@@ -96,7 +98,15 @@ function toValidation(result: ValidateResult | null, dataElements: DataElementSu
             dataElement: issue.dataElementId ? (names.get(issue.dataElementId) ?? issue.dataElementId) : null,
             source: issue.source
         }));
-    return { scope: result.dataGuid ? "data element" : "instance", issues };
+    const instanceGuid = result.instanceGuid;
+    if (!result.dataGuid) return { key: "instance", instanceGuid, scope: "instance", label: "Instance", issues };
+    return {
+        key: `data:${result.dataGuid}`,
+        instanceGuid,
+        scope: "data element",
+        label: names.get(result.dataGuid) ?? result.dataGuid,
+        issues
+    };
 }
 
 /** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
@@ -203,6 +213,11 @@ export function App() {
      * fetch had left behind, and vice versa, so they are kept instead.
      */
     const [logs, setLogs] = useState<LogEntry[]>([]);
+    /**
+     * The latest validation per target, so an instance result and several data element results can
+     * be on screen together. Kept apart from the run history: a fetch should not blank the issues.
+     */
+    const [validations, setValidations] = useState<ValidationView[]>([]);
     const [running, setRunning] = useState(false);
     const [runError, setRunError] = useState<unknown>(null);
 
@@ -213,17 +228,28 @@ export function App() {
 
     const HISTORY_LIMIT = 25;
     const appendLog = useCallback((result: LogResult) => {
-        setLogs((current) =>
-            [
-                {
-                    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                    at: new Date().toLocaleTimeString("nb"),
-                    result
-                },
-                ...current
-            ].slice(0, HISTORY_LIMIT)
-        );
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const at = new Date().toLocaleTimeString("nb");
+        setLogs((current) => [{ id, at, result }, ...current].slice(0, HISTORY_LIMIT));
+
+        const validation = result.validation;
+        if (!validation) return;
+        setValidations((current) => upsertValidation(current, validation, at, id));
     }, []);
+
+    const clearValidations = useCallback(() => setValidations([]), []);
+
+    const changeInstanceGuid = useCallback(
+        (value: string) => {
+            const { partyId, guid } = splitPastedInstanceId(value);
+            // Issues describe one instance. Pointing at another one makes them stale, not wrong,
+            // which is the more misleading of the two.
+            if (guid !== instanceGuid) clearValidations();
+            setInstanceGuid(guid);
+            if (partyId) setInstanceOwnerPartyId(partyId);
+        },
+        [instanceGuid, clearValidations, setInstanceGuid, setInstanceOwnerPartyId]
+    );
 
     // Ticks once a second so token expiry counts down live.
     const [now, setNow] = useState(() => Date.now());
@@ -500,9 +526,6 @@ export function App() {
         }
     }
 
-    // Newest run that included a validation. A later fetch does not blank it.
-    const validationEntry = logs.find((entry) => entry.result.validation) ?? null;
-
     const blockers: string[] = [];
     if (!tokenUsable) blockers.push("a valid token");
     if (!org) blockers.push("an org");
@@ -558,11 +581,7 @@ export function App() {
                         instanceOwnerPartyId={instanceOwnerPartyId}
                         onPartyChange={setInstanceOwnerPartyId}
                         instanceGuid={instanceGuid}
-                        onInstanceGuidChange={(value) => {
-                            const { partyId, guid } = splitPastedInstanceId(value);
-                            setInstanceGuid(guid);
-                            if (partyId) setInstanceOwnerPartyId(partyId);
-                        }}
+                        onInstanceGuidChange={changeInstanceGuid}
                         mode={mode}
                         onModeChange={setMode}
                         catalogue={catalogue}
@@ -632,11 +651,7 @@ export function App() {
                         instanceOwnerPartyId={instanceOwnerPartyId}
                         onPartyChange={setInstanceOwnerPartyId}
                         instanceGuid={instanceGuid}
-                        onInstanceGuidChange={(value) => {
-                            const { partyId, guid } = splitPastedInstanceId(value);
-                            setInstanceGuid(guid);
-                            if (partyId) setInstanceOwnerPartyId(partyId);
-                        }}
+                        onInstanceGuidChange={changeInstanceGuid}
                         dataElements={instanceDataElements}
                         dataGuid={dataGuid}
                         onDataGuidChange={setDataGuid}
@@ -651,7 +666,7 @@ export function App() {
                 </div>
 
                 <div className="column column--log">
-                    <ValidationPanel entry={validationEntry} />
+                    <ValidationPanel validations={validations} onClear={clearValidations} />
                     <RunLog entries={logs} running={running || fetching} onClear={() => setLogs([])} />
                 </div>
             </div>
