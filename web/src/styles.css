@@ -871,8 +871,16 @@ textarea {
     margin-bottom: 14px;
 }
 
-.issues__head {
+.issues__toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
     margin-bottom: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 /* A severity coloured edge, so a long list can be skimmed by seriousness. */
@@ -927,6 +935,61 @@ textarea {
     font-size: 11px;
     color: var(--text-faint);
     overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ run history */
+
+.runs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.run {
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    border-radius: 4px;
+}
+
+.run--ok {
+    border-left-color: var(--ok);
+}
+
+.run--bad {
+    border-left-color: var(--bad);
+}
+
+.run__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    background: var(--bg-subtle);
+    border: none;
+    border-radius: 3px;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.run__title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.run__meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+
+.run__body {
+    padding: 10px;
+    border-top: 1px solid var(--border);
 }
 
 /* ------------------------------------------------------------------ run log */
@@ -1099,15 +1162,6 @@ textarea {
 .verdict--bad {
     border-color: var(--bad-border);
     background: var(--bad-bg);
-}
-
-.verdict__title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 8px;
 }
 
 .verdict__rows {

@@ -7,6 +7,7 @@ import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
 import { RunLog } from "./components/RunLog";
+import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
 import type {
@@ -17,6 +18,7 @@ import type {
     DataElementSummary,
     ExampleGroup,
     LocaltestStatus,
+    LogEntry,
     LogIssue,
     LogResult,
     PublicToken,
@@ -72,18 +74,18 @@ function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult 
         title: "Posted",
         rows,
         instanceUrl: result.instanceUrl,
-        issues: toLogIssues(followUp.validation, followUp.instance?.dataElements ?? [])
+        validation: toValidation(followUp.validation, followUp.instance?.dataElements ?? [])
     };
 }
 
 /**
- * Prepares validation issues for the log: sorted by severity, with data element ids resolved to
- * data type names where the instance read told us what they are.
+ * Prepares a validation result for display: issues sorted by severity, with data element ids
+ * resolved to data type names where the instance read told us what they are.
  */
-function toLogIssues(result: ValidateResult | null, dataElements: DataElementSummary[]): LogIssue[] {
-    if (!result?.ok) return [];
+function toValidation(result: ValidateResult | null, dataElements: DataElementSummary[]): LogResult["validation"] {
+    if (!result?.ok) return undefined;
     const names = new Map(dataElements.map((element) => [element.id, element.dataType]));
-    return [...result.issues]
+    const issues = [...result.issues]
         .sort((a, b) => a.severity - b.severity)
         .map((issue) => ({
             severity: issue.severity,
@@ -94,6 +96,7 @@ function toLogIssues(result: ValidateResult | null, dataElements: DataElementSum
             dataElement: issue.dataElementId ? (names.get(issue.dataElementId) ?? issue.dataElementId) : null,
             source: issue.source
         }));
+    return { scope: result.dataGuid ? "data element" : "instance", issues };
 }
 
 /** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
@@ -165,7 +168,7 @@ function logFromValidation(result: ValidateResult, dataElements: DataElementSumm
         failedAt: result.failedAt,
         title: result.dataGuid ? "Validated data element" : "Validated instance",
         rows,
-        issues: toLogIssues(result, dataElements)
+        validation: toValidation(result, dataElements)
     };
 }
 
@@ -195,8 +198,11 @@ export function App() {
     const [probing, setProbing] = useState(false);
     const [probeError, setProbeError] = useState<unknown>(null);
 
-    // One log for whichever request ran last, posting or reading.
-    const [log, setLog] = useState<LogResult | null>(null);
+    /**
+     * Every run that has happened this session, newest first. Posting used to wipe whatever a
+     * fetch had left behind, and vice versa, so they are kept instead.
+     */
+    const [logs, setLogs] = useState<LogEntry[]>([]);
     const [running, setRunning] = useState(false);
     const [runError, setRunError] = useState<unknown>(null);
 
@@ -204,6 +210,20 @@ export function App() {
     const [dataGuid, setDataGuid] = useState("");
     const [fetching, setFetching] = useState(false);
     const [fetchError, setFetchError] = useState<unknown>(null);
+
+    const HISTORY_LIMIT = 25;
+    const appendLog = useCallback((result: LogResult) => {
+        setLogs((current) =>
+            [
+                {
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                    at: new Date().toLocaleTimeString("nb"),
+                    result
+                },
+                ...current
+            ].slice(0, HISTORY_LIMIT)
+        );
+    }, []);
 
     // Ticks once a second so token expiry counts down live.
     const [now, setNow] = useState(() => Date.now());
@@ -381,7 +401,6 @@ export function App() {
         if (!activeTokenId) return;
         setRunning(true);
         setRunError(null);
-        setLog(null);
         try {
             const payload = await api.postRun({
                 tokenId: activeTokenId,
@@ -406,7 +425,7 @@ export function App() {
             // Chain naturally into "now post more data to that instance".
             if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
 
-            setLog(logFromRun(payload, await followUpAfterPost(payload)));
+            appendLog(logFromRun(payload, await followUpAfterPost(payload)));
         } catch (error) {
             setRunError(error);
         } finally {
@@ -426,7 +445,7 @@ export function App() {
                 instanceOwnerPartyId,
                 instanceGuid
             });
-            setLog(logFromInstance(read));
+            appendLog(logFromInstance(read));
             setInstanceDataElements(read.dataElements);
             // Preselect one so fetching a data element is a single click.
             if (read.dataElements.length > 0 && !read.dataElements.some((el) => el.id === dataGuid)) {
@@ -444,7 +463,7 @@ export function App() {
         setFetching(true);
         setFetchError(null);
         try {
-            setLog(
+            appendLog(
                 logFromDataElement(
                     await api.getDataElement({
                         tokenId: activeTokenId,
@@ -473,13 +492,16 @@ export function App() {
         try {
             const result = scope === "instance" ? await api.validateInstance(params) : await api.validateDataElement({ ...params, dataGuid });
             // The instance read is what lets an issue name its data type instead of a guid.
-            setLog(logFromValidation(result, instanceDataElements));
+            appendLog(logFromValidation(result, instanceDataElements));
         } catch (error) {
             setFetchError(error);
         } finally {
             setFetching(false);
         }
     }
+
+    // Newest run that included a validation. A later fetch does not blank it.
+    const validationEntry = logs.find((entry) => entry.result.validation) ?? null;
 
     const blockers: string[] = [];
     if (!tokenUsable) blockers.push("a valid token");
@@ -629,7 +651,8 @@ export function App() {
                 </div>
 
                 <div className="column column--log">
-                    <RunLog result={log} running={running || fetching} />
+                    <ValidationPanel entry={validationEntry} />
+                    <RunLog entries={logs} running={running || fetching} onClear={() => setLogs([])} />
                 </div>
             </div>
         </div>

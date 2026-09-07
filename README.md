@@ -2,7 +2,7 @@
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest. It fetches a test user token from LocalTest, targets an org and app, posts one or more data elements, and shows the full request and response log for every call it made.
 
-The interface has three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the run log on the right. It both posts data and reads it back, see [Reading data back](#reading-data-back).
+The interface has three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the validation results and run log on the right. It both posts data and reads it back, see [Reading data back](#reading-data-back).
 
 ## Quick start
 
@@ -45,9 +45,19 @@ The data type picker is grouped as **Main form**, **Sub forms** and **Attachment
 
 Apps that declare neither field fall back to grouping by app logic, where a single-instance form data type is the main form and any other is a subform. `web/src/lib/dataTypeGroups.test.ts` covers both paths.
 
+### Validation
+
+Its own panel, separate from the run log, holding the issues from the most recent validation. Issues are grouped by severity with the worst first, and each group folds. Errors start open because they are what blocks a submission, while warnings and anything else start folded with their counts still showing.
+
+Each issue shows its code, the data type it belongs to, the description and the field path, on a severity coloured card. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code.
+
+The panel only changes when something validates. Fetching an instance or a data element afterwards leaves the issues on screen, so they stay readable while you fix the payload.
+
 ### Run log
 
-Every call in order with method, URL, status, duration, and both bodies, plus a link that opens the instance in the app. Posts and reads share the log, and it shows whichever request ran last.
+Every call in order with method, URL, status, duration, and both bodies, plus a link that opens the instance in the app.
+
+Runs are kept rather than replaced. Each one is a row showing what it was, how many steps it took, how long it ran and when, and the newest is open while the rest fold to a single line. Posts, fetches and validations all land here, so a fetch no longer wipes the post you are looking at. **Clear history** empties it, and the last 25 runs are kept.
 
 ## Destinations
 

@@ -216,8 +216,19 @@ export interface LogResult {
     title: string;
     rows: { label: string; value: string; tone?: "ok" | "warn" | "bad" }[];
     instanceUrl?: string | null;
-    /** Validation issues to list out, most severe first. */
-    issues?: LogIssue[];
+    /**
+     * Present when the run included a validation, even when it found nothing. Absent means no
+     * validation ran, which is what keeps an earlier result on screen.
+     */
+    validation?: { scope: string; issues: LogIssue[] };
+}
+
+/** One entry in the run history. */
+export interface LogEntry {
+    id: string;
+    /** Wall clock time the run finished, for the history header. */
+    at: string;
+    result: LogResult;
 }
 
 export interface ValidationIssue {

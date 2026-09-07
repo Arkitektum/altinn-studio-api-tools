@@ -1,62 +1,100 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { prettyJson } from "../lib/format";
 import { Panel } from "./Panel";
-import type { LogIssue, LogResult, RunStep } from "../types";
+import type { LogEntry, LogResult, RunStep } from "../types";
 
 interface RunLogProps {
-    result: LogResult | null;
+    /** Newest first. */
+    entries: LogEntry[];
     running: boolean;
+    onClear: () => void;
 }
 
-export function RunLog({ result, running }: RunLogProps) {
+export function RunLog({ entries, running, onClear }: RunLogProps) {
+    // One run open at a time, following whatever ran last. Older runs stay one line each.
+    const [openId, setOpenId] = useState<string | null>(null);
+    const newestId = entries[0]?.id ?? null;
+    useEffect(() => {
+        if (newestId) setOpenId(newestId);
+    }, [newestId]);
+
     return (
         <Panel
             title="Run log"
             aside={
-                running ? (
-                    <span className="badge">
-                        <span className="led led--warn led--live" />
-                        running
-                    </span>
-                ) : result ? (
-                    <span className={`badge ${result.ok ? "badge--ok" : "badge--bad"}`}>
-                        {result.steps.length} {result.steps.length === 1 ? "step" : "steps"}
-                    </span>
-                ) : undefined
+                <span className="row" style={{ gap: 6 }}>
+                    {running && (
+                        <span className="badge">
+                            <span className="led led--warn led--live" />
+                            running
+                        </span>
+                    )}
+                    {entries.length > 0 && (
+                        <>
+                            {/* Named apart from the payload element's Clear, which does something else. */}
+                            <button type="button" className="btn btn--ghost btn--tiny" onClick={onClear}>
+                                Clear history
+                            </button>
+                            <span className="badge">
+                                {entries.length} run{entries.length === 1 ? "" : "s"}
+                            </span>
+                        </>
+                    )}
+                </span>
             }
         >
-            {!result && !running && (
+            {entries.length === 0 && !running && (
                 <div className="log-empty">
                     <strong>No requests yet</strong>
-                    Every request this tool makes to Altinn is recorded here: method, URL, status, timing, and both bodies.
+                    Every request this tool makes to Altinn is recorded here: method, URL, status, timing, and both bodies. Runs are kept, so a fetch
+                    no longer replaces a post.
                 </div>
             )}
 
-            {result && (
-                <>
-                    <Verdict result={result} />
-                    {result.issues && result.issues.length > 0 && <Issues issues={result.issues} />}
+            <div className="runs">
+                {entries.map((entry) => (
+                    <Run key={entry.id} entry={entry} open={entry.id === openId} onToggle={() => setOpenId(entry.id === openId ? null : entry.id)} />
+                ))}
+            </div>
+        </Panel>
+    );
+}
+
+function Run({ entry, open, onToggle }: { entry: LogEntry; open: boolean; onToggle: () => void }) {
+    const { result } = entry;
+    const totalMs = result.steps.reduce((sum, step) => sum + step.durationMs, 0);
+
+    return (
+        <div className={`run ${result.ok ? "run--ok" : "run--bad"}`}>
+            <button type="button" className="run__head" aria-expanded={open} onClick={onToggle}>
+                <span className="element__chevron" aria-hidden="true">
+                    {open ? "▼" : "▶"}
+                </span>
+                <span className={`led ${result.ok ? "led--ok" : "led--bad"}`} />
+                <span className="run__title">{result.ok ? result.title : "Failed"}</span>
+                <span className="spacer" />
+                <span className="run__meta">
+                    {result.steps.length} step{result.steps.length === 1 ? "" : "s"} · {totalMs} ms · {entry.at}
+                </span>
+            </button>
+
+            {open && (
+                <div className="run__body">
+                    <Verdict result={result} totalMs={totalMs} />
                     <div className="tape">
                         {result.steps.map((step, position) => (
                             <Step key={`${position}-${step.name}`} step={step} />
                         ))}
                     </div>
-                </>
+                </div>
             )}
-        </Panel>
+        </div>
     );
 }
 
-function Verdict({ result }: { result: LogResult }) {
-    const totalMs = result.steps.reduce((sum, step) => sum + step.durationMs, 0);
-
+function Verdict({ result, totalMs }: { result: LogResult; totalMs: number }) {
     return (
         <div className={`verdict ${result.ok ? "verdict--ok" : "verdict--bad"}`}>
-            <div className="verdict__title">
-                <span className={`led ${result.ok ? "led--ok" : "led--bad"}`} />
-                {result.ok ? result.title : "Failed"}
-            </div>
-
             {result.failedAt && (
                 <div className="notice notice--bad" style={{ marginBottom: 10 }}>
                     {result.failedAt}
@@ -91,61 +129,6 @@ function statusTone(status: number): "ok" | "info" | "warn" | "bad" {
     if (status < 400) return "info";
     if (status < 500) return "warn";
     return "bad";
-}
-
-/**
- * Validation issues, grouped by severity. The code is the line to scan and the description the
- * line to read, so the code leads and the description sits under it.
- */
-function Issues({ issues }: { issues: LogIssue[] }) {
-    const bySeverity = new Map<number, LogIssue[]>();
-    for (const issue of issues) {
-        const bucket = bySeverity.get(issue.severity);
-        if (bucket) bucket.push(issue);
-        else bySeverity.set(issue.severity, [issue]);
-    }
-
-    return (
-        <div className="issues">
-            {[...bySeverity.entries()].map(([severity, group]) => (
-                <div key={severity}>
-                    <div className="issues__head">
-                        <span className={`badge ${severityBadge(severity)}`}>
-                            {group.length} {group[0]?.severityLabel}
-                            {group.length === 1 ? "" : "s"}
-                        </span>
-                    </div>
-                    {group.map((issue, position) => (
-                        <div key={`${issue.code}-${issue.field}-${position}`} className={`issue issue--${severityTone(severity)}`}>
-                            <div className="issue__top">
-                                {issue.code && (
-                                    <span className="issue__code" title={issue.source ?? undefined}>
-                                        {issue.code}
-                                    </span>
-                                )}
-                                {issue.dataElement && <span className="badge">{issue.dataElement}</span>}
-                            </div>
-                            {issue.description && <p className="issue__description">{issue.description}</p>}
-                            {issue.field && <div className="issue__field">{issue.field}</div>}
-                        </div>
-                    ))}
-                </div>
-            ))}
-        </div>
-    );
-}
-
-/** Errors read as bad, warnings as warn, anything else as neutral information. */
-function severityTone(severity: number): "bad" | "warn" | "info" {
-    if (severity === 1) return "bad";
-    if (severity === 2) return "warn";
-    return "info";
-}
-
-function severityBadge(severity: number): string {
-    if (severity === 1) return "badge--bad";
-    if (severity === 2) return "badge--warn";
-    return "badge--info";
 }
 
 function Step({ step }: { step: RunStep }) {
