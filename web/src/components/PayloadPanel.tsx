@@ -1,5 +1,6 @@
 import { contentTypeOptions, preferredContentType } from '../lib/contentType';
 import { groupDataTypes, groupedDataTypeIds } from '../lib/dataTypeGroups';
+import { exampleOptionsFor } from '../lib/exampleOptions';
 import { ExamplePicker } from './ExamplePicker';
 import { Panel } from './Panel';
 import type {
@@ -60,6 +61,8 @@ export function PayloadPanel({
       dataType,
       contentType: preferredContentType(declared),
       content: '',
+      encoding: undefined,
+      filename: undefined,
       exampleName: undefined,
     });
   }
@@ -116,7 +119,14 @@ export function PayloadPanel({
               <button
                 type="button"
                 className="btn btn--ghost btn--tiny"
-                onClick={() => update(index, { content: '', exampleName: undefined })}
+                onClick={() =>
+                  update(index, {
+                    content: '',
+                    encoding: undefined,
+                    filename: undefined,
+                    exampleName: undefined,
+                  })
+                }
                 disabled={!element.content}
               >
                 Clear
@@ -211,13 +221,20 @@ export function PayloadPanel({
                   key={element.dataType}
                   dataType={element.dataType}
                   hasContent={Boolean(element.content)}
-                  group={exampleGroups.find((entry) => entry.dataType === element.dataType)}
-                  onLoad={(content, fileName) =>
+                  options={exampleOptionsFor(
+                    exampleGroups,
+                    element.dataType,
+                    known?.allowedContentTypes ?? [],
+                  )}
+                  onLoad={(file, option) =>
                     update(index, {
-                      content,
-                      // These examples are all XML, so be explicit rather than relying on detection.
-                      contentType: element.contentType ?? 'application/xml',
-                      exampleName: fileName,
+                      content: file.content,
+                      encoding: file.encoding,
+                      // The file knows what it is, so take its content type rather than guessing.
+                      contentType: file.contentType,
+                      // Altinn stores this as the data element filename for attachments.
+                      ...(option.kind === 'attachment' ? { filename: file.name } : {}),
+                      exampleName: file.name,
                     })
                   }
                 />
@@ -225,20 +242,31 @@ export function PayloadPanel({
 
               <div className="field">
                 <label htmlFor={`content-${index}`}>Content</label>
-                <textarea
-                  id={`content-${index}`}
-                  className="code"
-                  value={element.content}
-                  onChange={(event) =>
-                    update(index, { content: event.target.value, exampleName: undefined })
-                  }
-                  placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
-                  spellCheck={false}
-                />
+                {element.encoding === 'base64' ? (
+                  // Base64 bytes are not worth showing, and editing them as text would corrupt
+                  // the file. The picker and Clear are the only ways to change it.
+                  <div className="binary">
+                    <span className="badge">{element.contentType ?? 'binary'}</span>
+                    <span>{element.filename ?? 'binary file'}</span>
+                  </div>
+                ) : (
+                  <textarea
+                    id={`content-${index}`}
+                    className="code"
+                    value={element.content}
+                    onChange={(event) =>
+                      update(index, { content: event.target.value, exampleName: undefined })
+                    }
+                    placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
+                    spellCheck={false}
+                  />
+                )}
                 <p className="field__hint">
                   {element.content ? (
                     <>
-                      {element.content.length.toLocaleString('nb')} characters
+                      {element.encoding === 'base64'
+                        ? `${Math.ceil((element.content.length * 3) / 4).toLocaleString('nb')} bytes`
+                        : `${element.content.length.toLocaleString('nb')} characters`}
                       {element.exampleName ? (
                         <>
                           {' · from '}

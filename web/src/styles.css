@@ -738,6 +738,20 @@ textarea {
   color: var(--text-faint);
 }
 
+/* A binary attachment has nothing worth showing in a textarea. */
+.binary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-inset);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* ------------------------------------------------------------------ example picker */
 
 .example__row {

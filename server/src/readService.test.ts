@@ -20,7 +20,9 @@ interface Call {
   accept: string | null;
 }
 
-function stubAltinn(respond: (url: string) => { status?: number; body: string; contentType: string }) {
+function stubAltinn(
+  respond: (url: string) => { status?: number; body: string | Uint8Array; contentType: string },
+) {
   const calls: Call[] = [];
   const original = globalThis.fetch;
 
@@ -142,15 +144,31 @@ describe('readDataElement', () => {
     assert.equal(result.dataGuid, DATA_GUID);
   });
 
-  it('parses a json data element', async () => {
-    const stub = stubAltinn(() => ({
-      body: '{"melding":{"navn":"Test"}}',
-      contentType: 'application/json',
-    }));
+  it('returns a json data element as text, not pre-parsed', async () => {
+    const body = '{"melding":{"navn":"Test"}}';
+    const stub = stubAltinn(() => ({ body, contentType: 'application/json' }));
     active = stub;
 
     const result = await readDataElement('test-token', { ...target, dataGuid: DATA_GUID });
-    assert.deepEqual(result.content, { melding: { navn: 'Test' } });
+    // The payload is handed back verbatim, so it is the app's bytes and not our re-encoding.
+    assert.equal(result.encoding, 'utf8');
+    assert.equal(result.content, body);
+  });
+
+  it('returns a binary data element as base64', async () => {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0x00]);
+    // Passed as bytes, since routing them through a JS string would re-encode them as UTF-8.
+    const stub = stubAltinn(() => ({ body: png, contentType: 'image/png' }));
+    active = stub;
+
+    const result = await readDataElement('test-token', { ...target, dataGuid: DATA_GUID });
+    assert.equal(result.encoding, 'base64');
+    assert.equal(result.contentType, 'image/png');
+    // Decoding must give the bytes back, which UTF-8 text handling would have mangled.
+    assert.deepEqual([...Buffer.from(result.content ?? '', 'base64')], [...png]);
+
+    // The log gets a byte summary rather than mojibake.
+    assert.deepEqual(result.steps[0]?.response, { bytes: png.length, contentType: 'image/png' });
   });
 
   it('reports an unknown data guid without throwing', async () => {

@@ -1,4 +1,4 @@
-import { altinnFetch } from './altinnClient.js';
+import { altinnFetch, isTextual } from './altinnClient.js';
 import { StepRecorder, type RunStep } from './stepRecorder.js';
 import { appBaseUrl, instanceUiUrl } from './urls.js';
 
@@ -37,8 +37,10 @@ export interface ReadDataElementResult {
   failedAt: string | null;
   dataGuid: string;
   contentType: string | null;
-  /** Parsed when Altinn returns JSON, otherwise the raw text such as XML. */
-  content: unknown;
+  /** utf8 for text formats, base64 for a stored binary file. */
+  encoding: 'utf8' | 'base64';
+  /** Text for XML and JSON, base64 for anything binary. */
+  content: string | null;
 }
 
 /** One entry of Altinn's validation response. */
@@ -146,10 +148,14 @@ export async function readDataElement(
     request.instanceOwnerPartyId
   }/${request.instanceGuid}/data/${request.dataGuid}`;
 
-  // Data elements are stored in whatever type the app used, commonly XML, so do not ask for JSON.
+  // Data elements are stored in whatever type the app used, commonly XML, so do not ask for
+  // JSON. Read the bytes rather than text, because an attachment is not necessarily text.
   const response = await recorder.run('Get data element', 'GET', url, () =>
-    altinnFetch({ url, token, accept: '*/*' }),
+    altinnFetch({ url, token, accept: '*/*', binaryResponse: true }),
   );
+
+  const textual = isTextual(response.contentType);
+  const bytes = response.bytes;
 
   return {
     ok: response.ok,
@@ -157,7 +163,8 @@ export async function readDataElement(
     failedAt: response.ok ? null : 'Could not read the data element.',
     dataGuid: request.dataGuid,
     contentType: response.contentType,
-    content: response.ok ? response.body : null,
+    encoding: textual ? 'utf8' : 'base64',
+    content: response.ok && bytes ? bytes.toString(textual ? 'utf8' : 'base64') : null,
   };
 }
 

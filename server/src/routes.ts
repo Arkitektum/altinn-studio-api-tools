@@ -43,6 +43,7 @@ const appQuerySchema = z.object({
 const dataElementSchema = z.object({
   dataType: z.string().trim().min(1, 'dataType is required'),
   content: z.string(),
+  encoding: z.enum(['utf8', 'base64']).optional(),
   contentType: z.string().trim().optional(),
   filename: z.string().trim().optional(),
 });
@@ -118,8 +119,9 @@ router.get(
 );
 
 const exampleFileSchema = z.object({
-  kind: z.enum(['form', 'subform']),
-  dataType: z.string().trim().min(1),
+  kind: z.enum(['form', 'subform', 'attachment']),
+  // Data type for forms and subforms. Attachments are flat, so it may be empty.
+  group: z.string().trim().default(''),
   name: z.string().trim().min(1),
 });
 
@@ -127,7 +129,7 @@ router.get(
   '/examples/file',
   asyncHandler(async (req, res) => {
     const query = exampleFileSchema.parse(req.query);
-    res.json(await readExample(query.kind, query.dataType, query.name));
+    res.json(await readExample(query.kind, query.group, query.name));
   }),
 );
 

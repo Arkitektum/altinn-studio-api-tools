@@ -85,7 +85,7 @@ export const api = {
 
   getCatalogue: () => request<CatalogueApp[]>('/catalogue'),
   getExamples: () => request<ExamplesResponse>('/examples'),
-  getExampleFile: (params: { kind: ExampleKind; dataType: string; name: string }) =>
+  getExampleFile: (params: { kind: ExampleKind; group: string; name: string }) =>
     request<ExampleContent>(`/examples/file?${new URLSearchParams(params)}`),
 
   listTokens: () => request<PublicToken[]>('/tokens'),

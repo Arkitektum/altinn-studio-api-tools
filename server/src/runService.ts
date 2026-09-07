@@ -22,6 +22,8 @@ export type RunMode = 'sequential' | 'multipart' | 'existing';
 export interface DataElementInput {
   dataType: string;
   content: string;
+  /** base64 means `content` is encoded and must be decoded before it goes to Altinn. */
+  encoding?: 'utf8' | 'base64';
   contentType?: string;
   /** Set for binary data types. Altinn stores it as the data element filename. */
   filename?: string;
@@ -70,7 +72,17 @@ interface Instance {
 
 const PREVIEW_LIMIT = 4_000;
 
-function preview(content: string): string {
+/** Bytes for the wire. Base64 content is decoded here and nowhere else. */
+function bodyOf(element: DataElementInput): string | Buffer {
+  return element.encoding === 'base64' ? Buffer.from(element.content, 'base64') : element.content;
+}
+
+function preview(element: DataElementInput): string {
+  if (element.encoding === 'base64') {
+    // Dumping base64 into the log would bury the useful part of it.
+    return `[${Buffer.from(element.content, 'base64').length} bytes, base64 encoded]`;
+  }
+  const { content } = element;
   return content.length > PREVIEW_LIMIT ? `${content.slice(0, PREVIEW_LIMIT)}…[truncated]` : content;
 }
 
@@ -159,7 +171,7 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
       },
       ...request.dataElements.map((element) => ({
         name: element.dataType,
-        content: element.content,
+        content: bodyOf(element),
         contentType:
           element.contentType ??
           resolveContentType(dataTypesById.get(element.dataType), element.content),
@@ -182,7 +194,7 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
           contentType: multipartContentType,
         }),
       `${JSON.stringify(instanceTemplate, null, 2)}\n\nparts: ${parts
-        .map((part) => `${part.name} (${part.contentType}, ${part.content.length} chars)`)
+        .map((part) => `${part.name} (${part.contentType}, ${part.content.length} bytes)`)
         .join(', ')}`,
     );
     if (!response.ok) {
@@ -263,11 +275,11 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
             url: dataUrl,
             method: replacing ? 'PUT' : 'POST',
             token,
-            body: element.content,
+            body: bodyOf(element),
             contentType,
             headers,
           }),
-        preview(element.content),
+        preview(element),
       );
       if (!dataResponse.ok) {
         return failed(recorder, mode, `Upload of data element "${element.dataType}" failed.`, at);

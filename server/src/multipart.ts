@@ -3,7 +3,8 @@ import { randomUUID } from 'node:crypto';
 export interface MultipartPart {
   /** Part name. For Altinn instantiation this is the data type id, or "instance". */
   name: string;
-  content: string;
+  /** Text for XML and JSON, bytes for a binary attachment. */
+  content: string | Buffer;
   contentType: string;
   /** Only set for binary/attachment parts. Form data parts must not carry a filename. */
   filename?: string;
@@ -31,7 +32,7 @@ export function buildMultipart(parts: MultipartPart[]): { body: Buffer; contentT
           `Content-Type: ${part.contentType}\r\n\r\n`,
         'utf8',
       ),
-      Buffer.from(part.content, 'utf8'),
+      Buffer.isBuffer(part.content) ? part.content : Buffer.from(part.content, 'utf8'),
       Buffer.from('\r\n', 'utf8'),
     );
   }
@@ -47,7 +48,12 @@ export function buildMultipart(parts: MultipartPart[]): { body: Buffer; contentT
 function pickBoundary(parts: MultipartPart[]): string {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const candidate = `----AltinnApiTools${randomUUID().replace(/-/g, '')}`;
-    if (!parts.some((part) => part.content.includes(candidate))) return candidate;
+    const clashes = parts.some((part) =>
+      Buffer.isBuffer(part.content)
+        ? part.content.includes(candidate)
+        : part.content.includes(candidate),
+    );
+    if (!clashes) return candidate;
   }
   throw new Error('Could not find a multipart boundary absent from the payload.');
 }

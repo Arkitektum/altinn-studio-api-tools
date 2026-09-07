@@ -367,3 +367,75 @@ describe('existing mode: post onto an instance that already exists', () => {
     assert.match(result.failedAt ?? '', /instanceGuid is required/);
   });
 });
+
+describe('binary data elements', () => {
+  it('decodes base64 content before posting it, and keeps the filename', async () => {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02]);
+    const stub = stubAltinn([
+      ['GET applicationmetadata', () => metadata([{ id: 'vedlegg', maxCount: 0 }])],
+      [
+        'POST /instances?instanceOwnerPartyId',
+        () => ({ status: 201, json: { id: `510001/${GUID}`, data: [] } }),
+      ],
+      ['POST /data?dataType=vedlegg', () => ({ status: 201, json: {} })],
+      [`GET /instances/510001/${GUID}`, () => ({ json: { id: `510001/${GUID}` } })],
+    ]);
+    active = stub;
+
+    const result = await postDataToApp('test-token', {
+      ...baseRequest,
+      dataElements: [
+        {
+          dataType: 'vedlegg',
+          content: png.toString('base64'),
+          encoding: 'base64',
+          contentType: 'image/png',
+          filename: 'dummy.png',
+        },
+      ],
+    });
+
+    assert.equal(result.ok, true);
+    const upload = stub.calls.find((call) => call.url.includes('/data?dataType=vedlegg'));
+    assert.ok(upload);
+    assert.equal(upload.contentType, 'image/png');
+    // The bytes must arrive decoded, not as the base64 text.
+    assert.equal(upload.body, png.toString('utf8'));
+    assert.notEqual(upload.body, png.toString('base64'));
+
+    // The log shows a byte count instead of a wall of base64.
+    const step = result.steps.find((s) => s.name.includes('vedlegg'));
+    assert.equal(step?.requestPreview, '[10 bytes, base64 encoded]');
+  });
+
+  it('carries decoded bytes into a multipart body', async () => {
+    const pdf = Buffer.from('%PDF-1.4 mock\n%%EOF\n');
+    const stub = stubAltinn([
+      ['GET applicationmetadata', () => metadata([...ET_FORM, { id: 'vedlegg', maxCount: 0 }])],
+      ['POST /instances', () => ({ status: 201, json: { id: `510001/${GUID}`, data: [] } })],
+      [`GET /instances/510001/${GUID}`, () => ({ json: { id: `510001/${GUID}` } })],
+    ]);
+    active = stub;
+
+    await postDataToApp('test-token', {
+      ...baseRequest,
+      mode: 'multipart',
+      dataElements: [
+        { dataType: 'ET', content: '<ET/>' },
+        {
+          dataType: 'vedlegg',
+          content: pdf.toString('base64'),
+          encoding: 'base64',
+          contentType: 'application/pdf',
+          filename: 'dummy.pdf',
+        },
+      ],
+    });
+
+    const body = stub.calls.find((call) => call.method === 'POST')?.body ?? '';
+    assert.match(body, /name="vedlegg"; filename="dummy\.pdf"/);
+    assert.match(body, /Content-Type: application\/pdf/);
+    assert.ok(body.includes('%PDF-1.4 mock'), 'expected the decoded pdf bytes in the part');
+    assert.ok(!body.includes(pdf.toString('base64')), 'base64 must not be sent verbatim');
+  });
+});

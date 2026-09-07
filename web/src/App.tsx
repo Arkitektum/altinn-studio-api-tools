@@ -125,6 +125,15 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
     rows: [
       { label: 'Data guid', value: result.dataGuid },
       ...(result.contentType ? [{ label: 'Content type', value: result.contentType }] : []),
+      // Binary content comes back base64 encoded, which is worth saying out loud.
+      ...(result.ok && result.encoding === 'base64'
+        ? [
+            {
+              label: 'Bytes',
+              value: String(Math.ceil(((result.content?.length ?? 0) * 3) / 4)),
+            },
+          ]
+        : []),
     ],
   };
 }
@@ -246,7 +255,10 @@ export function App() {
         ...catalogueEntry.subForms.map((subform) => subform.dataType),
       ];
     }
-    return exampleGroups.map((group) => group.dataType);
+    // Attachment groups are keyed by content type, so they are not data type suggestions.
+    return exampleGroups
+      .filter((group) => group.kind !== 'attachment')
+      .map((group) => group.key);
   }, [catalogueEntry, exampleGroups]);
 
   // Prefill the instance owner from the token's own party claim, which for a LocalTest user is
@@ -375,7 +387,9 @@ export function App() {
         dataElements: dataElements.map((element) => ({
           dataType: element.dataType,
           content: element.content,
+          ...(element.encoding ? { encoding: element.encoding } : {}),
           ...(element.contentType ? { contentType: element.contentType } : {}),
+          ...(element.filename ? { filename: element.filename } : {}),
         })),
         // Validation runs as a follow-up request instead of a step inside the run.
         validate: false,

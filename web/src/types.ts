@@ -72,6 +72,8 @@ export type RunMode = 'sequential' | 'multipart' | 'existing';
 export interface DataElementInput {
   dataType: string;
   content: string;
+  /** base64 means the content is encoded and the server decodes it before posting. */
+  encoding?: ExampleEncoding;
   contentType?: string;
   filename?: string;
   /** UI-only: which example file this content came from. Not sent to the server. */
@@ -123,17 +125,22 @@ export interface CatalogueApp {
   subForms: CatalogueSubform[];
 }
 
-export type ExampleKind = 'form' | 'subform';
+export type ExampleKind = 'form' | 'subform' | 'attachment';
+
+export type ExampleEncoding = 'utf8' | 'base64';
 
 export interface ExampleFile {
   name: string;
   label: string;
   sizeBytes: number;
+  contentType: string;
+  encoding: ExampleEncoding;
 }
 
 export interface ExampleGroup {
-  dataType: string;
   kind: ExampleKind;
+  /** Data type id for forms and subforms. Content type for attachments. */
+  key: string;
   files: ExampleFile[];
 }
 
@@ -143,9 +150,11 @@ export interface ExamplesResponse {
 }
 
 export interface ExampleContent {
-  content: string;
-  sizeBytes: number;
   name: string;
+  content: string;
+  encoding: ExampleEncoding;
+  contentType: string;
+  sizeBytes: number;
 }
 
 // ---------------------------------------------------------------- reading
@@ -176,7 +185,9 @@ export interface ReadDataElementResult {
   failedAt: string | null;
   dataGuid: string;
   contentType: string | null;
-  content: unknown;
+  /** utf8 for text formats, base64 for a stored binary file. */
+  encoding: ExampleEncoding;
+  content: string | null;
 }
 
 /**

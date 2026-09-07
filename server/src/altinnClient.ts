@@ -12,6 +12,11 @@ export interface AltinnRequest {
   contentType?: string;
   headers?: Record<string, string>;
   accept?: string;
+  /**
+   * Read the response as bytes and expose them on `bytes`. Needed for stored attachments,
+   * where decoding as UTF-8 text would corrupt the file.
+   */
+  binaryResponse?: boolean;
 }
 
 export interface AltinnResponse {
@@ -21,6 +26,8 @@ export interface AltinnResponse {
   /** Parsed JSON when the response is JSON, otherwise the raw text (truncated). */
   body: unknown;
   contentType: string | null;
+  /** Raw bytes, only when the request asked for them. */
+  bytes?: Buffer;
 }
 
 const MAX_LOGGED_BODY = 200_000;
@@ -63,6 +70,35 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
   }
 
   const contentType = response.headers.get('content-type');
+
+  if (request.binaryResponse) {
+    const bytes = Buffer.from(await response.arrayBuffer());
+    // Text formats stay readable in the log, and JSON is still parsed so error payloads read
+    // the same as on any other request. Anything else gets a summary, because a wall of
+    // mojibake would be worse than useless.
+    let body: unknown;
+    if (contentType?.includes('json')) {
+      const text = bytes.toString('utf8');
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = text;
+      }
+    } else if (isTextual(contentType)) {
+      body = bytes.toString('utf8');
+    } else {
+      body = { bytes: bytes.length, contentType };
+    }
+    return {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      body,
+      contentType,
+      bytes,
+    };
+  }
+
   const text = await response.text();
   let body: unknown = text.length > MAX_LOGGED_BODY ? `${text.slice(0, MAX_LOGGED_BODY)}…[truncated]` : text;
   if (contentType?.includes('json') && text.trim()) {
@@ -81,6 +117,21 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
     body,
     contentType,
   };
+}
+
+/**
+ * Content types that are safe to hand around as UTF-8 text.
+ *
+ * Matched on the subtype rather than by substring, because a substring test for "xml" also
+ * matches `application/vnd.openxmlformats-officedocument...`, which is a zip. Decoding one of
+ * those as text corrupts the file.
+ */
+export function isTextual(contentType: string | null): boolean {
+  if (!contentType) return false;
+  const type = contentType.split(';')[0]?.trim().toLowerCase() ?? '';
+  if (type.startsWith('text/')) return true;
+  if (type === 'application/json' || type === 'application/xml') return true;
+  return type.endsWith('+json') || type.endsWith('+xml');
 }
 
 /** Pull a human-readable message out of an Altinn/ASP.NET error payload. */
