@@ -53,7 +53,9 @@ Every call in order with method, URL, status, duration, and both bodies, plus a 
 
 After a run the instance guid is carried into the existing instance field, so creating an instance and then posting more data onto it takes two clicks. Pasting a full `510001/99d0632c-...` pair into that field splits the party id out for you.
 
-Two options apply to any run: validate, which calls `GET .../validate`, and advance process, which calls `PUT .../process/next` to submit the step.
+One option applies to any run: advance process, which calls `PUT .../process/next` to submit the step.
+
+Every post is followed automatically by `GET .../instances/{party}/{guid}` and `GET .../instances/{party}/{guid}/validate`, so the log always shows what Altinn actually stored and whether it validates. Those two requests are appended to the same log entry as the post, and the verdict gains a data element count and an issue summary. The data element select in the Fetch panel is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
 ## Example data
 
@@ -108,7 +110,7 @@ The party id and instance guid are the same fields the existing instance destina
 
 All four requests appear in the run log alongside posts, with method, URL, status, timing, and body.
 
-The post flow has its own validate option, which runs the instance validation as a step straight after upload. The Fetch panel is for validating on demand, without posting anything.
+Posting already runs the instance get and validate automatically, so the buttons here are for an instance you did not just create. Paste its party id and guid to inspect it.
 
 ## API
 

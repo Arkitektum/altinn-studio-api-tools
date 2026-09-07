@@ -23,6 +23,7 @@ import type {
   ReadInstanceResult,
   RunMode,
   RunResult,
+  RunStep,
   SavedApp,
   ServerConfig,
   ValidateResult,
@@ -37,19 +38,62 @@ function splitPastedInstanceId(value: string): { partyId?: string; guid: string 
   return { guid: value.trim() };
 }
 
-function logFromRun(result: RunResult): LogResult {
+/**
+ * Each request numbers its own steps from 1, so concatenating them needs a renumber to keep the
+ * indexes unique across the whole log entry.
+ */
+function renumber(steps: RunStep[]): RunStep[] {
+  return steps.map((step, position) => ({ ...step, index: position + 1 }));
+}
+
+/**
+ * Builds the log for a post, folding in the instance read and validation that run automatically
+ * afterwards. They are separate requests but one story, so they share a single log entry.
+ */
+function logFromRun(
+  result: RunResult,
+  followUp: { instance: ReadInstanceResult | null; validation: ValidateResult | null },
+): LogResult {
   const rows: { label: string; value: string }[] = [{ label: 'Mode', value: result.mode }];
   if (result.instanceOwnerPartyId) {
     rows.push({ label: 'Party', value: result.instanceOwnerPartyId });
   }
   if (result.instanceGuid) rows.push({ label: 'Instance', value: result.instanceGuid });
+  if (followUp.instance?.ok) {
+    rows.push({
+      label: 'Data elements',
+      value: String(followUp.instance.dataElements.length),
+    });
+  }
+  if (followUp.validation?.ok) rows.push(issueRow(followUp.validation));
+
   return {
     ok: result.ok,
-    steps: result.steps,
+    steps: renumber([
+      ...result.steps,
+      ...(followUp.instance?.steps ?? []),
+      ...(followUp.validation?.steps ?? []),
+    ]),
     failedAt: result.failedAt,
     title: 'Posted',
     rows,
     instanceUrl: result.instanceUrl,
+  };
+}
+
+/** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
+function issueRow(result: ValidateResult): { label: string; value: string } {
+  const { errors, warnings, other } = result.counts;
+  return {
+    label: 'Issues',
+    value:
+      result.issues.length === 0
+        ? 'none'
+        : [
+            `${errors} error${errors === 1 ? '' : 's'}`,
+            `${warnings} warning${warnings === 1 ? '' : 's'}`,
+            ...(other > 0 ? [`${other} other`] : []),
+          ].join(', '),
   };
 }
 
@@ -86,23 +130,10 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
 }
 
 function logFromValidation(result: ValidateResult): LogResult {
-  const { errors, warnings, other } = result.counts;
   const rows: { label: string; value: string }[] = [];
   if (result.dataGuid) rows.push({ label: 'Data guid', value: result.dataGuid });
   // On a failed request there is no issue list, and "none" would read as "validated clean".
-  if (result.ok) {
-    rows.push({
-      label: 'Issues',
-      value:
-        result.issues.length === 0
-          ? 'none'
-          : [
-              `${errors} error${errors === 1 ? '' : 's'}`,
-              `${warnings} warning${warnings === 1 ? '' : 's'}`,
-              ...(other > 0 ? [`${other} other`] : []),
-            ].join(', '),
-    });
-  }
+  if (result.ok) rows.push(issueRow(result));
   return {
     ok: result.ok,
     steps: result.steps,
@@ -130,7 +161,6 @@ export function App() {
   const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>('dataElements', [
     EMPTY_ELEMENT,
   ]);
-  const [validate, setValidate] = useLocalStorage('validate', true);
   const [advanceProcess, setAdvanceProcess] = useLocalStorage('advanceProcess', false);
   const [savedApps, setSavedApps] = useLocalStorage<SavedApp[]>('savedApps', []);
 
@@ -288,6 +318,47 @@ export function App() {
     }
   }
 
+  /**
+   * Reads the instance back and validates it straight after a post, so the log shows what Altinn
+   * actually stored without anyone pressing another button. Sequential rather than parallel so
+   * the step timings in the log stay honest.
+   */
+  async function followUpAfterPost(payload: RunResult) {
+    const party = payload.instanceOwnerPartyId;
+    const guid = payload.instanceGuid;
+    if (!activeTokenId || !payload.ok || !party || !guid) {
+      return { instance: null, validation: null };
+    }
+    const params = {
+      tokenId: activeTokenId,
+      org,
+      app,
+      instanceOwnerPartyId: party,
+      instanceGuid: guid,
+    };
+
+    // A failure here must not mask a successful post, so each one degrades to null and the
+    // failing step still shows up in the log.
+    let instance: ReadInstanceResult | null = null;
+    let validation: ValidateResult | null = null;
+    try {
+      instance = await api.getInstance(params);
+    } catch {
+      /* leave it null, the post itself still succeeded */
+    }
+    try {
+      validation = await api.validateInstance(params);
+    } catch {
+      /* same */
+    }
+
+    if (instance?.ok) {
+      setInstanceDataElements(instance.dataElements);
+      setDataGuid(instance.dataElements[0]?.id ?? '');
+    }
+    return { instance, validation };
+  }
+
   async function run() {
     if (!activeTokenId) return;
     setRunning(true);
@@ -306,13 +377,15 @@ export function App() {
           content: element.content,
           ...(element.contentType ? { contentType: element.contentType } : {}),
         })),
-        validate,
+        // Validation runs as a follow-up request instead of a step inside the run.
+        validate: false,
         advanceProcess,
       });
-      setLog(logFromRun(payload));
       rememberApp({ org, app });
       // Chain naturally into "now post more data to that instance".
       if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
+
+      setLog(logFromRun(payload, await followUpAfterPost(payload)));
     } catch (error) {
       setRunError(error);
     } finally {
@@ -492,8 +565,6 @@ export function App() {
             dataTypes={dataTypes}
             suggestedDataTypes={suggestedDataTypes}
             exampleGroups={exampleGroups}
-            validate={validate}
-            onValidateChange={setValidate}
             advanceProcess={advanceProcess}
             onAdvanceProcessChange={setAdvanceProcess}
           />

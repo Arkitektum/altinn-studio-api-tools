@@ -11,8 +11,6 @@ interface PayloadPanelProps {
   /** Data types worth offering before the app has been probed. */
   suggestedDataTypes: string[];
   exampleGroups: ExampleGroup[];
-  validate: boolean;
-  onValidateChange: (next: boolean) => void;
   advanceProcess: boolean;
   onAdvanceProcessChange: (next: boolean) => void;
 }
@@ -33,8 +31,6 @@ export function PayloadPanel({
   dataTypes,
   suggestedDataTypes,
   exampleGroups,
-  validate,
-  onValidateChange,
   advanceProcess,
   onAdvanceProcessChange,
 }: PayloadPanelProps) {
@@ -276,19 +272,9 @@ export function PayloadPanel({
       <div style={{ marginTop: 18 }}>
         <span className="legend">After upload</span>
 
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={validate}
-            onChange={(event) => onValidateChange(event.target.checked)}
-          />
-          <span className="check__body">
-            <span className="check__title">Validate</span>
-            <span className="check__note">
-              GET /instances/…/validate and report the issues in the log.
-            </span>
-          </span>
-        </label>
+        <p className="field__hint" style={{ marginBottom: 10 }}>
+          The instance is read back and validated automatically after every post.
+        </p>
 
         <label className="check">
           <input

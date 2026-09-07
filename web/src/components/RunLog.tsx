@@ -37,8 +37,8 @@ export function RunLog({ result, running }: RunLogProps) {
         <>
           <Verdict result={result} />
           <div className="tape">
-            {result.steps.map((step) => (
-              <Step key={step.index} step={step} />
+            {result.steps.map((step, position) => (
+              <Step key={`${position}-${step.name}`} step={step} />
             ))}
           </div>
         </>

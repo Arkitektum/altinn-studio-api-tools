@@ -61,6 +61,11 @@ export function FetchPanel({
 
   return (
     <Panel title="Fetch">
+      <p className="field__hint" style={{ marginBottom: 12 }}>
+        Posting reads the instance back and validates it automatically. Use this to inspect an
+        instance you did not just create, by pasting its party id and guid.
+      </p>
+
       <div className="grid grid--2">
         <div className="field">
           <label htmlFor="fetchParty">Instance owner party id</label>
