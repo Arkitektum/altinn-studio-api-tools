@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError } from '../api';
 import type { ExampleGroup } from '../types';
 
 interface ExamplePickerProps {
-  /** Example groups for the data type this element is posting. */
+  /** Example group for the data type this element is posting. */
   group: ExampleGroup | undefined;
   dataType: string;
+  /** Suppresses the automatic load, so restored or hand-written content is never overwritten. */
+  hasContent: boolean;
   onLoad: (content: string, fileName: string) => void;
 }
 
@@ -14,19 +16,53 @@ function formatSize(bytes: number): string {
 }
 
 /**
- * Loads a shipped example XML into a data element. This is a separate control rather than an
- * automatic load on data type change, so it never overwrites something you just typed.
+ * Loads a shipped example XML into a data element.
+ *
+ * The parent keys this component on the data type, so a mount means the data type just changed.
+ * That is when the first example is loaded automatically, giving every element something valid
+ * to post without a second click.
  */
-export function ExamplePicker({ group, dataType, onLoad }: ExamplePickerProps) {
+export function ExamplePicker({ group, dataType, hasContent, onLoad }: ExamplePickerProps) {
   const [selected, setSelected] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const autoLoaded = useRef(false);
+
+  const files = group?.files ?? [];
+  const first = files[0];
+
+  const load = useCallback(
+    async (name: string) => {
+      if (!name || !group) return;
+      setBusy(true);
+      setError(null);
+      try {
+        const file = await api.getExampleFile({ kind: group.kind, dataType, name });
+        setSelected(name);
+        onLoad(file.content, file.name);
+      } catch (caught) {
+        setError(caught instanceof ApiError ? caught.message : String(caught));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [group, dataType, onLoad],
+  );
+
+  useEffect(() => {
+    // Mount only. Reacting to later content changes would pull the example back in every time
+    // the operator cleared or edited the field.
+    if (autoLoaded.current || !first || hasContent) return;
+    autoLoaded.current = true;
+    void load(first.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!dataType) {
     return <p className="field__hint">Pick a data type to see its example files.</p>;
   }
 
-  if (!group || group.files.length === 0) {
+  if (files.length === 0) {
     return (
       <p className="field__hint">
         No example data on disk for <strong>{dataType}</strong>.
@@ -34,21 +70,7 @@ export function ExamplePicker({ group, dataType, onLoad }: ExamplePickerProps) {
     );
   }
 
-  async function load(name: string) {
-    if (!name || !group) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const file = await api.getExampleFile({ kind: group.kind, dataType, name });
-      onLoad(file.content, file.name);
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : String(caught));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const chosen = group.files.find((file) => file.name === selected);
+  const chosen = files.find((file) => file.name === selected);
 
   return (
     <div className="example">
@@ -63,9 +85,9 @@ export function ExamplePicker({ group, dataType, onLoad }: ExamplePickerProps) {
           disabled={busy}
         >
           <option value="">
-            Load example ({group.files.length} for {dataType})
+            Load example ({files.length} for {dataType})
           </option>
-          {group.files.map((file) => (
+          {files.map((file) => (
             <option key={file.name} value={file.name}>
               {file.label} · {formatSize(file.sizeBytes)}
             </option>
@@ -88,7 +110,7 @@ export function ExamplePicker({ group, dataType, onLoad }: ExamplePickerProps) {
           {error}
         </div>
       )}
-      {chosen && !error && group.kind === 'subform' && (
+      {chosen && !error && group?.kind === 'subform' && (
         <p className="field__hint">subform data</p>
       )}
     </div>

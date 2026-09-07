@@ -21,6 +21,13 @@ export interface ApplicationMetadata {
   org: string;
   title?: Record<string, string>;
   dataTypes?: AppDataType[];
+  /** Data type id of the app's main form. Declared by the DIBK apps. */
+  mainFormDataType?: string;
+  /**
+   * Subform data types. Entries are ids, but older apps write objects, so this stays loose and
+   * is normalised on read.
+   */
+  subFormDataTypes?: unknown[];
 }
 
 export interface AppParty {

@@ -563,6 +563,7 @@ export function App() {
             dataElements={dataElements}
             onChange={setDataElements}
             dataTypes={dataTypes}
+            metadata={metadata?.metadata ?? null}
             suggestedDataTypes={suggestedDataTypes}
             exampleGroups={exampleGroups}
             advanceProcess={advanceProcess}

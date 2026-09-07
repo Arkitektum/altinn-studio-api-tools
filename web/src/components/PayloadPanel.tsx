@@ -1,13 +1,21 @@
 import { contentTypeOptions, preferredContentType } from '../lib/contentType';
+import { groupDataTypes, groupedDataTypeIds } from '../lib/dataTypeGroups';
 import { ExamplePicker } from './ExamplePicker';
 import { Panel } from './Panel';
-import type { AppDataType, DataElementInput, ExampleGroup } from '../types';
+import type {
+  AppDataType,
+  ApplicationMetadata,
+  DataElementInput,
+  ExampleGroup,
+} from '../types';
 
 interface PayloadPanelProps {
   dataElements: DataElementInput[];
   onChange: (next: DataElementInput[]) => void;
   /** From applicationmetadata. Authoritative, but only available after probing. */
   dataTypes: AppDataType[];
+  /** Drives the main form, sub form and attachment grouping. Null until the app is probed. */
+  metadata: ApplicationMetadata | null;
   /** Data types worth offering before the app has been probed. */
   suggestedDataTypes: string[];
   exampleGroups: ExampleGroup[];
@@ -29,6 +37,7 @@ export function PayloadPanel({
   dataElements,
   onChange,
   dataTypes,
+  metadata,
   suggestedDataTypes,
   exampleGroups,
   advanceProcess,
@@ -38,40 +47,31 @@ export function PayloadPanel({
     onChange(dataElements.map((element, i) => (i === index ? { ...element, ...patch } : element)));
   }
 
-  function hasExamples(dataType: string): boolean {
-    return exampleGroups.some(
-      (group) => group.dataType === dataType && group.files.length > 0,
-    );
-  }
-
   /**
-   * Content belongs to one data type, so whatever is in the editor goes stale as soon as the
-   * type changes. If the new type has example files the picker can replace it, but if it has
-   * none there is nothing to replace it with, so drop it rather than leave the wrong payload
-   * sitting under the new type.
-   *
-   * The content type is re-derived from what the new type declares, for the same reason.
+   * Content and content type both belong to the data type that was selected, so a change drops
+   * them. The example picker remounts on the new data type and loads its first example, so an
+   * element with examples ends up populated rather than empty.
    */
   function changeDataType(index: number, dataType: string) {
-    const element = dataElements[index];
-    if (!element) return;
+    if (!dataElements[index]) return;
 
     const declared = dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? [];
-    const patch: Partial<DataElementInput> = {
+    update(index, {
       dataType,
       contentType: preferredContentType(declared),
-    };
-    if (element.content && !hasExamples(dataType)) {
-      patch.content = '';
-      patch.exampleName = undefined;
-    }
-    update(index, patch);
+      content: '',
+      exampleName: undefined,
+    });
   }
 
   function add() {
-    // Offer a data type that is not already in the list, so adding is one click.
+    // Offer a data type that is not already in the list, so adding is one click. Follows the
+    // picker order, which keeps it off the app-produced types.
     const used = new Set(dataElements.map((element) => element.dataType));
-    const candidates = dataTypes.length > 0 ? dataTypes.map((type) => type.id) : suggestedDataTypes;
+    const candidates =
+      dataTypes.length > 0
+        ? groupedDataTypeIds(groupDataTypes(dataTypes, metadata))
+        : suggestedDataTypes;
     const next = candidates.find((id) => !used.has(id));
     onChange([...dataElements, { dataType: next ?? '', content: '' }]);
   }
@@ -142,10 +142,14 @@ export function PayloadPanel({
                       onChange={(event) => changeDataType(index, event.target.value)}
                     >
                       <option value="">Select data type</option>
-                      {dataTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.id} ({describeDataType(type)})
-                        </option>
+                      {groupDataTypes(dataTypes, metadata, element.dataType).map((group) => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.dataTypes.map((type) => (
+                            <option key={type.id} value={type.id}>
+                              {type.id} ({describeDataType(type)})
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   ) : (
@@ -202,10 +206,11 @@ export function PayloadPanel({
               <div className="field">
                 <label>Example data</label>
                 <ExamplePicker
-                  // Remount on a data type change so the picker does not keep showing a file
-                  // that belonged to the previous type.
+                  // Remount on a data type change, both to clear the previous type's selection
+                  // and to trigger the automatic load of the new type's first example.
                   key={element.dataType}
                   dataType={element.dataType}
+                  hasContent={Boolean(element.content)}
                   group={exampleGroups.find((entry) => entry.dataType === element.dataType)}
                   onLoad={(content, fileName) =>
                     update(index, {
