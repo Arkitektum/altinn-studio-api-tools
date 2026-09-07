@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { config } from "./config.js";
-import { appBaseUrl } from "./urls.js";
+import { appBaseUrl, appUiUrl } from "./urls.js";
 import { HttpError } from "./httpError.js";
 import { createTestUserToken } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
@@ -166,7 +166,7 @@ router.get(
         const query = appQuerySchema.parse(req.query);
         const token = requireToken(query.tokenId);
         const metadata = await fetchApplicationMetadata(token.token, query.org, query.app);
-        res.json({ baseUrl: appBaseUrl(query.org, query.app), metadata });
+        res.json({ appUrl: appUiUrl(query.org, query.app), metadata });
     })
 );
 

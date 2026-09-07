@@ -53,7 +53,8 @@ export interface ApplicationMetadata {
 }
 
 export interface AppMetadataResponse {
-    baseUrl: string;
+    /** Link to the app frontend, for the Open app button. */
+    appUrl: string;
     metadata: ApplicationMetadata;
 }
 

@@ -8,6 +8,14 @@ export function appBaseUrl(org: string, app: string): string {
     return `${config.appHost}/${org}/${app}`;
 }
 
+/**
+ * Link a human can open to reach the app frontend. The trailing slash matters: without it the app
+ * is not served, which is why this is not the same as the api base.
+ */
+export function appUiUrl(org: string, app: string): string {
+    return `${appBaseUrl(org, app)}/`;
+}
+
 /** Deep link a human can open to inspect the instance in the app frontend. */
 export function instanceUiUrl(org: string, app: string, instanceOwnerPartyId: string | number, instanceGuid: string): string {
     return `${appBaseUrl(org, app)}/#/instance/${instanceOwnerPartyId}/${instanceGuid}`;

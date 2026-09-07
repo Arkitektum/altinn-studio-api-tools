@@ -138,7 +138,7 @@ export function TargetPanel({
                     Probe app
                 </button>
                 {metadata && (
-                    <a href={metadata.baseUrl} target="_blank" rel="noreferrer" className="btn btn--ghost btn--tiny">
+                    <a href={metadata.appUrl} target="_blank" rel="noreferrer" className="btn btn--ghost btn--tiny">
                         Open app
                     </a>
                 )}
