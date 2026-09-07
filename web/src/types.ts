@@ -202,7 +202,7 @@ export interface LogResult {
     failedAt: string | null;
     /** Heading shown when the request succeeded. */
     title: string;
-    rows: { label: string; value: string }[];
+    rows: { label: string; value: string; tone?: "ok" | "warn" | "bad" }[];
     instanceUrl?: string | null;
 }
 

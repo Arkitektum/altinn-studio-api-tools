@@ -95,7 +95,7 @@ export function ExamplePicker({ dataType, options, hasContent, onLoad }: Example
 
     return (
         <div className="example">
-            <div className="example__row">
+            <div className={`example__row${hasContent ? "" : " example__row--empty"}`}>
                 <select
                     value={selected}
                     onChange={(event) => {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { groupDataTypes, groupedDataTypeIds, readSubFormDataTypes } from "./dataTypeGroups";
+import { dataTypeKindOf, groupDataTypes, groupedDataTypeIds, readSubFormDataTypes } from "./dataTypeGroups";
 import type { AppDataType, ApplicationMetadata } from "../types";
 
 const form = (id: string, maxCount = 1): AppDataType => ({
@@ -113,5 +113,25 @@ describe("readSubFormDataTypes", () => {
         assert.deepEqual(readSubFormDataTypes(metadata({})), []);
         assert.deepEqual(readSubFormDataTypes(metadata({ subFormDataTypes: "ET" as unknown as unknown[] })), []);
         assert.deepEqual(readSubFormDataTypes(null), []);
+    });
+});
+
+describe("dataTypeKindOf", () => {
+    it("names the group a data type belongs to", () => {
+        assert.equal(dataTypeKindOf(ET_TYPES, DECLARED, "ET"), "main");
+        assert.equal(dataTypeKindOf(ET_TYPES, DECLARED, "GjennomfoeringsplanDataV7"), "sub");
+        assert.equal(dataTypeKindOf(ET_TYPES, DECLARED, "vedlegg"), "attachment");
+    });
+
+    it("still answers for a hidden type that is selected, and for nothing at all", () => {
+        // Hidden types stay resolvable, because an element can already hold one.
+        assert.equal(dataTypeKindOf(ET_TYPES, DECLARED, "Valideringsrapport"), "attachment");
+        assert.equal(dataTypeKindOf(ET_TYPES, DECLARED, ""), null);
+        assert.equal(dataTypeKindOf(ET_TYPES, DECLARED, "ukjent"), null);
+    });
+
+    it("uses the app logic fallback when the app declares neither field", () => {
+        assert.equal(dataTypeKindOf(ET_TYPES, metadata({}), "ET"), "main");
+        assert.equal(dataTypeKindOf(ET_TYPES, metadata({}), "GjennomfoeringsplanDataV7"), "sub");
     });
 });

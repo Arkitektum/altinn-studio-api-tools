@@ -37,6 +37,11 @@
     --warn-bg: #2b2519;
     --warn-border: #4d422a;
 
+    /* Categorical, not semantic. Used to tell subform data types from the main form. */
+    --violet: #b49ae2;
+    --violet-bg: #2a2437;
+    --violet-border: #453a5c;
+
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
@@ -527,6 +532,19 @@ textarea {
     color: var(--accent);
 }
 
+/* Payload element groups, so a collapsed list can be scanned by kind. */
+.badge--main {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+    color: var(--accent);
+}
+
+.badge--sub {
+    border-color: var(--violet-border);
+    background: var(--violet-bg);
+    color: var(--violet);
+}
+
 /* ------------------------------------------------------------------ notices */
 
 .notice {
@@ -756,6 +774,11 @@ textarea {
     color: var(--warn);
 }
 
+/* The example a collapsed element was filled from, so loaded and hand-typed differ at a glance. */
+.element__source {
+    color: var(--accent);
+}
+
 .element__ord {
     font-size: 12px;
     color: var(--text-muted);
@@ -827,6 +850,11 @@ textarea {
     min-width: 0;
 }
 
+/* Nothing loaded yet, so this select is the action that unblocks the post. */
+.example__row--empty select {
+    border-color: var(--accent-border);
+}
+
 /* ------------------------------------------------------------------ run log */
 
 .log-empty {
@@ -882,6 +910,16 @@ textarea {
     color: var(--ok);
 }
 
+.step__status--info {
+    color: var(--accent);
+}
+
+/* 4xx is usually something about the request, 5xx is the app falling over. Worth telling apart
+   at a glance rather than lumping both into red. */
+.step__status--warn {
+    color: var(--warn);
+}
+
 .step__status--bad {
     color: var(--bad);
 }
@@ -892,6 +930,46 @@ textarea {
     font-size: 11.5px;
     color: var(--text-faint);
     word-break: break-all;
+}
+
+/* Reading, creating, replacing and deleting each get their own colour, so a long log can be
+   scanned for the request that changed something. */
+.step__method {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* The same colouring in the "will call" previews, so a preview and its log entry match. */
+.method {
+    font-weight: 600;
+}
+
+.method--get {
+    color: var(--accent);
+}
+
+.method--post {
+    color: var(--ok);
+}
+
+.method--put {
+    color: var(--warn);
+}
+
+.step__method--get {
+    color: var(--accent);
+}
+
+.step__method--post {
+    color: var(--ok);
+}
+
+.step__method--put {
+    color: var(--warn);
+}
+
+.step__method--delete {
+    color: var(--bad);
 }
 
 .step__toggle {
@@ -976,6 +1054,18 @@ textarea {
     font-family: var(--font-mono);
     font-size: 11.5px;
     word-break: break-all;
+}
+
+.verdict__rows dd[data-tone="ok"] {
+    color: var(--ok);
+}
+
+.verdict__rows dd[data-tone="warn"] {
+    color: var(--warn);
+}
+
+.verdict__rows dd[data-tone="bad"] {
+    color: var(--bad);
 }
 
 a {

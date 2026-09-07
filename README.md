@@ -275,6 +275,17 @@ web/src
   styles.css          all the styling
 ```
 
+Colour is used to encode things rather than to decorate:
+
+- HTTP methods, so a long log can be scanned for the request that changed something. GET blue, POST green, PUT amber, DELETE red. The same colours appear in the "will call" URL previews, so a preview and its log entry read the same way.
+- Status codes by class, since 4xx is usually something about the request and 5xx is the app falling over. 2xx green, 3xx blue, 4xx amber, 5xx red.
+- Payload element badges by group, with the main form in the accent blue, subforms in violet and attachments left neutral.
+- Which example a collapsed element was filled from, in the accent, so loaded and hand-typed content differ at a glance.
+- Validation counts, amber for warnings only and red when there are errors.
+- An element with no content, whose summary turns amber and whose example picker gets an accent border, because that is the thing to press next.
+
+Everything else stays grey.
+
 The UI is plain and dark only. It uses system fonts with no webfonts to load, a single accent colour, hairline borders, and no decoration. All colours are CSS variables in `:root` at the top of `styles.css`, so changing the theme means editing that one block.
 
 ### Why multipart is written by hand

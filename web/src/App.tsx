@@ -51,7 +51,7 @@ function renumber(steps: RunStep[]): RunStep[] {
  * afterwards. They are separate requests but one story, so they share a single log entry.
  */
 function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult | null; validation: ValidateResult | null }): LogResult {
-    const rows: { label: string; value: string }[] = [{ label: "Mode", value: result.mode }];
+    const rows: LogResult["rows"] = [{ label: "Mode", value: result.mode }];
     if (result.instanceOwnerPartyId) {
         rows.push({ label: "Party", value: result.instanceOwnerPartyId });
     }
@@ -75,10 +75,11 @@ function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult 
 }
 
 /** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
-function issueRow(result: ValidateResult): { label: string; value: string } {
+function issueRow(result: ValidateResult): { label: string; value: string; tone: "ok" | "warn" | "bad" } {
     const { errors, warnings, other } = result.counts;
     return {
         label: "Issues",
+        tone: errors > 0 ? "bad" : warnings > 0 ? "warn" : "ok",
         value:
             result.issues.length === 0
                 ? "none"
@@ -132,7 +133,7 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
 }
 
 function logFromValidation(result: ValidateResult): LogResult {
-    const rows: { label: string; value: string }[] = [];
+    const rows: LogResult["rows"] = [];
     if (result.dataGuid) rows.push({ label: "Data guid", value: result.dataGuid });
     // On a failed request there is no issue list, and "none" would read as "validated clean".
     if (result.ok) rows.push(issueRow(result));

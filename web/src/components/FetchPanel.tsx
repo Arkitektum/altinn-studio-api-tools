@@ -104,9 +104,9 @@ export function FetchPanel({
             </div>
 
             <p className="field__hint" style={{ marginTop: 8 }}>
-                GET {base}/instances/{party}/{guid}
+                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}
                 <br />
-                GET {base}/instances/{party}/{guid}/validate
+                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
             </p>
 
             <div className="field" style={{ marginTop: 16 }}>
@@ -141,9 +141,9 @@ export function FetchPanel({
 
             {dataGuid && (
                 <p className="field__hint" style={{ marginTop: 8 }}>
-                    GET {base}/instances/{party}/{guid}/data/{dataGuid}
+                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}
                     <br />
-                    GET {base}/instances/{party}/{guid}/data/{dataGuid}/validate
+                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
                 </p>
             )}
 

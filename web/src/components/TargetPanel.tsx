@@ -79,10 +79,10 @@ export function TargetPanel({
     const party = instanceOwnerPartyId || "{partyId}";
     const preview =
         mode === "existing"
-            ? `POST ${base}/instances/${party}/${instanceGuid || "{instanceGuid}"}/data?dataType=…`
+            ? `${base}/instances/${party}/${instanceGuid || "{instanceGuid}"}/data?dataType=…`
             : mode === "multipart"
-              ? `POST ${base}/instances  (multipart, ${elementCount} part${elementCount === 1 ? "" : "s"} + instance)`
-              : `POST ${base}/instances?instanceOwnerPartyId=${party}`;
+              ? `${base}/instances  (multipart, ${elementCount} part${elementCount === 1 ? "" : "s"} + instance)`
+              : `${base}/instances?instanceOwnerPartyId=${party}`;
 
     const activeMode = MODES.find((entry) => entry.value === mode);
 
@@ -240,7 +240,7 @@ export function TargetPanel({
             <div style={{ marginTop: 14 }}>
                 <span className="legend">Will call</span>
                 <pre className="dump" style={{ margin: 0 }}>
-                    {preview}
+                    <span className="method method--post">POST</span> {preview}
                 </pre>
             </div>
         </Panel>

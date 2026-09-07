@@ -66,7 +66,7 @@ function Verdict({ result }: { result: LogResult }) {
                 {result.rows.map((row) => (
                     <div key={row.label} style={{ display: "contents" }}>
                         <dt>{row.label}</dt>
-                        <dd>{row.value}</dd>
+                        <dd data-tone={row.tone}>{row.value}</dd>
                     </div>
                 ))}
                 <dt>Total</dt>
@@ -84,6 +84,14 @@ function Verdict({ result }: { result: LogResult }) {
     );
 }
 
+/** 2xx reads as fine, 3xx as informational, 4xx as the request, 5xx as the app. */
+function statusTone(status: number): "ok" | "info" | "warn" | "bad" {
+    if (status < 300) return "ok";
+    if (status < 400) return "info";
+    if (status < 500) return "warn";
+    return "bad";
+}
+
 function Step({ step }: { step: RunStep }) {
     const [open, setOpen] = useState(!step.ok);
     const hasDetail = step.requestPreview !== undefined || step.response !== undefined;
@@ -93,13 +101,13 @@ function Step({ step }: { step: RunStep }) {
             <div className="step__head">
                 <span className="step__name">{step.name}</span>
                 <span className="spacer" />
-                {step.status !== null && <span className={`step__status ${step.ok ? "step__status--ok" : "step__status--bad"}`}>{step.status}</span>}
+                {step.status !== null && <span className={`step__status step__status--${statusTone(step.status)}`}>{step.status}</span>}
                 <span className="step__status">{step.durationMs} ms</span>
             </div>
 
             {step.url !== "-" && (
                 <div className="step__url">
-                    {step.method} {step.url}
+                    <span className={`step__method step__method--${step.method.toLowerCase()}`}>{step.method}</span> {step.url}
                 </div>
             )}
 

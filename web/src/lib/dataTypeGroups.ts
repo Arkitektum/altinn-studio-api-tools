@@ -6,7 +6,10 @@ import type { AppDataType, ApplicationMetadata } from "../types";
  */
 export const HIDDEN_DATA_TYPE_IDS = ["Signatur", "FoedselsnummerTiltakshaver", "Valideringsrapport", "ref-data-as-pdf"];
 
+export type DataTypeKind = "main" | "sub" | "attachment";
+
 export interface DataTypeGroup {
+    kind: DataTypeKind;
     label: string;
     dataTypes: AppDataType[];
 }
@@ -54,9 +57,10 @@ export function groupDataTypes(dataTypes: AppDataType[], metadata: ApplicationMe
     const isSub = (dataType: AppDataType): boolean => (declared ? subIds.has(dataType.id) : Boolean(dataType.appLogic) && dataType.maxCount !== 1);
 
     return [
-        { label: "Main form", dataTypes: visible.filter(isMain) },
-        { label: "Sub forms", dataTypes: visible.filter((type) => !isMain(type) && isSub(type)) },
+        { kind: "main" as const, label: "Main form", dataTypes: visible.filter(isMain) },
+        { kind: "sub" as const, label: "Sub forms", dataTypes: visible.filter((type) => !isMain(type) && isSub(type)) },
         {
+            kind: "attachment" as const,
             label: "Attachments",
             dataTypes: visible.filter((type) => !isMain(type) && !isSub(type))
         }
@@ -66,4 +70,11 @@ export function groupDataTypes(dataTypes: AppDataType[], metadata: ApplicationMe
 /** Flattens the groups back into ids, in the order they appear in the picker. */
 export function groupedDataTypeIds(groups: DataTypeGroup[]): string[] {
     return groups.flatMap((group) => group.dataTypes.map((dataType) => dataType.id));
+}
+
+/** Which group a data type falls in, for styling a single element rather than the whole picker. */
+export function dataTypeKindOf(dataTypes: AppDataType[], metadata: ApplicationMetadata | null, dataTypeId: string): DataTypeKind | null {
+    if (!dataTypeId) return null;
+    const group = groupDataTypes(dataTypes, metadata, dataTypeId).find((entry) => entry.dataTypes.some((dataType) => dataType.id === dataTypeId));
+    return group?.kind ?? null;
 }

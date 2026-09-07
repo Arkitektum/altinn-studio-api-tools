@@ -1,5 +1,5 @@
 import { contentTypeOptions, preferredContentType } from "../lib/contentType";
-import { groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
+import { dataTypeKindOf, groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
 import { exampleOptionsFor } from "../lib/exampleOptions";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
@@ -19,15 +19,20 @@ interface PayloadPanelProps {
     onAdvanceProcessChange: (next: boolean) => void;
 }
 
-/** What a collapsed element shows about itself, so nothing is hidden that you need. */
-function describeContent(element: DataElementInput): string {
-    if (!element.content) return "no content";
+/**
+ * What a collapsed element shows about itself, so nothing is hidden that you need. The source is
+ * returned separately so it can be accented, matching the hint under the expanded editor.
+ */
+function describeContent(element: DataElementInput): { size: string; source?: string } {
+    if (!element.content) return { size: "no content" };
     if (element.encoding === "base64") {
         const bytes = Math.ceil((element.content.length * 3) / 4);
-        return [element.filename, `${bytes.toLocaleString("nb")} bytes`].filter(Boolean).join(" · ");
+        return { size: `${bytes.toLocaleString("nb")} bytes`, source: element.filename };
     }
-    const chars = `${element.content.length.toLocaleString("nb")} characters`;
-    return element.exampleName ? `${chars} · ${element.exampleName}` : chars;
+    return {
+        size: `${element.content.length.toLocaleString("nb")} characters`,
+        source: element.exampleName
+    };
 }
 
 function describeDataType(dataType: AppDataType): string {
@@ -124,6 +129,10 @@ export function PayloadPanel({
         >
             {dataElements.map((element, index) => {
                 const known = dataTypes.find((type) => type.id === element.dataType);
+                // Main form, subform and attachment each get their own badge colour.
+                const kind = dataTypeKindOf(dataTypes, metadata, element.dataType);
+                const badgeClass = kind === "main" ? "badge badge--main" : kind === "sub" ? "badge badge--sub" : "badge";
+                const summary = describeContent(element);
                 return (
                     <div className="element" key={index}>
                         <div className="element__bar">
@@ -138,9 +147,15 @@ export function PayloadPanel({
                                     {element.collapsed ? "\u25b6" : "\u25bc"}
                                 </span>
                                 <span className="element__ord">{index + 1}</span>
-                                {element.dataType && <span className="badge">{element.dataType}</span>}
+                                {element.dataType && <span className={badgeClass}>{element.dataType}</span>}
                                 <span className={`element__summary${element.content ? "" : " element__summary--empty"}`}>
-                                    {describeContent(element)}
+                                    {summary.size}
+                                    {summary.source && (
+                                        <>
+                                            {" \u00b7 "}
+                                            <span className="element__source">{summary.source}</span>
+                                        </>
+                                    )}
                                 </span>
                             </button>
                             <span className="spacer" />
