@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+    <!-- Same palette as the app: the dark surface with the accent on top, so the tab reads as
+         this tool at 16px without needing a second light variant. -->
+    <rect width="32" height="32" rx="7" fill="#1c1e21" />
+    <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#34383d" />
+    <!-- An A drawn as a path rather than text, so it does not depend on a font being present. -->
+    <path
+        d="M8 24 L16 8 L24 24 M11 18 L21 18"
+        fill="none"
+        stroke="#7dabdd"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+</svg>
