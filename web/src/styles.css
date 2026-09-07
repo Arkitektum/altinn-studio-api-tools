@@ -1229,3 +1229,14 @@ a.btn {
 .result__body {
     padding: 2px 10px 10px;
 }
+
+/* The browser's pdf viewer, sized to roughly a portrait page so it does not need scrolling to
+   see the top of the receipt. */
+.pdf {
+    display: block;
+    width: 100%;
+    height: 900px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-inset);
+}

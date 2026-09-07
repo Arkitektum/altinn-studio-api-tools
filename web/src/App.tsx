@@ -9,6 +9,7 @@ import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
 import { RunLog } from "./components/RunLog";
+import { PdfPanel, type PdfPreview } from "./components/PdfPanel";
 import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
@@ -23,6 +24,7 @@ import type {
     LogEntry,
     LogIssue,
     LogResult,
+    PdfPreviewResult,
     ValidationView,
     PublicToken,
     ReadDataElementResult,
@@ -167,6 +169,16 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
     };
 }
 
+function logFromPdf(result: PdfPreviewResult, bytes: number): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Rendered pdf",
+        rows: [...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []), { label: "Bytes", value: String(bytes) }]
+    };
+}
+
 function logFromValidation(result: ValidateResult, dataElements: DataElementSummary[]): LogResult {
     const rows: LogResult["rows"] = [];
     if (result.dataGuid) rows.push({ label: "Data guid", value: result.dataGuid });
@@ -220,6 +232,12 @@ export function App() {
     const [running, setRunning] = useState(false);
     const [runError, setRunError] = useState<unknown>(null);
 
+    /**
+     * The rendered pdf, held as a blob url. Only one at a time: rendering again replaces it, and
+     * the old url is revoked so the blob can be collected.
+     */
+    const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
+
     const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
     const [dataGuid, setDataGuid] = useState("");
     const [fetching, setFetching] = useState(false);
@@ -238,6 +256,16 @@ export function App() {
 
     const clearValidations = useCallback(() => setValidations([]), []);
 
+    /** Replaces the held preview, revoking the previous blob url so it is not leaked. */
+    const showPdf = useCallback((next: PdfPreview | null) => {
+        setPdfPreview((current) => {
+            if (current) URL.revokeObjectURL(current.url);
+            return next;
+        });
+    }, []);
+
+    const clearPdf = useCallback(() => showPdf(null), [showPdf]);
+
     const changeInstanceGuid = useCallback(
         (value: string) => {
             const { partyId, guid } = splitPastedInstanceId(value);
@@ -249,11 +277,12 @@ export function App() {
                 // are not in this one.
                 setInstanceDataElements([]);
                 setDataGuid("");
+                clearPdf();
             }
             setInstanceGuid(guid);
             if (partyId) setInstanceOwnerPartyId(partyId);
         },
-        [instanceGuid, clearValidations, setInstanceGuid, setInstanceOwnerPartyId]
+        [instanceGuid, clearValidations, clearPdf, setInstanceGuid, setInstanceOwnerPartyId]
     );
 
     // Ticks once a second so token expiry counts down live.
@@ -503,6 +532,31 @@ export function App() {
         }
     }
 
+    async function renderPdf() {
+        if (!activeTokenId) return;
+        setFetching(true);
+        setFetchError(null);
+        try {
+            const result = await api.previewPdf({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
+            appendLog(logFromPdf(result, result.size));
+            if (!result.ok || !result.content) {
+                // A failed render must not leave the previous pdf on screen looking current.
+                clearPdf();
+                return;
+            }
+            const bytes = Uint8Array.from(atob(result.content), (character) => character.charCodeAt(0));
+            showPdf({
+                url: URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })),
+                size: result.size,
+                at: new Date().toLocaleTimeString("nb")
+            });
+        } catch (error) {
+            setFetchError(error);
+        } finally {
+            setFetching(false);
+        }
+    }
+
     // Named runValidation to avoid shadowing the `validate` option used by the post flow.
     async function runValidation(scope: "instance" | "dataElement") {
         if (!activeTokenId) return;
@@ -539,6 +593,7 @@ export function App() {
         app,
         validationCount: validations.length,
         runCount: logs.length,
+        hasPdf: pdfPreview !== null,
         busy: running || fetching
     });
 
@@ -662,9 +717,12 @@ export function App() {
                                 busy={fetching}
                                 hasToken={tokenUsable}
                                 error={fetchError}
+                                onPreviewPdf={() => void renderPdf()}
                             />
                         </>
                     )}
+
+                    {sections.pdf && pdfPreview && <PdfPanel preview={pdfPreview} onClear={clearPdf} />}
                 </div>
 
                 {(sections.validation || sections.log) && (

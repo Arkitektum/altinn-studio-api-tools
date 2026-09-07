@@ -6,6 +6,7 @@ import type {
     ExampleKind,
     ExamplesResponse,
     LocaltestStatus,
+    PdfPreviewResult,
     PublicToken,
     ReadDataElementResult,
     ReadInstanceResult,
@@ -111,5 +112,7 @@ export const api = {
         instanceOwnerPartyId: string;
         instanceGuid: string;
         dataGuid: string;
-    }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`)
+    }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`),
+    previewPdf: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
+        request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`)
 };

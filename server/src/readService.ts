@@ -43,6 +43,17 @@ export interface ReadDataElementResult {
     content: string | null;
 }
 
+export interface PdfPreviewResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    contentType: string | null;
+    /** The pdf bytes, base64 encoded because the rest of the api is json. */
+    content: string | null;
+    /** Decoded byte count, so the ui can show a size without decoding first. */
+    size: number;
+}
+
 /** One entry of Altinn's validation response. */
 export interface ValidationIssue {
     severity: number;
@@ -142,6 +153,31 @@ export async function readDataElement(token: string, request: ReadRequest & { da
         contentType: response.contentType,
         encoding: textual ? "utf8" : "base64",
         content: response.ok && bytes ? bytes.toString(textual ? "utf8" : "base64") : null
+    };
+}
+
+/**
+ * GET {app}/instances/{party}/{guid}/pdf/preview
+ *
+ * The app renders the receipt pdf it would archive, which is the quickest way to see what the
+ * form data turns into without walking the process to the end.
+ */
+export async function previewPdf(token: string, request: ReadRequest): Promise<PdfPreviewResult> {
+    const recorder = new StepRecorder();
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/pdf/preview`;
+
+    const response = await recorder.run("Preview pdf", "GET", url, () =>
+        altinnFetch({ url, token, accept: "application/pdf", binaryResponse: true })
+    );
+
+    const bytes = response.ok ? response.bytes : null;
+    return {
+        ok: response.ok,
+        steps: recorder.steps,
+        failedAt: response.ok ? null : "Could not render the pdf preview.",
+        contentType: response.contentType,
+        content: bytes ? bytes.toString("base64") : null,
+        size: bytes?.byteLength ?? 0
     };
 }
 

@@ -9,6 +9,7 @@ const ready: SectionInputs = {
     app: "et-v4",
     validationCount: 0,
     runCount: 0,
+    hasPdf: false,
     busy: false
 };
 
@@ -27,6 +28,11 @@ describe("visibleSections", () => {
 
         assert.equal(visibleSections({ ...ready, validationCount: 1 }).validation, true);
         assert.equal(visibleSections({ ...ready, runCount: 1 }).log, true);
+    });
+
+    it("shows the pdf panel only while a rendered pdf is held", () => {
+        assert.equal(visibleSections(ready).pdf, false);
+        assert.equal(visibleSections({ ...ready, hasPdf: true }).pdf, true);
     });
 
     it("shows the log while a request is in flight, before it has any runs", () => {

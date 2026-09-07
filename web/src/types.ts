@@ -261,6 +261,16 @@ export interface ValidationCounts {
     other: number;
 }
 
+export interface PdfPreviewResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    contentType: string | null;
+    /** The pdf bytes, base64 encoded because the rest of the api is json. */
+    content: string | null;
+    size: number;
+}
+
 export interface ValidateResult {
     ok: boolean;
     steps: RunStep[];

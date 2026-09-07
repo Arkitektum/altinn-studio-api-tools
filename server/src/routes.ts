@@ -7,7 +7,7 @@ import { createTestUserToken } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
-import { readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
+import { previewPdf, readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
 import { altinnFetch, describeFailure } from "./altinnClient.js";
 import { appCatalogue } from "./appCatalogue.js";
 import { listExamples, readExample } from "./examples.js";
@@ -234,6 +234,15 @@ router.get(
         const query = readDataElementSchema.parse(req.query);
         const token = requireToken(query.tokenId);
         res.json(await validateDataElement(token.token, query));
+    })
+);
+
+router.get(
+    "/instances/pdf-preview",
+    asyncHandler(async (req, res) => {
+        const query = instanceLookupSchema.parse(req.query);
+        const token = requireToken(query.tokenId);
+        res.json(await previewPdf(token.token, query));
     })
 );
 

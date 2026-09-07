@@ -3,12 +3,15 @@
          this tool at 16px without needing a second light variant. -->
     <rect width="32" height="32" rx="7" fill="#1c1e21" />
     <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#34383d" />
-    <!-- An A drawn as a path rather than text, so it does not depend on a font being present. -->
+    <!--
+        An A drawn as a path rather than text, so it does not depend on a font being present. It
+        fills most of the square on purpose: at 16px in a tab strip, padding costs legibility.
+    -->
     <path
-        d="M8 24 L16 8 L24 24 M11 18 L21 18"
+        d="M6 26 L16 6 L26 26 M9.8 19 L22.2 19"
         fill="none"
         stroke="#7dabdd"
-        stroke-width="3"
+        stroke-width="3.5"
         stroke-linecap="round"
         stroke-linejoin="round"
     />

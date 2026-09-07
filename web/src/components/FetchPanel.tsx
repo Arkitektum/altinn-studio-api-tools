@@ -18,6 +18,7 @@ interface FetchPanelProps {
     onGetDataElement: () => void;
     onValidateInstance: () => void;
     onValidateDataElement: () => void;
+    onPreviewPdf: () => void;
     busy: boolean;
     hasToken: boolean;
     error: unknown;
@@ -48,6 +49,7 @@ export function FetchPanel({
     onGetDataElement,
     onValidateInstance,
     onValidateDataElement,
+    onPreviewPdf,
     busy,
     hasToken,
     error
@@ -100,12 +102,17 @@ export function FetchPanel({
                 <button type="button" className="btn" onClick={onValidateInstance} disabled={busy || !canGetInstance}>
                     Validate instance
                 </button>
+                <button type="button" className="btn" onClick={onPreviewPdf} disabled={busy || !canGetInstance}>
+                    Preview pdf
+                </button>
             </div>
 
             <p className="field__hint" style={{ marginTop: 8 }}>
                 <span className="method method--get">GET</span> {base}/instances/{party}/{guid}
                 <br />
                 <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
+                <br />
+                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
             </p>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}

@@ -47,6 +47,14 @@ The data type picker is grouped as **Main form**, **Sub forms** and **Attachment
 
 Apps that declare neither field fall back to grouping by app logic, where a single-instance form data type is the main form and any other is a subform. `web/src/lib/dataTypeGroups.test.ts` covers both paths.
 
+### Pdf preview
+
+**Preview pdf** in the Fetch panel calls `GET /instances/{party}/{guid}/pdf/preview`, which is the receipt pdf the app would archive. It is the quickest way to see what the form data turns into without walking the process to the end.
+
+The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. **Open in new tab** gives you the full viewer with print and save, and **Close preview** puts the panel away.
+
+One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and changing the instance guid clears it along with that instance's validation results.
+
 ### Validation
 
 Its own panel, separate from the run log, holding one result per thing validated: the instance, and each data element you have validated. Results are grouped by target so several can be on screen at once, with the instance first and the data elements after it by name. Validating the same target again replaces its result rather than adding another, so what you see is always current.
@@ -173,7 +181,7 @@ The tool detects the existing element and sends `PUT .../data/{dataElementId}` i
 
 ## Reading data back
 
-The **Fetch** panel does four GET requests against an instance you already have, paired as get and validate for the instance and for one data element.
+The **Fetch** panel does five GET requests against an instance you already have: get and validate for the instance and for one data element, plus the pdf preview.
 
 **Get instance** calls `GET /{org}/{app}/instances/{party}/{guid}`. Besides logging the whole response it reads the instance's `data` array and fills the data element select, so you do not have to copy a dataGuid by hand.
 
@@ -185,7 +193,9 @@ Validation results are listed out rather than left as raw JSON. Issues are group
 
 **Validate instance** calls `GET /{org}/{app}/instances/{party}/{guid}/validate` and **Validate data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes. The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`.
 
-All four requests appear in the run log alongside posts, with method, URL, status, timing, and body.
+**Preview pdf** calls `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, see [Pdf preview](#pdf-preview).
+
+All five requests appear in the run log alongside posts, with method, URL, status, timing, and body.
 
 Posting already runs the instance get and validate automatically, so the buttons here are for an instance you did not just create. Paste its party id and guid to inspect it.
 
@@ -212,6 +222,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                     |
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                  |
 | `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                |
+| `GET`    | `/api/instances/pdf-preview`           | Render the receipt pdf. Same query as `/api/instances`                |
 | `PUT`    | `/api/instances/process/next`          | Advance an existing instance                                          |
 
 ```bash
