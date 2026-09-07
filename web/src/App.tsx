@@ -166,6 +166,11 @@ export function App() {
   const [app, setApp] = useLocalStorage('app', '');
   const [instanceOwnerPartyId, setInstanceOwnerPartyId] = useLocalStorage('partyId', '');
   const [instanceGuid, setInstanceGuid] = useLocalStorage('instanceGuid', '');
+  // The party value this session last filled in from a token claim. See the effect below.
+  const [autoFilledParty, setAutoFilledParty] = useLocalStorage<string | null>(
+    'partyAutoFilledFrom',
+    null,
+  );
   const [mode, setMode] = useLocalStorage<RunMode>('mode', 'sequential');
   const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>('dataElements', [
     EMPTY_ELEMENT,
@@ -261,13 +266,29 @@ export function App() {
       .map((group) => group.key);
   }, [catalogueEntry, exampleGroups]);
 
-  // Prefill the instance owner from the token's own party claim, which for a LocalTest user is
-  // almost always the party you want.
+  /**
+   * Keep the instance owner in step with the token's own party claim, which for a LocalTest user
+   * is almost always the party you want.
+   *
+   * Only fills an empty field or replaces a value this effect put there itself, so a party typed
+   * by hand survives a token switch. Acting on behalf of another party is a real case.
+   *
+   * The marker is persisted rather than kept in a ref, because otherwise a party restored from a
+   * previous session would look hand-typed and switching user would leave the wrong party behind.
+   */
   useEffect(() => {
-    if (activeToken?.partyId && !instanceOwnerPartyId) {
-      setInstanceOwnerPartyId(activeToken.partyId);
-    }
-  }, [activeToken, instanceOwnerPartyId, setInstanceOwnerPartyId]);
+    const claim = activeToken?.partyId;
+    if (!claim) return;
+    if (instanceOwnerPartyId && instanceOwnerPartyId !== autoFilledParty) return;
+    if (instanceOwnerPartyId !== claim) setInstanceOwnerPartyId(claim);
+    if (autoFilledParty !== claim) setAutoFilledParty(claim);
+  }, [
+    activeToken,
+    instanceOwnerPartyId,
+    setInstanceOwnerPartyId,
+    autoFilledParty,
+    setAutoFilledParty,
+  ]);
 
   // A probe result belongs to one org and app, so drop it when the target moves.
   useEffect(() => {

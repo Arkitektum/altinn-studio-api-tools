@@ -29,7 +29,7 @@ The header shows a status dot for the app host, for whether LocalTest is answeri
 
 ### Test user
 
-Enter a user id and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The token is held in server memory only. The browser receives an opaque id and the decoded claims, never the bearer token itself. The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and the remaining validity counts down live. A **Paste** tab accepts a token obtained some other way.
+Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The list lives in `TEST_USERS` at the top of `web/src/components/TokenPanel.tsx`, currently Pengelens Partner (1001) and Sophie Salt (1337). Add an entry there to offer another. The stored token is named after the person rather than the id. The token is held in server memory only. The browser receives an opaque id and the decoded claims, never the bearer token itself. The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and it follows the active token when you switch user. A party you typed yourself is left alone, since acting on behalf of another party is a real case. The remaining validity counts down live. A **Paste** tab accepts a token obtained some other way.
 
 ### Target
 

@@ -89,7 +89,7 @@ export const api = {
     request<ExampleContent>(`/examples/file?${new URLSearchParams(params)}`),
 
   listTokens: () => request<PublicToken[]>('/tokens'),
-  createTestUserToken: (input: { userId: string }) =>
+  createTestUserToken: (input: { userId: string; label?: string }) =>
     request<PublicToken>('/tokens/test-user', jsonBody(input)),
   createRawToken: (input: { token: string }) =>
     request<PublicToken>('/tokens/raw', jsonBody(input)),

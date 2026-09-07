@@ -7,6 +7,12 @@ import type { LocaltestStatus, PublicToken, ServerConfig } from '../types';
 
 type Mode = 'test-user' | 'raw';
 
+/** The LocalTest users we work with. Add an entry to offer another. */
+const TEST_USERS = [
+  { label: 'Pengelens Partner', userId: '1001' },
+  { label: 'Sophie Salt', userId: '1337' },
+];
+
 interface TokenPanelProps {
   serverConfig: ServerConfig | null;
   localtest: LocaltestStatus | null;
@@ -29,7 +35,7 @@ export function TokenPanel({
   const [mode, setMode] = useState<Mode>('test-user');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const [userId, setUserId] = useState('1001');
+  const [userId, setUserId] = useState(TEST_USERS[0]?.userId ?? '');
   const [rawToken, setRawToken] = useState('');
 
   async function submit(event: React.FormEvent) {
@@ -39,7 +45,11 @@ export function TokenPanel({
     try {
       const token =
         mode === 'test-user'
-          ? await api.createTestUserToken({ userId: userId.trim() })
+          ? await api.createTestUserToken({
+              userId,
+              // Names the token after the person, rather than "Test user 1001".
+              label: TEST_USERS.find((user) => user.userId === userId)?.label,
+            })
           : await api.createRawToken({ token: rawToken.trim() });
       onActivate(token.id);
       onTokensChanged();
@@ -93,20 +103,22 @@ export function TokenPanel({
       <form onSubmit={submit}>
         {mode === 'test-user' ? (
           <div className="field" style={{ marginBottom: 12 }}>
-            <label htmlFor="userId">User id</label>
-            <input
+            <label htmlFor="userId">Test user</label>
+            <select
               id="userId"
-              type="text"
               value={userId}
               onChange={(event) => setUserId(event.target.value)}
-              placeholder="1001"
-              autoComplete="off"
-              required
-            />
+            >
+              {TEST_USERS.map((user) => (
+                <option key={user.userId} value={user.userId}>
+                  {user.label} ({user.userId})
+                </option>
+              ))}
+            </select>
             <p className="field__hint">
               GET {serverConfig?.localtestUrl ?? 'http://localhost:5101'}
               /Home/GetTestUserToken/
-              <span style={{ color: 'var(--accent)' }}>{userId.trim() || '…'}</span>
+              <span style={{ color: 'var(--accent)' }}>{userId}</span>
               <br />
               The party id is read from the token claims and prefilled below.
             </p>
