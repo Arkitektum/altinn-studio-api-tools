@@ -64,6 +64,26 @@ describe("parseTestUsersHtml", () => {
         assert.deepEqual(parseTestUsersHtml(html), []);
     });
 
+    it("takes UserSelect off the real front page, which holds three selects", () => {
+        // The attributes are as LocalTest writes them, capital Class and all.
+        const html = `
+            <select class="form-control" id="AppPathSelection" name="AppPathSelection">
+                <option value="dibk/et-v4">dibk/et-v4</option>
+            </select>
+            <select Class="form-control" id="UserSelect" name="UserSelect">
+                <option value="1001">Pengelens Partner</option>
+                <option value="1337">Sophie Salt</option>
+            </select>
+            <select Class="form-control" id="AuthenticationLevel" name="AuthenticationLevel">
+                <option value="2">Niv&#xE5; 2</option>
+            </select>`;
+
+        assert.deepEqual(parseTestUsersHtml(html), [
+            { userId: "1001", label: "Pengelens Partner" },
+            { userId: "1337", label: "Sophie Salt" }
+        ]);
+    });
+
     it("takes the user select and nothing else from a page holding several", () => {
         const html = `
             <select id="AuthenticationLevel"><option value="2">Niv&#xE5; 2</option></select>
