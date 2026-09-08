@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
-import { isExpired, processLabel, severityLabel } from "./lib/format";
+import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { bytesFromBase64 } from "./lib/formats";
+import { clampRepeat, MAX_REPEAT, splitPastedInstanceId } from "./lib/inputs";
 import { buildInstanceTemplate, type TemplateFields } from "./lib/instanceTemplate";
+import {
+    logFromAdvance,
+    logFromDataElement,
+    logFromDelete,
+    logFromInstance,
+    logFromInstances,
+    logFromPdf,
+    logFromRun,
+    logFromValidation
+} from "./lib/logResults";
 import { placeLoaded } from "./lib/payload";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
@@ -19,243 +30,28 @@ import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
 import type {
-    AdvanceProcessResult,
     AppMetadataResponse,
     AppParty,
     CatalogueApp,
     DataElementInput,
-    DeleteInstanceResult,
     DataElementSummary,
     ExampleGroup,
     FetchedDataElement,
     InstanceSummary,
-    ListInstancesResult,
     LocaltestStatus,
     LogEntry,
-    LogIssue,
     LogResult,
-    PdfPreviewResult,
     ProcessSummary,
-    ValidationView,
     PublicToken,
-    ReadDataElementResult,
     ReadInstanceResult,
     RunMode,
     RunResult,
-    RunStep,
     ServerConfig,
-    ValidateResult
+    ValidateResult,
+    ValidationView
 } from "./types";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
-
-/**
- * Most repeats you can ask for in one go. High enough to build a pile of test instances, low
- * enough that a fat-fingered extra digit does not run for minutes against localtest.
- */
-const MAX_REPEAT = 50;
-
-/** A repeat count that can be trusted: whole, at least one, and no more than the cap. */
-function clampRepeat(value: number): number {
-    return Math.min(Math.max(Math.round(value) || 1, 1), MAX_REPEAT);
-}
-
-/** Accepts "510001/99d0632c-..." as well as a bare guid, so an instance id can be pasted whole. */
-function splitPastedInstanceId(value: string): { partyId?: string; guid: string } {
-    const match = /^(\d+)\/(.+)$/.exec(value.trim());
-    if (match?.[1] && match[2]) return { partyId: match[1], guid: match[2].trim() };
-    return { guid: value.trim() };
-}
-
-/**
- * Each request numbers its own steps from 1, so concatenating them needs a renumber to keep the
- * indexes unique across the whole log entry.
- */
-function renumber(steps: RunStep[]): RunStep[] {
-    return steps.map((step, position) => ({ ...step, index: position + 1 }));
-}
-
-/**
- * Builds the log for a post, folding in the instance read and validation that run automatically
- * afterwards. They are separate requests but one story, so they share a single log entry.
- */
-function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult | null; validation: ValidateResult | null }): LogResult {
-    const rows: LogResult["rows"] = [{ label: "Mode", value: result.mode }];
-    if (result.instanceOwnerPartyId) {
-        rows.push({ label: "Party", value: result.instanceOwnerPartyId });
-    }
-    if (result.instanceGuid) rows.push({ label: "Instance", value: result.instanceGuid });
-    if (followUp.instance?.ok) {
-        rows.push({
-            label: "Data elements",
-            value: String(followUp.instance.dataElements.length)
-        });
-    }
-    if (followUp.instance?.ok && followUp.instance.process) {
-        rows.push({ label: "Task", value: processLabel(followUp.instance.process) });
-    }
-    if (followUp.validation?.ok) rows.push(issueRow(followUp.validation));
-
-    return {
-        ok: result.ok,
-        steps: renumber([...result.steps, ...(followUp.instance?.steps ?? []), ...(followUp.validation?.steps ?? [])]),
-        failedAt: result.failedAt,
-        title: "Posted",
-        rows,
-        instanceUrl: result.instanceUrl,
-        validation: toValidation(followUp.validation, followUp.instance?.dataElements ?? [])
-    };
-}
-
-/**
- * Prepares a validation result for display: issues sorted by severity, with data element ids
- * resolved to data type names where the instance read told us what they are.
- */
-function toValidation(result: ValidateResult | null, dataElements: DataElementSummary[]): LogResult["validation"] {
-    if (!result?.ok) return undefined;
-    const names = new Map(dataElements.map((element) => [element.id, element.dataType]));
-    const issues = [...result.issues]
-        .sort((a, b) => a.severity - b.severity)
-        .map((issue) => ({
-            severity: issue.severity,
-            severityLabel: severityLabel(issue.severity),
-            description: issue.description ?? "",
-            code: issue.code,
-            field: issue.field,
-            dataElement: issue.dataElementId ? (names.get(issue.dataElementId) ?? issue.dataElementId) : null,
-            source: issue.source
-        }));
-    const instanceGuid = result.instanceGuid;
-    if (!result.dataGuid) return { key: "instance", instanceGuid, scope: "instance", label: "Instance", issues };
-    return {
-        key: `data:${result.dataGuid}`,
-        instanceGuid,
-        scope: "data element",
-        label: names.get(result.dataGuid) ?? result.dataGuid,
-        issues
-    };
-}
-
-/** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
-function issueRow(result: ValidateResult): { label: string; value: string; tone: "ok" | "warn" | "bad" } {
-    const { errors, warnings, other } = result.counts;
-    return {
-        label: "Issues",
-        tone: errors > 0 ? "bad" : warnings > 0 ? "warn" : "ok",
-        value:
-            result.issues.length === 0
-                ? "none"
-                : [
-                      `${errors} error${errors === 1 ? "" : "s"}`,
-                      `${warnings} warning${warnings === 1 ? "" : "s"}`,
-                      ...(other > 0 ? [`${other} other`] : [])
-                  ].join(", ")
-    };
-}
-
-function logFromInstances(result: ListInstancesResult): LogResult {
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: "Listed instances",
-        rows: [
-            { label: "Party", value: result.instanceOwnerPartyId },
-            ...(result.ok ? [{ label: "Instances", value: String(result.instances.length) }] : [])
-        ]
-    };
-}
-
-function logFromInstance(result: ReadInstanceResult): LogResult {
-    const rows = [
-        { label: "Party", value: result.instanceOwnerPartyId },
-        { label: "Instance", value: result.instanceGuid }
-    ];
-    if (result.ok) {
-        rows.push({ label: "Data elements", value: String(result.dataElements.length) });
-        if (result.process) rows.push({ label: "Task", value: processLabel(result.process) });
-    }
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: "Fetched instance",
-        rows,
-        // Offering to open an instance that could not be read would just 404 again.
-        instanceUrl: result.ok ? result.instanceUrl : null
-    };
-}
-
-function logFromDataElement(result: ReadDataElementResult): LogResult {
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: "Fetched data element",
-        rows: [
-            { label: "Data guid", value: result.dataGuid },
-            ...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []),
-            // Binary content comes back base64 encoded, which is worth saying out loud.
-            ...(result.ok && result.encoding === "base64"
-                ? [
-                      {
-                          label: "Bytes",
-                          value: String(Math.ceil(((result.content?.length ?? 0) * 3) / 4))
-                      }
-                  ]
-                : [])
-        ]
-    };
-}
-
-function logFromAdvance(result: AdvanceProcessResult): LogResult {
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: "Advanced process",
-        rows: [{ label: "Instance", value: result.instanceGuid }, ...(result.ok ? [{ label: "Task", value: processLabel(result.process) }] : [])]
-    };
-}
-
-function logFromDelete(result: DeleteInstanceResult): LogResult {
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: result.hard ? "Deleted instance" : "Marked instance deleted",
-        rows: [
-            { label: "Party", value: result.instanceOwnerPartyId },
-            { label: "Instance", value: result.instanceGuid },
-            { label: "Delete", value: result.hard ? "hard" : "soft" }
-        ]
-    };
-}
-
-function logFromPdf(result: PdfPreviewResult, bytes: number): LogResult {
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: "Rendered pdf",
-        rows: [...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []), { label: "Bytes", value: String(bytes) }]
-    };
-}
-
-function logFromValidation(result: ValidateResult, dataElements: DataElementSummary[]): LogResult {
-    const rows: LogResult["rows"] = [];
-    if (result.dataGuid) rows.push({ label: "Data guid", value: result.dataGuid });
-    // On a failed request there is no issue list, and "none" would read as "validated clean".
-    if (result.ok) rows.push(issueRow(result));
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: result.dataGuid ? "Validated data element" : "Validated instance",
-        rows,
-        validation: toValidation(result, dataElements)
-    };
-}
 
 export function App() {
     const [serverConfig, setServerConfig] = useState<ServerConfig | null>(null);

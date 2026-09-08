@@ -369,7 +369,7 @@ server/src
   altinnClient.ts     fetch wrapper: bearer, timeout, never throws on non-2xx
   urls.ts             app url building
 web/src
-  App.tsx             state and wiring
+  App.tsx             state and wiring only, the pure parts live in lib/
   components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, ProcessPanel, RunLog, CopyButton
   lib/curl.ts         a logged step as a curl command
   lib/formats.ts      content types, extensions and base64
@@ -377,6 +377,8 @@ web/src
   lib/fileUpload.ts   reading a picked file into a payload
   lib/payload.ts      where a loaded data element goes in the list
   lib/instanceTemplate.ts  dueBefore and visibleAfter as an instance body
+  lib/logResults.ts   each api result as a run log entry
+  lib/inputs.ts       normalising a pasted instance id and a repeat count
   styles.css          all the styling
 ```
 

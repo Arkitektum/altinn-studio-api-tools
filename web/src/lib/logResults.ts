@@ -1,0 +1,209 @@
+import { processLabel, severityLabel } from "./format";
+import type {
+    AdvanceProcessResult,
+    DataElementSummary,
+    DeleteInstanceResult,
+    ListInstancesResult,
+    LogResult,
+    PdfPreviewResult,
+    ReadDataElementResult,
+    ReadInstanceResult,
+    RunResult,
+    RunStep,
+    ValidateResult
+} from "../types";
+
+/**
+ * Turns each kind of api result into the shape the run log renders, so the log does not need to
+ * know which request produced it. All of it is pure, and `logResults.test.ts` covers it.
+ */
+
+/**
+ * Each request numbers its own steps from 1, so concatenating them needs a renumber to keep the
+ * indexes unique across the whole log entry.
+ */
+export function renumber(steps: RunStep[]): RunStep[] {
+    return steps.map((step, position) => ({ ...step, index: position + 1 }));
+}
+
+/** Summarises a validation response by severity, following Altinn's ValidationIssueSeverity. */
+export function issueRow(result: ValidateResult): { label: string; value: string; tone: "ok" | "warn" | "bad" } {
+    const { errors, warnings, other } = result.counts;
+    return {
+        label: "Issues",
+        tone: errors > 0 ? "bad" : warnings > 0 ? "warn" : "ok",
+        value:
+            result.issues.length === 0
+                ? "none"
+                : [
+                      `${errors} error${errors === 1 ? "" : "s"}`,
+                      `${warnings} warning${warnings === 1 ? "" : "s"}`,
+                      ...(other > 0 ? [`${other} other`] : [])
+                  ].join(", ")
+    };
+}
+
+/**
+ * Prepares a validation result for display: issues sorted by severity, with data element ids
+ * resolved to data type names where the instance read told us what they are.
+ */
+export function toValidation(result: ValidateResult | null, dataElements: DataElementSummary[]): LogResult["validation"] {
+    if (!result?.ok) return undefined;
+    const names = new Map(dataElements.map((element) => [element.id, element.dataType]));
+    const issues = [...result.issues]
+        .sort((a, b) => a.severity - b.severity)
+        .map((issue) => ({
+            severity: issue.severity,
+            severityLabel: severityLabel(issue.severity),
+            description: issue.description ?? "",
+            code: issue.code,
+            field: issue.field,
+            dataElement: issue.dataElementId ? (names.get(issue.dataElementId) ?? issue.dataElementId) : null,
+            source: issue.source
+        }));
+    const instanceGuid = result.instanceGuid;
+    if (!result.dataGuid) return { key: "instance", instanceGuid, scope: "instance", label: "Instance", issues };
+    return {
+        key: `data:${result.dataGuid}`,
+        instanceGuid,
+        scope: "data element",
+        label: names.get(result.dataGuid) ?? result.dataGuid,
+        issues
+    };
+}
+
+/**
+ * Builds the log for a post, folding in the instance read and validation that run automatically
+ * afterwards. They are separate requests but one story, so they share a single log entry.
+ */
+export function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult | null; validation: ValidateResult | null }): LogResult {
+    const rows: LogResult["rows"] = [{ label: "Mode", value: result.mode }];
+    if (result.instanceOwnerPartyId) {
+        rows.push({ label: "Party", value: result.instanceOwnerPartyId });
+    }
+    if (result.instanceGuid) rows.push({ label: "Instance", value: result.instanceGuid });
+    if (followUp.instance?.ok) {
+        rows.push({
+            label: "Data elements",
+            value: String(followUp.instance.dataElements.length)
+        });
+    }
+    if (followUp.instance?.ok && followUp.instance.process) {
+        rows.push({ label: "Task", value: processLabel(followUp.instance.process) });
+    }
+    if (followUp.validation?.ok) rows.push(issueRow(followUp.validation));
+
+    return {
+        ok: result.ok,
+        steps: renumber([...result.steps, ...(followUp.instance?.steps ?? []), ...(followUp.validation?.steps ?? [])]),
+        failedAt: result.failedAt,
+        title: "Posted",
+        rows,
+        instanceUrl: result.instanceUrl,
+        validation: toValidation(followUp.validation, followUp.instance?.dataElements ?? [])
+    };
+}
+
+export function logFromInstances(result: ListInstancesResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Listed instances",
+        rows: [
+            { label: "Party", value: result.instanceOwnerPartyId },
+            ...(result.ok ? [{ label: "Instances", value: String(result.instances.length) }] : [])
+        ]
+    };
+}
+
+export function logFromInstance(result: ReadInstanceResult): LogResult {
+    const rows = [
+        { label: "Party", value: result.instanceOwnerPartyId },
+        { label: "Instance", value: result.instanceGuid }
+    ];
+    if (result.ok) {
+        rows.push({ label: "Data elements", value: String(result.dataElements.length) });
+        if (result.process) rows.push({ label: "Task", value: processLabel(result.process) });
+    }
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Fetched instance",
+        rows,
+        // Offering to open an instance that could not be read would just 404 again.
+        instanceUrl: result.ok ? result.instanceUrl : null
+    };
+}
+
+export function logFromDataElement(result: ReadDataElementResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Fetched data element",
+        rows: [
+            { label: "Data guid", value: result.dataGuid },
+            ...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []),
+            // Binary content comes back base64 encoded, which is worth saying out loud.
+            ...(result.ok && result.encoding === "base64"
+                ? [
+                      {
+                          label: "Bytes",
+                          value: String(Math.ceil(((result.content?.length ?? 0) * 3) / 4))
+                      }
+                  ]
+                : [])
+        ]
+    };
+}
+
+export function logFromAdvance(result: AdvanceProcessResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Advanced process",
+        rows: [{ label: "Instance", value: result.instanceGuid }, ...(result.ok ? [{ label: "Task", value: processLabel(result.process) }] : [])]
+    };
+}
+
+export function logFromDelete(result: DeleteInstanceResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: result.hard ? "Deleted instance" : "Marked instance deleted",
+        rows: [
+            { label: "Party", value: result.instanceOwnerPartyId },
+            { label: "Instance", value: result.instanceGuid },
+            { label: "Delete", value: result.hard ? "hard" : "soft" }
+        ]
+    };
+}
+
+export function logFromPdf(result: PdfPreviewResult, bytes: number): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Rendered pdf",
+        rows: [...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []), { label: "Bytes", value: String(bytes) }]
+    };
+}
+
+export function logFromValidation(result: ValidateResult, dataElements: DataElementSummary[]): LogResult {
+    const rows: LogResult["rows"] = [];
+    if (result.dataGuid) rows.push({ label: "Data guid", value: result.dataGuid });
+    // On a failed request there is no issue list, and "none" would read as "validated clean".
+    if (result.ok) rows.push(issueRow(result));
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: result.dataGuid ? "Validated data element" : "Validated instance",
+        rows,
+        validation: toValidation(result, dataElements)
+    };
+}
