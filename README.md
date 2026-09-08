@@ -115,6 +115,10 @@ After a run the instance guid is carried into the existing instance field, so cr
 
 One option applies to any run: advance process, which calls `PUT .../process/next` to submit the step. The same call sits on its own button in the [Process](#process) panel, for an instance you are not posting to.
 
+**Repeat** next to the post button posts the same payload more than once, for building up test data without clicking the same button ten times. The posts run one after another rather than at once, so the log stays in order and localtest is not hammered, and the button counts them off as "Posting 3 of 10". Each one is read back and validated like any other post, and a failure stops the rest instead of failing the same way another forty times. Up to 50 in one go, which is high enough to be useful and low enough that an extra digit does not run for minutes. Note that the run log keeps the last 25 entries, so a long repeat pushes its own early runs out.
+
+The destination decides what repeating means. Against a new instance it makes that many instances, and against an existing one it posts onto the same instance that many times, aiming each post at the instance you chose rather than at the one the previous post created.
+
 Every post is followed automatically by `GET .../instances/{party}/{guid}` and `GET .../instances/{party}/{guid}/validate`, so the log always shows what Altinn actually stored and whether it validates. Those two requests are appended to the same log entry as the post, and the verdict gains a data element count and an issue summary. The data element select in the Fetch panel is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
 ## Example data
