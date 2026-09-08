@@ -23,7 +23,9 @@ Clicking a row points the whole tool at that instance: what a post adds data to,
 
 An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the post button says otherwise. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
 
-Altinn lists the instances whose process has not ended, so an archived one is not here. There is nowhere to paste a guid either, which means an instance whose process ended in an earlier session cannot be reached from the UI at all; `/api/instances` still takes any guid, see [API](api.md). Within a session it is not a problem, since the guid stays selected after a post even once the process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
+Altinn lists the instances whose process has not ended, so an archived one is not here. **Other instance** at the bottom of the list is the way to one anyway: it reveals a field that takes a guid, or the whole `510001/99d0632c-…` pair as Altinn writes it, in which case the party comes along too. What you reach that way gets the same row as any other, marked "not in the active list", and is just as readable and deletable.
+
+Within a session it rarely comes up, since an instance stays selected after a post even once its process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
 ## Get instance
 

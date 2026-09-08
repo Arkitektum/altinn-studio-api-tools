@@ -20,7 +20,7 @@ Everything is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to
 | Panel                                               | What it is for                                                              |
 | --------------------------------------------------- | --------------------------------------------------------------------------- |
 | [Test user](test-user.md)                           | Getting a token from LocalTest, or pasting one                              |
-| [Target](target.md)                                 | Which app and which party                                                   |
+| [Target](target.md)                                 | Which application and which party                                           |
 | [Payload](payload.md)                               | The data elements to post, from an example, a file, or by hand              |
 | [Posting](posting.md)                               | What a post calls, and max count behaviour                                  |
 | [Instances and Fetch](reading-data-back.md)         | Listing, opening, reading, validating, downloading and deleting an instance |

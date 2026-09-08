@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { partyLabel } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
@@ -23,6 +24,9 @@ interface TargetPanelProps {
     onPickCatalogueApp: (entry: CatalogueApp) => void;
 }
 
+/** The value that stands for "not one of these", revealing the org and app fields. */
+const OTHER = "other";
+
 export function TargetPanel({
     appHost,
     org,
@@ -42,6 +46,28 @@ export function TargetPanel({
     catalogue,
     onPickCatalogueApp
 }: TargetPanelProps) {
+    /**
+     * Which application is targeted, and whether it is being typed rather than picked.
+     *
+     * Derived rather than stored, so that a catalogue arriving after the first render does not
+     * leave a catalogued app looking hand-typed. The one thing worth remembering is an explicit
+     * choice: picking "Other application" with the fields still empty has nothing to derive from.
+     */
+    const [chose, setChose] = useState<"catalogue" | "other" | null>(null);
+    const pair = org && app ? `${org}/${app}` : "";
+    const inCatalogue = catalogue.some((entry) => entry.org === org && entry.app === app);
+    const typing = chose === "other" || (chose === null && Boolean(pair) && !inCatalogue);
+
+    function pick(value: string) {
+        if (value === OTHER) {
+            setChose("other");
+            return;
+        }
+        setChose("catalogue");
+        const entry = catalogue.find((candidate) => `${candidate.org}/${candidate.app}` === value);
+        if (entry) onPickCatalogueApp(entry);
+    }
+
     // Altinn nests subunits under their parent org, so flatten for the picker.
     const flatParties: AppParty[] = parties.flatMap((party) => [party, ...(party.childParties ?? [])]);
 
@@ -72,51 +98,48 @@ export function TargetPanel({
             title="Target"
             aside={metadata ? <span className="badge badge--ok">{metadata.metadata.dataTypes?.length ?? 0} data types</span> : undefined}
         >
-            <div className="field" style={{ marginBottom: 12 }}>
-                <label htmlFor="knownApp">Known app</label>
-                <select
-                    id="knownApp"
-                    value={catalogue.some((e) => e.org === org && e.app === app) ? `${org}/${app}` : ""}
-                    onChange={(event) => {
-                        const entry = catalogue.find((e) => `${e.org}/${e.app}` === event.target.value);
-                        if (entry) onPickCatalogueApp(entry);
-                    }}
-                >
-                    <option value="">Pick a known app, or type below</option>
+            <div className="field">
+                <label htmlFor="application">Application</label>
+                <select id="application" value={typing ? OTHER : inCatalogue ? pair : ""} onChange={(event) => pick(event.target.value)}>
+                    <option value="">{catalogue.length === 0 ? "Nothing in the catalogue" : `Pick one of ${catalogue.length}`}</option>
                     {catalogue.map((entry) => (
                         <option key={`${entry.org}/${entry.app}`} value={`${entry.org}/${entry.app}`}>
                             {entry.org}/{entry.app} → {entry.dataType}
                             {entry.subForms.length > 0 ? ` (+${entry.subForms.length} subform)` : ""}
                         </option>
                     ))}
+                    {/* The catalogue is generated, so an app it has never heard of needs typing. */}
+                    <option value={OTHER}>Other application…</option>
                 </select>
-            </div>
 
-            <div className="grid grid--2">
-                <div className="field">
-                    <label htmlFor="org">Org</label>
-                    <input
-                        id="org"
-                        type="text"
-                        value={org}
-                        onChange={(event) => onOrgChange(event.target.value.trim())}
-                        placeholder="dibk"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                </div>
-                <div className="field">
-                    <label htmlFor="app">App</label>
-                    <input
-                        id="app"
-                        type="text"
-                        value={app}
-                        onChange={(event) => onAppChange(event.target.value.trim())}
-                        placeholder="et-v4"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                </div>
+                {typing ? (
+                    <div className="grid grid--2" style={{ marginTop: 6 }}>
+                        <input
+                            type="text"
+                            value={org}
+                            onChange={(event) => onOrgChange(event.target.value.trim())}
+                            placeholder="dibk"
+                            autoComplete="off"
+                            spellCheck={false}
+                            aria-label="Org"
+                        />
+                        <input
+                            type="text"
+                            value={app}
+                            onChange={(event) => onAppChange(event.target.value.trim())}
+                            placeholder="et-v4"
+                            autoComplete="off"
+                            spellCheck={false}
+                            aria-label="App"
+                        />
+                    </div>
+                ) : null}
+
+                <p className="field__hint">
+                    {typing
+                        ? "Org and app, read once both are filled in. The catalogue's data type suggestions are not available for an app it does not list."
+                        : "The apps the catalogue knows, with the data type each uses for its form data."}
+                </p>
             </div>
 
             {/*

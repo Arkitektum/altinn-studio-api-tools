@@ -18,6 +18,8 @@ interface InstancesPanelProps {
     instanceGuid: string;
     /** Null selects the new instance row, which is what "post creates one" means. */
     onSelect: (instance: InstanceSummary | null) => void;
+    /** A guid typed or pasted, for an instance the active list does not hold. */
+    onSelectTyped: (value: string) => void;
     onDelete: (instance: InstanceSummary, hard: boolean) => void;
     onRefresh: () => void;
     busy: boolean;
@@ -32,6 +34,7 @@ export function InstancesPanel({
     instances,
     instanceGuid,
     onSelect,
+    onSelectTyped,
     onDelete,
     onRefresh,
     busy,
@@ -39,6 +42,8 @@ export function InstancesPanel({
 }: InstancesPanelProps) {
     /** Which row has been armed for deletion, by guid. One at a time. */
     const [confirming, setConfirming] = useState<string | null>(null);
+    /** Whether the guid field is showing, for an instance the list does not hold. */
+    const [typing, setTyping] = useState(false);
     const [hard, setHard] = useState(false);
 
     // A list that changed under a pending confirmation is not the list it was armed against.
@@ -163,7 +168,33 @@ export function InstancesPanel({
                         </div>
                     );
                 })}
+
+                {/* Altinn's active list leaves out an instance whose process has ended, and this
+                    is the way back to one: its guid, or the whole "510001/guid" pair. */}
+                <button
+                    type="button"
+                    className="picklist__item"
+                    aria-current={typing}
+                    onClick={() => setTyping(!typing)}
+                    title="Reach an instance the list does not hold, by its guid"
+                >
+                    <span className="led led--warn" />
+                    <span>Other instance…</span>
+                </button>
             </div>
+
+            {typing && (
+                <input
+                    type="text"
+                    value={instanceGuid}
+                    onChange={(event) => onSelectTyped(event.target.value)}
+                    placeholder="99d0632c-5917-448c-8ab6-a5d3b681376b"
+                    autoComplete="off"
+                    spellCheck={false}
+                    aria-label="Instance guid"
+                    style={{ marginTop: 6 }}
+                />
+            )}
 
             {instances === null && !busy && <p className="field__hint">Nothing listed yet.</p>}
             {instances !== null && instances.length === 0 && (

@@ -3,6 +3,7 @@ import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
+import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
 import {
     logFromAdvance,
@@ -167,6 +168,29 @@ export function App() {
             if (instance) setInstanceOwnerPartyId(instance.instanceOwnerPartyId);
         },
         [instanceGuid, clearValidations, clearPdf, setInstanceGuid, setInstanceOwnerPartyId]
+    );
+
+    /**
+     * An instance reached by its guid rather than by a row, for one the active list leaves out.
+     * A pasted "510001/guid" pair brings its party with it, and a bare guid belongs to the party
+     * already chosen.
+     */
+    const selectTypedInstance = useCallback(
+        (value: string) => {
+            const { partyId, guid } = splitPastedInstanceId(value);
+            selectInstance(
+                guid
+                    ? {
+                          id: `${partyId ?? instanceOwnerPartyId}/${guid}`,
+                          instanceOwnerPartyId: partyId ?? instanceOwnerPartyId,
+                          instanceGuid: guid,
+                          lastChanged: null,
+                          lastChangedBy: null
+                      }
+                    : null
+            );
+        },
+        [instanceOwnerPartyId, selectInstance]
     );
 
     /** A party of its own, since choosing one drops the instance that belonged to the last. */
@@ -643,8 +667,7 @@ export function App() {
 
     const blockers: string[] = [];
     if (!tokenUsable) blockers.push("a valid token");
-    if (!org) blockers.push("an org");
-    if (!app) blockers.push("an app");
+    if (!org || !app) blockers.push("an application");
     if (!instanceOwnerPartyId) blockers.push("an instance owner party id");
     if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
@@ -744,6 +767,7 @@ export function App() {
                             instances={instanceList}
                             instanceGuid={instanceGuid}
                             onSelect={selectInstance}
+                            onSelectTyped={selectTypedInstance}
                             onDelete={(instance, hard) => void removeInstance(instance, hard)}
                             onRefresh={refreshInstances}
                             busy={listing}

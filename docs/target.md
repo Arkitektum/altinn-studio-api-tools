@@ -15,11 +15,13 @@ A result belongs to one org and app, so changing either drops it and reads the n
 
 There is deliberately no link to the app root here. Altinn instantiates from it, so opening it left a new empty instance behind every time, which is rarely what anyone wanted from a link called "open app". To open an instance you actually have, use **Open** on its row in [Instances](reading-data-back.md#instances), or the link on its run log entry. The api still reports the app's url as `appUrl` on `/api/app/metadata` for a caller that wants it.
 
-## Known apps
+## Application
 
-`server/src/appCatalogue.ts` lists 25 known org and app pairs together with the data type each app uses for its form data, generated from the same `altinnStudioApps` registry. Picking an app from the **Known app** dropdown fills in org, app, and the main data type at once, and the app's subform data types become suggestions on any elements you add.
+A select, which is the only way to choose one. `server/src/appCatalogue.ts` lists 25 org and app pairs together with the data type each uses for its form data, generated from the same `altinnStudioApps` registry. Picking one fills in the org, the app and the main data type at once, and that app's subform data types become suggestions on any elements you add.
 
-The catalogue is only a convenience. Once you probe an app, its own `applicationmetadata` takes over.
+**Other application** reveals an org and an app field, for an app the catalogue has never heard of, which is the case for one you have just started building. The read happens as soon as both are filled in, so it costs nothing beyond the typing. What you lose is the catalogue's data type suggestions, which is only a head start: the app's own `applicationmetadata` takes over the moment it is read, catalogued or not.
+
+Whether the fields are showing is worked out rather than remembered, so an app that is in the catalogue does not look hand-typed just because the catalogue had not loaded yet when the page did.
 
 ## Instance owner party
 
@@ -31,7 +33,7 @@ Choosing a party drops the selected instance, since it belonged to the previous 
 
 ## Where a post goes
 
-Not here. Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, or one of the party's instances. The **Will call** line at the bottom of this panel shows the URL either way, and says which of the two it is.
+Not here. Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, one of the party's instances, or **Other instance** for one the list does not hold. The **Will call** line at the bottom of this panel shows the URL either way, and says which of the two it is.
 
 ## Instance template
 

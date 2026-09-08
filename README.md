@@ -27,21 +27,21 @@ The interface has three columns: the test user on the left, the target app, payl
 The quickest path to a full submission, where the user id is the only thing you type:
 
 1. Pick a test user and press **Get token**. The party id is filled in from the token's claim.
-2. Pick `dibk/et-v4` from **Known app**, which fills in org, app and the main data type.
+2. Pick `dibk/et-v4` from **Application**, which fills in the org, the app and the main data type.
 3. Nothing to press: the app is read for you, so the data type and party pickers come from the app itself.
 4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
 5. **New instance** is already selected in Instances, so press **Post**.
 
 The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, preview the receipt pdf, or delete the instance.
 
-By hand instead: type an org and app, probe, pick a party, choose a data type, load an example or a file off disk, and post. If the post button is disabled, the line above it says what is missing.
+For an app the catalogue does not list, pick **Other application** and type the org and app. Everything after that is the same. If the post button is disabled, the line above it says what is missing.
 
 ## What it can do
 
 |                                                                                                        |                                                                                              |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                           | Tokens from LocalTest's own user list, any user id by hand, renew in place, or paste a token |
-| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                 | Reads the app for its data types and parties, and 25 known apps to pick from                 |
+| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                 | 25 applications to pick from or one you type, read for its data types and parties            |
 | [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                               | One card per data element, from a shipped example, a file off disk, or by hand               |
 | [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                               | A new instance or an existing one, read back and validated after every post                  |
 | [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)           | List a party's instances, read and validate, download, load into the payload, delete         |
