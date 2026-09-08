@@ -16,7 +16,8 @@ interface InstancesPanelProps {
     instances: InstanceSummary[] | null;
     /** The instance the rest of the tool is pointed at, so the row can say which one that is. */
     instanceGuid: string;
-    onSelect: (instance: InstanceSummary) => void;
+    /** Null selects the new instance row, which is what "post creates one" means. */
+    onSelect: (instance: InstanceSummary | null) => void;
     onDelete: (instance: InstanceSummary, hard: boolean) => void;
     onRefresh: () => void;
     busy: boolean;
@@ -47,6 +48,32 @@ export function InstancesPanel({
 
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
 
+    /**
+     * The rows to show. An instance whose process has ended leaves Altinn's active list, so the
+     * one being worked on can be absent from it: after a post that advanced the process, for
+     * instance. It gets a row of its own rather than leaving the list with nothing selected while
+     * the post button says otherwise, and it stays deletable and readable.
+     */
+    const listed = instances ?? [];
+    const selectedIsListed = instanceGuid === "" || listed.some((instance) => instance.instanceGuid === instanceGuid);
+    const rows: { instance: InstanceSummary; absent: boolean }[] = [
+        ...(selectedIsListed
+            ? []
+            : [
+                  {
+                      instance: {
+                          id: `${instanceOwnerPartyId}/${instanceGuid}`,
+                          instanceOwnerPartyId,
+                          instanceGuid,
+                          lastChanged: null,
+                          lastChangedBy: null
+                      },
+                      absent: true
+                  }
+              ]),
+        ...listed.map((instance) => ({ instance, absent: false }))
+    ];
+
     return (
         <Panel
             title="Instances"
@@ -60,76 +87,94 @@ export function InstancesPanel({
                 </span>
             }
         >
-            <p className="field__hint" style={{ marginBottom: 12 }}>
-                <span className="method method--get">GET</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/active
-                <br />
-                Listed on its own for the party in Target. Altinn returns the instances whose process has not ended, so an archived one is not here
-                and its guid has to be pasted into Fetch.
+            <p className="field__hint" style={{ marginBottom: 10 }}>
+                What you post to. Pick <strong>New instance</strong> and posting creates one, or pick an instance and posting adds data to that one.
             </p>
 
-            {instances === null && !busy && <p className="field__hint">Nothing listed yet.</p>}
-            {instances !== null && instances.length === 0 && <p className="field__hint">This party has no active instances.</p>}
+            <div className="picklist">
+                {/* The instance that does not exist yet. Selected means the post will create it. */}
+                <button
+                    type="button"
+                    className="picklist__item"
+                    aria-current={instanceGuid === ""}
+                    onClick={() => onSelect(null)}
+                    title="Posting creates a new instance for this party"
+                >
+                    <span className={`led ${instanceGuid === "" ? "led--ok" : "led--bad"}`} />
+                    <span>New instance</span>
+                </button>
 
-            {instances !== null && instances.length > 0 && (
-                <div className="picklist">
-                    {instances.map((instance) => {
-                        const armed = confirming === instance.instanceGuid;
-                        const current = instance.instanceGuid === instanceGuid;
-                        return (
-                            <div key={instance.instanceGuid} style={{ display: "flex", gap: 6 }}>
-                                {/* Selecting points the whole tool at it: Fetch, Process and the existing destination. */}
-                                <button
-                                    type="button"
-                                    className="picklist__item"
-                                    style={{ flex: 1 }}
-                                    aria-current={current}
-                                    onClick={() => onSelect(instance)}
-                                    title={instance.id}
-                                >
-                                    <span className={`led ${current ? "led--ok" : "led--warn"}`} />
-                                    <span>{instanceLabel(instance)}</span>
-                                </button>
+                {rows.map(({ instance, absent }) => {
+                    const armed = confirming === instance.instanceGuid;
+                    const current = instance.instanceGuid === instanceGuid;
+                    return (
+                        <div key={instance.instanceGuid} style={{ display: "flex", gap: 6 }}>
+                            {/* Selecting points the whole tool at it: Fetch, Process and the existing destination. */}
+                            <button
+                                type="button"
+                                className="picklist__item"
+                                style={{ flex: 1 }}
+                                aria-current={current}
+                                onClick={() => onSelect(instance)}
+                                title={instance.id}
+                            >
+                                <span className={`led ${current ? "led--ok" : "led--warn"}`} />
+                                <span>
+                                    {instanceLabel(instance)}
+                                    {absent ? " · not in the active list" : ""}
+                                </span>
+                            </button>
 
-                                <a
-                                    href={`${base}/#/instance/${instance.instanceOwnerPartyId}/${instance.instanceGuid}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn btn--ghost btn--tiny"
-                                    title="Open it in the app, which needs a LocalTest session in the browser"
-                                >
-                                    Open
-                                </a>
+                            <a
+                                href={`${base}/#/instance/${instance.instanceOwnerPartyId}/${instance.instanceGuid}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn--ghost btn--tiny"
+                                title="Open it in the app, which needs a LocalTest session in the browser"
+                            >
+                                Open
+                            </a>
 
-                                {armed ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            className="btn btn--danger btn--armed btn--tiny"
-                                            onClick={() => onDelete(instance, hard)}
-                                            disabled={busy}
-                                        >
-                                            Confirm {hard ? "hard" : "soft"} delete
-                                        </button>
-                                        <button type="button" className="btn btn--ghost btn--tiny" onClick={() => setConfirming(null)}>
-                                            Cancel
-                                        </button>
-                                    </>
-                                ) : (
+                            {armed ? (
+                                <>
                                     <button
                                         type="button"
-                                        className="btn btn--ghost btn--tiny btn--danger"
-                                        onClick={() => setConfirming(instance.instanceGuid)}
+                                        className="btn btn--danger btn--armed btn--tiny"
+                                        onClick={() => onDelete(instance, hard)}
                                         disabled={busy}
-                                        aria-label={`Delete instance ${instance.instanceGuid}`}
                                     >
-                                        Delete
+                                        Confirm {hard ? "hard" : "soft"} delete
                                     </button>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                                    <button type="button" className="btn btn--ghost btn--tiny" onClick={() => setConfirming(null)}>
+                                        Cancel
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="btn btn--ghost btn--tiny btn--danger"
+                                    onClick={() => setConfirming(instance.instanceGuid)}
+                                    disabled={busy}
+                                    aria-label={`Delete instance ${instance.instanceGuid}`}
+                                >
+                                    Delete
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {instances === null && !busy && <p className="field__hint">Nothing listed yet.</p>}
+            {instances !== null && instances.length === 0 && (
+                <p className="field__hint">Nothing else here: this party has no active instances to add data to.</p>
             )}
+
+            <p className="field__hint" style={{ marginTop: 10 }}>
+                <span className="method method--get">GET</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/active
+                <br />
+                Listed on its own for the party in Target. Altinn returns the instances whose process has not ended, so an archived one is not here.
+            </p>
 
             {instances !== null && instances.length > 0 && (
                 <label className="check" style={{ marginTop: 12 }}>

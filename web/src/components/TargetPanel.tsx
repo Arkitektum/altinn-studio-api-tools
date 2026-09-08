@@ -1,7 +1,7 @@
 import { partyLabel } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { AppMetadataResponse, AppParty, CatalogueApp, RunMode } from "../types";
+import type { AppMetadataResponse, AppParty, CatalogueApp } from "../types";
 
 interface TargetPanelProps {
     appHost: string;
@@ -12,8 +12,6 @@ interface TargetPanelProps {
     instanceOwnerPartyId: string;
     onPartyChange: (next: string) => void;
     instanceGuid: string;
-    mode: RunMode;
-    onModeChange: (next: RunMode) => void;
     metadata: AppMetadataResponse | null;
     parties: AppParty[];
     onProbe: () => void;
@@ -25,23 +23,6 @@ interface TargetPanelProps {
     onPickCatalogueApp: (entry: CatalogueApp) => void;
 }
 
-/**
- * Two destinations. The api also takes `sequential`, which posts each data element in its own
- * request, but it did the same thing as multipart with a longer log, so it is not offered here.
- */
-const MODES: { value: RunMode; label: string; note: string }[] = [
-    {
-        value: "multipart",
-        label: "New instance",
-        note: "One multipart POST /instances carrying the instance plus every data element."
-    },
-    {
-        value: "existing",
-        label: "Existing instance",
-        note: "Skips creation and upserts the data elements on an instance you already have."
-    }
-];
-
 export function TargetPanel({
     appHost,
     org,
@@ -51,8 +32,6 @@ export function TargetPanel({
     instanceOwnerPartyId,
     onPartyChange,
     instanceGuid,
-    mode,
-    onModeChange,
     metadata,
     parties,
     onProbe,
@@ -82,14 +61,11 @@ export function TargetPanel({
 
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
-    const preview =
-        mode === "existing"
-            ? `${base}/instances/${party}/${instanceGuid || "{instanceGuid}"}/data?dataType=…`
-            : mode === "multipart"
-              ? `${base}/instances  (multipart, ${elementCount} part${elementCount === 1 ? "" : "s"} + instance)`
-              : `${base}/instances?instanceOwnerPartyId=${party}`;
-
-    const activeMode = MODES.find((entry) => entry.value === mode);
+    // An instance selected in Instances means the data goes onto it, and none means the post
+    // creates one. There is no separate destination to read.
+    const preview = instanceGuid
+        ? `${base}/instances/${party}/${instanceGuid}/data?dataType=…`
+        : `${base}/instances  (multipart, ${elementCount} part${elementCount === 1 ? "" : "s"} + instance)`;
 
     return (
         <Panel
@@ -195,46 +171,12 @@ export function TargetPanel({
                 </p>
             </div>
 
-            <div style={{ marginTop: 16 }}>
-                <span className="legend">Destination</span>
-                <div className="tabs" role="tablist" aria-label="Destination">
-                    {MODES.map((entry) => (
-                        <button
-                            key={entry.value}
-                            type="button"
-                            role="tab"
-                            aria-selected={mode === entry.value}
-                            onClick={() => onModeChange(entry.value)}
-                        >
-                            {entry.label}
-                        </button>
-                    ))}
-                </div>
-                {activeMode && (
-                    <p className="field__hint" style={{ marginTop: 0 }}>
-                        {activeMode.note}
-                    </p>
-                )}
-
-                {/* No guid field: an instance is chosen by its row in Instances, just below. */}
-                {mode === "existing" && (
-                    <p className="field__hint" style={{ marginTop: 6 }}>
-                        {instanceGuid ? (
-                            <>
-                                Posting onto <span style={{ color: "var(--accent)" }}>{instanceGuid}</span>. Pick another in Instances below.
-                            </>
-                        ) : (
-                            "Pick an instance in Instances below."
-                        )}
-                    </p>
-                )}
-            </div>
-
             <div style={{ marginTop: 14 }}>
                 <span className="legend">Will call</span>
                 <pre className="dump" style={{ margin: 0 }}>
                     <span className="method method--post">POST</span> {preview}
                 </pre>
+                <p className="field__hint">{instanceGuid ? "Onto the instance selected in Instances." : "Creating a new instance."}</p>
             </div>
         </Panel>
     );

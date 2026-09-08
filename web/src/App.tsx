@@ -4,7 +4,6 @@ import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { bytesFromBase64 } from "./lib/formats";
-import { offeredMode } from "./lib/inputs";
 import {
     logFromAdvance,
     logFromDataElement,
@@ -69,9 +68,6 @@ export function App() {
     const [instanceGuid, setInstanceGuid] = useLocalStorage("instanceGuid", "");
     // The party value this session last filled in from a token claim. See the effect below.
     const [autoFilledParty, setAutoFilledParty] = useLocalStorage<string | null>("partyAutoFilledFrom", null);
-    const [storedMode, setMode] = useLocalStorage<RunMode>("mode", "multipart");
-    // Normalised, so a "sequential" saved before that destination was dropped still selects.
-    const mode = offeredMode(storedMode);
     const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>("dataElements", [EMPTY_ELEMENT]);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
 
@@ -650,11 +646,17 @@ export function App() {
     if (!org) blockers.push("an org");
     if (!app) blockers.push("an app");
     if (!instanceOwnerPartyId) blockers.push("an instance owner party id");
-    if (mode === "existing" && !instanceGuid) blockers.push("an instance picked in Instances");
     if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
+
+    /**
+     * Where a post goes, which is not a setting: an instance selected in Instances means the data
+     * is added to it, and the new instance row means the post creates one. Two controls could
+     * disagree, and this one cannot.
+     */
+    const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
@@ -713,8 +715,6 @@ export function App() {
                         instanceOwnerPartyId={instanceOwnerPartyId}
                         onPartyChange={changeParty}
                         instanceGuid={instanceGuid}
-                        mode={mode}
-                        onModeChange={setMode}
                         catalogue={catalogue}
                         onPickCatalogueApp={(entry) => {
                             setOrg(entry.org);
@@ -783,7 +783,11 @@ export function App() {
                                     disabled={running || blockers.length > 0}
                                 >
                                     {running && <span className="btn__spinner" />}
-                                    {running ? "Posting…" : mode === "existing" ? "Post data to instance" : `Post to ${org || "org"}/${app || "app"}`}
+                                    {running
+                                        ? "Posting…"
+                                        : instanceGuid
+                                          ? `Add data to ${instanceGuid.slice(0, 8)}`
+                                          : `Post a new instance to ${org || "org"}/${app || "app"}`}
                                 </button>
                             </section>
 

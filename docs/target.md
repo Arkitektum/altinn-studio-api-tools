@@ -23,17 +23,15 @@ The catalogue is only a convenience. Once you probe an app, its own `application
 
 ## Instance owner party
 
-A select, above the destination, since everything below depends on it: what the instance list asks about, and who a new instance belongs to.
+A select, since everything below depends on it: what the instance list asks about, and who a new instance belongs to.
 
 It offers the parties the app says this token may instantiate for, with subunits flattened out of Altinn's nesting, so a party that would return 403 is not on the list. There is no field to type one into. The party prefilled from the token's `urn:altinn:partyid` claim is offered too, marked as coming from the token, because it is not always among the instantiable ones and the select would otherwise show no selection at all.
 
 Choosing a party drops the selected instance, since it belonged to the previous one.
 
-## Destination
+## Where a post goes
 
-A switch: a new instance, or one you already have. Described in [Posting](posting.md).
-
-There is no guid field. For the existing instance destination you pick the instance by its row in [Instances](reading-data-back.md#instances), which sits directly below, and the switch says which one is currently selected. The party comes with it, since a listing is per party and a row knows its own.
+Not here. Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, or one of the party's instances. The **Will call** line at the bottom of this panel shows the URL either way, and says which of the two it is.
 
 ## Instance template
 

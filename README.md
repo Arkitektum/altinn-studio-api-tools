@@ -30,7 +30,7 @@ The quickest path to a full submission, where the user id is the only thing you 
 2. Pick `dibk/et-v4` from **Known app**, which fills in org, app and the main data type.
 3. Nothing to press: the app is read for you, so the data type and party pickers come from the app itself.
 4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
-5. Leave the destination on **New instance** and press **Post**.
+5. **New instance** is already selected in Instances, so press **Post**.
 
 The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, preview the receipt pdf, or delete the instance.
 

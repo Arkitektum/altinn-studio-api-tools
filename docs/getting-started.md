@@ -29,7 +29,7 @@ The user id is the only thing you type:
 2. Pick `dibk/et-v4` from **Known app**, which fills in org, app and the main data type.
 3. The app is read for you, so the data type picker and the party picker now come from the app itself.
 4. The first payload element already holds the ET example, loaded when the data type was set. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
-5. Leave the destination on **New instance** and press **Post**.
+5. **New instance** is selected in Instances, so press **Post**.
 
 What you get back is the instance, read and validated automatically, with every request in the run log. From there [read it back](reading-data-back.md), [advance the process](process.md), or preview the receipt pdf.
 
@@ -38,7 +38,7 @@ What you get back is the instance, read and validated automatically, with every 
 1. **Test user.** Pick a user, or choose **Other user id** and type one. See [Test user](test-user.md).
 2. **Target.** Type an org and app, which the tool then reads for its data types and parties, and pick a party the token is allowed to instantiate for. See [Target](target.md).
 3. **Payload.** Choose a data type, then load an example, pick a file off disk, or paste XML or JSON. See [Payload](payload.md).
-4. **Post.** Choose a destination and press the post button. The line above it says what is missing if the button is disabled. See [Posting](posting.md).
+4. **Post.** Pick **New instance** or an existing one in Instances, then press the post button. The line above it says what is missing if the button is disabled. See [Posting](posting.md).
 
 ## Scripts
 

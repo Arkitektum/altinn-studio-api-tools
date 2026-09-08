@@ -69,7 +69,7 @@ web/src
 ## Where state lives
 
 - **Tokens: server memory.** A `Map` in `tokenStore.ts`, pruned when expired. Never written to disk, never sent to the browser.
-- **Everything you typed: `localStorage`.** Org, app, party, instance guid, destination mode and the payload elements, under the `altinn-api-tools:` prefix by `useLocalStorage`. A refresh does not lose your work.
+- **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid and the payload elements, under the `altinn-api-tools:` prefix by `useLocalStorage`. Not the destination, which is derived from whether an instance is selected rather than stored. A refresh does not lose your work.
 - **Everything read back: React state.** The run log, validation results, the instance listing, the process state, the fetched data element and the pdf blob. Reloading drops them, which is correct: they describe a moment.
 
 ## Conventions the UI follows

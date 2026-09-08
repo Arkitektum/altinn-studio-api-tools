@@ -5,18 +5,22 @@ nav_order: 8
 
 # Posting
 
-## Destinations
+## Where a post goes
 
-A switch with two positions:
+There is no destination setting. What a post does follows from what is selected in [Instances](reading-data-back.md#instances):
 
-| Destination           | Calls                                                                                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| **New instance**      | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
-| **Existing instance** | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}` per data element                   |
+| Selected             | Calls                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| **New instance**     | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
+| An existing instance | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}` per data element                   |
 
-The api also takes `mode: "sequential"`, which creates the instance and then posts each data element in its own request. It was a third position on the switch and is not any more: it stored the same thing as multipart with a longer log, and one fewer choice is worth more than the difference. `/api/runs` still accepts it, see [API](api.md).
+The two used to be separate controls, a destination switch and a list, which could disagree: "existing instance" with nothing selected was a state you could be in, and the post button had to explain itself. One selection cannot contradict itself, so the switch is gone and the list carries a **New instance** row at the top instead.
 
-After a run the new instance stays selected, so creating an instance and then posting more data onto it means flicking the switch to **Existing instance**.
+The post button says which of the two it will do, and the **Will call** line in Target shows the URL.
+
+After a post the new instance becomes the selected one, so it is what Fetch, Process and validation now point at, and another post would add data to it. Pick **New instance** again to make a second one.
+
+The api also takes `mode: "sequential"`, which creates the instance and then posts each data element in its own request. It was a third position on the old switch and is not offered any more: it stored the same thing as multipart with a longer log. `/api/runs` still accepts it, see [API](api.md).
 
 ## What happens after every post
 
@@ -39,4 +43,4 @@ The tool detects the existing element and sends `PUT .../data/{dataElementId}` i
 
 ## When the post button is disabled
 
-A line above it says what is missing: a valid token, an org, an app, an instance owner party id, an instance picked in Instances for the existing instance destination, a data type on every element, or content on every element. An element with no content also turns amber in the payload list, so you can see which one it means.
+A line above it says what is missing: a valid token, an org, an app, an instance owner party, a data type on every element, or content on every element. An element with no content also turns amber in the payload list, so you can see which one it means.

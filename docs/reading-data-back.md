@@ -5,7 +5,7 @@ nav_order: 9
 
 # Reading data back
 
-Two panels. **Instances** lists what the party has, so one can be opened or deleted, and **Fetch** reads whichever one is selected.
+Two panels. **Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. **Fetch** reads whichever one that is.
 
 Posting already runs the instance get and validate automatically, so Fetch is for an instance you did not just create. It has no fields of its own: it reads whatever is selected in Instances, and says which party and instance that is.
 
@@ -17,7 +17,11 @@ Every request appears in the run log alongside posts, with method, URL, status, 
 
 There is no button for it. It is one read, and a panel whose whole purpose is showing the list may as well ask for it: the listing runs once there is a token, an app and a party, debounced because the party is typed a character at a time, and attempted once per target so a party that 403s is not retried forever. **Refresh** in the panel header lists again, and a post refreshes it too, since a post either makes an instance or changes one.
 
-Each row is the first eight characters of the guid, when it was last changed and by whom, newest first. Clicking a row points the whole tool at that instance: Fetch, Process, and the existing instance destination. The row for the selected one is marked. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
+The first row is **New instance**, which is not an instance yet: with it selected, posting creates one. Under it come the party's instances, each the first eight characters of its guid, when it was last changed and by whom, newest first.
+
+Clicking a row points the whole tool at that instance: what a post adds data to, and what Fetch, Process and validation read. The selected row is marked.
+
+An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the post button says otherwise. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
 
 Altinn lists the instances whose process has not ended, so an archived one is not here. There is nowhere to paste a guid either, which means an instance whose process ended in an earlier session cannot be reached from the UI at all; `/api/instances` still takes any guid, see [API](api.md). Within a session it is not a problem, since the guid stays selected after a post even once the process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
@@ -45,7 +49,7 @@ Picking another data element, or another instance, drops what is held instead of
 
 **Load into payload** reuses an element that is standing empty rather than adding a second one next to it, and otherwise appends it with the others collapsed, so the loaded element is the one in front of you. The collapsed row and the editor hint both say `instance 99d0632c` where an example file would have named itself, so loaded and shipped content never look alike. A content type parameter is dropped on the way in, so a stored `application/xml; charset=utf-8` does not become an extra option in the picker.
 
-The destination is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick the destination in Target as usual. Posting it back to the same instance needs nothing else: it is still the selected one, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
+The selection is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick in Instances as usual. Posting it back to the same instance needs nothing else: it is still the selected one, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
 
 ## Validate
 
