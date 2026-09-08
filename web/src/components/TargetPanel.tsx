@@ -12,7 +12,6 @@ interface TargetPanelProps {
     instanceOwnerPartyId: string;
     onPartyChange: (next: string) => void;
     instanceGuid: string;
-    onInstanceGuidChange: (next: string) => void;
     mode: RunMode;
     onModeChange: (next: RunMode) => void;
     metadata: AppMetadataResponse | null;
@@ -52,7 +51,6 @@ export function TargetPanel({
     instanceOwnerPartyId,
     onPartyChange,
     instanceGuid,
-    onInstanceGuidChange,
     mode,
     onModeChange,
     metadata,
@@ -67,6 +65,20 @@ export function TargetPanel({
 }: TargetPanelProps) {
     // Altinn nests subunits under their parent org, so flatten for the picker.
     const flatParties: AppParty[] = parties.flatMap((party) => [party, ...(party.childParties ?? [])]);
+
+    /**
+     * What the party select offers. The parties the app says this token may instantiate for,
+     * plus the current value when it is not among them, which happens with a party prefilled
+     * from the token claim before the app has been read, or one the app does not list. Without
+     * that the select would show no selection and there is no longer a field to type in.
+     */
+    const partyOptions: { value: string; label: string }[] = flatParties.map((entry) => ({
+        value: String(entry.partyId),
+        label: partyLabel(entry)
+    }));
+    if (instanceOwnerPartyId && !partyOptions.some((option) => option.value === instanceOwnerPartyId)) {
+        partyOptions.unshift({ value: instanceOwnerPartyId, label: `${instanceOwnerPartyId} · from the token` });
+    }
 
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
@@ -155,6 +167,34 @@ export function TargetPanel({
                 </div>
             ) : null}
 
+            <div className="field" style={{ marginTop: 16 }}>
+                <label htmlFor="party">Instance owner party</label>
+                <select
+                    id="party"
+                    value={instanceOwnerPartyId}
+                    onChange={(event) => onPartyChange(event.target.value)}
+                    disabled={partyOptions.length === 0}
+                >
+                    {partyOptions.length === 0 ? (
+                        <option value="">No parties yet</option>
+                    ) : (
+                        <>
+                            <option value="">Pick one of {partyOptions.length}</option>
+                            {partyOptions.map((entry) => (
+                                <option key={entry.value} value={entry.value}>
+                                    {entry.label}
+                                </option>
+                            ))}
+                        </>
+                    )}
+                </select>
+                <p className="field__hint">
+                    {partyOptions.length === 0
+                        ? "Read from the app, which needs a token and an app above."
+                        : "The parties this token may instantiate for, read from the app."}
+                </p>
+            </div>
+
             <div style={{ marginTop: 16 }}>
                 <span className="legend">Destination</span>
                 <div className="tabs" role="tablist" aria-label="Destination">
@@ -175,52 +215,20 @@ export function TargetPanel({
                         {activeMode.note}
                     </p>
                 )}
-            </div>
 
-            <div className="field" style={{ marginTop: 12 }}>
-                <label htmlFor="party">Instance owner party id</label>
-                {flatParties.length > 0 && (
-                    <select
-                        // Falls back to the empty option when the id was typed by hand rather than picked.
-                        value={flatParties.some((entry) => String(entry.partyId) === instanceOwnerPartyId) ? instanceOwnerPartyId : ""}
-                        onChange={(event) => onPartyChange(event.target.value)}
-                        aria-label="Pick from parties this token may instantiate for"
-                    >
-                        <option value="">Pick one of {flatParties.length} allowed parties</option>
-                        {flatParties.map((entry) => (
-                            <option key={entry.partyId} value={String(entry.partyId)}>
-                                {partyLabel(entry)}
-                            </option>
-                        ))}
-                    </select>
-                )}
-                <input
-                    id="party"
-                    type="text"
-                    value={instanceOwnerPartyId}
-                    onChange={(event) => onPartyChange(event.target.value.trim())}
-                    placeholder="510001"
-                    autoComplete="off"
-                />
-            </div>
-
-            {mode === "existing" && (
-                <div className="field" style={{ marginTop: 12 }}>
-                    <label htmlFor="instanceGuid">Instance guid</label>
-                    <input
-                        id="instanceGuid"
-                        type="text"
-                        value={instanceGuid}
-                        onChange={(event) => onInstanceGuidChange(event.target.value.trim())}
-                        placeholder="99d0632c-5917-448c-8ab6-a5d3b681376b"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                    <p className="field__hint">
-                        Paste the whole <code>510001/99d0632c-…</code> pair and the party id is split out for you.
+                {/* No guid field: an instance is chosen by its row in Instances, just below. */}
+                {mode === "existing" && (
+                    <p className="field__hint" style={{ marginTop: 6 }}>
+                        {instanceGuid ? (
+                            <>
+                                Posting onto <span style={{ color: "var(--accent)" }}>{instanceGuid}</span>. Pick another in Instances below.
+                            </>
+                        ) : (
+                            "Pick an instance in Instances below."
+                        )}
                     </p>
-                </div>
-            )}
+                )}
+            </div>
 
             <div style={{ marginTop: 14 }}>
                 <span className="legend">Will call</span>

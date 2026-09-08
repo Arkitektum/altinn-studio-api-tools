@@ -17,9 +17,9 @@ Results stand on their own. An expired token hides the request panels, because y
 
 ## State that describes one instance is dropped together
 
-Changing the instance guid clears the validation issues, the data element list, the process state and the pdf preview in one go, because all of them described the instance you just left. Stale results are more misleading than absent ones.
+Selecting another instance, or another party, clears the validation issues, the data element list, the process state and the pdf preview in one go, because all of them described the instance you just left. Stale results are more misleading than absent ones.
 
-Everything you typed survives a reload: org, app, party, instance guid, destination and the payload elements with their content all persist in `localStorage`. Tokens do not. They live in server memory and are listed again when the page loads.
+Everything you chose survives a reload: org, app, party, the selected instance, destination and the payload elements with their content all persist in `localStorage`. Tokens do not. They live in server memory and are listed again when the page loads.
 
 ## Colour encodes rather than decorates
 

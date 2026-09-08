@@ -4,7 +4,7 @@ import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { bytesFromBase64 } from "./lib/formats";
-import { offeredMode, splitPastedInstanceId } from "./lib/inputs";
+import { offeredMode } from "./lib/inputs";
 import {
     logFromAdvance,
     logFromDataElement,
@@ -150,26 +150,36 @@ export function App() {
 
     const clearPdf = useCallback(() => showPdf(null), [showPdf]);
 
-    const changeInstanceGuid = useCallback(
-        (value: string) => {
-            const { partyId, guid } = splitPastedInstanceId(value);
-            // Issues describe one instance. Pointing at another one makes them stale, not wrong,
-            // which is the more misleading of the two.
+    /**
+     * Points the tool at an instance, or at none. Everything that described the previous one goes
+     * with it: the validation issues, the data element list, the process state and the pdf. Stale
+     * results are more misleading than absent ones.
+     */
+    const selectInstance = useCallback(
+        (instance: InstanceSummary | null) => {
+            const guid = instance?.instanceGuid ?? "";
             if (guid !== instanceGuid) {
                 clearValidations();
-                // The data element list came from the old instance, so it would offer guids that
-                // are not in this one.
                 setInstanceDataElements([]);
                 setDataGuid("");
                 setFetchedElement(null);
-                // Likewise the process state, which described the instance we just left.
                 setInstanceProcess(null);
                 clearPdf();
             }
             setInstanceGuid(guid);
-            if (partyId) setInstanceOwnerPartyId(partyId);
+            // The party follows the instance, since a listing is per party and a row knows its own.
+            if (instance) setInstanceOwnerPartyId(instance.instanceOwnerPartyId);
         },
         [instanceGuid, clearValidations, clearPdf, setInstanceGuid, setInstanceOwnerPartyId]
+    );
+
+    /** A party of its own, since choosing one drops the instance that belonged to the last. */
+    const changeParty = useCallback(
+        (next: string) => {
+            setInstanceOwnerPartyId(next);
+            if (next !== instanceOwnerPartyId) selectInstance(null);
+        },
+        [instanceOwnerPartyId, setInstanceOwnerPartyId, selectInstance]
     );
 
     // Ticks once a second so token expiry counts down live.
@@ -592,7 +602,7 @@ export function App() {
             // Only clear the fields when they pointed at the instance that just went. Clearing the
             // guid drops the data elements, process and issues along with it, which would be wrong
             // to do while looking at a different instance.
-            if (instanceGuid === result.instanceGuid) changeInstanceGuid("");
+            if (instanceGuid === result.instanceGuid) selectInstance(null);
         } catch (error) {
             setListError(error);
         } finally {
@@ -640,7 +650,7 @@ export function App() {
     if (!org) blockers.push("an org");
     if (!app) blockers.push("an app");
     if (!instanceOwnerPartyId) blockers.push("an instance owner party id");
-    if (mode === "existing" && !instanceGuid) blockers.push("an instance guid");
+    if (mode === "existing" && !instanceGuid) blockers.push("an instance picked in Instances");
     if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
 
@@ -701,9 +711,8 @@ export function App() {
                         onOrgChange={setOrg}
                         onAppChange={setApp}
                         instanceOwnerPartyId={instanceOwnerPartyId}
-                        onPartyChange={setInstanceOwnerPartyId}
+                        onPartyChange={changeParty}
                         instanceGuid={instanceGuid}
-                        onInstanceGuidChange={changeInstanceGuid}
                         mode={mode}
                         onModeChange={setMode}
                         catalogue={catalogue}
@@ -725,7 +734,24 @@ export function App() {
                         elementCount={dataElements.length}
                     />
 
-                    {/* Nothing here can be aimed anywhere without a token and an app. */}
+                    {/* Right under the destination, since choosing one is how you aim at it. */}
+                    {sections.instances && (
+                        <InstancesPanel
+                            appHost={appHost}
+                            org={org}
+                            app={app}
+                            instanceOwnerPartyId={instanceOwnerPartyId}
+                            instances={instanceList}
+                            instanceGuid={instanceGuid}
+                            onSelect={selectInstance}
+                            onDelete={(instance, hard) => void removeInstance(instance, hard)}
+                            onRefresh={refreshInstances}
+                            busy={listing}
+                            error={listError}
+                        />
+                    )}
+
+                    {/* Nothing below can be aimed anywhere without a token and an app. */}
                     {sections.requests && (
                         <>
                             <PayloadPanel
@@ -761,32 +787,12 @@ export function App() {
                                 </button>
                             </section>
 
-                            {sections.instances && (
-                                <InstancesPanel
-                                    appHost={appHost}
-                                    org={org}
-                                    app={app}
-                                    instanceOwnerPartyId={instanceOwnerPartyId}
-                                    instances={instanceList}
-                                    instanceGuid={instanceGuid}
-                                    // Selecting takes the whole "510001/guid" pair, so the party
-                                    // follows the instance rather than being assumed.
-                                    onSelect={(instance) => changeInstanceGuid(instance.id)}
-                                    onDelete={(instance, hard) => void removeInstance(instance, hard)}
-                                    onRefresh={refreshInstances}
-                                    busy={listing}
-                                    error={listError}
-                                />
-                            )}
-
                             <FetchPanel
                                 appHost={appHost}
                                 org={org}
                                 app={app}
                                 instanceOwnerPartyId={instanceOwnerPartyId}
-                                onPartyChange={setInstanceOwnerPartyId}
                                 instanceGuid={instanceGuid}
-                                onInstanceGuidChange={changeInstanceGuid}
                                 dataElements={instanceDataElements}
                                 dataGuid={dataGuid}
                                 onDataGuidChange={changeDataGuid}

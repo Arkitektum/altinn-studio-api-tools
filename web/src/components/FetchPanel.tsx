@@ -8,9 +8,7 @@ interface FetchPanelProps {
     org: string;
     app: string;
     instanceOwnerPartyId: string;
-    onPartyChange: (next: string) => void;
     instanceGuid: string;
-    onInstanceGuidChange: (next: string) => void;
     /** Data elements from the last successful instance read, for the data guid select. */
     dataElements: DataElementSummary[];
     dataGuid: string;
@@ -44,9 +42,7 @@ export function FetchPanel({
     org,
     app,
     instanceOwnerPartyId,
-    onPartyChange,
     instanceGuid,
-    onInstanceGuidChange,
     dataElements,
     dataGuid,
     onDataGuidChange,
@@ -72,35 +68,16 @@ export function FetchPanel({
     return (
         <Panel title="Fetch">
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                Reads whichever instance is selected above, or one you paste the party id and guid for. Posting already reads the instance back and
-                validates it, so these are for an instance you did not just create.
+                Reads whichever instance is selected in Instances above. Posting already reads the instance back and validates it, so these are for an
+                instance you did not just create.
             </p>
 
-            <div className="grid grid--2">
-                <div className="field">
-                    <label htmlFor="fetchParty">Instance owner party id</label>
-                    <input
-                        id="fetchParty"
-                        type="text"
-                        value={instanceOwnerPartyId}
-                        onChange={(event) => onPartyChange(event.target.value.trim())}
-                        placeholder="510001"
-                        autoComplete="off"
-                    />
-                </div>
-                <div className="field">
-                    <label htmlFor="fetchGuid">Instance guid</label>
-                    <input
-                        id="fetchGuid"
-                        type="text"
-                        value={instanceGuid}
-                        onChange={(event) => onInstanceGuidChange(event.target.value.trim())}
-                        placeholder="99d0632c-5917-448c-8ab6-a5d3b681376b"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                </div>
-            </div>
+            <dl className="claims" style={{ marginBottom: 12 }}>
+                <dt>Party</dt>
+                <dd>{instanceOwnerPartyId || "none"}</dd>
+                <dt>Instance</dt>
+                <dd>{instanceGuid || "none selected"}</dd>
+            </dl>
 
             <div className="row" style={{ marginTop: 12 }}>
                 <button type="button" className="btn" onClick={onGetInstance} disabled={busy || !canGetInstance}>

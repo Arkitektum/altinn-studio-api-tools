@@ -21,13 +21,19 @@ There is deliberately no link to the app root here. Altinn instantiates from it,
 
 The catalogue is only a convenience. Once you probe an app, its own `applicationmetadata` takes over.
 
-## Party
+## Instance owner party
 
-The party id is prefilled from the token's claim. Once the app has been probed, the picker above the field lists the parties that token is allowed to instantiate for, with subunits flattened out of Altinn's nesting. A party typed by hand is left alone when you switch token.
+A select, above the destination, since everything below depends on it: what the instance list asks about, and who a new instance belongs to.
+
+It offers the parties the app says this token may instantiate for, with subunits flattened out of Altinn's nesting, so a party that would return 403 is not on the list. There is no field to type one into. The party prefilled from the token's `urn:altinn:partyid` claim is offered too, marked as coming from the token, because it is not always among the instantiable ones and the select would otherwise show no selection at all.
+
+Choosing a party drops the selected instance, since it belonged to the previous one.
 
 ## Destination
 
-A switch: a new instance, or one you already have. Described in [Posting](posting.md). The **Instance guid** field appears for the existing instance destination, and pasting a full `510001/99d0632c-…` pair into it splits the party id out for you, as does picking a row in [Instances](reading-data-back.md#instances).
+A switch: a new instance, or one you already have. Described in [Posting](posting.md).
+
+There is no guid field. For the existing instance destination you pick the instance by its row in [Instances](reading-data-back.md#instances), which sits directly below, and the switch says which one is currently selected. The party comes with it, since a listing is per party and a row knows its own.
 
 ## Instance template
 

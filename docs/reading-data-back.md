@@ -7,7 +7,7 @@ nav_order: 9
 
 Two panels. **Instances** lists what the party has, so one can be opened or deleted, and **Fetch** reads whichever one is selected.
 
-Posting already runs the instance get and validate automatically, so Fetch is for an instance you did not just create. Its party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping.
+Posting already runs the instance get and validate automatically, so Fetch is for an instance you did not just create. It has no fields of its own: it reads whatever is selected in Instances, and says which party and instance that is.
 
 Every request appears in the run log alongside posts, with method, URL, status, timing, and body.
 
@@ -19,7 +19,7 @@ There is no button for it. It is one read, and a panel whose whole purpose is sh
 
 Each row is the first eight characters of the guid, when it was last changed and by whom, newest first. Clicking a row points the whole tool at that instance: Fetch, Process, and the existing instance destination. The row for the selected one is marked. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
 
-Altinn lists the instances whose process has not ended, so an archived one is not here and its guid still has to be pasted into Fetch. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
+Altinn lists the instances whose process has not ended, so an archived one is not here. There is nowhere to paste a guid either, which means an instance whose process ended in an earlier session cannot be reached from the UI at all; `/api/instances` still takes any guid, see [API](api.md). Within a session it is not a problem, since the guid stays selected after a post even once the process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
 ## Get instance
 
@@ -45,7 +45,7 @@ Picking another data element, or another instance, drops what is held instead of
 
 **Load into payload** reuses an element that is standing empty rather than adding a second one next to it, and otherwise appends it with the others collapsed, so the loaded element is the one in front of you. The collapsed row and the editor hint both say `instance 99d0632c` where an example file would have named itself, so loaded and shipped content never look alike. A content type parameter is dropped on the way in, so a stored `application/xml; charset=utf-8` does not become an extra option in the picker.
 
-The destination is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick the destination in Target as usual. Posting it back to the same instance needs nothing else: the party id and guid are already filled in, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
+The destination is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick the destination in Target as usual. Posting it back to the same instance needs nothing else: it is still the selected one, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
 
 ## Validate
 
@@ -59,7 +59,7 @@ The verdict summarises them by severity, for example "1 error, 1 warning, 1 othe
 
 The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. **Open in new tab** gives you the full viewer with print and save, and **Close preview** puts the panel away.
 
-One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and changing the instance guid clears it along with that instance's validation results.
+One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and selecting another instance clears it along with that instance's validation results.
 
 ## Deleting an instance
 

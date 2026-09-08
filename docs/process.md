@@ -7,7 +7,7 @@ nav_order: 10
 
 Where the instance stands, and the button that moves it on. The panel shows the current task and its Altinn task type, when the process started, and when it ended together with the end event once it has. The badge in the header repeats the same thing in one line, so a folded glance is enough.
 
-The state comes out of the instance read rather than from a request of its own, so the panel appears with the first **Get instance** or with the read that follows a post, and it says nothing until then. Changing the instance guid clears it, since it described the instance you just left.
+The state comes out of the instance read rather than from a request of its own, so the panel appears with the first **Get instance** or with the read that follows a post, and it says nothing until then. Selecting another instance clears it, since it described the one you just left.
 
 ## Advancing
 
