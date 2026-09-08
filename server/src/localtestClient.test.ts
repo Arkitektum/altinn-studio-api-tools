@@ -49,27 +49,70 @@ describe("parseTestUsersHtml", () => {
         ]);
     });
 
-    it("leaves out the app dropdown, whose values are not numbers", () => {
+    it("leaves the authentication level dropdown alone", () => {
+        // This is what taking any numeric option value off the page picked up: five levels
+        // offered as people. Its id says nothing about users, so it is not read.
         const html = `
-            <option value="dibk/et-v4">dibk/et-v4</option>
-            <option value="1001">Pengelens Partner</option>`;
+            <select id="AuthenticationLevel" name="AuthenticationLevel">
+                <option value="0">Niv&#xE5; 0</option>
+                <option value="1">Niv&#xE5; 1</option>
+                <option value="2">Niv&#xE5; 2</option>
+                <option value="3">Niv&#xE5; 3</option>
+                <option value="4">Niv&#xE5; 4</option>
+            </select>`;
+
+        assert.deepEqual(parseTestUsersHtml(html), []);
+    });
+
+    it("takes the user select and nothing else from a page holding several", () => {
+        const html = `
+            <select id="AuthenticationLevel"><option value="2">Niv&#xE5; 2</option></select>
+            <select id="AppSelect"><option value="dibk/et-v4">dibk/et-v4</option></select>
+            <select name="userId"><option value="1337">Sophie Salt</option></select>`;
+
+        assert.deepEqual(parseTestUsersHtml(html), [{ userId: "1337", label: "Sophie Salt" }]);
+    });
+
+    it("decodes the entities Razor writes, which is how the Norwegian vowels arrive", () => {
+        const html = `
+            <select id="userSelect">
+                <option value="1">Sm&#xE5;stein &#216;degaard</option>
+                <option value="2">Ola &aring;s</option>
+                <option value="3">Pengelens &amp; Partner</option>
+                <option value="4">Doubly &amp;#xE5; encoded</option>
+            </select>`;
+
+        assert.deepEqual(parseTestUsersHtml(html), [
+            { userId: "1", label: "Småstein Ødegaard" },
+            { userId: "2", label: "Ola ås" },
+            { userId: "3", label: "Pengelens & Partner" },
+            // Decoded once, not twice, so a literal entity in a name stays literal.
+            { userId: "4", label: "Doubly &#xE5; encoded" }
+        ]);
+    });
+
+    it("strips tags out of the label", () => {
+        const html = `<select id="userSelect"><option value="1001"><span>Pengelens Partner</span></option></select>`;
         assert.deepEqual(parseTestUsersHtml(html), [{ userId: "1001", label: "Pengelens Partner" }]);
     });
 
-    it("strips tags and entities out of the label", () => {
-        const html = `<option value="1001"><span>Pengelens &amp; Partner</span></option>`;
-        assert.deepEqual(parseTestUsersHtml(html), [{ userId: "1001", label: "Pengelens & Partner" }]);
-    });
-
     it("keeps the first of a repeated id, and names an option with no text", () => {
-        const html = `<option value="1001">First</option><option value="1001">Again</option><option value="42"></option>`;
+        const html = `
+            <select id="userSelect">
+                <option value="1001">First</option>
+                <option value="1001">Again</option>
+                <option value="42"></option>
+            </select>`;
+
         assert.deepEqual(parseTestUsersHtml(html), [
             { userId: "1001", label: "First" },
             { userId: "42", label: "Test user 42" }
         ]);
     });
 
-    it("finds nothing in a page without a dropdown", () => {
+    it("finds nothing in a page without a user dropdown", () => {
         assert.deepEqual(parseTestUsersHtml("<html><body>LocalTest</body></html>"), []);
+        // Options loose on the page are not read either, since nothing says whose they are.
+        assert.deepEqual(parseTestUsersHtml(`<option value="1001">Pengelens Partner</option>`), []);
     });
 });

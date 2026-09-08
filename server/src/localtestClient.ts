@@ -53,23 +53,60 @@ export function parseTestUsersJson(body: unknown): LocaltestUser[] {
  * Reads the user dropdown off LocalTest's front page.
  *
  * LocalTest has no documented endpoint for its user list, so the page it already renders is the
- * next best source. Only numeric option values are taken, which leaves out the placeholder and
- * the app dropdown's org/app values.
+ * next best source.
+ *
+ * Only a select whose id or name says it holds users is read. Taking any numeric option value
+ * off the page picked up the authentication level dropdown instead, offering "Nivå 0" through
+ * "Nivå 4" as people. A select this does not recognise yields nothing, and the UI then offers
+ * the fallback pair and a typed id, which is the honest outcome.
  */
 export function parseTestUsersHtml(html: string): LocaltestUser[] {
     const users = new Map<string, string>();
-    for (const match of html.matchAll(/<option\b[^>]*\bvalue="(\d+)"[^>]*>([\s\S]*?)<\/option>/gi)) {
-        const userId = match[1];
-        // Tags inside the option, and entities, would otherwise land in the label.
-        const label = (match[2] ?? "")
-            .replace(/<[^>]*>/g, "")
-            .replace(/&amp;/g, "&")
-            .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
-            .replace(/\s+/g, " ")
-            .trim();
-        if (userId && !users.has(userId)) users.set(userId, label || `Test user ${userId}`);
+
+    for (const block of html.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)) {
+        const attributes = block[1] ?? "";
+        if (!/\b(?:id|name)\s*=\s*"[^"]*(?:user|profile)[^"]*"/i.test(attributes)) continue;
+
+        for (const option of (block[2] ?? "").matchAll(/<option\b[^>]*\bvalue="(\d+)"[^>]*>([\s\S]*?)<\/option>/gi)) {
+            const userId = option[1];
+            if (!userId || users.has(userId)) continue;
+            users.set(userId, decodeHtmlText(option[2] ?? "") || `Test user ${userId}`);
+        }
     }
+
     return [...users].map(([userId, label]) => ({ userId, label }));
+}
+
+/** The named entities worth knowing, which for these names means the Norwegian vowels. */
+const ENTITIES: Record<string, string> = {
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    nbsp: " ",
+    aring: "å",
+    Aring: "Å",
+    oslash: "ø",
+    Oslash: "Ø",
+    aelig: "æ",
+    AElig: "Æ"
+};
+
+/** Option text as a person would read it: no tags, no entities, no run of whitespace. */
+function decodeHtmlText(html: string): string {
+    return (
+        html
+            .replace(/<[^>]*>/g, "")
+            // Razor writes å as &#xE5;, so hex numeric entities are the common case here.
+            .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
+            .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
+            .replace(/&([a-z]+);/gi, (whole, name: string) => ENTITIES[name] ?? whole)
+            // Last of the lot, so a doubly encoded &amp;#xE5; is left as text rather than
+            // decoded twice into a character that was never in the name.
+            .replace(/&amp;/g, "&")
+            .replace(/\s+/g, " ")
+            .trim()
+    );
 }
 
 /**
