@@ -1,0 +1,54 @@
+name: Bug report
+description: The tool did something other than what it says it does
+labels: [bug]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              The run log is usually the whole story. **Copy curl** on the step that failed gives the
+              exact request, with the token already replaced by `$TOKEN`, so there is nothing to
+              redact and nothing to describe twice.
+
+    - type: textarea
+      id: what
+      attributes:
+          label: What happened, and what you expected instead
+      validations:
+          required: true
+
+    - type: textarea
+      id: request
+      attributes:
+          label: The failing step
+          description: Copy curl on it, plus the status and the message the app gave back.
+          render: bash
+      validations:
+          required: false
+
+    - type: input
+      id: target
+      attributes:
+          label: Which app
+          description: Org and app, and the data type if it is about one.
+          placeholder: dibk/et-v4, ET
+      validations:
+          required: false
+
+    - type: textarea
+      id: setup
+      attributes:
+          label: Setup
+          description: |
+              Anything that is not the defaults: a commit or branch other than main, a Node version,
+              ports other than 8000 and 5101, or an `ALTINN_EXAMPLE_DATA_DIR` of your own.
+      validations:
+          required: false
+
+    - type: checkboxes
+      id: header
+      attributes:
+          label: The header
+          description: The three status dots rule out most of what looks like a bug in the tool.
+          options:
+              - label: The app host and LocalTest dots were green
+              - label: The token was still valid, not counted down to expired

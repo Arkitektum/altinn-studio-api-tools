@@ -1,0 +1,7 @@
+# Blank issues stay on. The two forms are for the common cases, not a gate: an internal tool with
+# a handful of users does not need everything filed on rails.
+blank_issues_enabled: true
+contact_links:
+    - name: Documentation
+      url: https://arkitektum.github.io/altinn-studio-api-tools/
+      about: Each panel, the api, and the environment variables. Worth a look first for behaviour that is deliberate.

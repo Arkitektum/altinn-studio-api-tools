@@ -84,4 +84,10 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 ## Reporting something broken
 
-Include the run log entry. **Copy curl** on the failing step gives the exact request with the token left as `$TOKEN`, which is usually enough to see what happened without a screenshot.
+There is an issue form for it, and one for a feature, under `.github/ISSUE_TEMPLATE/`. Blank issues are still on: the forms are for the common cases, not a gate.
+
+The one thing worth attaching either way is the run log entry. **Copy curl** on the failing step gives the exact request with the token left as `$TOKEN`, which is usually enough to see what happened without a screenshot.
+
+## Opening a pull request
+
+`.github/pull_request_template.md` asks for what changed, why, and a handful of checks. Three of them are what CI runs anyway; the rest are the ones a green build cannot tell you about, such as whether a pure decision ended up in `web/src/lib/` with a test and whether the behaviour that changed is documented.

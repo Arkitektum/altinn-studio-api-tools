@@ -1,0 +1,34 @@
+name: Feature request
+description: Something the tool should do, or should stop making you do
+labels: [enhancement]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Start with the testing you are trying to get done rather than with the control you have
+              in mind. Several of the better changes here replaced the thing that was asked for: a
+              button became automatic, two controls became one, and a panel was dropped instead.
+
+    - type: textarea
+      id: goal
+      attributes:
+          label: What are you trying to do
+          description: The test you are setting up, or the thing you are trying to find out.
+      validations:
+          required: true
+
+    - type: textarea
+      id: today
+      attributes:
+          label: What it takes today
+          description: The steps you go through now, including the ones you do outside the tool.
+      validations:
+          required: false
+
+    - type: textarea
+      id: idea
+      attributes:
+          label: What you had in mind
+          description: Optional. A shape for it, if you have one.
+      validations:
+          required: false
