@@ -8,6 +8,7 @@ import type {
     ExamplesResponse,
     ListInstancesResult,
     LocaltestStatus,
+    LocaltestUsers,
     PdfPreviewResult,
     PublicToken,
     ReadDataElementResult,
@@ -81,6 +82,7 @@ const jsonBody = (value: unknown): RequestInit => ({
 export const api = {
     getConfig: () => request<ServerConfig>("/config"),
     getLocaltestStatus: () => request<LocaltestStatus>("/localtest/status"),
+    getLocaltestUsers: () => request<LocaltestUsers>("/localtest/users"),
 
     getCatalogue: () => request<CatalogueApp[]>("/catalogue"),
     getExamples: () => request<ExamplesResponse>("/examples"),

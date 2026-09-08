@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { z } from "zod";
 import { config } from "./config.js";
 import { appUiUrl } from "./urls.js";
-import { createTestUserToken } from "./localtestClient.js";
+import { createTestUserToken, listTestUsers } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
@@ -98,6 +98,14 @@ router.get(
                 error: error instanceof Error ? error.message : String(error)
             });
         }
+    })
+);
+
+/** The test users LocalTest knows about, so the picker is not a hardcoded pair. */
+router.get(
+    "/localtest/users",
+    asyncHandler(async (_req, res) => {
+        res.json(await listTestUsers());
     })
 );
 

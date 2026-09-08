@@ -1,17 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
 import { describeExpiry, isExpired, summariseClaims } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { LocaltestStatus, PublicToken, ServerConfig } from "../types";
+import type { LocaltestStatus, LocaltestUser, LocaltestUsers, PublicToken, ServerConfig } from "../types";
 
 type Mode = "test-user" | "raw";
 
-/** The LocalTest users we work with. Add an entry to offer another. */
-const TEST_USERS = [
-    { label: "Pengelens Partner", userId: "1001" },
-    { label: "Sophie Salt", userId: "1337" }
+/** Offered when LocalTest tells us nothing about its users. The two we work with. */
+const FALLBACK_USERS: LocaltestUser[] = [
+    { userId: "1001", label: "Pengelens Partner" },
+    { userId: "1337", label: "Sophie Salt" }
 ];
+
+/** The value that stands for "not one of these", revealing the text field. */
+const OTHER = "other";
+
+function describeSource(users: LocaltestUsers | null): string {
+    if (!users || users.source === "none") return "LocalTest offered no list, so these are the two we work with. Any other id can be typed.";
+    return `${users.users.length} test users from LocalTest${users.source === "page" ? ", read off its front page" : ""}.`;
+}
 
 interface TokenPanelProps {
     serverConfig: ServerConfig | null;
@@ -27,8 +35,36 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
     const [mode, setMode] = useState<Mode>("test-user");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<unknown>(null);
-    const [userId, setUserId] = useState(TEST_USERS[0]?.userId ?? "");
+    const [available, setAvailable] = useState<LocaltestUsers | null>(null);
+    const [picked, setPicked] = useState("");
+    /** A user id typed by hand, for a user LocalTest did not offer. */
+    const [typedId, setTypedId] = useState("");
     const [rawToken, setRawToken] = useState("");
+
+    // Asked for once. A LocalTest that starts later is covered by the reload the operator does
+    // anyway to get the status dot green.
+    useEffect(() => {
+        void (async () => {
+            try {
+                setAvailable(await api.getLocaltestUsers());
+            } catch {
+                /* the fallback pair is offered, and any id can still be typed */
+                setAvailable({ source: "none", users: [] });
+            }
+        })();
+    }, []);
+
+    const offered = available && available.users.length > 0 ? available.users : FALLBACK_USERS;
+    const typing = picked === OTHER;
+    const userId = typing ? typedId.trim() : picked;
+
+    /**
+     * Land on the first offered user, and keep the selection valid when the real list replaces
+     * the fallback pair. A selection that is not among the options renders as no selection at all.
+     */
+    useEffect(() => {
+        setPicked((current) => (current === OTHER || offered.some((user) => user.userId === current) ? current : (offered[0]?.userId ?? "")));
+    }, [offered]);
 
     async function submit(event: React.FormEvent) {
         event.preventDefault();
@@ -40,7 +76,7 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
                     ? await api.createTestUserToken({
                           userId,
                           // Names the token after the person, rather than "Test user 1001".
-                          label: TEST_USERS.find((user) => user.userId === userId)?.label
+                          label: offered.find((user) => user.userId === userId)?.label
                       })
                     : await api.createRawToken({ token: rawToken.trim() });
             onActivate(token.id);
@@ -89,17 +125,32 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
                 {mode === "test-user" ? (
                     <div className="field" style={{ marginBottom: 12 }}>
                         <label htmlFor="userId">Test user</label>
-                        <select id="userId" value={userId} onChange={(event) => setUserId(event.target.value)}>
-                            {TEST_USERS.map((user) => (
+                        <select id="userId" value={picked} onChange={(event) => setPicked(event.target.value)}>
+                            {offered.map((user) => (
                                 <option key={user.userId} value={user.userId}>
                                     {user.label} ({user.userId})
                                 </option>
                             ))}
+                            {/* LocalTest mints a token for any id it knows, listed or not. */}
+                            <option value={OTHER}>Other user id…</option>
                         </select>
+                        {typing && (
+                            <input
+                                type="text"
+                                value={typedId}
+                                onChange={(event) => setTypedId(event.target.value.trim())}
+                                placeholder="1001"
+                                autoComplete="off"
+                                aria-label="Test user id"
+                                style={{ marginTop: 6 }}
+                            />
+                        )}
                         <p className="field__hint">
                             GET {serverConfig?.localtestUrl ?? "http://localhost:5101"}
                             /Home/GetTestUserToken/
-                            <span style={{ color: "var(--accent)" }}>{userId}</span>
+                            <span style={{ color: "var(--accent)" }}>{userId || "{userId}"}</span>
+                            <br />
+                            {describeSource(available)}
                             <br />
                             The party id is read from the token claims and prefilled below.
                         </p>
@@ -121,7 +172,7 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
                     </div>
                 )}
 
-                <button type="submit" className="btn btn--primary" style={{ width: "100%" }} disabled={busy}>
+                <button type="submit" className="btn btn--primary" style={{ width: "100%" }} disabled={busy || (mode === "test-user" && !userId)}>
                     {busy && <span className="btn__spinner" />}
                     {mode === "test-user" ? "Get token" : "Store token"}
                 </button>

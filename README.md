@@ -31,7 +31,11 @@ The header shows a status dot for the app host, for whether LocalTest is answeri
 
 ### Test user
 
-Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The list lives in `TEST_USERS` at the top of `web/src/components/TokenPanel.tsx`, currently Pengelens Partner (1001) and Sophie Salt (1337). Add an entry there to offer another. The stored token is named after the person rather than the id. The token is held in server memory only. The browser receives an opaque id and the decoded claims, never the bearer token itself. The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and it follows the active token when you switch user. A party you typed yourself is left alone, since acting on behalf of another party is a real case. The remaining validity counts down live. A **Paste** tab accepts a token obtained some other way.
+Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The stored token is named after the person rather than the id.
+
+The list comes from LocalTest itself. It has no documented endpoint for its users, so the server tries the json one some versions serve at `/Home/GetTestUsers` and otherwise reads the option list off the front page it already renders, which is where those names are shown anyway. Whichever it was is stated under the picker, since a scraped list deserves to say so. `localtestClient.test.ts` covers both parsers, including the app dropdown's non-numeric values, which are not users.
+
+Where LocalTest offers nothing, the two we work with are offered instead, Pengelens Partner (1001) and Sophie Salt (1337). Either way **Other user id** takes any id by hand, which is the path that depends on no discovery at all: LocalTest mints a token for any user it knows, listed or not. The token is held in server memory only. The browser receives an opaque id and the decoded claims, never the bearer token itself. The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and it follows the active token when you switch user. A party you typed yourself is left alone, since acting on behalf of another party is a real case. The remaining validity counts down live. A **Paste** tab accepts a token obtained some other way.
 
 ### Target
 
@@ -246,6 +250,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/health`                          |                                                                       |
 | `GET`    | `/api/config`                          | Resolved `appHost` and `localtestUrl`                                 |
 | `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                        |
+| `GET`    | `/api/localtest/users`                 | Its test users, with `source` naming where the list came from         |
 | `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms            |
 | `GET`    | `/api/examples`                        | Example files grouped by data type                                    |
 | `GET`    | `/api/examples/file`                   | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml`        |
@@ -330,7 +335,8 @@ server/src
   examples.test.ts
   appCatalogue.ts     generated list of known apps and their data types
   contentTypeGaps.ts  reports content types with no dummy attachment
-  localtestClient.ts  GetTestUserToken
+  localtestClient.ts  GetTestUserToken, and the test user list
+  localtestClient.test.ts
   tokenStore.ts       in-memory token store
   appService.ts       applicationmetadata, parties, content type resolution
   altinnClient.ts     fetch wrapper: bearer, timeout, never throws on non-2xx

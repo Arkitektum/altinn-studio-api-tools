@@ -14,6 +14,17 @@ export interface LocaltestStatus {
     error?: string;
 }
 
+export interface LocaltestUser {
+    userId: string;
+    label: string;
+}
+
+export interface LocaltestUsers {
+    /** Where the list came from. "none" means LocalTest told us nothing and a user id must be typed. */
+    source: "api" | "page" | "none";
+    users: LocaltestUser[];
+}
+
 export type TokenKind = "test-user" | "raw";
 
 export interface PublicToken {
