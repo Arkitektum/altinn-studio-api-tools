@@ -1,30 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { clampRepeat, MAX_REPEAT, splitPastedInstanceId } from "./inputs";
-
-describe("clampRepeat", () => {
-    it("keeps a sensible count as it is", () => {
-        assert.equal(clampRepeat(1), 1);
-        assert.equal(clampRepeat(10), 10);
-        assert.equal(clampRepeat(MAX_REPEAT), MAX_REPEAT);
-    });
-
-    it("holds the line at one, so a run always posts at least once", () => {
-        assert.equal(clampRepeat(0), 1);
-        assert.equal(clampRepeat(-5), 1);
-        assert.equal(clampRepeat(Number.NaN), 1);
-    });
-
-    it("caps a fat-fingered extra digit", () => {
-        assert.equal(clampRepeat(500), MAX_REPEAT);
-        assert.equal(clampRepeat(Number.POSITIVE_INFINITY), MAX_REPEAT);
-    });
-
-    it("rounds, since half a post is not a thing", () => {
-        assert.equal(clampRepeat(2.4), 2);
-        assert.equal(clampRepeat(2.6), 3);
-    });
-});
+import { splitPastedInstanceId } from "./inputs";
 
 describe("splitPastedInstanceId", () => {
     const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";

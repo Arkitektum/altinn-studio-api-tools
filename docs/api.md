@@ -65,7 +65,7 @@ curl -s localhost:4000/api/runs -H 'content-type: application/json' -d "{
 
 A data element takes `dataType` and `content`, plus optionally `encoding` (`utf8` or `base64`), `contentType` and `filename`. Base64 content is decoded before the request goes to Altinn, and `filename` becomes the data element's `Content-Disposition` name, which only attachments want.
 
-`instanceTemplate` is merged into the instance body when creating one, so anything Altinn accepts there can be set, not only the two fields the UI offers. `validate` and `advanceProcess` are booleans that add a validation call and a `process/next` call after the upload.
+`instanceTemplate` is merged into the instance body when creating one, so anything Altinn accepts there can be set, `dueBefore` and `visibleAfter` included. The UI offers none of it, deliberately, so this is the only way to reach it. `validate` and `advanceProcess` are booleans that add a validation call and a `process/next` call after the upload.
 
 ## Failures are results
 

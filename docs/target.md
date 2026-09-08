@@ -31,10 +31,4 @@ Three destinations, described in [Posting](posting.md). The **Instance guid** fi
 
 ## Instance template
 
-Two optional fields, **Due before** and **Visible after**, for the cases where an instance needs a deadline or a date before which it is not visible. Both are local wall clock in the input and go out as UTC.
-
-Leaving them empty is the normal case and sends no template at all, which keeps the simpler request with the party in the query string. Setting either moves the party into the instance body, because the query string form carries nothing else. The **Will call** line says which of the two it will be.
-
-A visible after date in the future warns, since it hides the instance you just made, including from the instance listing in this tool. The fields are not offered for the existing instance destination, where Altinn ignores them.
-
-Altinn's instance template takes more than these two. The api accepts any of it through `instanceTemplate` on `/api/runs`, see [API](api.md), and the UI offers the two that a test run has a use for.
+Not offered here. Altinn takes a `dueBefore` and a `visibleAfter` when an instance is created, and the api still accepts those and anything else Altinn allows through `instanceTemplate` on `/api/runs`, see [API](api.md). The UI had two fields for them and they earned their space: a deadline and a visibility date are not what a test run is usually about, and a `visibleAfter` in the future hides the instance you just made, including from the listing in this tool.

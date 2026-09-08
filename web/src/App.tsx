@@ -4,8 +4,7 @@ import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { bytesFromBase64 } from "./lib/formats";
-import { clampRepeat, MAX_REPEAT, splitPastedInstanceId } from "./lib/inputs";
-import { buildInstanceTemplate, type TemplateFields } from "./lib/instanceTemplate";
+import { splitPastedInstanceId } from "./lib/inputs";
 import {
     logFromAdvance,
     logFromDataElement,
@@ -72,10 +71,6 @@ export function App() {
     const [mode, setMode] = useLocalStorage<RunMode>("mode", "sequential");
     const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>("dataElements", [EMPTY_ELEMENT]);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
-    /** How many times to post the same payload, for building up test data. */
-    const [repeat, setRepeat] = useLocalStorage("repeat", 1);
-    /** Optional instance template. Empty strings mean the field is not sent. */
-    const [template, setTemplate] = useLocalStorage<TemplateFields>("instanceTemplate", { dueBefore: "", visibleAfter: "" });
 
     const [metadata, setMetadata] = useState<AppMetadataResponse | null>(null);
     const [parties, setParties] = useState<AppParty[]>([]);
@@ -94,8 +89,6 @@ export function App() {
     const [validations, setValidations] = useState<ValidationView[]>([]);
     const [running, setRunning] = useState(false);
     const [runError, setRunError] = useState<unknown>(null);
-    /** Which post of a repeat run is in flight. Null when a single post is running. */
-    const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
     /**
      * The rendered pdf, held as a blob url. Only one at a time: rendering again replaces it, and
@@ -367,49 +360,36 @@ export function App() {
 
     async function run() {
         if (!activeTokenId) return;
-        const times = repeatTimes;
-        const instanceTemplate = buildInstanceTemplate(template);
         setRunning(true);
         setRunError(null);
         try {
-            for (let attempt = 0; attempt < times; attempt++) {
-                if (times > 1) setProgress({ done: attempt, total: times });
-                const payload = await api.postRun({
-                    tokenId: activeTokenId,
-                    org,
-                    app,
-                    instanceOwnerPartyId,
-                    mode,
-                    // The guid from the closure, so every repeat posts onto the instance you
-                    // aimed at rather than onto the one the previous repeat created.
-                    ...(mode === "existing" ? { instanceGuid } : {}),
-                    // Only sent when a field is set, and only for a new instance.
-                    ...(mode !== "existing" && instanceTemplate ? { instanceTemplate } : {}),
-                    // Only the wire fields. exampleName and collapsed are UI state.
-                    dataElements: dataElements.map((element) => ({
-                        dataType: element.dataType,
-                        content: element.content,
-                        ...(element.encoding ? { encoding: element.encoding } : {}),
-                        ...(element.contentType ? { contentType: element.contentType } : {}),
-                        ...(element.filename ? { filename: element.filename } : {})
-                    })),
-                    // Validation runs as a follow-up request instead of a step inside the run.
-                    validate: false,
-                    advanceProcess
-                });
-                // Chain naturally into "now post more data to that instance".
-                if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
+            const payload = await api.postRun({
+                tokenId: activeTokenId,
+                org,
+                app,
+                instanceOwnerPartyId,
+                mode,
+                ...(mode === "existing" ? { instanceGuid } : {}),
+                // Only the wire fields. exampleName and collapsed are UI state.
+                dataElements: dataElements.map((element) => ({
+                    dataType: element.dataType,
+                    content: element.content,
+                    ...(element.encoding ? { encoding: element.encoding } : {}),
+                    ...(element.contentType ? { contentType: element.contentType } : {}),
+                    ...(element.filename ? { filename: element.filename } : {})
+                })),
+                // Validation runs as a follow-up request instead of a step inside the run.
+                validate: false,
+                advanceProcess
+            });
+            // Chain naturally into "now post more data to that instance".
+            if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
 
-                appendLog(logFromRun(payload, await followUpAfterPost(payload)));
-
-                // Stop rather than fail the same way another forty times. What ran is in the log.
-                if (!payload.ok) break;
-            }
+            appendLog(logFromRun(payload, await followUpAfterPost(payload)));
         } catch (error) {
             setRunError(error);
         } finally {
             setRunning(false);
-            setProgress(null);
         }
     }
 
@@ -623,7 +603,6 @@ export function App() {
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
-    const repeatTimes = clampRepeat(repeat);
 
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
@@ -684,9 +663,6 @@ export function App() {
                         onInstanceGuidChange={changeInstanceGuid}
                         mode={mode}
                         onModeChange={setMode}
-                        template={template}
-                        onTemplateChange={setTemplate}
-                        now={now}
                         catalogue={catalogue}
                         onPickCatalogueApp={(entry) => {
                             setOrg(entry.org);
@@ -738,38 +714,8 @@ export function App() {
                                     disabled={running || blockers.length > 0}
                                 >
                                     {running && <span className="btn__spinner" />}
-                                    {running
-                                        ? progress
-                                            ? `Posting ${progress.done + 1} of ${progress.total}…`
-                                            : "Posting…"
-                                        : mode === "existing"
-                                          ? `Post data to instance${repeatTimes > 1 ? ` ${repeatTimes} times` : ""}`
-                                          : `Post to ${org || "org"}/${app || "app"}${repeatTimes > 1 ? ` ${repeatTimes} times` : ""}`}
+                                    {running ? "Posting…" : mode === "existing" ? "Post data to instance" : `Post to ${org || "org"}/${app || "app"}`}
                                 </button>
-
-                                {/* For building up test data without clicking the same button ten times. */}
-                                <div className="row" style={{ marginTop: 12, gap: 10 }}>
-                                    <label htmlFor="repeat" style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                                        Repeat
-                                    </label>
-                                    <input
-                                        id="repeat"
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={repeat}
-                                        onChange={(event) => setRepeat(Number(event.target.value.replace(/\D/g, "")) || 1)}
-                                        onBlur={() => setRepeat(repeatTimes)}
-                                        style={{ width: 64 }}
-                                        disabled={running}
-                                    />
-                                    <span className="field__hint" style={{ margin: 0 }}>
-                                        {repeatTimes === 1
-                                            ? `One post. Up to ${MAX_REPEAT} for a pile of test instances.`
-                                            : mode === "existing"
-                                              ? `${repeatTimes} posts onto the same instance, one after another.`
-                                              : `${repeatTimes} instances, one after another. Each is read back and validated, and a failure stops the rest.`}
-                                    </span>
-                                </div>
                             </section>
 
                             <FetchPanel

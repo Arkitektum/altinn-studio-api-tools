@@ -13,8 +13,6 @@ nav_order: 8
 | New instance, all data in one request                | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
 | Existing instance                                    | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}`                                    |
 
-The first row's query string form is what you get with no instance template. With one, the party moves into a json instance body on the same URL, since the query string carries nothing but the party. The multipart row already sends an instance part, so a template just goes in it. See [Instance template](target.md#instance-template).
-
 One request per data element gives the clearest log, since every element has its own step, status and timing. All data in one request is closer to what a real client does, and it is the only way to create an instance and its data in a single call.
 
 After a run the instance guid is carried into the existing instance field, so creating an instance and then posting more data onto it takes two clicks.
@@ -26,14 +24,6 @@ Every post is followed automatically by `GET .../instances/{party}/{guid}` and `
 The data element select in the Fetch panel is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
 **Advance process** is the one option that applies to any run, calling `PUT .../process/next` to submit the step. It runs after the data is stored, and after validation when both are asked for.
-
-## Repeat
-
-**Repeat** next to the post button posts the same payload more than once, for building up test data without clicking the same button ten times. The posts run one after another rather than at once, so the log stays in order and localtest is not hammered, and the button counts them off as "Posting 3 of 10".
-
-Each one is read back and validated like any other post, and a failure stops the rest instead of failing the same way another forty times. Up to 50 in one go, which is high enough to be useful and low enough that an extra digit does not run for minutes. The run log keeps the last 25 entries, so a long repeat pushes its own early runs out.
-
-The destination decides what repeating means. Against a new instance it makes that many instances, and against an existing one it posts onto the same instance that many times, aiming each post at the instance you chose rather than at the one the previous post created.
 
 ## Max count behaviour
 

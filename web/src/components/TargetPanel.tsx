@@ -1,5 +1,4 @@
 import { partyLabel } from "../lib/format";
-import { hidesInstance, type TemplateFields } from "../lib/instanceTemplate";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { AppMetadataResponse, AppParty, CatalogueApp, RunMode } from "../types";
@@ -16,11 +15,6 @@ interface TargetPanelProps {
     onInstanceGuidChange: (next: string) => void;
     mode: RunMode;
     onModeChange: (next: RunMode) => void;
-    /** Optional instance template fields, only sent when creating an instance. */
-    template: TemplateFields;
-    onTemplateChange: (next: TemplateFields) => void;
-    /** For deciding whether a visibleAfter is still in the future. */
-    now: number;
     metadata: AppMetadataResponse | null;
     parties: AppParty[];
     onProbe: () => void;
@@ -62,9 +56,6 @@ export function TargetPanel({
     onInstanceGuidChange,
     mode,
     onModeChange,
-    template,
-    onTemplateChange,
-    now,
     metadata,
     parties,
     onProbe,
@@ -80,17 +71,12 @@ export function TargetPanel({
 
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
-    // With a template the party travels in the instance body instead of the query string, since
-    // the query string form carries nothing else.
-    const hasTemplate = mode !== "existing" && Boolean(template.dueBefore || template.visibleAfter);
     const preview =
         mode === "existing"
             ? `${base}/instances/${party}/${instanceGuid || "{instanceGuid}"}/data?dataType=…`
             : mode === "multipart"
               ? `${base}/instances  (multipart, ${elementCount} part${elementCount === 1 ? "" : "s"} + instance)`
-              : hasTemplate
-                ? `${base}/instances  (instance body with party and template)`
-                : `${base}/instances?instanceOwnerPartyId=${party}`;
+              : `${base}/instances?instanceOwnerPartyId=${party}`;
 
     const activeMode = MODES.find((entry) => entry.value === mode);
 
@@ -147,14 +133,11 @@ export function TargetPanel({
             </div>
 
             {/*
-             * No link to the app root here. Altinn instantiates from it, so opening it left an
-             * empty instance behind every time, and the run log entry and the instance listing
-             * both open an instance you actually have.
-             */}
-            {/*
-             * No button. The probe is two reads that create nothing, so it runs on its own once
-             * there is a token and a target, and the badge in the panel header says when it
-             * landed. The only affordance left is a retry, and only when one failed.
+             * Two buttons deliberately absent. Reading the app is two requests that create
+             * nothing, so it happens on its own and the header badge reports it; the only
+             * affordance left is a retry, and only when one failed. A link to the app root is
+             * gone because Altinn instantiates from it, so it left an empty instance behind
+             * every time, and both the run log entry and the instance listing open a real one.
              */}
             {!hasToken && <p className="field__hint">Get a token first, and the app is read automatically.</p>}
 
@@ -227,43 +210,6 @@ export function TargetPanel({
                     <p className="field__hint">
                         Paste the whole <code>510001/99d0632c-…</code> pair and the party id is split out for you.
                     </p>
-                </div>
-            )}
-
-            {/* Ignored when posting onto an instance that already exists, so it is not offered. */}
-            {mode !== "existing" && (
-                <div style={{ marginTop: 16 }}>
-                    <span className="legend">Instance template (optional)</span>
-                    <div className="grid grid--2">
-                        <div className="field">
-                            <label htmlFor="dueBefore">Due before</label>
-                            <input
-                                id="dueBefore"
-                                type="datetime-local"
-                                value={template.dueBefore}
-                                onChange={(event) => onTemplateChange({ ...template, dueBefore: event.target.value })}
-                            />
-                        </div>
-                        <div className="field">
-                            <label htmlFor="visibleAfter">Visible after</label>
-                            <input
-                                id="visibleAfter"
-                                type="datetime-local"
-                                value={template.visibleAfter}
-                                onChange={(event) => onTemplateChange({ ...template, visibleAfter: event.target.value })}
-                            />
-                        </div>
-                    </div>
-                    {hidesInstance(template.visibleAfter, now) ? (
-                        <div className="notice notice--warn" style={{ marginTop: 8 }}>
-                            A visible after date in the future hides the instance until then, including from the instance listing here.
-                        </div>
-                    ) : (
-                        <p className="field__hint">
-                            Sent as the instance body rather than as a party in the query string. Local time, sent as UTC. Leave both empty for the
-                            simpler request.
-                        </p>
-                    )}
                 </div>
             )}
 

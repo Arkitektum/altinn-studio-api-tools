@@ -26,7 +26,6 @@ The resolved `appHost` and `localtestUrl` are shown in the header and available 
 - **25 MB request bodies**, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - **30 second timeout** on calls to Altinn, `REQUEST_TIMEOUT_MS` to change it.
 - **25 runs** kept in the log.
-- **50 posts** per repeat.
 - **Claims are decoded, never verified.** The app that receives the token does that.
 
 ## What is stored where
