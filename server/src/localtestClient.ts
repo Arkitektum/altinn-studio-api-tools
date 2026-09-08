@@ -107,11 +107,35 @@ const ENTITIES: Record<string, string> = {
     AElig: "Æ"
 };
 
+/**
+ * Drops markup, keeping the text between the tags.
+ *
+ * Scanned character by character rather than replaced with a regex. One pass of `/<[^>]*>/g`
+ * over nested or malformed markup leaves a fragment behind, and can even assemble a tag that was
+ * not there: `<scr<x>ipt>` loses `<x>` and becomes `<script>`. Counting depth cannot do that,
+ * since nothing between a `<` and its `>` is ever kept.
+ */
+function stripTags(html: string): string {
+    let text = "";
+    let depth = 0;
+    for (const character of html) {
+        if (character === "<") {
+            depth += 1;
+            continue;
+        }
+        if (character === ">" && depth > 0) {
+            depth -= 1;
+            continue;
+        }
+        if (depth === 0) text += character;
+    }
+    return text;
+}
+
 /** Option text as a person would read it: no tags, no entities, no run of whitespace. */
 function decodeHtmlText(html: string): string {
     return (
-        html
-            .replace(/<[^>]*>/g, "")
+        stripTags(html)
             // Razor writes å as &#xE5;, so hex numeric entities are the common case here.
             .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
             .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))

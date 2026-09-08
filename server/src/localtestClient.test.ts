@@ -149,6 +149,24 @@ describe("parseTestUsersHtml", () => {
         assert.deepEqual(parseTestUsersHtml(html), [{ userId: "1001", label: "Pengelens Partner" }]);
     });
 
+    it("leaves no markup behind, even where one regex pass would assemble a tag", () => {
+        // A single pass of /<[^>]*>/g over <scr<x>ipt> removes <x> and leaves <script>. Depth
+        // counting keeps nothing between a < and its >, so the label cannot come out with either.
+        const html = `<select id="userSelect">
+            <option value="1">Ola<scr<x>ipt>alert(1)</script></option>
+            <option value="2"><b>Kari<i></b>Nordmann</option>
+            <option value="3">Unterminated <span</option>
+        </select>`;
+
+        const users = parseTestUsersHtml(html);
+        assert.equal(users.length, 3);
+        for (const user of users) {
+            assert.equal(user.label.includes("<"), false, `${user.label} still holds markup`);
+            assert.equal(/script/i.test(user.label), false, `${user.label} still holds a tag name`);
+        }
+        assert.equal(users[1]?.label, "KariNordmann");
+    });
+
     it("keeps the first of a repeated id, and names an option with no text", () => {
         const html = `
             <select id="userSelect">

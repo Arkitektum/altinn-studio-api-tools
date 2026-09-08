@@ -5,6 +5,12 @@ on:
         branches: [main]
     pull_request:
 
+# Least privilege, and stated rather than inherited: this workflow reads the code and writes
+# nothing back. Without it the job would get whatever the repository's default token scope is,
+# which is broader than checking out and running npm needs.
+permissions:
+    contents: read
+
 # A new push supersedes the run in flight, so a series of commits does not queue up behind itself.
 concurrency:
     group: ci-${{ github.ref }}
