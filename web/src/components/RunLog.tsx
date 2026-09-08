@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
+import { CopyButton } from "./CopyButton";
 import { Panel } from "./Panel";
 import type { LogEntry, LogResult, RunStep } from "../types";
 
@@ -156,25 +158,36 @@ function Step({ step }: { step: RunStep }) {
                 </div>
             )}
 
-            {hasDetail && (
-                <>
+            <div className="row" style={{ gap: 8, marginTop: 5 }}>
+                {hasDetail && (
                     <button type="button" className="step__toggle" onClick={() => setOpen(!open)}>
                         {open ? "Hide bodies" : "Show bodies"}
                     </button>
-                    {open && (
+                )}
+                {/* A step that made no request has nothing to replay. */}
+                {step.url !== "-" && (
+                    <CopyButton label="Copy curl" title="The request as a curl command, with the token left as $TOKEN" text={() => toCurl(step)} />
+                )}
+            </div>
+
+            {hasDetail && open && (
+                <>
+                    {step.requestPreview !== undefined && (
                         <>
-                            {step.requestPreview !== undefined && (
-                                <>
-                                    <div className="dump__label">Request</div>
-                                    <pre className="dump">{step.requestPreview}</pre>
-                                </>
-                            )}
-                            {step.response !== undefined && step.response !== null && (
-                                <>
-                                    <div className="dump__label">Response</div>
-                                    <pre className="dump">{prettyJson(step.response)}</pre>
-                                </>
-                            )}
+                            <div className="dump__label">
+                                Request
+                                <CopyButton label="Copy" text={step.requestPreview} />
+                            </div>
+                            <pre className="dump">{step.requestPreview}</pre>
+                        </>
+                    )}
+                    {step.response !== undefined && step.response !== null && (
+                        <>
+                            <div className="dump__label">
+                                Response
+                                <CopyButton label="Copy" text={() => prettyJson(step.response)} />
+                            </div>
+                            <pre className="dump">{prettyJson(step.response)}</pre>
                         </>
                     )}
                 </>

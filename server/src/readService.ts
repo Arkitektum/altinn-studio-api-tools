@@ -279,7 +279,7 @@ export async function advanceProcess(token: string, request: ReadRequest): Promi
         "PUT",
         url,
         () => altinnFetch({ url, method: "PUT", token, body: "{}", contentType: "application/json" }),
-        "{}"
+        { preview: "{}" }
     );
 
     return {

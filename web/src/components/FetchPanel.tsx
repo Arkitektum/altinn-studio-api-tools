@@ -1,7 +1,8 @@
 import { instanceLabel } from "../lib/format";
+import { CopyButton } from "./CopyButton";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { DataElementSummary, InstanceSummary } from "../types";
+import type { DataElementSummary, FetchedDataElement, InstanceSummary } from "../types";
 
 interface FetchPanelProps {
     appHost: string;
@@ -21,6 +22,9 @@ interface FetchPanelProps {
     dataElements: DataElementSummary[];
     dataGuid: string;
     onDataGuidChange: (next: string) => void;
+    /** The data element last read back, for the download and copy buttons. */
+    fetched: FetchedDataElement | null;
+    onDownloadDataElement: () => void;
     onGetInstance: () => void;
     onGetDataElement: () => void;
     onValidateInstance: () => void;
@@ -54,6 +58,8 @@ export function FetchPanel({
     dataElements,
     dataGuid,
     onDataGuidChange,
+    fetched,
+    onDownloadDataElement,
     onGetInstance,
     onGetDataElement,
     onValidateInstance,
@@ -195,6 +201,20 @@ export function FetchPanel({
                             <br />
                             <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
                         </p>
+                    )}
+
+                    {/* What came back, as a file rather than as text in the log. */}
+                    {fetched && (
+                        <div className="row" style={{ marginTop: 12 }}>
+                            <button type="button" className="btn" onClick={onDownloadDataElement}>
+                                Download {fetched.filename}
+                            </button>
+                            {/* Copying base64 as text would hand over the encoding, not the file. */}
+                            {fetched.encoding === "utf8" && <CopyButton label="Copy content" text={fetched.content} />}
+                            <span className="field__hint">
+                                {fetched.contentType ?? "unknown type"} · {fetched.size} B
+                            </span>
+                        </div>
                     )}
                 </>
             )}

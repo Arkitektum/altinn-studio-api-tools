@@ -177,9 +177,13 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
                     body: multipartBody,
                     contentType: multipartContentType
                 }),
-            `${JSON.stringify(instanceTemplate, null, 2)}\n\nparts: ${parts
-                .map((part) => `${part.name} (${part.contentType}, ${part.content.length} bytes)`)
-                .join(", ")}`
+            {
+                // A summary rather than the body: the assembled multipart is mostly boundaries.
+                preview: `${JSON.stringify(instanceTemplate, null, 2)}\n\nparts: ${parts
+                    .map((part) => `${part.name} (${part.contentType}, ${part.content.length} bytes)`)
+                    .join(", ")}`,
+                verbatim: false
+            }
         );
         if (!response.ok) {
             return failed(recorder, mode, "Multipart instantiation failed.");
@@ -209,7 +213,7 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
                     body,
                     contentType: body ? "application/json" : undefined
                 }),
-            body
+            { preview: body }
         );
         if (!response.ok) {
             return failed(recorder, mode, "Instance creation failed.");
@@ -259,7 +263,8 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
                         contentType,
                         headers
                     }),
-                preview(element)
+                // Base64 content is logged as a byte count, which is not a body anyone can replay.
+                { preview: preview(element), verbatim: element.encoding !== "base64" }
             );
             if (!dataResponse.ok) {
                 return failed(recorder, mode, `Upload of data element "${element.dataType}" failed.`, at);

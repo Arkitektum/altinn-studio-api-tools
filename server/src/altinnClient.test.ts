@@ -1,6 +1,46 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import { isTextual } from "./altinnClient.js";
+import { afterEach, describe, it } from "node:test";
+import { altinnFetch, isTextual } from "./altinnClient.js";
+
+describe("altinnFetch request headers", () => {
+    const original = globalThis.fetch;
+    afterEach(() => {
+        globalThis.fetch = original;
+    });
+
+    function stub(): void {
+        globalThis.fetch = (async () => new Response("{}", { headers: { "content-type": "application/json" } })) as typeof fetch;
+    }
+
+    it("reports the headers it sent, with the token replaced by a placeholder", async () => {
+        stub();
+
+        const response = await altinnFetch({
+            url: "http://local.altinn.cloud:8000/dibk/et-v4/instances",
+            method: "POST",
+            token: "a-real-token",
+            body: "<ET/>",
+            contentType: "application/xml"
+        });
+
+        // The bearer token never leaves the server, not even into a log entry.
+        assert.equal(response.requestHeaders["authorization"], "Bearer $TOKEN");
+        assert.equal(JSON.stringify(response.requestHeaders).includes("a-real-token"), false);
+        assert.equal(response.requestHeaders["content-type"], "application/xml");
+        assert.equal(response.requestHeaders["accept"], "application/json");
+    });
+
+    it("reports the headers even when the request never got through", async () => {
+        globalThis.fetch = (async () => {
+            throw new Error("connect ECONNREFUSED");
+        }) as typeof fetch;
+
+        const response = await altinnFetch({ url: "http://localhost:1/nothing", token: "a-real-token" });
+
+        assert.equal(response.ok, false);
+        assert.equal(response.requestHeaders["authorization"], "Bearer $TOKEN");
+    });
+});
 
 describe("isTextual", () => {
     it("treats text subtypes and the xml/json family as text", () => {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired, processLabel, severityLabel } from "./lib/format";
+import { bytesFromBase64, downloadContent, suggestedFilename } from "./lib/download";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
@@ -22,6 +23,7 @@ import type {
     DataElementInput,
     DataElementSummary,
     ExampleGroup,
+    FetchedDataElement,
     InstanceSummary,
     ListInstancesResult,
     LocaltestStatus,
@@ -281,6 +283,8 @@ export function App() {
 
     const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
     const [dataGuid, setDataGuid] = useState("");
+    /** The data element last read back, so it can be downloaded or copied rather than reread. */
+    const [fetchedElement, setFetchedElement] = useState<FetchedDataElement | null>(null);
     const [fetching, setFetching] = useState(false);
     const [fetchError, setFetchError] = useState<unknown>(null);
     // Kept apart from fetchError so a refused move is reported in the process panel, not in Fetch.
@@ -298,6 +302,12 @@ export function App() {
     }, []);
 
     const clearValidations = useCallback(() => setValidations([]), []);
+
+    /** Picking another data element drops the held one, which is no longer what is selected. */
+    const changeDataGuid = useCallback((next: string) => {
+        setDataGuid(next);
+        setFetchedElement((current) => (current?.dataGuid === next ? current : null));
+    }, []);
 
     /** Replaces the held preview, revoking the previous blob url so it is not leaked. */
     const showPdf = useCallback((next: PdfPreview | null) => {
@@ -320,6 +330,7 @@ export function App() {
                 // are not in this one.
                 setInstanceDataElements([]);
                 setDataGuid("");
+                setFetchedElement(null);
                 // Likewise the process state, which described the instance we just left.
                 setInstanceProcess(null);
                 clearPdf();
@@ -493,7 +504,7 @@ export function App() {
 
         if (instance?.ok) {
             setInstanceDataElements(instance.dataElements);
-            setDataGuid(instance.dataElements[0]?.id ?? "");
+            changeDataGuid(instance.dataElements[0]?.id ?? "");
             setInstanceProcess(instance.process);
         }
         return { instance, validation };
@@ -568,7 +579,7 @@ export function App() {
             setInstanceProcess(read.process);
             // Preselect one so fetching a data element is a single click.
             if (read.dataElements.length > 0 && !read.dataElements.some((el) => el.id === dataGuid)) {
-                setDataGuid(read.dataElements[0]?.id ?? "");
+                changeDataGuid(read.dataElements[0]?.id ?? "");
             }
         } catch (error) {
             setFetchError(error);
@@ -582,23 +593,47 @@ export function App() {
         setFetching(true);
         setFetchError(null);
         try {
-            appendLog(
-                logFromDataElement(
-                    await api.getDataElement({
-                        tokenId: activeTokenId,
-                        org,
-                        app,
-                        instanceOwnerPartyId,
-                        instanceGuid,
-                        dataGuid
-                    })
-                )
+            const read = await api.getDataElement({
+                tokenId: activeTokenId,
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                dataGuid
+            });
+            appendLog(logFromDataElement(read));
+
+            // Held so it can be saved as a file. A failed read clears it rather than leaving the
+            // previous element looking like the one you just asked for.
+            const summary = instanceDataElements.find((element) => element.id === dataGuid);
+            setFetchedElement(
+                read.ok && read.content !== null
+                    ? {
+                          dataGuid,
+                          dataType: summary?.dataType ?? "data",
+                          filename: suggestedFilename({
+                              dataType: summary?.dataType ?? "data",
+                              filename: summary?.filename ?? null,
+                              contentType: read.contentType
+                          }),
+                          contentType: read.contentType,
+                          encoding: read.encoding,
+                          content: read.content,
+                          size: read.encoding === "base64" ? Math.ceil((read.content.length * 3) / 4) : new Blob([read.content]).size
+                      }
+                    : null
             );
         } catch (error) {
             setFetchError(error);
         } finally {
             setFetching(false);
         }
+    }
+
+    /** Saves the held data element as a file, under the name Altinn stored or the data type. */
+    function downloadDataElement() {
+        if (!fetchedElement) return;
+        downloadContent(fetchedElement.filename, fetchedElement.content, fetchedElement.encoding, fetchedElement.contentType);
     }
 
     async function renderPdf() {
@@ -613,7 +648,7 @@ export function App() {
                 clearPdf();
                 return;
             }
-            const bytes = Uint8Array.from(atob(result.content), (character) => character.charCodeAt(0));
+            const bytes = bytesFromBase64(result.content);
             showPdf({
                 url: URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })),
                 size: result.size,
@@ -798,7 +833,9 @@ export function App() {
                                 onListInstances={() => void listInstances()}
                                 dataElements={instanceDataElements}
                                 dataGuid={dataGuid}
-                                onDataGuidChange={setDataGuid}
+                                onDataGuidChange={changeDataGuid}
+                                fetched={fetchedElement}
+                                onDownloadDataElement={downloadDataElement}
                                 onGetInstance={() => void getInstance()}
                                 onGetDataElement={() => void getDataElement()}
                                 onValidateInstance={() => void runValidation("instance")}

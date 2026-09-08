@@ -28,9 +28,27 @@ export interface AltinnResponse {
     contentType: string | null;
     /** Raw bytes, only when the request asked for them. */
     bytes?: Buffer;
+    /** The headers this request went out with, so a log entry can be replayed. Never the token. */
+    requestHeaders: Record<string, string>;
 }
 
 const MAX_LOGGED_BODY = 200_000;
+
+/**
+ * What goes in the log in place of the bearer token. The token itself never leaves the server,
+ * and the placeholder reads as a shell variable so a copied curl command is a fill-in away from
+ * working.
+ */
+const TOKEN_PLACEHOLDER = "Bearer $TOKEN";
+
+/** The headers as sent, with the token replaced. */
+function reportable(headers: Headers): Record<string, string> {
+    const reported: Record<string, string> = {};
+    headers.forEach((value, key) => {
+        reported[key] = key === "authorization" ? TOKEN_PLACEHOLDER : value;
+    });
+    return reported;
+}
 
 /**
  * Thin fetch wrapper for Altinn endpoints: attaches the bearer token, applies a timeout
@@ -44,6 +62,8 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
     if (request.contentType && request.body !== undefined) {
         headers.set("content-type", request.contentType);
     }
+
+    const requestHeaders = reportable(headers);
 
     let response: Response;
     try {
@@ -65,7 +85,8 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
                     ? `Request to ${request.url} timed out after ${config.requestTimeoutMs} ms.`
                     : `Request to ${request.url} failed: ${reason}`
             },
-            contentType: null
+            contentType: null,
+            requestHeaders
         };
     }
 
@@ -95,7 +116,8 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
             statusText: response.statusText,
             body,
             contentType,
-            bytes
+            bytes,
+            requestHeaders
         };
     }
 
@@ -115,7 +137,8 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
         status: response.status,
         statusText: response.statusText,
         body,
-        contentType
+        contentType,
+        requestHeaders
     };
 }
 

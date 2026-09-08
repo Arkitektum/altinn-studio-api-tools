@@ -92,6 +92,10 @@ export interface RunStep {
     ok: boolean;
     durationMs: number;
     requestPreview?: string;
+    /** Headers the request went out with. The token is a `$TOKEN` placeholder, never the real one. */
+    requestHeaders?: Record<string, string>;
+    /** Whether requestPreview is the exact body sent, so it can be replayed as written. */
+    requestVerbatim?: boolean;
     response?: unknown;
     error?: string;
 }
@@ -224,6 +228,22 @@ export interface ReadDataElementResult {
     /** utf8 for text formats, base64 for a stored binary file. */
     encoding: ExampleEncoding;
     content: string | null;
+}
+
+/**
+ * The data element last read back, held so it can be downloaded or copied. The log shows it too,
+ * but as text in a `pre`, which is not something you can get a file out of.
+ */
+export interface FetchedDataElement {
+    dataGuid: string;
+    dataType: string;
+    /** What a download would be called. */
+    filename: string;
+    contentType: string | null;
+    encoding: ExampleEncoding;
+    content: string;
+    /** Decoded byte count, so the panel can show a size without decoding again. */
+    size: number;
 }
 
 /** A validation issue, ready to render. Ids are resolved to names before it gets here. */

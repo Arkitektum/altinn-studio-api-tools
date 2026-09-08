@@ -79,6 +79,20 @@ Every call in order with method, URL, status, duration, and both bodies, plus a 
 
 Runs are kept rather than replaced. Each one is a row showing what it was, how many steps it took, how long it ran and when, and the newest is open while the rest fold to a single line. Posts, fetches and validations all land here, so a fetch no longer wipes the post you are looking at. **Clear history** empties it, and the last 25 runs are kept.
 
+Every step carries a **Copy curl** button, and each body a **Copy**, since the usual next move after a surprising log entry is handing the request to someone else. The command reads:
+
+```bash
+curl -i -X POST 'http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/{guid}/data?dataType=ET' \
+  -H 'accept: application/json' \
+  -H 'authorization: Bearer $TOKEN' \
+  -H 'content-type: application/xml' \
+  --data-binary '<ET>…</ET>'
+```
+
+The headers are the ones the request actually went out with, recorded by `altinnClient.ts` as it built them, so a data element read carries its `accept: */*` and an upload its real content type. The bearer token is replaced with the literal `$TOKEN` at that point, which is why the browser can be given the headers at all: run `TOKEN=$(…)` first and the command works. `altinnClient.test.ts` covers the substitution.
+
+Two kinds of step cannot be replayed as written, because their logged body is a summary and not the payload: a base64 attachment, which is logged as a byte count, and a multipart instantiation, which is mostly boundaries. Those commands come with a comment saying so and a `--data-binary @body` for you to fill in, rather than quietly posting the summary. `curl.test.ts` covers both shapes.
+
 ## Destinations
 
 | Destination                                          | Calls                                                                                                |
@@ -201,6 +215,8 @@ A listing belongs to one app and one party, so changing either drops it. A party
 
 The party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping. The request goes out with `Accept: */*`, because asking for JSON would stop Altinn returning stored XML. XML comes back verbatim and JSON comes back parsed.
 
+What came back is held, so **Download** saves it as a file and **Copy content** puts the text on the clipboard, rather than leaving it as text in a `pre` to be selected by hand. The download is named after whatever Altinn stored, since an attachment was uploaded under a name someone chose, and otherwise after the data type with an extension from the content type, so `ET` becomes `ET.xml`. Binary content is written from the decoded bytes and offers no copy button, because copying base64 as text hands over the encoding rather than the file. Picking another data element, or another instance, drops what is held instead of offering to download an element you are no longer looking at.
+
 Validation results are listed out rather than left as raw JSON. Issues are grouped by severity with the worst first, each one showing its code, the data type it belongs to, the description and the field path, on a severity coloured card. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code. This appears both for the validation that runs automatically after a post and for the two validate buttons.
 
 **Validate instance** calls `GET /{org}/{app}/instances/{party}/{guid}/validate` and **Validate data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes. The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`.
@@ -311,7 +327,9 @@ server/src
   urls.ts             app url building
 web/src
   App.tsx             state and wiring
-  components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, ProcessPanel, RunLog
+  components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, ProcessPanel, RunLog, CopyButton
+  lib/curl.ts         a logged step as a curl command
+  lib/download.ts     saving a data element as a file
   styles.css          all the styling
 ```
 
