@@ -59,6 +59,12 @@ export function parseTestUsersJson(body: unknown): LocaltestUser[] {
  * off the page picked up the authentication level dropdown instead, offering "Nivå 0" through
  * "Nivå 4" as people. A select this does not recognise yields nothing, and the UI then offers
  * the fallback pair and a typed id, which is the honest outcome.
+ *
+ * LocalTest's own picker offers a user and a party together, as `<optgroup label="Sophie Salt">`
+ * holding one option per party she can act for, valued `1337.501337`, which is user id then
+ * party id. Only the user id is taken, because that is what a token is minted for. The party
+ * comes from the token's own claim, and the app's parties endpoint lists them authoritatively
+ * once the app is probed, so there is nothing to gain by trusting the page for that as well.
  */
 export function parseTestUsersHtml(html: string): LocaltestUser[] {
     const users = new Map<string, string>();
@@ -67,10 +73,19 @@ export function parseTestUsersHtml(html: string): LocaltestUser[] {
         const attributes = block[1] ?? "";
         if (!/\b(?:id|name)\s*=\s*"[^"]*(?:user|profile)[^"]*"/i.test(attributes)) continue;
 
-        for (const option of (block[2] ?? "").matchAll(/<option\b[^>]*\bvalue="(\d+)"[^>]*>([\s\S]*?)<\/option>/gi)) {
-            const userId = option[1];
+        // Groups and options are walked in document order, so an option belongs to the group
+        // above it. The group is the person's plain name, where the option text carries the
+        // party as well, so the group is the better label when there is one.
+        let group = "";
+        const items = /<optgroup\b[^>]*\blabel="([^"]*)"[^>]*>|<option\b[^>]*\bvalue="(\d+)(?:\.\d+)?"[^>]*>([\s\S]*?)<\/option>/gi;
+        for (const item of (block[2] ?? "").matchAll(items)) {
+            if (item[1] !== undefined) {
+                group = decodeHtmlText(item[1]);
+                continue;
+            }
+            const userId = item[2];
             if (!userId || users.has(userId)) continue;
-            users.set(userId, decodeHtmlText(option[2] ?? "") || `Test user ${userId}`);
+            users.set(userId, group || decodeHtmlText(item[3] ?? "") || `Test user ${userId}`);
         }
     }
 

@@ -65,22 +65,55 @@ describe("parseTestUsersHtml", () => {
     });
 
     it("takes UserSelect off the real front page, which holds three selects", () => {
-        // The attributes are as LocalTest writes them, capital Class and all.
+        // Markup as LocalTest writes it: capital Class, a group per person, and one option per
+        // party they can act for, valued userId.partyId.
         const html = `
             <select class="form-control" id="AppPathSelection" name="AppPathSelection">
                 <option value="dibk/et-v4">dibk/et-v4</option>
             </select>
             <select Class="form-control" id="UserSelect" name="UserSelect">
-                <option value="1001">Pengelens Partner</option>
-                <option value="1337">Sophie Salt</option>
+                <optgroup label="Sophie Salt">
+                    <option value="1337.501337">Sophie Salt (Person)</option>
+                    <option value="1337.500000">DDG Fitness AS (Organisation)</option>
+                    <option value="1337.500600">EAS Health Consulting (Organisation)</option>
+                </optgroup>
+                <optgroup label="Pengelens Partner">
+                    <option value="1001.501001">Pengelens Partner (Person)</option>
+                    <option value="1001.510001">Testdepartementet (Organisation)</option>
+                </optgroup>
             </select>
             <select Class="form-control" id="AuthenticationLevel" name="AuthenticationLevel">
                 <option value="2">Niv&#xE5; 2</option>
             </select>`;
 
+        // One entry per user, not one per party: a token is minted for a user. The group names
+        // the person, where the option text would say "Sophie Salt (Person)".
         assert.deepEqual(parseTestUsersHtml(html), [
-            { userId: "1001", label: "Pengelens Partner" },
-            { userId: "1337", label: "Sophie Salt" }
+            { userId: "1337", label: "Sophie Salt" },
+            { userId: "1001", label: "Pengelens Partner" }
+        ]);
+    });
+
+    it("still reads a flat list of users, without groups or party ids", () => {
+        const html = `
+            <select id="UserSelect">
+                <option value="">Select user</option>
+                <option value="1001">Pengelens Partner</option>
+            </select>`;
+
+        assert.deepEqual(parseTestUsersHtml(html), [{ userId: "1001", label: "Pengelens Partner" }]);
+    });
+
+    it("keeps groups apart, so an option is labelled by the person above it", () => {
+        const html = `
+            <select id="UserSelect">
+                <optgroup label="Sm&#xE5;stein &#216;degaard"><option value="42.5042">Sm&#xE5;stein (Person)</option></optgroup>
+                <optgroup label="Ola Nordmann"><option value="43.5043">Ola (Person)</option></optgroup>
+            </select>`;
+
+        assert.deepEqual(parseTestUsersHtml(html), [
+            { userId: "42", label: "Småstein Ødegaard" },
+            { userId: "43", label: "Ola Nordmann" }
         ]);
     });
 
