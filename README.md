@@ -43,6 +43,12 @@ One editor card per data element, holding the data type, the content type, and t
 
 Elements collapse to a single row, so a payload with several of them stays readable. Adding an element collapses the ones already there and leaves the new one open, and **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
 
+**File from disk** takes a file the shipped dummies do not cover, a real pdf or a real GML rather than a placeholder. It is read in the browser: text formats arrive in the editor and stay editable, and anything else becomes base64 that the server decodes before the request goes to Altinn, so what gets stored is byte identical to the file you picked. `fileUpload.test.ts` covers the round trip.
+
+The content type follows the browser's own guess, falling back to the extension where the browser has none, which is the case for `.gml` and `.geojson`. Either way a spelling the app declared wins over an equivalent one it did not, so an app asking for `text/xml` gets `text/xml`. Where nothing the app declares looks like the file, the honest guess is posted and the app is left to refuse it, since that is more informative than quietly relabelling it. The file dialog itself filters to the types the app declares.
+
+Only attachments carry the filename to Altinn. Form data and subforms do not, for the same reason the multipart body is written by hand, see [Why multipart is written by hand](#why-multipart-is-written-by-hand).
+
 The data type picker is grouped as **Main form**, **Sub forms** and **Attachments**, read from the app's `mainFormDataType` and `subFormDataTypes`. Anything the app declares that is not one of those counts as an attachment. Four data types the app produces itself are left out, since they are not something you post: `Signatur`, `FoedselsnummerTiltakshaver`, `Valideringsrapport` and `ref-data-as-pdf`. A hidden type that is already selected on an element stays selectable, so switching between apps never blanks a selection.
 
 Apps that declare neither field fall back to grouping by app logic, where a single-instance form data type is the main form and any other is a subform. `web/src/lib/dataTypeGroups.test.ts` covers both paths.
@@ -165,7 +171,7 @@ Attachment data types are keyed not by data type but by the content types they a
 
 The picker offers the dummies matching the data type's `allowedContentTypes`, in the order the app declares them, so the first declared one is what loads automatically. Where a format has several content type spellings, the file is offered under each and posted as the one the app asked for, so an app declaring `text/xml` gets `text/xml` rather than `application/xml`.
 
-A content type with no dummy is simply not offered. Adding one means dropping a file into the directory and listing its extension in `FORMATS` in `server/src/examples.ts`.
+A content type with no dummy is simply not offered. Adding one means dropping a file into the directory and listing its extension in `FORMATS` in `server/src/examples.ts`. For a one-off, **File from disk** on the element takes any file without it having to be shipped first.
 
 To find out which content types your own apps declare and which of them have no dummy, run this with localtest up:
 
@@ -333,7 +339,9 @@ web/src
   App.tsx             state and wiring
   components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, ProcessPanel, RunLog, CopyButton
   lib/curl.ts         a logged step as a curl command
+  lib/formats.ts      content types, extensions and base64
   lib/download.ts     saving a data element as a file
+  lib/fileUpload.ts   reading a picked file into a payload
   lib/payload.ts      where a loaded data element goes in the list
   styles.css          all the styling
 ```
@@ -359,7 +367,7 @@ The UI is plain and dark only. It uses system fonts with no webfonts to load, a 
 
 Everything is addressed relative to `ALTINN_APP_HOST`, so this tool only talks to a local Altinn. It has no knowledge of tt02 or production.
 
-Data elements are sent as text, either JSON or XML. Binary upload is not wired into the UI, although `runService` accepts a `filename` and sets `Content-Disposition` when one is given.
+Files travel as base64 inside a json request, and the server parses bodies up to 25 MB, so the file picker refuses anything over 15 MB rather than letting express refuse it less clearly.
 
 Token claims are decoded for display only. The signature is never verified here, because the app does that.
 

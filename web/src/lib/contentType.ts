@@ -11,6 +11,20 @@ export function preferredContentType(declared: string[]): string | undefined {
 }
 
 /**
+ * Content types that are safe to hand around as UTF-8 text. Mirrors isTextual on the server.
+ *
+ * Matched on the subtype rather than by substring, because a substring test for "xml" also
+ * matches the office packages, which are zips. Reading one of those as text corrupts the file.
+ */
+export function isTextual(contentType: string | null): boolean {
+    if (!contentType) return false;
+    const type = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+    if (type.startsWith("text/")) return true;
+    if (type === "application/json" || type === "application/xml") return true;
+    return type.endsWith("+json") || type.endsWith("+xml");
+}
+
+/**
  * Options for the content type select. A value set before the app was probed stays selectable
  * even if the app does not declare it, so switching to a probed app never silently drops it.
  */

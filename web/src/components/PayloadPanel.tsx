@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { contentTypeOptions, preferredContentType } from "../lib/contentType";
 import { dataTypeKindOf, groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
 import { exampleOptionsFor } from "../lib/exampleOptions";
+import { readPickedFile } from "../lib/fileUpload";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
 import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup } from "../types";
@@ -55,8 +57,39 @@ export function PayloadPanel({
     advanceProcess,
     onAdvanceProcessChange
 }: PayloadPanelProps) {
+    /** Per element, since one element failing to read says nothing about the others. */
+    const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
+
     function update(index: number, patch: Partial<DataElementInput>) {
         onChange(dataElements.map((element, i) => (i === index ? { ...element, ...patch } : element)));
+    }
+
+    function noteFileError(index: number, message: string | null) {
+        setFileErrors((current) => {
+            const next = { ...current };
+            if (message === null) delete next[index];
+            else next[index] = message;
+            return next;
+        });
+    }
+
+    /** Reads a file off disk into the element, the way the example picker loads a shipped one. */
+    async function pickFile(index: number, file: File, target: { allowed: string[]; isAttachment: boolean }) {
+        noteFileError(index, null);
+        try {
+            const picked = await readPickedFile(file, target.allowed);
+            update(index, {
+                content: picked.content,
+                encoding: picked.encoding,
+                contentType: picked.contentType,
+                // Altinn stores this as the data element filename, which an attachment wants and
+                // form data does not, the same rule the example picker follows.
+                ...(target.isAttachment ? { filename: picked.filename } : { filename: undefined }),
+                exampleName: picked.filename
+            });
+        } catch (error) {
+            noteFileError(index, error instanceof Error ? error.message : String(error));
+        }
     }
 
     /**
@@ -277,6 +310,38 @@ export function PayloadPanel({
                                         })
                                     }
                                 />
+                            </div>
+
+                            {/* For the file that is not among the shipped dummies. */}
+                            <div className="field">
+                                <label htmlFor={`file-${index}`}>File from disk</label>
+                                <input
+                                    id={`file-${index}`}
+                                    type="file"
+                                    // Offer what the app declares, so the dialog filters to it.
+                                    accept={known?.allowedContentTypes?.join(",") || undefined}
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        // Clear the input so picking the same file again re-reads it.
+                                        event.target.value = "";
+                                        if (file) {
+                                            void pickFile(index, file, {
+                                                allowed: known?.allowedContentTypes ?? [],
+                                                isAttachment: kind !== "main" && kind !== "sub"
+                                            });
+                                        }
+                                    }}
+                                />
+                                {fileErrors[index] ? (
+                                    <div className="notice notice--bad" style={{ marginTop: 7 }}>
+                                        {fileErrors[index]}
+                                    </div>
+                                ) : (
+                                    <p className="field__hint">
+                                        Read in the browser. Text formats stay editable below, and anything else travels as base64 and is decoded
+                                        before the request goes out.
+                                    </p>
+                                )}
                             </div>
 
                             <div className="field">
