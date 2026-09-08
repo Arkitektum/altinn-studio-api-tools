@@ -1,0 +1,239 @@
+// Loaded last by just-the-docs, for the things a colour scheme cannot say.
+//
+// The aim is the same as the tool's: system fonts, hairline borders, one accent, no decoration.
+// Anything here is either matching the app or undoing a flourish.
+
+:root {
+    --altinn-bg: #1c1e21;
+    --altinn-bg-subtle: #24272b;
+    --altinn-bg-inset: #191b1e;
+    --altinn-border: #34383d;
+    --altinn-text: #e4e6e9;
+    --altinn-muted: #a2a9b1;
+    --altinn-faint: #7d848c;
+    --altinn-accent: #7dabdd;
+    --altinn-accent-bg: #222f3c;
+    --altinn-accent-border: #35506b;
+
+    // Dark native controls and scrollbars, without restyling them.
+    color-scheme: dark;
+}
+
+// System fonts rather than a webfont to load, matching the app.
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+code,
+pre,
+kbd,
+.highlight {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+// Headings: weight and spacing do the work, so they need no colour of their own.
+.main-content {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    // A rule under the section headings, so a long page has visible joins.
+    h2 {
+        margin-top: 2rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid var(--altinn-border);
+        font-size: 1.15rem;
+    }
+
+    h3 {
+        margin-top: 1.5rem;
+        font-size: 1rem;
+    }
+
+    p,
+    li {
+        line-height: 1.6;
+    }
+}
+
+// Links are the accent, underlined on hover only, as in the app.
+.main-content a,
+.site-title,
+.site-footer a {
+    color: var(--altinn-accent);
+    text-decoration: none;
+}
+
+.main-content a:hover {
+    text-decoration: underline;
+}
+
+// Inline code reads as a value, not as a badge.
+.main-content code {
+    padding: 0.1em 0.35em;
+    color: var(--altinn-text);
+    background-color: var(--altinn-bg-inset);
+    border: 1px solid var(--altinn-border);
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.main-content div.highlighter-rouge,
+.main-content pre.highlight,
+.main-content figure.highlight {
+    background-color: var(--altinn-bg-inset);
+    border: 1px solid var(--altinn-border);
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+// A code block's own code needs no second border.
+.main-content pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+// Tables carry most of the reference material here, so they get hairlines and a plain header
+// rather than the theme's shadowed card.
+.main-content table {
+    border: 1px solid var(--altinn-border);
+    border-collapse: collapse;
+    border-radius: 5px;
+    box-shadow: none;
+    display: table;
+    width: 100%;
+    font-size: 0.8rem;
+
+    th,
+    td {
+        border-bottom: 1px solid var(--altinn-border);
+        border-left: 0;
+        padding: 0.5rem 0.7rem;
+        background-color: transparent;
+    }
+
+    thead th {
+        color: var(--altinn-muted);
+        font-weight: 600;
+        border-bottom: 1px solid var(--altinn-border);
+        background-color: var(--altinn-bg-subtle);
+    }
+
+    tbody tr:last-child td {
+        border-bottom: 0;
+    }
+}
+
+// Sidebar: quieter than the content, with the current page in the accent rather than in a slab.
+.side-bar {
+    background-color: var(--altinn-bg-inset);
+    border-right: 1px solid var(--altinn-border);
+}
+
+.site-header {
+    border-bottom: 1px solid var(--altinn-border);
+}
+
+.site-title {
+    font-weight: 600;
+}
+
+.nav-list .nav-list-item .nav-list-link {
+    color: var(--altinn-muted);
+    font-size: 0.8rem;
+
+    &:hover {
+        color: var(--altinn-text);
+        background-image: none;
+        background-color: var(--altinn-bg-subtle);
+    }
+
+    &.active {
+        color: var(--altinn-accent);
+        font-weight: 600;
+        background-image: none;
+        background-color: var(--altinn-accent-bg);
+    }
+}
+
+// Search: an input like the app's, and results that do not float.
+.search-input {
+    background-color: var(--altinn-bg-subtle);
+    color: var(--altinn-text);
+    border: 1px solid var(--altinn-border);
+}
+
+.search-input:focus {
+    border-color: var(--altinn-accent);
+}
+
+.search-results {
+    border: 1px solid var(--altinn-border);
+    box-shadow: none;
+}
+
+.search-result-title {
+    color: var(--altinn-muted);
+}
+
+// Blockquotes as a quiet aside, not a coloured banner.
+.main-content blockquote {
+    border-left: 2px solid var(--altinn-accent-border);
+    color: var(--altinn-muted);
+}
+
+.site-footer {
+    color: var(--altinn-faint);
+    font-size: 0.75rem;
+}
+
+// Belt and braces on the accent. The theme's own is purple, and it reaches further than the
+// colour scheme variables do, so the remaining surfaces are named outright.
+.nav-category,
+.aux-nav-list-item a,
+.anchor-heading svg {
+    color: var(--altinn-accent);
+    fill: currentcolor;
+}
+
+.nav-category {
+    border-bottom: 1px solid var(--altinn-border);
+    color: var(--altinn-faint);
+}
+
+.btn,
+.btn-primary {
+    background-color: var(--altinn-bg-subtle);
+    background-image: none;
+    color: var(--altinn-text);
+    border: 1px solid var(--altinn-border);
+    box-shadow: none;
+
+    &:hover {
+        background-color: var(--altinn-accent-bg);
+        border-color: var(--altinn-accent-border);
+        box-shadow: none;
+    }
+}
+
+.search-result-highlight,
+mark {
+    color: var(--altinn-accent);
+    background: none;
+    font-weight: 600;
+}
+
+::selection {
+    background: var(--altinn-accent-bg);
+}

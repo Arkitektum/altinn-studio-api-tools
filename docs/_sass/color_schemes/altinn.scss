@@ -1,0 +1,47 @@
+// The tool's own palette, so the docs and the app it documents look like one thing. The values
+// are copied from the :root block at the top of web/src/styles.css. Muted blue accent, no purple.
+//
+// Every name here is a just-the-docs variable declared with !default, so this file wins. A name
+// that a future version of the theme drops becomes inert rather than breaking the build.
+
+$body-background-color: #1c1e21;
+$sidebar-color: #191b1e;
+$search-background-color: #24272b;
+$table-background-color: #24272b;
+$code-background-color: #191b1e;
+$feedback-color: #24272b;
+$base-button-color: #24272b;
+
+$border-color: #34383d;
+
+$body-text-color: #e4e6e9;
+$body-heading-color: #e4e6e9;
+$nav-child-link-color: #a2a9b1;
+$search-result-preview-color: #7d848c;
+
+$link-color: #7dabdd;
+$btn-primary-color: #7dabdd;
+
+// Syntax highlighting, restrained: strings and keywords carry colour, the rest is text.
+$code-linenumber-color: #7d848c;
+
+// The theme uses these for callouts. Kept to the same three the tool uses for status.
+$green-000: #66c48d;
+$green-100: #66c48d;
+$green-300: #2f4a3a;
+$red-000: #ef8b83;
+$red-100: #ef8b83;
+$red-300: #573331;
+$yellow-000: #ddb264;
+$yellow-100: #ddb264;
+$yellow-300: #4d422a;
+$blue-000: #7dabdd;
+$blue-100: #7dabdd;
+$blue-300: #35506b;
+
+// The theme's purples reach the nav, the buttons and the labels. Pointed at the accent instead,
+// so nothing is purple by accident.
+$purple-000: #7dabdd;
+$purple-100: #7dabdd;
+$purple-200: #7dabdd;
+$purple-300: #35506b;

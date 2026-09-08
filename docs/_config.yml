@@ -4,6 +4,10 @@ description: Post test data into Altinn 3 apps running under Altinn Studio local
 url: https://arkitektum.github.io
 baseurl: /altinn-studio-api-tools
 
+# Directories rather than .html files, so a page is /getting-started/ and not
+# /getting-started.html. Relative links between the pages are rewritten to match.
+permalink: pretty
+
 # Built by GitHub Pages from this folder. Deliberately unpinned: this site has no styling of its
 # own to protect, so following the theme's default branch costs nothing and a tag typo would
 # break the build.
@@ -12,8 +16,10 @@ plugins:
     - jekyll-remote-theme
     - jekyll-relative-links
 
-# Dark only, matching the tool itself.
-color_scheme: dark
+# The tool's own palette, in _sass/color_schemes/altinn.scss. Dark only, and no purple: the
+# theme's default accent reaches the nav, the buttons and the labels, so it is pointed at the
+# app's muted blue instead.
+color_scheme: altinn
 search_enabled: true
 heading_anchors: true
 
