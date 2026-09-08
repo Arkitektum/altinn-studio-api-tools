@@ -21,6 +21,8 @@ The first row is **New instance**, which is not an instance yet: with it selecte
 
 Clicking a row points the whole tool at that instance: what a post adds data to, and what Fetch, Process and validation read. The selected row is marked.
 
+**Open** on a row is a link into the app, which is a session of its own. The token here lives in server memory so the browser never receives one, which means Altinn bounces to LocalTest's user picker until you have logged in there, and the deep link's fragment is dropped on the way back so you land on the app root. **Log in** in the panel header is that same picker, and opening the instance again afterwards works.
+
 An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the post button says otherwise. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
 
 Altinn lists the instances whose process has not ended, so an archived one is not here. **Other instance** at the bottom of the list is the way to one anyway: it reveals a field that takes a guid, or the whole `510001/99d0632c-…` pair as Altinn writes it, in which case the party comes along too. What you reach that way gets the same row as any other, marked "not in the active list", and is just as readable and deletable.
@@ -63,11 +65,13 @@ The instance's own validation runs with the read above. **Validate data element*
 
 The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`. The issues themselves are listed in the [Validation](validation-and-log.md) panel rather than left as raw JSON.
 
-## Preview pdf
+## Receipt pdf
 
 `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, the receipt pdf the app would archive. It is the quickest way to see what the form data turns into without walking the process to the end.
 
-The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. **Open in new tab** gives you the full viewer with print and save, and **Close preview** puts the panel away.
+It sits apart from the rest of Fetch, behind a rule, because it is a different kind of action: everything else there reads data, and this renders a document. It is also the one thing that is not automatic, since rendering a pdf on every selection would be wasteful.
+
+The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: a receipt is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
 
 One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and selecting another instance clears it along with that instance's validation results.
 

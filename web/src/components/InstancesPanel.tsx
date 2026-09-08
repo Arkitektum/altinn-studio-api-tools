@@ -9,6 +9,8 @@ interface InstancesPanelProps {
     org: string;
     app: string;
     instanceOwnerPartyId: string;
+    /** For the login link, since opening an instance in the app is a session of its own. */
+    localtestUrl: string;
     /**
      * The party's instances. Null means the listing has not answered yet, which reads differently
      * from a party that genuinely has none.
@@ -31,6 +33,7 @@ export function InstancesPanel({
     org,
     app,
     instanceOwnerPartyId,
+    localtestUrl,
     instances,
     instanceGuid,
     onSelect,
@@ -84,6 +87,9 @@ export function InstancesPanel({
             title="Instances"
             aside={
                 <span className="row" style={{ gap: 6 }}>
+                    <a href={`${localtestUrl}/`} target="_blank" rel="noreferrer" className="btn btn--ghost btn--tiny">
+                        Log in
+                    </a>
                     <button type="button" className="btn btn--ghost btn--tiny" onClick={onRefresh} disabled={busy}>
                         {busy && <span className="btn__spinner" />}
                         Refresh
@@ -200,6 +206,12 @@ export function InstancesPanel({
             {instances !== null && instances.length === 0 && (
                 <p className="field__hint">Nothing else here: this party has no active instances to add data to.</p>
             )}
+
+            <p className="field__hint" style={{ marginTop: 10 }}>
+                <strong>Open</strong> is a link into the app, which is a session of its own: the token here lives in server memory, so the browser
+                never gets one. If it bounces to a user picker, <strong>Log in</strong> above is that same picker, and opening the instance again then
+                works.
+            </p>
 
             <p className="field__hint" style={{ marginTop: 10 }}>
                 <span className="method method--get">GET</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/active

@@ -25,7 +25,7 @@ import { InstancesPanel } from "./components/InstancesPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
 import { ProcessPanel } from "./components/ProcessPanel";
 import { RunLog } from "./components/RunLog";
-import { PdfPanel, type PdfPreview } from "./components/PdfPanel";
+import { PdfModal, type PdfPreview } from "./components/PdfModal";
 import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
@@ -719,7 +719,6 @@ export function App() {
         app,
         validationCount: validations.length,
         runCount: logs.length,
-        hasPdf: pdfPreview !== null,
         hasProcess: instanceProcess !== null,
         party: instanceOwnerPartyId,
         busy: running || fetching
@@ -795,6 +794,7 @@ export function App() {
                             org={org}
                             app={app}
                             instanceOwnerPartyId={instanceOwnerPartyId}
+                            localtestUrl={localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101"}
                             instances={instanceList}
                             instanceGuid={instanceGuid}
                             onSelect={selectInstance}
@@ -883,8 +883,6 @@ export function App() {
                             )}
                         </>
                     )}
-
-                    {sections.pdf && pdfPreview && <PdfPanel preview={pdfPreview} onClear={clearPdf} />}
                 </div>
 
                 {(sections.validation || sections.log) && (
@@ -901,6 +899,8 @@ export function App() {
                     </div>
                 )}
             </div>
+
+            {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
         </div>
     );
 }

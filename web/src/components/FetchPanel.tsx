@@ -84,17 +84,6 @@ export function FetchPanel({
                 <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
             </p>
 
-            <div className="row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" onClick={onPreviewPdf} disabled={busy || !canGetInstance}>
-                    {busy && <span className="btn__spinner" />}
-                    Preview pdf
-                </button>
-            </div>
-
-            <p className="field__hint" style={{ marginTop: 8 }}>
-                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
-            </p>
-
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
             {dataElements.length > 0 && (
                 <>
@@ -150,6 +139,22 @@ export function FetchPanel({
                     )}
                 </>
             )}
+
+            {/* A different kind of action: it renders a document, and shows it over the tool. */}
+            <div className="apart">
+                <span className="legend">Receipt pdf</span>
+                <p className="field__hint" style={{ marginTop: 0, marginBottom: 10 }}>
+                    What the app would archive, rendered from the data as it stands. The quickest way to see what the form turns into without walking
+                    the process to the end. It opens in a window over the tool.
+                </p>
+                <button type="button" className="btn" onClick={onPreviewPdf} disabled={busy || !canGetInstance}>
+                    {busy && <span className="btn__spinner" />}
+                    Render receipt pdf
+                </button>
+                <p className="field__hint" style={{ marginTop: 8 }}>
+                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
+                </p>
+            </div>
 
             {error ? (
                 <div style={{ marginTop: 12 }}>

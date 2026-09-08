@@ -6,8 +6,6 @@ export interface SectionInputs {
     validationCount: number;
     /** Runs in the history. */
     runCount: number;
-    /** A rendered pdf is being held. */
-    hasPdf: boolean;
     /** An instance read has told us where the instance stands in its process. */
     hasProcess: boolean;
     /** A party is set, so the instance list has something to ask about. */
@@ -24,7 +22,6 @@ export interface VisibleSections {
     /** Where the instance stands, and the button that moves it on. */
     process: boolean;
     validation: boolean;
-    pdf: boolean;
     log: boolean;
 }
 
@@ -43,7 +40,6 @@ export function visibleSections(inputs: SectionInputs): VisibleSections {
         process: inputs.hasProcess,
         // Results stand on their own. An expired token does not make what you already read useless.
         validation: inputs.validationCount > 0,
-        pdf: inputs.hasPdf,
         log: inputs.runCount > 0 || inputs.busy
     };
 }
