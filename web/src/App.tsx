@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
-import { isExpired, severityLabel } from "./lib/format";
+import { isExpired, processLabel, severityLabel } from "./lib/format";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
+import { ProcessPanel } from "./components/ProcessPanel";
 import { RunLog } from "./components/RunLog";
 import { PdfPanel, type PdfPreview } from "./components/PdfPanel";
 import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
 import type {
+    AdvanceProcessResult,
     AppMetadataResponse,
     AppParty,
     CatalogueApp,
@@ -27,6 +29,7 @@ import type {
     LogIssue,
     LogResult,
     PdfPreviewResult,
+    ProcessSummary,
     ValidationView,
     PublicToken,
     ReadDataElementResult,
@@ -70,6 +73,9 @@ function logFromRun(result: RunResult, followUp: { instance: ReadInstanceResult 
             label: "Data elements",
             value: String(followUp.instance.dataElements.length)
         });
+    }
+    if (followUp.instance?.ok && followUp.instance.process) {
+        rows.push({ label: "Task", value: processLabel(followUp.instance.process) });
     }
     if (followUp.validation?.ok) rows.push(issueRow(followUp.validation));
 
@@ -150,6 +156,7 @@ function logFromInstance(result: ReadInstanceResult): LogResult {
     ];
     if (result.ok) {
         rows.push({ label: "Data elements", value: String(result.dataElements.length) });
+        if (result.process) rows.push({ label: "Task", value: processLabel(result.process) });
     }
     return {
         ok: result.ok,
@@ -181,6 +188,16 @@ function logFromDataElement(result: ReadDataElementResult): LogResult {
                   ]
                 : [])
         ]
+    };
+}
+
+function logFromAdvance(result: AdvanceProcessResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Advanced process",
+        rows: [{ label: "Instance", value: result.instanceGuid }, ...(result.ok ? [{ label: "Task", value: processLabel(result.process) }] : [])]
     };
 }
 
@@ -259,10 +276,15 @@ export function App() {
      */
     const [instanceList, setInstanceList] = useState<InstanceSummary[] | null>(null);
 
+    /** Where the instance stands, from the last instance read or process move. */
+    const [instanceProcess, setInstanceProcess] = useState<ProcessSummary | null>(null);
+
     const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
     const [dataGuid, setDataGuid] = useState("");
     const [fetching, setFetching] = useState(false);
     const [fetchError, setFetchError] = useState<unknown>(null);
+    // Kept apart from fetchError so a refused move is reported in the process panel, not in Fetch.
+    const [processError, setProcessError] = useState<unknown>(null);
 
     const HISTORY_LIMIT = 25;
     const appendLog = useCallback((result: LogResult) => {
@@ -298,6 +320,8 @@ export function App() {
                 // are not in this one.
                 setInstanceDataElements([]);
                 setDataGuid("");
+                // Likewise the process state, which described the instance we just left.
+                setInstanceProcess(null);
                 clearPdf();
             }
             setInstanceGuid(guid);
@@ -470,6 +494,7 @@ export function App() {
         if (instance?.ok) {
             setInstanceDataElements(instance.dataElements);
             setDataGuid(instance.dataElements[0]?.id ?? "");
+            setInstanceProcess(instance.process);
         }
         return { instance, validation };
     }
@@ -540,6 +565,7 @@ export function App() {
             });
             appendLog(logFromInstance(read));
             setInstanceDataElements(read.dataElements);
+            setInstanceProcess(read.process);
             // Preselect one so fetching a data element is a single click.
             if (read.dataElements.length > 0 && !read.dataElements.some((el) => el.id === dataGuid)) {
                 setDataGuid(read.dataElements[0]?.id ?? "");
@@ -600,6 +626,23 @@ export function App() {
         }
     }
 
+    async function advance() {
+        if (!activeTokenId) return;
+        setFetching(true);
+        setProcessError(null);
+        try {
+            const result = await api.advanceProcess({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
+            appendLog(logFromAdvance(result));
+            // The response carries the process it landed in, so a refused move leaves the panel
+            // showing the task the instance is still in rather than blanking it.
+            if (result.ok && result.process) setInstanceProcess(result.process);
+        } catch (error) {
+            setProcessError(error);
+        } finally {
+            setFetching(false);
+        }
+    }
+
     // Named runValidation to avoid shadowing the `validate` option used by the post flow.
     async function runValidation(scope: "instance" | "dataElement") {
         if (!activeTokenId) return;
@@ -637,6 +680,7 @@ export function App() {
         validationCount: validations.length,
         runCount: logs.length,
         hasPdf: pdfPreview !== null,
+        hasProcess: instanceProcess !== null,
         busy: running || fetching
     });
 
@@ -764,6 +808,22 @@ export function App() {
                                 error={fetchError}
                                 onPreviewPdf={() => void renderPdf()}
                             />
+
+                            {/* Where the instance stands. Arrives with the first instance read. */}
+                            {sections.process && instanceProcess && (
+                                <ProcessPanel
+                                    appHost={appHost}
+                                    org={org}
+                                    app={app}
+                                    instanceOwnerPartyId={instanceOwnerPartyId}
+                                    instanceGuid={instanceGuid}
+                                    process={instanceProcess}
+                                    onAdvance={() => void advance()}
+                                    busy={fetching}
+                                    hasToken={tokenUsable}
+                                    error={processError}
+                                />
+                            )}
                         </>
                     )}
 

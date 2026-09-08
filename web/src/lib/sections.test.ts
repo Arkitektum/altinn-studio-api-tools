@@ -10,6 +10,7 @@ const ready: SectionInputs = {
     validationCount: 0,
     runCount: 0,
     hasPdf: false,
+    hasProcess: false,
     busy: false
 };
 
@@ -33,6 +34,11 @@ describe("visibleSections", () => {
     it("shows the pdf panel only while a rendered pdf is held", () => {
         assert.equal(visibleSections(ready).pdf, false);
         assert.equal(visibleSections({ ...ready, hasPdf: true }).pdf, true);
+    });
+
+    it("shows the process panel only once an instance read has said where it stands", () => {
+        assert.equal(visibleSections(ready).process, false);
+        assert.equal(visibleSections({ ...ready, hasProcess: true }).process, true);
     });
 
     it("shows the log while a request is in flight, before it has any runs", () => {

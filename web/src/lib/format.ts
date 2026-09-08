@@ -63,6 +63,13 @@ export function partyLabel(party: { partyId: number; name?: string; orgNumber?: 
     return `${party.partyId} · ${party.name ?? "unnamed"}${identifier ? ` (${identifier})` : ""}`;
 }
 
+/** Where a process stands, in one line: the task it sits in, or that it has ended. */
+export function processLabel(process: { currentTask: string | null; ended: string | null; endEvent: string | null } | null): string {
+    if (!process) return "unknown";
+    if (process.ended) return process.endEvent ? `ended · ${process.endEvent}` : "ended";
+    return process.currentTask ?? "no task";
+}
+
 /** Labels an instance in the picker: enough to tell two apart without reading a whole guid. */
 export function instanceLabel(instance: { instanceGuid: string; lastChanged: string | null; lastChangedBy: string | null }): string {
     const bits = [instance.instanceGuid.slice(0, 8)];

@@ -8,6 +8,8 @@ export interface SectionInputs {
     runCount: number;
     /** A rendered pdf is being held. */
     hasPdf: boolean;
+    /** An instance read has told us where the instance stands in its process. */
+    hasProcess: boolean;
     /** A request is in flight, so the log is about to have something in it. */
     busy: boolean;
 }
@@ -15,6 +17,8 @@ export interface SectionInputs {
 export interface VisibleSections {
     /** Payload, the post button and Fetch. All of them need a token and an app to aim at. */
     requests: boolean;
+    /** Where the instance stands, and the button that moves it on. */
+    process: boolean;
     validation: boolean;
     pdf: boolean;
     log: boolean;
@@ -28,6 +32,9 @@ export interface VisibleSections {
 export function visibleSections(inputs: SectionInputs): VisibleSections {
     return {
         requests: inputs.hasToken && Boolean(inputs.org && inputs.app),
+        // Reading an instance is what fills this in, so it arrives with its first content like the
+        // result panels do.
+        process: inputs.hasProcess,
         // Results stand on their own. An expired token does not make what you already read useless.
         validation: inputs.validationCount > 0,
         pdf: inputs.hasPdf,

@@ -1,4 +1,5 @@
 import type {
+    AdvanceProcessResult,
     AppMetadataResponse,
     AppParty,
     CatalogueApp,
@@ -118,5 +119,8 @@ export const api = {
         dataGuid: string;
     }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`),
     previewPdf: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
-        request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`)
+        request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`),
+
+    advanceProcess: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
+        request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) })
 };

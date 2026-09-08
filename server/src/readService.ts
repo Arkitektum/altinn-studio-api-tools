@@ -38,6 +38,17 @@ export interface ListInstancesResult {
     instances: InstanceSummary[];
 }
 
+/** Where an instance stands in its process, trimmed to what you need to decide what to do next. */
+export interface ProcessSummary {
+    /** Element id of the task the instance sits in. Null once the process has ended. */
+    currentTask: string | null;
+    /** Altinn's task type: data, confirmation, feedback, signing, payment. */
+    taskType: string | null;
+    started: string | null;
+    ended: string | null;
+    endEvent: string | null;
+}
+
 export interface ReadInstanceResult {
     ok: boolean;
     steps: RunStep[];
@@ -48,6 +59,18 @@ export interface ReadInstanceResult {
     instance: unknown;
     /** Data elements on the instance, for choosing which one to fetch next. */
     dataElements: DataElementSummary[];
+    /** Null when the instance could not be read, or carried no process at all. */
+    process: ProcessSummary | null;
+}
+
+export interface AdvanceProcessResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    /** The process as it stands after the move, so the caller need not read the instance again. */
+    process: ProcessSummary | null;
 }
 
 export interface ReadDataElementResult {
@@ -129,6 +152,35 @@ function toSummary(value: unknown): DataElementSummary | null {
     };
 }
 
+/**
+ * Reads a process state out of either an instance body or a bare process state, because
+ * `PUT process/next` answers with the latter.
+ */
+function toProcess(value: unknown): ProcessSummary | null {
+    if (!value || typeof value !== "object") return null;
+    const record = value as Record<string, unknown>;
+    const nested = record["process"];
+    const process = (nested && typeof nested === "object" ? nested : record) as Record<string, unknown>;
+    const asString = (source: Record<string, unknown>, key: string): string | null =>
+        typeof source[key] === "string" ? (source[key] as string) : null;
+
+    const rawTask = process["currentTask"];
+    const task = rawTask && typeof rawTask === "object" ? (rawTask as Record<string, unknown>) : null;
+    const started = asString(process, "started");
+    const ended = asString(process, "ended");
+    // None of the three means this was not a process state at all, which is not the same as a
+    // process that has not started.
+    if (!task && !started && !ended) return null;
+
+    return {
+        currentTask: task ? asString(task, "elementId") : null,
+        taskType: task ? asString(task, "altinnTaskType") : null,
+        started,
+        ended,
+        endEvent: asString(process, "endEvent")
+    };
+}
+
 function toInstanceSummary(value: unknown, fallbackPartyId: string): InstanceSummary | null {
     if (!value || typeof value !== "object") return null;
     const record = value as Record<string, unknown>;
@@ -207,7 +259,36 @@ export async function readInstance(token: string, request: ReadRequest): Promise
         instanceGuid: request.instanceGuid,
         instanceUrl: instanceUiUrl(request.org, request.app, request.instanceOwnerPartyId, request.instanceGuid),
         instance,
-        dataElements
+        dataElements,
+        process: toProcess(instance)
+    };
+}
+
+/**
+ * PUT {app}/instances/{party}/{guid}/process/next
+ *
+ * Submits the current task and moves to the next one. The app validates before it moves, so this
+ * failing on validation is an answer rather than a problem with the request.
+ */
+export async function advanceProcess(token: string, request: ReadRequest): Promise<AdvanceProcessResult> {
+    const recorder = new StepRecorder();
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/process/next`;
+
+    const response = await recorder.run(
+        "Advance process to next task",
+        "PUT",
+        url,
+        () => altinnFetch({ url, method: "PUT", token, body: "{}", contentType: "application/json" }),
+        "{}"
+    );
+
+    return {
+        ok: response.ok,
+        steps: recorder.steps,
+        failedAt: response.ok ? null : "Could not advance the process.",
+        instanceOwnerPartyId: request.instanceOwnerPartyId,
+        instanceGuid: request.instanceGuid,
+        process: response.ok ? toProcess(response.body) : null
     };
 }
 

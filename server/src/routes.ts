@@ -1,14 +1,12 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { config } from "./config.js";
-import { appBaseUrl, appUiUrl } from "./urls.js";
-import { HttpError } from "./httpError.js";
+import { appUiUrl } from "./urls.js";
 import { createTestUserToken } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
-import { listInstances, previewPdf, readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
-import { altinnFetch, describeFailure } from "./altinnClient.js";
+import { advanceProcess, listInstances, previewPdf, readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
 import { appCatalogue } from "./appCatalogue.js";
 import { listExamples, readExample } from "./examples.js";
 
@@ -264,17 +262,8 @@ router.put(
     asyncHandler(async (req, res) => {
         const input = instanceLookupSchema.parse(req.body);
         const token = requireToken(input.tokenId);
-        const url = `${appBaseUrl(input.org, input.app)}/instances/${input.instanceOwnerPartyId}/${input.instanceGuid}/process/next`;
-        const response = await altinnFetch({
-            url,
-            method: "PUT",
-            token: token.token,
-            body: "{}",
-            contentType: "application/json"
-        });
-        if (!response.ok) {
-            throw new HttpError(response.status, `Could not advance the process: ${describeFailure(response)}`, { url });
-        }
-        res.json(response.body);
+        // 200 with ok:false on an Altinn error, matching the read endpoints. A refusal here is
+        // usually the app's validation talking, which belongs in the log rather than in an error.
+        res.json(await advanceProcess(token.token, input));
     })
 );

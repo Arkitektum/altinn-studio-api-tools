@@ -183,6 +183,17 @@ export interface ListInstancesResult {
     instances: InstanceSummary[];
 }
 
+/** Where an instance stands in its process. */
+export interface ProcessSummary {
+    /** Element id of the task the instance sits in. Null once the process has ended. */
+    currentTask: string | null;
+    /** Altinn's task type: data, confirmation, feedback, signing, payment. */
+    taskType: string | null;
+    started: string | null;
+    ended: string | null;
+    endEvent: string | null;
+}
+
 export interface ReadInstanceResult {
     ok: boolean;
     steps: RunStep[];
@@ -192,6 +203,16 @@ export interface ReadInstanceResult {
     instanceUrl: string;
     instance: unknown;
     dataElements: DataElementSummary[];
+    process: ProcessSummary | null;
+}
+
+export interface AdvanceProcessResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    process: ProcessSummary | null;
 }
 
 export interface ReadDataElementResult {

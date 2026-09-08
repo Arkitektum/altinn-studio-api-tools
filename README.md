@@ -4,7 +4,7 @@ A local web tool for posting test data into Altinn 3 apps running under Altinn S
 
 The interface has three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the validation results and run log on the right. It both posts data and reads it back, see [Reading data back](#reading-data-back).
 
-Panels appear as they become usable rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload, the post button and Fetch arrive once you have a token and an app to aim at. Validation and the run log arrive with their first content, and the data element controls in Fetch appear once an instance read has listed some. The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
+Panels appear as they become usable rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload, the post button and Fetch arrive once you have a token and an app to aim at. Validation and the run log arrive with their first content, and the process panel and the data element controls in Fetch appear once an instance read has told them what to show. The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
 
 ## Quick start
 
@@ -47,6 +47,14 @@ The data type picker is grouped as **Main form**, **Sub forms** and **Attachment
 
 Apps that declare neither field fall back to grouping by app logic, where a single-instance form data type is the main form and any other is a subform. `web/src/lib/dataTypeGroups.test.ts` covers both paths.
 
+### Process
+
+Where the instance stands, and the button that moves it on. The panel shows the current task and its Altinn task type, when the process started, and when it ended together with the end event once it has. The badge in the header repeats the same thing in one line, so a folded glance is enough.
+
+The state comes out of the instance read rather than from a request of its own, so the panel appears with the first **Get instance** or with the read that follows a post, and it says nothing until then. Changing the instance guid clears it, since it described the instance you just left.
+
+**Advance process** calls `PUT .../instances/{party}/{guid}/process/next`, the same call the post flow's advance checkbox makes. The app validates before it moves, so a refusal here is usually validation talking and lands in the run log with the app's own reason. The move answers with the process it landed in, so the panel updates without another read, and a refused move leaves the task the instance is still in on screen rather than blanking it. An ended process hides the button, since there is nowhere left to go.
+
 ### Pdf preview
 
 **Preview pdf** in the Fetch panel calls `GET /instances/{party}/{guid}/pdf/preview`, which is the receipt pdf the app would archive. It is the quickest way to see what the form data turns into without walking the process to the end.
@@ -81,7 +89,7 @@ Runs are kept rather than replaced. Each one is a row showing what it was, how m
 
 After a run the instance guid is carried into the existing instance field, so creating an instance and then posting more data onto it takes two clicks. Pasting a full `510001/99d0632c-...` pair into that field splits the party id out for you.
 
-One option applies to any run: advance process, which calls `PUT .../process/next` to submit the step.
+One option applies to any run: advance process, which calls `PUT .../process/next` to submit the step. The same call sits on its own button in the [Process](#process) panel, for an instance you are not posting to.
 
 Every post is followed automatically by `GET .../instances/{party}/{guid}` and `GET .../instances/{party}/{guid}/validate`, so the log always shows what Altinn actually stored and whether it validates. Those two requests are appended to the same log entry as the post, and the verdict gains a data element count and an issue summary. The data element select in the Fetch panel is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
@@ -228,7 +236,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                  |
 | `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                |
 | `GET`    | `/api/instances/pdf-preview`           | Render the receipt pdf. Same query as `/api/instances`                |
-| `PUT`    | `/api/instances/process/next`          | Advance an existing instance                                          |
+| `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query   |
 
 ```bash
 TOKEN_ID=$(curl -s localhost:4000/api/tokens/test-user \
@@ -257,7 +265,7 @@ curl -s localhost:4000/api/runs -H 'content-type: application/json' -d "{
 
 `mode` is `sequential` by default, and can also be `multipart` or `existing`.
 
-A request that fails still returns `200`, with `ok` set to `false`, a `failedAt` reason, and the step log up to the point of failure. This applies to `/api/runs` and to all four read endpoints, and keeps the whole log available to the UI instead of collapsing it into one error. Malformed requests return `400`.
+A request that fails still returns `200`, with `ok` set to `false`, a `failedAt` reason, and the step log up to the point of failure. This applies to `/api/runs`, to every read endpoint and to `/api/instances/process/next`, and keeps the whole log available to the UI instead of collapsing it into one error. Malformed requests return `400`.
 
 ## Scripts
 
@@ -303,7 +311,7 @@ server/src
   urls.ts             app url building
 web/src
   App.tsx             state and wiring
-  components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, RunLog
+  components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, ProcessPanel, RunLog
   styles.css          all the styling
 ```
 

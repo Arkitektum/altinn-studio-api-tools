@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { listInstances, readDataElement, readInstance, severityLabel, validateDataElement, validateInstance } from "./readService.js";
+import { advanceProcess, listInstances, readDataElement, readInstance, severityLabel, validateDataElement, validateInstance } from "./readService.js";
 
 const APP_BASE = "http://local.altinn.cloud:8000/dibk/et-v4";
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
@@ -35,6 +35,13 @@ const instanceBody = {
     id: `510001/${GUID}`,
     instanceOwner: { partyId: "510001" },
     appId: "dibk/et-v4",
+    process: {
+        started: "2026-09-03T09:59:00Z",
+        startEvent: "StartEvent_1",
+        currentTask: { flow: 2, elementId: "Task_1", altinnTaskType: "data", name: null },
+        ended: null,
+        endEvent: null
+    },
     data: [
         {
             id: DATA_GUID,
@@ -157,6 +164,15 @@ describe("readInstance", () => {
         });
         assert.equal(result.dataElements[2]?.filename, "kvittering.pdf");
         assert.equal(result.instanceUrl, `${APP_BASE}/#/instance/510001/${GUID}`);
+
+        // Where the instance stands, so the process panel needs no request of its own.
+        assert.deepEqual(result.process, {
+            currentTask: "Task_1",
+            taskType: "data",
+            started: "2026-09-03T09:59:00Z",
+            ended: null,
+            endEvent: null
+        });
     });
 
     it("reports a missing instance without throwing", async () => {
@@ -186,6 +202,68 @@ describe("readInstance", () => {
         const result = await readInstance("test-token", target);
         assert.equal(result.ok, true);
         assert.deepEqual(result.dataElements, []);
+        // No process on the body is not the same as a process that has not started.
+        assert.equal(result.process, null);
+    });
+
+    it("reads an ended process as ended rather than as no task", async () => {
+        const stub = stubAltinn(() => ({
+            body: JSON.stringify({
+                id: `510001/${GUID}`,
+                process: { started: "2026-09-03T09:59:00Z", currentTask: null, ended: "2026-09-03T10:05:00Z", endEvent: "EndEvent_1" }
+            }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await readInstance("test-token", target);
+        assert.deepEqual(result.process, {
+            currentTask: null,
+            taskType: null,
+            started: "2026-09-03T09:59:00Z",
+            ended: "2026-09-03T10:05:00Z",
+            endEvent: "EndEvent_1"
+        });
+    });
+});
+
+describe("advanceProcess", () => {
+    it("submits the task and reports the process it landed in", async () => {
+        // The app answers with a bare process state here, not with the whole instance.
+        const stub = stubAltinn(() => ({
+            body: JSON.stringify({
+                started: "2026-09-03T09:59:00Z",
+                currentTask: { flow: 3, elementId: "Task_2", altinnTaskType: "confirmation" },
+                ended: null
+            }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await advanceProcess("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.equal(stub.calls[0]?.method, "PUT");
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/process/next`);
+        assert.equal(result.steps[0]?.name, "Advance process to next task");
+        assert.equal(result.process?.currentTask, "Task_2");
+        assert.equal(result.process?.taskType, "confirmation");
+    });
+
+    it("reports a refusal without throwing, since it is usually validation talking", async () => {
+        const stub = stubAltinn(() => ({
+            status: 409,
+            body: JSON.stringify({ detail: "Instance is not valid for task Task_1" }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await advanceProcess("test-token", target);
+
+        assert.equal(result.ok, false);
+        assert.equal(result.failedAt, "Could not advance the process.");
+        assert.equal(result.process, null);
+        assert.equal(result.steps[0]?.error, "Instance is not valid for task Task_1");
     });
 });
 
