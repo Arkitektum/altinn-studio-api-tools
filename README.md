@@ -8,7 +8,7 @@ Panels appear as they become usable rather than sitting there dead. On a cold st
 
 ## Quick start
 
-Have localtest running, with apps on `local.altinn.cloud:8000` and LocalTest on `localhost:5101`, then:
+Have Node 22.12 or later and localtest running, with apps on `local.altinn.cloud:8000` and LocalTest on `localhost:5101`, then:
 
 ```bash
 npm install
@@ -330,6 +330,12 @@ A request that fails still returns `200`, with `ok` set to `false`, a `failedAt`
 | `npm run build`                   | Compile the server and bundle the UI                     |
 | `npm run format`                  | Format everything with Prettier                          |
 | `npm run format:check`            | Fail if anything is unformatted, for CI                  |
+
+## CI
+
+`.github/workflows/ci.yml` runs on pushes to main and on pull requests: `format:check`, `typecheck`, `test`, then `build`, cheapest first. A new push cancels the run still in flight, so a series of commits does not queue up behind itself.
+
+It runs on Node 24. The floor is Node 22.12, which is what `engines` says: the test scripts hand `src/**/*.test.ts` to `node --test` and let node expand it, which node has only done since 22, and the shell leaves the pattern alone because it matches nothing itself. Vite 8 wants 22.12 as well.
 
 ## Formatting
 

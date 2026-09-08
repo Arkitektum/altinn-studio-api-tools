@@ -1,0 +1,36 @@
+name: ci
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+# A new push supersedes the run in flight, so a series of commits does not queue up behind itself.
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v5
+              with:
+                  # The test scripts pass `src/**/*.test.ts` to node --test and let node expand it, which
+                  # needs Node 22 or later. The shell leaves the pattern alone, having nothing to match.
+                  node-version: 24
+                  cache: npm
+
+            - run: npm ci
+
+            # Cheapest first, so an unformatted file does not wait behind the build. Prettier owns the
+            # formatting, and appCatalogue.ts is generated, which is the file that tends to drift.
+            - run: npm run format:check
+
+            - run: npm run typecheck
+
+            - run: npm test
+
+            - run: npm run build
