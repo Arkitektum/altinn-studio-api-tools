@@ -1,0 +1,25 @@
+title: Altinn Studio API tools
+description: Post test data into Altinn 3 apps running under Altinn Studio localtest, and read it back.
+
+url: https://arkitektum.github.io
+baseurl: /altinn-studio-api-tools
+
+# Built by GitHub Pages from this folder. Deliberately unpinned: this site has no styling of its
+# own to protect, so following the theme's default branch costs nothing and a tag typo would
+# break the build.
+remote_theme: just-the-docs/just-the-docs
+plugins:
+    - jekyll-remote-theme
+    - jekyll-relative-links
+
+# Dark only, matching the tool itself.
+color_scheme: dark
+search_enabled: true
+heading_anchors: true
+
+aux_links:
+    Repository:
+        - https://github.com/Arkitektum/altinn-studio-api-tools
+aux_links_new_tab: true
+
+footer_content: A local development tool. It only talks to Altinn Studio localtest.
