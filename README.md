@@ -181,7 +181,11 @@ The tool detects the existing element and sends `PUT .../data/{dataElementId}` i
 
 ## Reading data back
 
-The **Fetch** panel does five GET requests against an instance you already have: get and validate for the instance and for one data element, plus the pdf preview.
+The **Fetch** panel does six GET requests: list the party's instances, then get and validate for the instance and for one data element, plus the pdf preview.
+
+**List instances** calls `GET /{org}/{app}/instances/{party}/active`, the app's own list endpoint, the one its frontend uses to offer an unfinished form back to the user. It needs a party but no guid, since finding the guid is the point of it. The picker labels each instance by the first eight characters of its guid, when it was last changed and by whom, newest first, and choosing one fills in both the party id and the guid. Altinn lists the instances whose process has not ended, so an archived one is not in there and still has to be pasted.
+
+A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
 **Get instance** calls `GET /{org}/{app}/instances/{party}/{guid}`. Besides logging the whole response it reads the instance's `data` array and fills the data element select, so you do not have to copy a dataGuid by hand.
 
@@ -195,9 +199,9 @@ Validation results are listed out rather than left as raw JSON. Issues are group
 
 **Preview pdf** calls `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, see [Pdf preview](#pdf-preview).
 
-All five requests appear in the run log alongside posts, with method, URL, status, timing, and body.
+All six requests appear in the run log alongside posts, with method, URL, status, timing, and body.
 
-Posting already runs the instance get and validate automatically, so the buttons here are for an instance you did not just create. Paste its party id and guid to inspect it.
+Posting already runs the instance get and validate automatically, so the buttons here are for an instance you did not just create. List the party's instances and pick one, or paste a party id and guid.
 
 ## API
 
@@ -218,6 +222,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                    |
 | `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                    |
 | `POST`   | `/api/runs`                            | The orchestrator, described below                                     |
+| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`     |
 | `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid` |
 | `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                     |
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                  |
@@ -283,7 +288,7 @@ server/src
   routes.ts           endpoints and zod schemas
   runService.ts       orchestrates create, upload, validate, advance
   runService.test.ts
-  readService.ts      get and validate, for instances and data elements
+  readService.ts      list, get and validate, for instances and data elements
   readService.test.ts
   stepRecorder.ts     shared request logging for both flows
   multipart.ts        hand-written multipart body, see the note below

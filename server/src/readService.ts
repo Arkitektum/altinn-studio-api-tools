@@ -19,6 +19,25 @@ export interface DataElementSummary {
     lastChanged: string | null;
 }
 
+/** One entry of the party's instance list, trimmed to what the UI needs to pick one. */
+export interface InstanceSummary {
+    /** "510001/99d0632c-…", as Altinn writes it. */
+    id: string;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    lastChanged: string | null;
+    /** Name of whoever last touched it, which is what Altinn's own list shows. */
+    lastChangedBy: string | null;
+}
+
+export interface ListInstancesResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    instanceOwnerPartyId: string;
+    instances: InstanceSummary[];
+}
+
 export interface ReadInstanceResult {
     ok: boolean;
     steps: RunStep[];
@@ -107,6 +126,65 @@ function toSummary(value: unknown): DataElementSummary | null {
         filename: asString("filename"),
         size: typeof record["size"] === "number" ? record["size"] : null,
         lastChanged: asString("lastChanged")
+    };
+}
+
+function toInstanceSummary(value: unknown, fallbackPartyId: string): InstanceSummary | null {
+    if (!value || typeof value !== "object") return null;
+    const record = value as Record<string, unknown>;
+    const id = record["id"];
+    if (typeof id !== "string" || !id.trim()) return null;
+    // Instance ids read "510001/99d0632c-…". A bare guid is accepted too, in which case the party
+    // is the one we asked about.
+    const [first, second] = id.split("/");
+    const guid = second ?? first ?? "";
+    if (!guid) return null;
+    const asString = (key: string): string | null => (typeof record[key] === "string" ? (record[key] as string) : null);
+    return {
+        id,
+        instanceOwnerPartyId: second ? (first ?? fallbackPartyId) : fallbackPartyId,
+        instanceGuid: guid,
+        lastChanged: asString("lastChanged"),
+        lastChangedBy: asString("lastChangedBy")
+    };
+}
+
+/**
+ * GET {app}/instances/{party}/active
+ *
+ * The app's own list endpoint, the one its frontend uses to offer an unfinished form back to the
+ * user. It answers with the party's instances whose process has not ended, so an archived
+ * instance is not in the list.
+ */
+export async function listInstances(
+    token: string,
+    request: { org: string; app: string; instanceOwnerPartyId: string }
+): Promise<ListInstancesResult> {
+    const recorder = new StepRecorder();
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/active`;
+
+    const response = await recorder.run("List active instances", "GET", url, () => altinnFetch({ url, token }));
+
+    // The app answers with a bare array. Storage-style `{ instances: [...] }` is accepted too, so
+    // pointing this at another endpoint still yields a list rather than nothing.
+    const body = response.ok ? response.body : null;
+    const rows = Array.isArray(body)
+        ? body
+        : Array.isArray((body as { instances?: unknown } | null)?.instances)
+          ? (body as { instances: unknown[] }).instances
+          : [];
+    const instances = rows
+        .map((row) => toInstanceSummary(row, request.instanceOwnerPartyId))
+        .filter((instance): instance is InstanceSummary => instance !== null)
+        // Newest first, which is nearly always the one you just made.
+        .sort((a, b) => (b.lastChanged ?? "").localeCompare(a.lastChanged ?? ""));
+
+    return {
+        ok: response.ok,
+        steps: recorder.steps,
+        failedAt: response.ok ? null : "Could not list the instances for this party.",
+        instanceOwnerPartyId: request.instanceOwnerPartyId,
+        instances
     };
 }
 

@@ -20,6 +20,8 @@ import type {
     DataElementInput,
     DataElementSummary,
     ExampleGroup,
+    InstanceSummary,
+    ListInstancesResult,
     LocaltestStatus,
     LogEntry,
     LogIssue,
@@ -125,6 +127,19 @@ function issueRow(result: ValidateResult): { label: string; value: string; tone:
                       `${warnings} warning${warnings === 1 ? "" : "s"}`,
                       ...(other > 0 ? [`${other} other`] : [])
                   ].join(", ")
+    };
+}
+
+function logFromInstances(result: ListInstancesResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Listed instances",
+        rows: [
+            { label: "Party", value: result.instanceOwnerPartyId },
+            ...(result.ok ? [{ label: "Instances", value: String(result.instances.length) }] : [])
+        ]
     };
 }
 
@@ -237,6 +252,12 @@ export function App() {
      * the old url is revoked so the blob can be collected.
      */
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
+
+    /**
+     * The party's instances from the last listing, so a guid can be picked instead of pasted.
+     * Null means nothing has been listed yet, which reads differently from a party with none.
+     */
+    const [instanceList, setInstanceList] = useState<InstanceSummary[] | null>(null);
 
     const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
     const [dataGuid, setDataGuid] = useState("");
@@ -366,6 +387,11 @@ export function App() {
         setProbeError(null);
     }, [org, app]);
 
+    // An instance listing belongs to one app and one party, so drop it when either moves.
+    useEffect(() => {
+        setInstanceList(null);
+    }, [org, app, instanceOwnerPartyId]);
+
     async function probe() {
         if (!activeTokenId) return;
         setProbing(true);
@@ -480,6 +506,23 @@ export function App() {
             setRunError(error);
         } finally {
             setRunning(false);
+        }
+    }
+
+    async function listInstances() {
+        if (!activeTokenId) return;
+        setFetching(true);
+        setFetchError(null);
+        try {
+            const result = await api.listInstances({ tokenId: activeTokenId, org, app, instanceOwnerPartyId });
+            appendLog(logFromInstances(result));
+            // A failed listing stays null rather than empty, since "none" would be a claim we
+            // cannot make when the request never answered.
+            setInstanceList(result.ok ? result.instances : null);
+        } catch (error) {
+            setFetchError(error);
+        } finally {
+            setFetching(false);
         }
     }
 
@@ -707,6 +750,8 @@ export function App() {
                                 onPartyChange={setInstanceOwnerPartyId}
                                 instanceGuid={instanceGuid}
                                 onInstanceGuidChange={changeInstanceGuid}
+                                instances={instanceList}
+                                onListInstances={() => void listInstances()}
                                 dataElements={instanceDataElements}
                                 dataGuid={dataGuid}
                                 onDataGuidChange={setDataGuid}

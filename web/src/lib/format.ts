@@ -63,6 +63,17 @@ export function partyLabel(party: { partyId: number; name?: string; orgNumber?: 
     return `${party.partyId} · ${party.name ?? "unnamed"}${identifier ? ` (${identifier})` : ""}`;
 }
 
+/** Labels an instance in the picker: enough to tell two apart without reading a whole guid. */
+export function instanceLabel(instance: { instanceGuid: string; lastChanged: string | null; lastChangedBy: string | null }): string {
+    const bits = [instance.instanceGuid.slice(0, 8)];
+    if (instance.lastChanged) {
+        const parsed = Date.parse(instance.lastChanged);
+        bits.push(Number.isNaN(parsed) ? instance.lastChanged : new Date(parsed).toLocaleString("nb"));
+    }
+    if (instance.lastChangedBy) bits.push(instance.lastChangedBy);
+    return bits.join(" · ");
+}
+
 /** Altinn's ValidationIssueSeverity. Mirrors severityLabel on the server. */
 const SEVERITY_LABELS: Record<number, string> = {
     1: "error",

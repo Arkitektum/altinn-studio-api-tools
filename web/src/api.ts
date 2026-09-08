@@ -5,6 +5,7 @@ import type {
     ExampleContent,
     ExampleKind,
     ExamplesResponse,
+    ListInstancesResult,
     LocaltestStatus,
     PdfPreviewResult,
     PublicToken,
@@ -95,6 +96,9 @@ export const api = {
     getAppParties: (params: { tokenId: string; org: string; app: string }) => request<AppParty[]>(`/app/parties?${new URLSearchParams(params)}`),
 
     postRun: (input: Record<string, unknown>) => request<RunResult>("/runs", jsonBody(input)),
+
+    listInstances: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string }) =>
+        request<ListInstancesResult>(`/instances/active?${new URLSearchParams(params)}`),
 
     getInstance: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
         request<ReadInstanceResult>(`/instances?${new URLSearchParams(params)}`),

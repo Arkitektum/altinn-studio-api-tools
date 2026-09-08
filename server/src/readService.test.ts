@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { readDataElement, readInstance, severityLabel, validateDataElement, validateInstance } from "./readService.js";
+import { listInstances, readDataElement, readInstance, severityLabel, validateDataElement, validateInstance } from "./readService.js";
 
 const APP_BASE = "http://local.altinn.cloud:8000/dibk/et-v4";
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
@@ -53,6 +53,76 @@ let active: { restore: () => void } | null = null;
 afterEach(() => {
     active?.restore();
     active = null;
+});
+
+describe("listInstances", () => {
+    const party = { org: "dibk", app: "et-v4", instanceOwnerPartyId: "510001" };
+
+    it("lists the party's instances, newest first", async () => {
+        const stub = stubAltinn(() => ({
+            body: JSON.stringify([
+                { id: `510001/${GUID}`, lastChanged: "2026-09-03T10:00:00Z", lastChangedBy: "Pengelens Partner" },
+                { id: "510001/aaaaaaaa-1111-2222-3333-444444444444", lastChanged: "2026-09-05T08:30:00Z" },
+                "not-an-object",
+                { lastChanged: "2026-09-06T08:30:00Z" }
+            ]),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await listInstances("test-token", party);
+
+        assert.equal(result.ok, true);
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/active`);
+        assert.equal(result.steps[0]?.name, "List active instances");
+        // The malformed entries are dropped rather than crashing the list.
+        assert.equal(result.instances.length, 2);
+        assert.deepEqual(result.instances[0], {
+            id: "510001/aaaaaaaa-1111-2222-3333-444444444444",
+            instanceOwnerPartyId: "510001",
+            instanceGuid: "aaaaaaaa-1111-2222-3333-444444444444",
+            lastChanged: "2026-09-05T08:30:00Z",
+            lastChangedBy: null
+        });
+        assert.equal(result.instances[1]?.instanceGuid, GUID);
+        assert.equal(result.instances[1]?.lastChangedBy, "Pengelens Partner");
+    });
+
+    it("reads a storage-style body, and a bare guid as this party's instance", async () => {
+        const stub = stubAltinn(() => ({
+            body: JSON.stringify({ count: 1, instances: [{ id: GUID }] }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await listInstances("test-token", party);
+        assert.equal(result.instances.length, 1);
+        assert.equal(result.instances[0]?.instanceGuid, GUID);
+        assert.equal(result.instances[0]?.instanceOwnerPartyId, "510001");
+    });
+
+    it("reports a party with nothing on it as an empty list", async () => {
+        const stub = stubAltinn(() => ({ body: "[]", contentType: "application/json" }));
+        active = stub;
+
+        const result = await listInstances("test-token", party);
+        assert.equal(result.ok, true);
+        assert.deepEqual(result.instances, []);
+    });
+
+    it("reports a failure without throwing", async () => {
+        const stub = stubAltinn(() => ({
+            status: 403,
+            body: JSON.stringify({ detail: "Forbidden" }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await listInstances("test-token", party);
+        assert.equal(result.ok, false);
+        assert.equal(result.failedAt, "Could not list the instances for this party.");
+        assert.deepEqual(result.instances, []);
+    });
 });
 
 describe("readInstance", () => {

@@ -7,7 +7,7 @@ import { createTestUserToken } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
-import { previewPdf, readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
+import { listInstances, previewPdf, readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
 import { altinnFetch, describeFailure } from "./altinnClient.js";
 import { appCatalogue } from "./appCatalogue.js";
 import { listExamples, readExample } from "./examples.js";
@@ -61,8 +61,11 @@ const runSchema = z
         path: ["instanceGuid"]
     });
 
-const instanceLookupSchema = appQuerySchema.extend({
-    instanceOwnerPartyId: z.string().trim().min(1),
+const partyLookupSchema = appQuerySchema.extend({
+    instanceOwnerPartyId: z.string().trim().min(1)
+});
+
+const instanceLookupSchema = partyLookupSchema.extend({
     instanceGuid: z.string().trim().min(1)
 });
 
@@ -195,6 +198,16 @@ router.post(
 );
 
 // ---------------------------------------------------------------- reading data
+
+/** Which instances does this party have, so a guid never has to be pasted by hand. */
+router.get(
+    "/instances/active",
+    asyncHandler(async (req, res) => {
+        const query = partyLookupSchema.parse(req.query);
+        const token = requireToken(query.tokenId);
+        res.json(await listInstances(token.token, query));
+    })
+);
 
 router.get(
     "/instances",

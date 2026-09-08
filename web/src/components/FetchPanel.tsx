@@ -1,6 +1,7 @@
+import { instanceLabel } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { DataElementSummary } from "../types";
+import type { DataElementSummary, InstanceSummary } from "../types";
 
 interface FetchPanelProps {
     appHost: string;
@@ -10,6 +11,12 @@ interface FetchPanelProps {
     onPartyChange: (next: string) => void;
     instanceGuid: string;
     onInstanceGuidChange: (next: string) => void;
+    /**
+     * The party's instances from the last listing. Null means nothing has been listed yet, which
+     * reads differently from a party that genuinely has none.
+     */
+    instances: InstanceSummary[] | null;
+    onListInstances: () => void;
     /** Data elements from the last successful instance read, for the data guid select. */
     dataElements: DataElementSummary[];
     dataGuid: string;
@@ -42,6 +49,8 @@ export function FetchPanel({
     onPartyChange,
     instanceGuid,
     onInstanceGuidChange,
+    instances,
+    onListInstances,
     dataElements,
     dataGuid,
     onDataGuidChange,
@@ -59,6 +68,8 @@ export function FetchPanel({
     const guid = instanceGuid || "{instanceGuid}";
 
     const canGetInstance = hasToken && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
+    // Listing needs a party but no guid, since finding the guid is the point of it.
+    const canListInstances = hasToken && Boolean(org && app && instanceOwnerPartyId);
     const selected = dataElements.find((element) => element.id === dataGuid);
 
     return (
@@ -93,6 +104,43 @@ export function FetchPanel({
                     />
                 </div>
             </div>
+
+            <div className="row" style={{ marginTop: 12 }}>
+                <button type="button" className="btn" onClick={onListInstances} disabled={busy || !canListInstances}>
+                    {busy && <span className="btn__spinner" />}
+                    List instances
+                </button>
+                {instances !== null && instances.length === 0 && <span className="field__hint">No active instances for party {party}.</span>}
+            </div>
+
+            <p className="field__hint" style={{ marginTop: 8 }}>
+                <span className="method method--get">GET</span> {base}/instances/{party}/active
+                <br />
+                Altinn lists the instances whose process has not ended, so an archived one is not in here.
+            </p>
+
+            {/* Nothing to pick from until a listing has found something. */}
+            {instances !== null && instances.length > 0 && (
+                <div className="field" style={{ marginTop: 12 }}>
+                    <label htmlFor="instancePick">Instance</label>
+                    <select
+                        id="instancePick"
+                        value={instances.some((instance) => instance.instanceGuid === instanceGuid) ? instanceGuid : ""}
+                        // The full "party/guid" goes through, so the party follows the instance.
+                        onChange={(event) => {
+                            const picked = instances.find((instance) => instance.instanceGuid === event.target.value);
+                            if (picked) onInstanceGuidChange(picked.id);
+                        }}
+                    >
+                        <option value="">Pick one of {instances.length}</option>
+                        {instances.map((instance) => (
+                            <option key={instance.instanceGuid} value={instance.instanceGuid}>
+                                {instanceLabel(instance)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             <div className="row" style={{ marginTop: 12 }}>
                 <button type="button" className="btn" onClick={onGetInstance} disabled={busy || !canGetInstance}>

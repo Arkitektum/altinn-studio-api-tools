@@ -165,6 +165,24 @@ export interface DataElementSummary {
     lastChanged: string | null;
 }
 
+/** One entry of the party's instance list, as offered in the instance picker. */
+export interface InstanceSummary {
+    /** "510001/99d0632c-…", as Altinn writes it. */
+    id: string;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    lastChanged: string | null;
+    lastChangedBy: string | null;
+}
+
+export interface ListInstancesResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    instanceOwnerPartyId: string;
+    instances: InstanceSummary[];
+}
+
 export interface ReadInstanceResult {
     ok: boolean;
     steps: RunStep[];
