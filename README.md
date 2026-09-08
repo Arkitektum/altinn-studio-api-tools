@@ -41,6 +41,10 @@ Where LocalTest offers nothing, the two we work with are offered instead, Pengel
 
 Enter org and app, then press **Probe app**. This reads `/api/v1/applicationmetadata` to fill the data type picker, and `/api/v1/parties?allowedToInstantiateFilter=true` to fill the party picker with subunits flattened, so you do not have to guess a party id that would return 403. A **Will call** line shows the exact URL that is about to be requested.
 
+**Instance template** holds two optional fields, due before and visible after, for the cases where an instance needs a deadline or a date before which it is not visible. Both are local wall clock in the input and go out as UTC. Leaving them empty is the normal case and sends no template at all, which keeps the simpler request with the party in the query string; setting either moves the party into the instance body, because the query string form carries nothing else. The **Will call** line says which of the two it will be. A visible after date in the future warns, since it hides the instance you just made, including from the instance listing here. The fields are not offered when posting onto an existing instance, where Altinn ignores them.
+
+Altinn's instance template takes more than these two. The api accepts any of it through `instanceTemplate` on `/api/runs`, see [API](#api), and the UI offers the two that a test run has a use for.
+
 ### Payload
 
 One editor card per data element, holding the data type, the content type, and the body. The content type defaults to what the app declares in `allowedContentTypes`, falling back to detection from the payload itself. Each element has an example data picker that loads a shipped XML file for its data type, so the common case needs no pasting. See [Example data](#example-data). Data read back off an instance can be loaded in here too, see [Reading data back](#reading-data-back).
@@ -110,6 +114,8 @@ Two kinds of step cannot be replayed as written, because their logged body is a 
 | New instance, one request per data element (default) | `POST /{org}/{app}/instances?instanceOwnerPartyId={party}`, then one request per data element        |
 | New instance, all data in one request                | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
 | Existing instance                                    | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}`                                    |
+
+The first row's query string form is what you get with no instance template. With one, the party moves into a json instance body on the same URL, since the query string carries nothing but the party. The multipart row already sends an instance part, so a template just goes in it.
 
 After a run the instance guid is carried into the existing instance field, so creating an instance and then posting more data onto it takes two clicks. Pasting a full `510001/99d0632c-...` pair into that field splits the party id out for you.
 
@@ -364,6 +370,7 @@ web/src
   lib/download.ts     saving a data element as a file
   lib/fileUpload.ts   reading a picked file into a payload
   lib/payload.ts      where a loaded data element goes in the list
+  lib/instanceTemplate.ts  dueBefore and visibleAfter as an instance body
   styles.css          all the styling
 ```
 

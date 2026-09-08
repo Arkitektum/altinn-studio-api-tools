@@ -4,6 +4,7 @@ import { preferredContentType } from "./lib/contentType";
 import { isExpired, processLabel, severityLabel } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { bytesFromBase64 } from "./lib/formats";
+import { buildInstanceTemplate, type TemplateFields } from "./lib/instanceTemplate";
 import { placeLoaded } from "./lib/payload";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
@@ -277,6 +278,8 @@ export function App() {
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
     /** How many times to post the same payload, for building up test data. */
     const [repeat, setRepeat] = useLocalStorage("repeat", 1);
+    /** Optional instance template. Empty strings mean the field is not sent. */
+    const [template, setTemplate] = useLocalStorage<TemplateFields>("instanceTemplate", { dueBefore: "", visibleAfter: "" });
 
     const [metadata, setMetadata] = useState<AppMetadataResponse | null>(null);
     const [parties, setParties] = useState<AppParty[]>([]);
@@ -545,6 +548,7 @@ export function App() {
     async function run() {
         if (!activeTokenId) return;
         const times = repeatTimes;
+        const instanceTemplate = buildInstanceTemplate(template);
         setRunning(true);
         setRunError(null);
         try {
@@ -559,6 +563,8 @@ export function App() {
                     // The guid from the closure, so every repeat posts onto the instance you
                     // aimed at rather than onto the one the previous repeat created.
                     ...(mode === "existing" ? { instanceGuid } : {}),
+                    // Only sent when a field is set, and only for a new instance.
+                    ...(mode !== "existing" && instanceTemplate ? { instanceTemplate } : {}),
                     // Only the wire fields. exampleName and collapsed are UI state.
                     dataElements: dataElements.map((element) => ({
                         dataType: element.dataType,
@@ -858,6 +864,9 @@ export function App() {
                         onInstanceGuidChange={changeInstanceGuid}
                         mode={mode}
                         onModeChange={setMode}
+                        template={template}
+                        onTemplateChange={setTemplate}
+                        now={now}
                         catalogue={catalogue}
                         onPickCatalogueApp={(entry) => {
                             setOrg(entry.org);

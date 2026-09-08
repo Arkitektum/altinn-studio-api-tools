@@ -256,6 +256,7 @@ body {
 }
 
 input[type="text"],
+input[type="datetime-local"],
 select,
 textarea {
     width: 100%;
