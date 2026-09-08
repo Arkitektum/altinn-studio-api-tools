@@ -5,19 +5,21 @@ nav_order: 9
 
 # Reading data back
 
-The **Fetch** panel does six GET requests: list the party's instances, then get and validate for the instance and for one data element, plus the pdf preview. It also holds the delete.
+Two panels. **Instances** lists what the party has, so one can be opened or deleted, and **Fetch** reads whichever one is selected.
 
-Posting already runs the instance get and validate automatically, so the buttons here are for an instance you did not just create. List the party's instances and pick one, or paste a party id and guid. The party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping.
+Posting already runs the instance get and validate automatically, so Fetch is for an instance you did not just create. Its party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping.
 
-All six requests appear in the run log alongside posts, with method, URL, status, timing, and body.
+Every request appears in the run log alongside posts, with method, URL, status, timing, and body.
 
-## List instances
+## Instances
 
 `GET /{org}/{app}/instances/{party}/active`, the app's own list endpoint, the one its frontend uses to offer an unfinished form back to the user. It needs a party but no guid, since finding the guid is the point of it.
 
-The picker labels each instance by the first eight characters of its guid, when it was last changed and by whom, newest first, and choosing one fills in both the party id and the guid.
+There is no button for it. It is one read, and a panel whose whole purpose is showing the list may as well ask for it: the listing runs once there is a token, an app and a party, debounced because the party is typed a character at a time, and attempted once per target so a party that 403s is not retried forever. **Refresh** in the panel header lists again, and a post refreshes it too, since a post either makes an instance or changes one.
 
-Altinn lists the instances whose process has not ended, so an archived one is not in there and still has to be pasted. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
+Each row is the first eight characters of the guid, when it was last changed and by whom, newest first. Clicking a row points the whole tool at that instance: Fetch, Process, and the existing instance destination. The row for the selected one is marked. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
+
+Altinn lists the instances whose process has not ended, so an archived one is not here and its guid still has to be pasted into Fetch. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
 ## Get instance
 
@@ -61,10 +63,10 @@ One preview is held at a time. Rendering again replaces it and revokes the previ
 
 ## Deleting an instance
 
-At the bottom of the panel, behind a rule and away from the read buttons, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard={true|false}`.
+Every row in **Instances** has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard={true|false}` for that row, not for whatever is in the Fetch fields.
 
-Soft is the default: Altinn marks the instance deleted, which takes it out of the active list while leaving it in storage. **Hard delete** removes it outright and cannot be undone, so it is a checkbox you tick rather than the default reading of a `hard` parameter that happens to be absent.
+Soft is the default: Altinn marks the instance deleted, which takes it out of the active list while leaving it in storage. **Hard delete** removes it outright and cannot be undone, so it is a checkbox under the list rather than the default reading of a `hard` parameter that happens to be absent.
 
-Delete asks twice. The first click arms the button, which then names what it is about to do and which instance, as in "Confirm hard delete of 99d0632c". Changing the instance guid or the party drops a pending confirmation, so a second click never lands on an instance you did not mean. A refusal from Altinn, a locked instance or a party you may not act for, lands in the run log with the app's own reason.
+Delete asks twice. The first click arms that row's button, which then says which kind of delete it is about to do. One row is armed at a time, and a listing that changed underneath drops a pending confirmation, so a second click never lands on an instance you did not mean. A refusal from Altinn, a locked instance or a party you may not act for, lands in the run log with the app's own reason.
 
-Afterwards the instance is dropped from the listing and the guid is cleared, which takes the data elements, the process state and the validation issues with it, since all of them described an instance that is no longer there.
+Afterwards the instance leaves the list. If it was the one being inspected, the guid is cleared too, which takes the data elements, the process state and the validation issues with it, since all of them described an instance that is no longer there.

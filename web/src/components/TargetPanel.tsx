@@ -26,20 +26,19 @@ interface TargetPanelProps {
     onPickCatalogueApp: (entry: CatalogueApp) => void;
 }
 
+/**
+ * Two destinations. The api also takes `sequential`, which posts each data element in its own
+ * request, but it did the same thing as multipart with a longer log, so it is not offered here.
+ */
 const MODES: { value: RunMode; label: string; note: string }[] = [
     {
-        value: "sequential",
-        label: "New instance, one request per data element",
-        note: "POST /instances, then PUT/POST each data element. Clearest log."
-    },
-    {
         value: "multipart",
-        label: "New instance, all data in one request",
-        note: "A single multipart POST /instances carrying the instance plus every data element."
+        label: "New instance",
+        note: "One multipart POST /instances carrying the instance plus every data element."
     },
     {
         value: "existing",
-        label: "Existing instance, post data onto it",
+        label: "Existing instance",
         note: "Skips creation and upserts the data elements on an instance you already have."
     }
 ];
@@ -156,16 +155,26 @@ export function TargetPanel({
                 </div>
             ) : null}
 
-            <div className="field" style={{ marginTop: 16 }}>
-                <label htmlFor="mode">Destination</label>
-                <select id="mode" value={mode} onChange={(event) => onModeChange(event.target.value as RunMode)}>
+            <div style={{ marginTop: 16 }}>
+                <span className="legend">Destination</span>
+                <div className="tabs" role="tablist" aria-label="Destination">
                     {MODES.map((entry) => (
-                        <option key={entry.value} value={entry.value}>
+                        <button
+                            key={entry.value}
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === entry.value}
+                            onClick={() => onModeChange(entry.value)}
+                        >
                             {entry.label}
-                        </option>
+                        </button>
                     ))}
-                </select>
-                {activeMode && <p className="field__hint">{activeMode.note}</p>}
+                </div>
+                {activeMode && (
+                    <p className="field__hint" style={{ marginTop: 0 }}>
+                        {activeMode.note}
+                    </p>
+                )}
             </div>
 
             <div className="field" style={{ marginTop: 12 }}>

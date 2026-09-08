@@ -10,6 +10,8 @@ export interface SectionInputs {
     hasPdf: boolean;
     /** An instance read has told us where the instance stands in its process. */
     hasProcess: boolean;
+    /** A party is set, so the instance list has something to ask about. */
+    party: string;
     /** A request is in flight, so the log is about to have something in it. */
     busy: boolean;
 }
@@ -17,6 +19,8 @@ export interface SectionInputs {
 export interface VisibleSections {
     /** Payload, the post button and Fetch. All of them need a token and an app to aim at. */
     requests: boolean;
+    /** The party's instances, to open or delete one. */
+    instances: boolean;
     /** Where the instance stands, and the button that moves it on. */
     process: boolean;
     validation: boolean;
@@ -32,6 +36,8 @@ export interface VisibleSections {
 export function visibleSections(inputs: SectionInputs): VisibleSections {
     return {
         requests: inputs.hasToken && Boolean(inputs.org && inputs.app),
+        // Listing needs a party as well as an app, and it asks on its own once it has both.
+        instances: inputs.hasToken && Boolean(inputs.org && inputs.app && inputs.party),
         // Reading an instance is what fills this in, so it arrives with its first content like the
         // result panels do.
         process: inputs.hasProcess,

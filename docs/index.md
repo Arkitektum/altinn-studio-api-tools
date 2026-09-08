@@ -17,15 +17,15 @@ Everything is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to
 
 ## The panels
 
-| Panel                                               | What it is for                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------------ |
-| [Test user](test-user.md)                           | Getting a token from LocalTest, or pasting one                     |
-| [Target](target.md)                                 | Which app, which party, and which destination                      |
-| [Payload](payload.md)                               | The data elements to post, from an example, a file, or by hand     |
-| [Posting](posting.md)                               | What each destination calls, and max count behaviour               |
-| [Fetch](reading-data-back.md)                       | Listing, reading, validating, downloading and deleting an instance |
-| [Process](process.md)                               | Where the instance stands, and advancing it                        |
-| [Validation and the run log](validation-and-log.md) | Issues by severity, and every request the tool made                |
+| Panel                                               | What it is for                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------- |
+| [Test user](test-user.md)                           | Getting a token from LocalTest, or pasting one                              |
+| [Target](target.md)                                 | Which app, which party, and which destination                               |
+| [Payload](payload.md)                               | The data elements to post, from an example, a file, or by hand              |
+| [Posting](posting.md)                               | What each destination calls, and max count behaviour                        |
+| [Instances and Fetch](reading-data-back.md)         | Listing, opening, reading, validating, downloading and deleting an instance |
+| [Process](process.md)                               | Where the instance stands, and advancing it                                 |
+| [Validation and the run log](validation-and-log.md) | Issues by severity, and every request the tool made                         |
 
 Plus [Example data](example-data.md) for what ships in `examples/` and how to point the tool at your own, and [Configuration](configuration.md) for the environment variables and limits.
 

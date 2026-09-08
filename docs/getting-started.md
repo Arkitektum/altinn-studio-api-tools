@@ -29,7 +29,7 @@ The user id is the only thing you type:
 2. Pick `dibk/et-v4` from **Known app**, which fills in org, app and the main data type.
 3. The app is read for you, so the data type picker and the party picker now come from the app itself.
 4. The first payload element already holds the ET example, loaded when the data type was set. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
-5. Set the destination to **New instance, all data in one request** and press **Post**.
+5. Leave the destination on **New instance** and press **Post**.
 
 What you get back is the instance, read and validated automatically, with every request in the run log. From there [read it back](reading-data-back.md), [advance the process](process.md), or preview the receipt pdf.
 

@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
-import { instanceLabel } from "../lib/format";
 import { CopyButton } from "./CopyButton";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { DataElementSummary, FetchedDataElement, InstanceSummary } from "../types";
+import type { DataElementSummary, FetchedDataElement } from "../types";
 
 interface FetchPanelProps {
     appHost: string;
@@ -13,12 +11,6 @@ interface FetchPanelProps {
     onPartyChange: (next: string) => void;
     instanceGuid: string;
     onInstanceGuidChange: (next: string) => void;
-    /**
-     * The party's instances from the last listing. Null means nothing has been listed yet, which
-     * reads differently from a party that genuinely has none.
-     */
-    instances: InstanceSummary[] | null;
-    onListInstances: () => void;
     /** Data elements from the last successful instance read, for the data guid select. */
     dataElements: DataElementSummary[];
     dataGuid: string;
@@ -32,7 +24,6 @@ interface FetchPanelProps {
     onValidateInstance: () => void;
     onValidateDataElement: () => void;
     onPreviewPdf: () => void;
-    onDeleteInstance: (hard: boolean) => void;
     busy: boolean;
     hasToken: boolean;
     error: unknown;
@@ -56,8 +47,6 @@ export function FetchPanel({
     onPartyChange,
     instanceGuid,
     onInstanceGuidChange,
-    instances,
-    onListInstances,
     dataElements,
     dataGuid,
     onDataGuidChange,
@@ -69,35 +58,22 @@ export function FetchPanel({
     onValidateInstance,
     onValidateDataElement,
     onPreviewPdf,
-    onDeleteInstance,
     busy,
     hasToken,
     error
 }: FetchPanelProps) {
-    /** Delete asks twice. Hard delete cannot be undone, and soft takes the instance out of use. */
-    const [confirming, setConfirming] = useState(false);
-    const [hard, setHard] = useState(false);
-
-    // Aiming at another instance drops a pending confirmation, so a second click never lands on
-    // an instance you did not mean.
-    useEffect(() => {
-        setConfirming(false);
-    }, [instanceGuid, instanceOwnerPartyId]);
-
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
     const guid = instanceGuid || "{instanceGuid}";
 
     const canGetInstance = hasToken && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
-    // Listing needs a party but no guid, since finding the guid is the point of it.
-    const canListInstances = hasToken && Boolean(org && app && instanceOwnerPartyId);
     const selected = dataElements.find((element) => element.id === dataGuid);
 
     return (
         <Panel title="Fetch">
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                Posting reads the instance back and validates it automatically. Use this to inspect an instance you did not just create, by pasting
-                its party id and guid.
+                Reads whichever instance is selected above, or one you paste the party id and guid for. Posting already reads the instance back and
+                validates it, so these are for an instance you did not just create.
             </p>
 
             <div className="grid grid--2">
@@ -125,43 +101,6 @@ export function FetchPanel({
                     />
                 </div>
             </div>
-
-            <div className="row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" onClick={onListInstances} disabled={busy || !canListInstances}>
-                    {busy && <span className="btn__spinner" />}
-                    List instances
-                </button>
-                {instances !== null && instances.length === 0 && <span className="field__hint">No active instances for party {party}.</span>}
-            </div>
-
-            <p className="field__hint" style={{ marginTop: 8 }}>
-                <span className="method method--get">GET</span> {base}/instances/{party}/active
-                <br />
-                Altinn lists the instances whose process has not ended, so an archived one is not in here.
-            </p>
-
-            {/* Nothing to pick from until a listing has found something. */}
-            {instances !== null && instances.length > 0 && (
-                <div className="field" style={{ marginTop: 12 }}>
-                    <label htmlFor="instancePick">Instance</label>
-                    <select
-                        id="instancePick"
-                        value={instances.some((instance) => instance.instanceGuid === instanceGuid) ? instanceGuid : ""}
-                        // The full "party/guid" goes through, so the party follows the instance.
-                        onChange={(event) => {
-                            const picked = instances.find((instance) => instance.instanceGuid === event.target.value);
-                            if (picked) onInstanceGuidChange(picked.id);
-                        }}
-                    >
-                        <option value="">Pick one of {instances.length}</option>
-                        {instances.map((instance) => (
-                            <option key={instance.instanceGuid} value={instance.instanceGuid}>
-                                {instanceLabel(instance)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            )}
 
             <div className="row" style={{ marginTop: 12 }}>
                 <button type="button" className="btn" onClick={onGetInstance} disabled={busy || !canGetInstance}>
@@ -239,51 +178,6 @@ export function FetchPanel({
                     )}
                 </>
             )}
-
-            {/* Clearing up after a test run. Kept to the bottom, away from the read buttons. */}
-            <div className="danger">
-                <span className="legend">Delete instance</span>
-                <label className="check">
-                    <input type="checkbox" checked={hard} onChange={(event) => setHard(event.target.checked)} disabled={busy} />
-                    <span className="check__body">
-                        <span className="check__title">Hard delete</span>
-                        <span className="check__note">
-                            Off marks the instance deleted and takes it out of the active list, leaving it in storage. On removes it outright, which
-                            cannot be undone.
-                        </span>
-                    </span>
-                </label>
-
-                <div className="row" style={{ marginTop: 10 }}>
-                    {confirming ? (
-                        <>
-                            <button
-                                type="button"
-                                className="btn btn--danger btn--armed"
-                                onClick={() => {
-                                    setConfirming(false);
-                                    onDeleteInstance(hard);
-                                }}
-                                disabled={busy || !canGetInstance}
-                            >
-                                {busy && <span className="btn__spinner" />}
-                                Confirm {hard ? "hard" : "soft"} delete of {instanceGuid.slice(0, 8)}
-                            </button>
-                            <button type="button" className="btn btn--ghost" onClick={() => setConfirming(false)}>
-                                Cancel
-                            </button>
-                        </>
-                    ) : (
-                        <button type="button" className="btn" onClick={() => setConfirming(true)} disabled={busy || !canGetInstance}>
-                            Delete instance
-                        </button>
-                    )}
-                </div>
-
-                <p className="field__hint" style={{ marginTop: 8 }}>
-                    <span className="method method--delete">DELETE</span> {base}/instances/{party}/{guid}?hard={String(hard)}
-                </p>
-            </div>
 
             {error ? (
                 <div style={{ marginTop: 12 }}>

@@ -4,7 +4,7 @@ import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { bytesFromBase64 } from "./lib/formats";
-import { splitPastedInstanceId } from "./lib/inputs";
+import { offeredMode, splitPastedInstanceId } from "./lib/inputs";
 import {
     logFromAdvance,
     logFromDataElement,
@@ -21,6 +21,7 @@ import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
+import { InstancesPanel } from "./components/InstancesPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
 import { ProcessPanel } from "./components/ProcessPanel";
 import { RunLog } from "./components/RunLog";
@@ -68,7 +69,9 @@ export function App() {
     const [instanceGuid, setInstanceGuid] = useLocalStorage("instanceGuid", "");
     // The party value this session last filled in from a token claim. See the effect below.
     const [autoFilledParty, setAutoFilledParty] = useLocalStorage<string | null>("partyAutoFilledFrom", null);
-    const [mode, setMode] = useLocalStorage<RunMode>("mode", "sequential");
+    const [storedMode, setMode] = useLocalStorage<RunMode>("mode", "multipart");
+    // Normalised, so a "sequential" saved before that destination was dropped still selects.
+    const mode = offeredMode(storedMode);
     const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>("dataElements", [EMPTY_ELEMENT]);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
 
@@ -101,6 +104,10 @@ export function App() {
      * Null means nothing has been listed yet, which reads differently from a party with none.
      */
     const [instanceList, setInstanceList] = useState<InstanceSummary[] | null>(null);
+    const [listing, setListing] = useState(false);
+    const [listError, setListError] = useState<unknown>(null);
+    /** Which token, app and party the listing has already been attempted for. */
+    const [listAttempted, setListAttempted] = useState<string | null>(null);
 
     /** Where the instance stands, from the last instance read or process move. */
     const [instanceProcess, setInstanceProcess] = useState<ProcessSummary | null>(null);
@@ -252,6 +259,26 @@ export function App() {
     }, [org, app, instanceOwnerPartyId]);
 
     /**
+     * List the party's instances without being asked. It is one read, and the panel exists to
+     * show them, so making anyone press a button for it was busywork.
+     *
+     * Debounced and attempted once per token, app and party, for the same reasons the app read
+     * is: the party is typed a character at a time, and a party that 403s should not be retried
+     * forever. Refresh in the panel header lists again on demand.
+     */
+    useEffect(() => {
+        if (!tokenUsable || !activeTokenId || !org || !app || !instanceOwnerPartyId) return;
+        const key = `${activeTokenId}:${org}/${app}:${instanceOwnerPartyId}`;
+        if (listAttempted === key) return;
+
+        const timer = window.setTimeout(() => {
+            setListAttempted(key);
+            void listInstances();
+        }, 500);
+        return () => window.clearTimeout(timer);
+    }, [tokenUsable, activeTokenId, org, app, instanceOwnerPartyId, listAttempted]);
+
+    /**
      * Probe on its own once there is a token and a target. It is two reads that create nothing,
      * so there is no reason to make anyone press a button for it.
      *
@@ -386,6 +413,8 @@ export function App() {
             if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
+            // The post either made an instance or changed one, so what was listed is out of date.
+            if (payload.ok) refreshInstances();
         } catch (error) {
             setRunError(error);
         } finally {
@@ -394,9 +423,9 @@ export function App() {
     }
 
     async function listInstances() {
-        if (!activeTokenId) return;
-        setFetching(true);
-        setFetchError(null);
+        if (!activeTokenId || !org || !app || !instanceOwnerPartyId) return;
+        setListing(true);
+        setListError(null);
         try {
             const result = await api.listInstances({ tokenId: activeTokenId, org, app, instanceOwnerPartyId });
             appendLog(logFromInstances(result));
@@ -404,10 +433,22 @@ export function App() {
             // cannot make when the request never answered.
             setInstanceList(result.ok ? result.instances : null);
         } catch (error) {
-            setFetchError(error);
+            setListError(error);
         } finally {
-            setFetching(false);
+            setListing(false);
         }
+    }
+
+    /**
+     * Lists again on demand, for the Refresh button and after a post.
+     *
+     * Marks the current target as attempted rather than clearing the marker: clearing it would
+     * make the effect below schedule a second listing on top of this one.
+     */
+    function refreshInstances() {
+        if (!activeTokenId) return;
+        setListAttempted(`${activeTokenId}:${org}/${app}:${instanceOwnerPartyId}`);
+        void listInstances();
     }
 
     async function getInstance() {
@@ -530,31 +571,32 @@ export function App() {
         }
     }
 
-    async function removeInstance(hard: boolean) {
+    async function removeInstance(instance: InstanceSummary, hard: boolean) {
         if (!activeTokenId) return;
-        setFetching(true);
-        setFetchError(null);
+        setListing(true);
+        setListError(null);
         try {
             const result = await api.deleteInstance({
                 tokenId: activeTokenId,
                 org,
                 app,
-                instanceOwnerPartyId,
-                instanceGuid,
+                instanceOwnerPartyId: instance.instanceOwnerPartyId,
+                instanceGuid: instance.instanceGuid,
                 hard: hard ? "true" : "false"
             });
             appendLog(logFromDelete(result));
             if (!result.ok) return;
 
             // Take it out of the listing, since a deleted instance is not one to offer next.
-            setInstanceList((current) => current?.filter((instance) => instance.instanceGuid !== result.instanceGuid) ?? null);
-            // Clearing the guid drops the data elements, process and issues along with it. Leaving
-            // them would describe an instance that is no longer there.
-            changeInstanceGuid("");
+            setInstanceList((current) => current?.filter((held) => held.instanceGuid !== result.instanceGuid) ?? null);
+            // Only clear the fields when they pointed at the instance that just went. Clearing the
+            // guid drops the data elements, process and issues along with it, which would be wrong
+            // to do while looking at a different instance.
+            if (instanceGuid === result.instanceGuid) changeInstanceGuid("");
         } catch (error) {
-            setFetchError(error);
+            setListError(error);
         } finally {
-            setFetching(false);
+            setListing(false);
         }
     }
 
@@ -613,6 +655,7 @@ export function App() {
         runCount: logs.length,
         hasPdf: pdfPreview !== null,
         hasProcess: instanceProcess !== null,
+        party: instanceOwnerPartyId,
         busy: running || fetching
     });
 
@@ -718,6 +761,24 @@ export function App() {
                                 </button>
                             </section>
 
+                            {sections.instances && (
+                                <InstancesPanel
+                                    appHost={appHost}
+                                    org={org}
+                                    app={app}
+                                    instanceOwnerPartyId={instanceOwnerPartyId}
+                                    instances={instanceList}
+                                    instanceGuid={instanceGuid}
+                                    // Selecting takes the whole "510001/guid" pair, so the party
+                                    // follows the instance rather than being assumed.
+                                    onSelect={(instance) => changeInstanceGuid(instance.id)}
+                                    onDelete={(instance, hard) => void removeInstance(instance, hard)}
+                                    onRefresh={refreshInstances}
+                                    busy={listing}
+                                    error={listError}
+                                />
+                            )}
+
                             <FetchPanel
                                 appHost={appHost}
                                 org={org}
@@ -726,8 +787,6 @@ export function App() {
                                 onPartyChange={setInstanceOwnerPartyId}
                                 instanceGuid={instanceGuid}
                                 onInstanceGuidChange={changeInstanceGuid}
-                                instances={instanceList}
-                                onListInstances={() => void listInstances()}
                                 dataElements={instanceDataElements}
                                 dataGuid={dataGuid}
                                 onDataGuidChange={changeDataGuid}
@@ -742,7 +801,6 @@ export function App() {
                                 hasToken={tokenUsable}
                                 error={fetchError}
                                 onPreviewPdf={() => void renderPdf()}
-                                onDeleteInstance={(hard) => void removeInstance(hard)}
                             />
 
                             {/* Where the instance stands. Arrives with the first instance read. */}

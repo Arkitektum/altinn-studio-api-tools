@@ -9,7 +9,7 @@ Three columns: the test user on the left, the target app, payload and fetch cont
 
 ## Panels appear as they become usable
 
-Rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload, the post button and Fetch arrive once you have a token and an app to aim at. Validation and the run log arrive with their first content, and the process panel and the data element controls in Fetch appear once an instance read has told them what to show.
+Rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload, the post button and Fetch arrive once you have a token and an app to aim at, and Instances once there is a party as well. Validation and the run log arrive with their first content, and the process panel and the data element controls in Fetch appear once an instance read has told them what to show.
 
 The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
 

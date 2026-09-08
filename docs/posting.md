@@ -7,15 +7,16 @@ nav_order: 8
 
 ## Destinations
 
-| Destination                                          | Calls                                                                                                |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| New instance, one request per data element (default) | `POST /{org}/{app}/instances?instanceOwnerPartyId={party}`, then one request per data element        |
-| New instance, all data in one request                | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
-| Existing instance                                    | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}`                                    |
+A switch with two positions:
 
-One request per data element gives the clearest log, since every element has its own step, status and timing. All data in one request is closer to what a real client does, and it is the only way to create an instance and its data in a single call.
+| Destination           | Calls                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| **New instance**      | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
+| **Existing instance** | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}` per data element                   |
 
-After a run the instance guid is carried into the existing instance field, so creating an instance and then posting more data onto it takes two clicks.
+The api also takes `mode: "sequential"`, which creates the instance and then posts each data element in its own request. It was a third position on the switch and is not any more: it stored the same thing as multipart with a longer log, and one fewer choice is worth more than the difference. `/api/runs` still accepts it, see [API](api.md).
+
+After a run the instance guid is carried over, so creating an instance and then posting more data onto it means flicking the switch to **Existing instance**.
 
 ## What happens after every post
 

@@ -11,6 +11,7 @@ const ready: SectionInputs = {
     runCount: 0,
     hasPdf: false,
     hasProcess: false,
+    party: "510001",
     busy: false
 };
 
@@ -34,6 +35,13 @@ describe("visibleSections", () => {
     it("shows the pdf panel only while a rendered pdf is held", () => {
         assert.equal(visibleSections(ready).pdf, false);
         assert.equal(visibleSections({ ...ready, hasPdf: true }).pdf, true);
+    });
+
+    it("shows the instance list once there is a party to list for", () => {
+        assert.equal(visibleSections(ready).instances, true);
+        assert.equal(visibleSections({ ...ready, party: "" }).instances, false);
+        // No token means no request it could make.
+        assert.equal(visibleSections({ ...ready, hasToken: false }).instances, false);
     });
 
     it("shows the process panel only once an instance read has said where it stands", () => {

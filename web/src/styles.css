@@ -671,13 +671,13 @@ textarea {
     white-space: nowrap;
 }
 
-.token-switch {
+.picklist {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.token-switch__item {
+.picklist__item {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -692,17 +692,17 @@ textarea {
     text-align: left;
 }
 
-.token-switch__item:hover {
+.picklist__item:hover {
     background: var(--bg-subtle);
 }
 
-.token-switch__item[aria-current="true"] {
+.picklist__item[aria-current="true"] {
     border-color: var(--accent-border);
     background: var(--accent-bg);
     color: var(--text);
 }
 
-.token-switch__item span {
+.picklist__item span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

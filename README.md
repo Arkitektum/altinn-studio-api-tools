@@ -30,7 +30,7 @@ The quickest path to a full submission, where the user id is the only thing you 
 2. Pick `dibk/et-v4` from **Known app**, which fills in org, app and the main data type.
 3. Nothing to press: the app is read for you, so the data type and party pickers come from the app itself.
 4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
-5. Choose **New instance, all data in one request** and press **Post**.
+5. Leave the destination on **New instance** and press **Post**.
 
 The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, preview the receipt pdf, or delete the instance.
 
@@ -43,7 +43,7 @@ By hand instead: type an org and app, probe, pick a party, choose a data type, l
 | [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                           | Tokens from LocalTest's own user list, any user id by hand, renew in place, or paste a token |
 | [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                 | Reads the app for its data types and parties, and 25 known apps to pick from                 |
 | [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                               | One card per data element, from a shipped example, a file off disk, or by hand               |
-| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                               | Three destinations, with automatic read back and validation after every post                 |
+| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                               | A new instance or an existing one, read back and validated after every post                  |
 | [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)           | List a party's instances, read and validate, download, load into the payload, delete         |
 | [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                               | Where the instance stands, and advancing it                                                  |
 | [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/) | Issues by severity, every request with both bodies, and copy as curl                         |

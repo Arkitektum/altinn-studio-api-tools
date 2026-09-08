@@ -13,7 +13,7 @@ The read is debounced, because org and app are typed a character at a time and `
 
 A result belongs to one org and app, so changing either drops it and reads the new target instead.
 
-There is deliberately no link to the app root here. Altinn instantiates from it, so opening it left a new empty instance behind every time, which is rarely what anyone wanted from a link called "open app". To open an instance you actually have, use the link on its run log entry, or [list the party's instances](reading-data-back.md#list-instances) in Fetch. The api still reports the app's url as `appUrl` on `/api/app/metadata` for a caller that wants it.
+There is deliberately no link to the app root here. Altinn instantiates from it, so opening it left a new empty instance behind every time, which is rarely what anyone wanted from a link called "open app". To open an instance you actually have, use **Open** on its row in [Instances](reading-data-back.md#instances), or the link on its run log entry. The api still reports the app's url as `appUrl` on `/api/app/metadata` for a caller that wants it.
 
 ## Known apps
 
@@ -27,7 +27,7 @@ The party id is prefilled from the token's claim. Once the app has been probed, 
 
 ## Destination
 
-Three destinations, described in [Posting](posting.md). The **Instance guid** field appears for the existing instance destination, and pasting a full `510001/99d0632c-…` pair into it splits the party id out for you.
+A switch: a new instance, or one you already have. Described in [Posting](posting.md). The **Instance guid** field appears for the existing instance destination, and pasting a full `510001/99d0632c-…` pair into it splits the party id out for you, as does picking a row in [Instances](reading-data-back.md#instances).
 
 ## Instance template
 

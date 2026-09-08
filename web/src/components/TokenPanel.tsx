@@ -254,12 +254,12 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
             {tokens.length > 1 && (
                 <div style={{ marginTop: 14 }}>
                     <span className="legend">Stored tokens</span>
-                    <div className="token-switch">
+                    <div className="picklist">
                         {tokens.map((token) => (
                             <div key={token.id} style={{ display: "flex", gap: 6 }}>
                                 <button
                                     type="button"
-                                    className="token-switch__item"
+                                    className="picklist__item"
                                     style={{ flex: 1 }}
                                     aria-current={token.id === activeToken?.id}
                                     onClick={() => onActivate(token.id)}
