@@ -77,7 +77,10 @@ export interface DataElementInput {
     encoding?: ExampleEncoding;
     contentType?: string;
     filename?: string;
-    /** UI-only: which example file this content came from. Not sent to the server. */
+    /**
+     * UI-only: where this content came from, an example file or an instance it was read back
+     * from. Reads after "from" in the editor hint. Not sent to the server.
+     */
     exampleName?: string;
     /** UI-only: collapsed in the payload list. Not sent to the server. */
     collapsed?: boolean;

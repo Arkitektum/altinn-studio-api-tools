@@ -3,6 +3,7 @@ import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired, processLabel, severityLabel } from "./lib/format";
 import { bytesFromBase64, downloadContent, suggestedFilename } from "./lib/download";
+import { placeLoaded } from "./lib/payload";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
@@ -636,6 +637,27 @@ export function App() {
         downloadContent(fetchedElement.filename, fetchedElement.content, fetchedElement.encoding, fetchedElement.contentType);
     }
 
+    /**
+     * Puts what was read back into the payload editor, so stored data can be changed and posted
+     * again. The destination is left alone: posting it back to the same instance and using it as
+     * the payload for a new one are both real cases, and only you know which this is.
+     */
+    function loadFetchedIntoPayload() {
+        if (!fetchedElement) return;
+        const loaded: DataElementInput = {
+            dataType: fetchedElement.dataType,
+            content: fetchedElement.content,
+            // Parameters are dropped, so a stored "application/xml; charset=utf-8" does not become
+            // an extra option in the content type picker.
+            ...(fetchedElement.contentType ? { contentType: fetchedElement.contentType.split(";")[0]?.trim() } : {}),
+            ...(fetchedElement.encoding === "base64" ? { encoding: "base64" as const, filename: fetchedElement.filename } : {}),
+            exampleName: `instance ${instanceGuid.slice(0, 8)}`,
+            collapsed: false
+        };
+
+        setDataElements(placeLoaded(dataElements, loaded));
+    }
+
     async function renderPdf() {
         if (!activeTokenId) return;
         setFetching(true);
@@ -836,6 +858,7 @@ export function App() {
                                 onDataGuidChange={changeDataGuid}
                                 fetched={fetchedElement}
                                 onDownloadDataElement={downloadDataElement}
+                                onLoadIntoPayload={loadFetchedIntoPayload}
                                 onGetInstance={() => void getInstance()}
                                 onGetDataElement={() => void getDataElement()}
                                 onValidateInstance={() => void runValidation("instance")}

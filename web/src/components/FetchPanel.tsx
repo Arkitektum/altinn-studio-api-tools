@@ -25,6 +25,7 @@ interface FetchPanelProps {
     /** The data element last read back, for the download and copy buttons. */
     fetched: FetchedDataElement | null;
     onDownloadDataElement: () => void;
+    onLoadIntoPayload: () => void;
     onGetInstance: () => void;
     onGetDataElement: () => void;
     onValidateInstance: () => void;
@@ -60,6 +61,7 @@ export function FetchPanel({
     onDataGuidChange,
     fetched,
     onDownloadDataElement,
+    onLoadIntoPayload,
     onGetInstance,
     onGetDataElement,
     onValidateInstance,
@@ -205,16 +207,22 @@ export function FetchPanel({
 
                     {/* What came back, as a file rather than as text in the log. */}
                     {fetched && (
-                        <div className="row" style={{ marginTop: 12 }}>
-                            <button type="button" className="btn" onClick={onDownloadDataElement}>
-                                Download {fetched.filename}
-                            </button>
-                            {/* Copying base64 as text would hand over the encoding, not the file. */}
-                            {fetched.encoding === "utf8" && <CopyButton label="Copy content" text={fetched.content} />}
-                            <span className="field__hint">
-                                {fetched.contentType ?? "unknown type"} · {fetched.size} B
-                            </span>
-                        </div>
+                        <>
+                            <div className="row" style={{ marginTop: 12 }}>
+                                <button type="button" className="btn" onClick={onDownloadDataElement}>
+                                    Download {fetched.filename}
+                                </button>
+                                <button type="button" className="btn" onClick={onLoadIntoPayload}>
+                                    Load into payload
+                                </button>
+                                {/* Copying base64 as text would hand over the encoding, not the file. */}
+                                {fetched.encoding === "utf8" && <CopyButton label="Copy content" text={fetched.content} />}
+                            </div>
+                            <p className="field__hint" style={{ marginTop: 8 }}>
+                                {fetched.contentType ?? "unknown type"} · {fetched.size} B · Loading puts it in the Payload panel for editing, and
+                                leaves the destination alone, so you choose whether it goes back to this instance or into a new one.
+                            </p>
+                        </>
                     )}
                 </>
             )}

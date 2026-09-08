@@ -39,7 +39,7 @@ Enter org and app, then press **Probe app**. This reads `/api/v1/applicationmeta
 
 ### Payload
 
-One editor card per data element, holding the data type, the content type, and the body. The content type defaults to what the app declares in `allowedContentTypes`, falling back to detection from the payload itself. Each element has an example data picker that loads a shipped XML file for its data type, so the common case needs no pasting. See [Example data](#example-data).
+One editor card per data element, holding the data type, the content type, and the body. The content type defaults to what the app declares in `allowedContentTypes`, falling back to detection from the payload itself. Each element has an example data picker that loads a shipped XML file for its data type, so the common case needs no pasting. See [Example data](#example-data). Data read back off an instance can be loaded in here too, see [Reading data back](#reading-data-back).
 
 Elements collapse to a single row, so a payload with several of them stays readable. Adding an element collapses the ones already there and leaves the new one open, and **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
 
@@ -215,6 +215,10 @@ A listing belongs to one app and one party, so changing either drops it. A party
 
 The party id and instance guid are the same fields the existing instance destination uses, so posting an instance and then reading it back needs no retyping. The request goes out with `Accept: */*`, because asking for JSON would stop Altinn returning stored XML. XML comes back verbatim and JSON comes back parsed.
 
+**Load into payload** puts what came back into the Payload panel, which is the round trip: read a stored element, change one field, post it again. An element that is standing empty is reused rather than a second one being added next to it, and otherwise it is appended with the others collapsed, so the loaded element is the one in front of you. The collapsed row and the editor hint both say `instance 99d0632c` where an example file would have named itself, so loaded and shipped content never look alike. A content type parameter is dropped on the way in, so a stored `application/xml; charset=utf-8` does not become an extra option in the picker.
+
+The destination is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick the destination in Target as usual. Posting it back to the same instance needs nothing else: the party id and guid are already filled in, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](#max-count-behaviour).
+
 What came back is held, so **Download** saves it as a file and **Copy content** puts the text on the clipboard, rather than leaving it as text in a `pre` to be selected by hand. The download is named after whatever Altinn stored, since an attachment was uploaded under a name someone chose, and otherwise after the data type with an extension from the content type, so `ET` becomes `ET.xml`. Binary content is written from the decoded bytes and offers no copy button, because copying base64 as text hands over the encoding rather than the file. Picking another data element, or another instance, drops what is held instead of offering to download an element you are no longer looking at.
 
 Validation results are listed out rather than left as raw JSON. Issues are grouped by severity with the worst first, each one showing its code, the data type it belongs to, the description and the field path, on a severity coloured card. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code. This appears both for the validation that runs automatically after a post and for the two validate buttons.
@@ -330,6 +334,7 @@ web/src
   components/         TokenPanel, TargetPanel, PayloadPanel, ExamplePicker, FetchPanel, ProcessPanel, RunLog, CopyButton
   lib/curl.ts         a logged step as a curl command
   lib/download.ts     saving a data element as a file
+  lib/payload.ts      where a loaded data element goes in the list
   styles.css          all the styling
 ```
 
