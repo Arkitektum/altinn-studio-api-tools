@@ -7,7 +7,7 @@ nav_order: 9
 
 Two panels. **Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. **Fetch** reads whichever one that is.
 
-Posting already runs the instance get and validate automatically, so Fetch is for an instance you did not just create. It has no fields of its own: it reads whatever is selected in Instances, and says which party and instance that is.
+Fetch has no fields of its own: it works on whatever is selected in Instances, and says which party and instance that is.
 
 Every request appears in the run log alongside posts, with method, URL, status, timing, and body.
 
@@ -27,9 +27,13 @@ Altinn lists the instances whose process has not ended, so an archived one is no
 
 Within a session it rarely comes up, since an instance stays selected after a post even once its process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
-## Get instance
+## Reading and validating, on selection
 
-`GET /{org}/{app}/instances/{party}/{guid}`. Besides logging the whole response it reads the instance's `data` array and fills the data element select, so you do not have to copy a dataGuid by hand. It also fills the [Process](process.md) panel, which needs no request of its own.
+`GET /{org}/{app}/instances/{party}/{guid}` and then `GET …/validate`, without a button: selecting an instance is asking to see it, and both are reads. It happens once per selection, debounced because a guid typed into **Other instance** arrives a character at a time, and a post marks its own instance as read since it already read and validated it.
+
+The two land as one run log entry, "Read instance", with the steps renumbered across both, the same way a post folds in its follow-ups. Two entries per click would have been noise.
+
+Besides logging the whole response, the read fills the data element select so you do not have to copy a dataGuid by hand, and fills the [Process](process.md) panel, which needs no request of its own. The validation fills the [Validation](validation-and-log.md) panel. A read that failed skips the validation, which would only fail the same way.
 
 ## Get data element
 
@@ -53,9 +57,9 @@ Picking another data element, or another instance, drops what is held instead of
 
 The selection is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick in Instances as usual. Posting it back to the same instance needs nothing else: it is still the selected one, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
 
-## Validate
+## Validate a data element
 
-**Validate instance** calls `GET /{org}/{app}/instances/{party}/{guid}/validate` and **Validate data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes.
+The instance's own validation runs with the read above. **Validate data element** is its own button, since it is about one element: `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes.
 
 The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`. The issues themselves are listed in the [Validation](validation-and-log.md) panel rather than left as raw JSON.
 

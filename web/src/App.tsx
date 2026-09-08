@@ -9,8 +9,8 @@ import {
     logFromAdvance,
     logFromDataElement,
     logFromDelete,
-    logFromInstance,
     logFromInstances,
+    logFromRead,
     logFromPdf,
     logFromRun,
     logFromValidation
@@ -105,6 +105,8 @@ export function App() {
     const [listError, setListError] = useState<unknown>(null);
     /** Which token, app and party the listing has already been attempted for. */
     const [listAttempted, setListAttempted] = useState<string | null>(null);
+    /** And which instance has already been read, so it is read once per selection. */
+    const [readAttempted, setReadAttempted] = useState<string | null>(null);
 
     /** Where the instance stands, from the last instance read or process move. */
     const [instanceProcess, setInstanceProcess] = useState<ProcessSummary | null>(null);
@@ -289,6 +291,26 @@ export function App() {
     }, [org, app, instanceOwnerPartyId]);
 
     /**
+     * Read and validate the selected instance without being asked. Both are reads, and the panels
+     * below exist to show what they return, so a button for them was busywork.
+     *
+     * Attempted once per token, app, party and instance, so it does not re-read on every render,
+     * and debounced because a guid typed into "Other instance" arrives a character at a time. A
+     * post marks its own instance as read, since it already reads and validates it.
+     */
+    useEffect(() => {
+        if (!tokenUsable || !activeTokenId || !org || !app || !instanceOwnerPartyId || !instanceGuid) return;
+        const key = `${activeTokenId}:${org}/${app}:${instanceOwnerPartyId}/${instanceGuid}`;
+        if (readAttempted === key) return;
+
+        const timer = window.setTimeout(() => {
+            setReadAttempted(key);
+            void readSelected(instanceOwnerPartyId, instanceGuid);
+        }, 500);
+        return () => window.clearTimeout(timer);
+    }, [tokenUsable, activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, readAttempted]);
+
+    /**
      * List the party's instances without being asked. It is one read, and the panel exists to
      * show them, so making anyone press a button for it was busywork.
      *
@@ -439,8 +461,12 @@ export function App() {
                 validate: false,
                 advanceProcess
             });
-            // Chain naturally into "now post more data to that instance".
-            if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
+            // Chain naturally into "now post more data to that instance". The follow-up below
+            // reads and validates it, so mark it read: the effect would otherwise do it twice.
+            if (payload.instanceGuid) {
+                setInstanceGuid(payload.instanceGuid);
+                setReadAttempted(`${activeTokenId}:${org}/${app}:${payload.instanceOwnerPartyId ?? instanceOwnerPartyId}/${payload.instanceGuid}`);
+            }
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
             // The post either made an instance or changed one, so what was listed is out of date.
@@ -481,25 +507,32 @@ export function App() {
         void listInstances();
     }
 
-    async function getInstance() {
-        if (!activeTokenId) return;
+    /**
+     * Reads the selected instance and validates it, as one log entry. Both are reads, so this
+     * runs on its own whenever the selection changes rather than waiting for a button.
+     */
+    async function readSelected(party: string, guid: string) {
+        if (!activeTokenId || !org || !app || !party || !guid) return;
         setFetching(true);
         setFetchError(null);
+        const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId: party, instanceGuid: guid };
         try {
-            const read = await api.getInstance({
-                tokenId: activeTokenId,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid
-            });
-            appendLog(logFromInstance(read));
+            const read = await api.getInstance(params);
             setInstanceDataElements(read.dataElements);
             setInstanceProcess(read.process);
-            // Preselect one so fetching a data element is a single click.
-            if (read.dataElements.length > 0 && !read.dataElements.some((el) => el.id === dataGuid)) {
-                changeDataGuid(read.dataElements[0]?.id ?? "");
+            // Preselect one so reading a data element is a single click.
+            if (read.dataElements.length > 0) changeDataGuid(read.dataElements[0]?.id ?? "");
+
+            // Validating an instance that could not be read would just fail the same way.
+            let validated: ValidateResult | null = null;
+            if (read.ok) {
+                try {
+                    validated = await api.validateInstance(params);
+                } catch {
+                    /* the read still stands, and its own step is in the log */
+                }
             }
+            appendLog(logFromRead(read, validated));
         } catch (error) {
             setFetchError(error);
         } finally {
@@ -647,15 +680,13 @@ export function App() {
         }
     }
 
-    // Named runValidation to avoid shadowing the `validate` option used by the post flow.
-    async function runValidation(scope: "instance" | "dataElement") {
-        if (!activeTokenId) return;
-        if (scope === "dataElement" && !dataGuid) return;
+    /** Validates one data element. The instance's own validation runs with the read. */
+    async function validateDataElement() {
+        if (!activeTokenId || !dataGuid) return;
         setFetching(true);
         setFetchError(null);
-        const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid };
         try {
-            const result = scope === "instance" ? await api.validateInstance(params) : await api.validateDataElement({ ...params, dataGuid });
+            const result = await api.validateDataElement({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid });
             // The instance read is what lets an issue name its data type instead of a guid.
             appendLog(logFromValidation(result, instanceDataElements));
         } catch (error) {
@@ -827,10 +858,8 @@ export function App() {
                                 fetched={fetchedElement}
                                 onDownloadDataElement={downloadDataElement}
                                 onLoadIntoPayload={loadFetchedIntoPayload}
-                                onGetInstance={() => void getInstance()}
                                 onGetDataElement={() => void getDataElement()}
-                                onValidateInstance={() => void runValidation("instance")}
-                                onValidateDataElement={() => void runValidation("dataElement")}
+                                onValidateDataElement={() => void validateDataElement()}
                                 busy={fetching}
                                 hasToken={tokenUsable}
                                 error={fetchError}

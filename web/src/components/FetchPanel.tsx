@@ -17,9 +17,7 @@ interface FetchPanelProps {
     fetched: FetchedDataElement | null;
     onDownloadDataElement: () => void;
     onLoadIntoPayload: () => void;
-    onGetInstance: () => void;
     onGetDataElement: () => void;
-    onValidateInstance: () => void;
     onValidateDataElement: () => void;
     onPreviewPdf: () => void;
     busy: boolean;
@@ -49,9 +47,7 @@ export function FetchPanel({
     fetched,
     onDownloadDataElement,
     onLoadIntoPayload,
-    onGetInstance,
     onGetDataElement,
-    onValidateInstance,
     onValidateDataElement,
     onPreviewPdf,
     busy,
@@ -79,24 +75,23 @@ export function FetchPanel({
                 <dd>{instanceGuid || "none selected"}</dd>
             </dl>
 
+            {/* The instance itself is read and validated on selection, so only the pdf is a button. */}
+            <p className="field__hint">
+                Read and validated when the selection changes:
+                <br />
+                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}
+                <br />
+                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
+            </p>
+
             <div className="row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" onClick={onGetInstance} disabled={busy || !canGetInstance}>
-                    {busy && <span className="btn__spinner" />}
-                    Get instance
-                </button>
-                <button type="button" className="btn" onClick={onValidateInstance} disabled={busy || !canGetInstance}>
-                    Validate instance
-                </button>
                 <button type="button" className="btn" onClick={onPreviewPdf} disabled={busy || !canGetInstance}>
+                    {busy && <span className="btn__spinner" />}
                     Preview pdf
                 </button>
             </div>
 
             <p className="field__hint" style={{ marginTop: 8 }}>
-                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}
-                <br />
-                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
-                <br />
                 <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
             </p>
 

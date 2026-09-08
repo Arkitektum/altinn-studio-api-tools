@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { issueRow, logFromDataElement, logFromDelete, logFromInstance, logFromRun, logFromValidation, renumber, toValidation } from "./logResults";
+import { issueRow, logFromDataElement, logFromDelete, logFromRead, logFromRun, logFromValidation, renumber, toValidation } from "./logResults";
 import type { DataElementSummary, ReadInstanceResult, RunResult, RunStep, ValidateResult } from "../types";
 
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
@@ -165,28 +165,6 @@ describe("logFromRun", () => {
     });
 });
 
-describe("logFromInstance", () => {
-    it("offers the app link only when the instance could be read", () => {
-        assert.equal(logFromInstance(instanceRead()).instanceUrl?.includes(GUID), true);
-        // Offering to open an instance that 404'd would just 404 again.
-        assert.equal(logFromInstance(instanceRead({ ok: false, failedAt: "Could not read the instance." })).instanceUrl, null);
-    });
-
-    it("counts the data elements and names the task, once it has them", () => {
-        const rows = logFromInstance(instanceRead()).rows;
-        assert.equal(rows.find((row) => row.label === "Data elements")?.value, "2");
-        assert.equal(rows.find((row) => row.label === "Task")?.value, "Task_1");
-    });
-
-    it("leaves the task row out for an instance with no process", () => {
-        const rows = logFromInstance(instanceRead({ process: null })).rows;
-        assert.equal(
-            rows.some((row) => row.label === "Task"),
-            false
-        );
-    });
-});
-
 describe("logFromDataElement", () => {
     const read = {
         ok: true,
@@ -235,6 +213,44 @@ describe("logFromValidation", () => {
     it("leaves out the issue row on a failed request, where none would read as clean", () => {
         const entry = logFromValidation(validation({ ok: false, failedAt: "Could not validate the instance." }), ELEMENTS);
         assert.deepEqual(entry.rows, []);
+        assert.equal(entry.validation, undefined);
+    });
+});
+
+describe("logFromRead", () => {
+    it("folds the read and its validation into one entry", () => {
+        const entry = logFromRead(instanceRead(), validation({ issues: ISSUES, counts: { errors: 1, warnings: 1, other: 0 } }));
+
+        assert.equal(entry.title, "Read instance");
+        // One read step and one validate step, renumbered across both.
+        assert.deepEqual(
+            entry.steps.map((step) => step.index),
+            [1, 2]
+        );
+        assert.deepEqual(
+            entry.rows.map((row) => row.label),
+            ["Party", "Instance", "Data elements", "Task", "Issues"]
+        );
+        assert.equal(entry.validation?.issues.length, 2);
+    });
+
+    it("leaves the task row out for an instance with no process", () => {
+        const rows = logFromRead(instanceRead({ process: null }), null).rows;
+        assert.equal(
+            rows.some((row) => row.label === "Task"),
+            false
+        );
+    });
+
+    it("says only what it knows when the read failed", () => {
+        const entry = logFromRead(instanceRead({ ok: false, failedAt: "Could not read the instance." }), null);
+
+        assert.equal(entry.ok, false);
+        assert.equal(entry.instanceUrl, null);
+        assert.deepEqual(
+            entry.rows.map((row) => row.label),
+            ["Party", "Instance"]
+        );
         assert.equal(entry.validation, undefined);
     });
 });

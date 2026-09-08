@@ -104,6 +104,34 @@ export function logFromRun(result: RunResult, followUp: { instance: ReadInstance
     };
 }
 
+/**
+ * The log for reading an instance and validating it, which happen together whenever the selected
+ * instance changes. Two requests, one story, so one entry with the steps renumbered across both,
+ * the same way a post folds in its follow-ups.
+ */
+export function logFromRead(instance: ReadInstanceResult, validation: ValidateResult | null): LogResult {
+    const rows: LogResult["rows"] = [
+        { label: "Party", value: instance.instanceOwnerPartyId },
+        { label: "Instance", value: instance.instanceGuid }
+    ];
+    if (instance.ok) {
+        rows.push({ label: "Data elements", value: String(instance.dataElements.length) });
+        if (instance.process) rows.push({ label: "Task", value: processLabel(instance.process) });
+    }
+    if (validation?.ok) rows.push(issueRow(validation));
+
+    return {
+        ok: instance.ok,
+        steps: renumber([...instance.steps, ...(validation?.steps ?? [])]),
+        failedAt: instance.failedAt,
+        title: "Read instance",
+        rows,
+        // Offering to open an instance that could not be read would just 404 again.
+        instanceUrl: instance.ok ? instance.instanceUrl : null,
+        validation: toValidation(validation, instance.dataElements)
+    };
+}
+
 export function logFromInstances(result: ListInstancesResult): LogResult {
     return {
         ok: result.ok,
@@ -114,26 +142,6 @@ export function logFromInstances(result: ListInstancesResult): LogResult {
             { label: "Party", value: result.instanceOwnerPartyId },
             ...(result.ok ? [{ label: "Instances", value: String(result.instances.length) }] : [])
         ]
-    };
-}
-
-export function logFromInstance(result: ReadInstanceResult): LogResult {
-    const rows = [
-        { label: "Party", value: result.instanceOwnerPartyId },
-        { label: "Instance", value: result.instanceGuid }
-    ];
-    if (result.ok) {
-        rows.push({ label: "Data elements", value: String(result.dataElements.length) });
-        if (result.process) rows.push({ label: "Task", value: processLabel(result.process) });
-    }
-    return {
-        ok: result.ok,
-        steps: result.steps,
-        failedAt: result.failedAt,
-        title: "Fetched instance",
-        rows,
-        // Offering to open an instance that could not be read would just 404 again.
-        instanceUrl: result.ok ? result.instanceUrl : null
     };
 }
 
