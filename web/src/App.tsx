@@ -258,6 +258,30 @@ export function App() {
         setInstanceList(null);
     }, [org, app, instanceOwnerPartyId]);
 
+    /**
+     * Probe on its own once there is a token and a target. It is two reads that create nothing,
+     * so there is no reason to make anyone press a button for it.
+     *
+     * Debounced, because org and app are typed a character at a time and "et-v4" would otherwise
+     * be five probes. Attempted once per token and target, so an app that is not running does not
+     * get retried forever; the button re-probes by hand, which is also how you pick up metadata
+     * that changed while the tool was open.
+     */
+    const [probeAttempted, setProbeAttempted] = useState<string | null>(null);
+    useEffect(() => {
+        if (!tokenUsable || !activeTokenId || !org || !app) return;
+        const key = `${activeTokenId}:${org}/${app}`;
+        if (probeAttempted === key) return;
+
+        const timer = window.setTimeout(() => {
+            setProbeAttempted(key);
+            // Not in the dependencies on purpose: probe is rebuilt every render, and listing it
+            // would make this effect fire in a loop.
+            void probe();
+        }, 400);
+        return () => window.clearTimeout(timer);
+    }, [tokenUsable, activeTokenId, org, app, probeAttempted]);
+
     async function probe() {
         if (!activeTokenId) return;
         setProbing(true);
@@ -799,7 +823,14 @@ export function App() {
                 {(sections.validation || sections.log) && (
                     <div className="column column--log">
                         {sections.validation && <ValidationPanel validations={validations} onClear={clearValidations} />}
-                        {sections.log && <RunLog entries={logs} running={running || fetching} onClear={() => setLogs([])} />}
+                        {sections.log && (
+                            <RunLog
+                                entries={logs}
+                                running={running || fetching}
+                                onClear={() => setLogs([])}
+                                localtestUrl={localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101"}
+                            />
+                        )}
                     </div>
                 )}
             </div>

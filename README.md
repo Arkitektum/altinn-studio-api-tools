@@ -28,7 +28,7 @@ The quickest path to a full submission, where the user id is the only thing you 
 
 1. Pick a test user and press **Get token**. The party id is filled in from the token's claim.
 2. Pick `dibk/et-v4` from **Known app**, which fills in org, app and the main data type.
-3. Press **Probe app**, so the data type and party pickers come from the app itself.
+3. Nothing to press: the app is read for you, so the data type and party pickers come from the app itself.
 4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
 5. Choose **New instance, all data in one request** and press **Post**.
 
@@ -38,16 +38,16 @@ By hand instead: type an org and app, probe, pick a party, choose a data type, l
 
 ## What it can do
 
-|                                                                                                        |                                                                                                   |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                           | Tokens from LocalTest's own user list, any user id by hand, renew in place, or paste a token      |
-| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                 | Probe an app for its data types and parties, 25 known apps, optional due before and visible after |
-| [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                               | One card per data element, from a shipped example, a file off disk, or by hand                    |
-| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                               | Three destinations, repeat up to 50 times, automatic read back and validation                     |
-| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)           | List a party's instances, read and validate, download, load into the payload, delete              |
-| [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                               | Where the instance stands, and advancing it                                                       |
-| [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/) | Issues by severity, every request with both bodies, and copy as curl                              |
-| [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                       | The backend on its own, for scripting a data load                                                 |
+|                                                                                                        |                                                                                                    |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                           | Tokens from LocalTest's own user list, any user id by hand, renew in place, or paste a token       |
+| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                 | Reads the app for its data types and parties, 25 known apps, optional due before and visible after |
+| [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                               | One card per data element, from a shipped example, a file off disk, or by hand                     |
+| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                               | Three destinations, repeat up to 50 times, automatic read back and validation                      |
+| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)           | List a party's instances, read and validate, download, load into the payload, delete               |
+| [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                               | Where the instance stands, and advancing it                                                        |
+| [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/) | Issues by severity, every request with both bodies, and copy as curl                               |
+| [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                       | The backend on its own, for scripting a data load                                                  |
 
 73 example XML files and 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
 

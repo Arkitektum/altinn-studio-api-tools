@@ -28,6 +28,8 @@ Everything the tool does to Altinn goes through `altinnClient.altinnFetch`, whic
 
 `stepRecorder.StepRecorder` wraps each call as a step: name, method, url, status, duration, request body and response body. Both the posting and the reading flows return `{ ok, steps, failedAt, … }` with the same shape, so the UI renders them with one component and does not need to know which request produced what.
 
+Two paths are not step-recorded, and both are answers to a question rather than actions on an instance: `appService`, which probes an app for its metadata and parties, and `localtestClient`, which mints a token and reads the user list. They report what they found or throw an `HttpError`, and nothing about them appears in the run log. It would be more consistent if a probe left a step behind, and it is not much work if the panels ever need it.
+
 ## Failures are results, not exceptions
 
 Any request that reached Altinn and came back unhappy returns HTTP 200 with `ok: false`, a `failedAt` reason, and the steps up to the failure. This applies to `/api/runs`, every read endpoint, and `/api/instances/process/next`.

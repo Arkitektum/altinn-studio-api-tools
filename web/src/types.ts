@@ -64,7 +64,10 @@ export interface ApplicationMetadata {
 }
 
 export interface AppMetadataResponse {
-    /** Link to the app frontend, for the Open app button. */
+    /**
+     * Link to the app frontend. Nothing in the UI opens it, since Altinn instantiates from the
+     * app root, but the api still reports it for a caller that wants it.
+     */
     appUrl: string;
     metadata: ApplicationMetadata;
 }

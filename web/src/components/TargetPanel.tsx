@@ -146,22 +146,30 @@ export function TargetPanel({
                 </div>
             </div>
 
-            <div className="row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" onClick={onProbe} disabled={probing || !hasToken || !org || !app}>
-                    {probing && <span className="btn__spinner" />}
-                    Probe app
-                </button>
-                {metadata && (
-                    <a href={metadata.appUrl} target="_blank" rel="noreferrer" className="btn btn--ghost btn--tiny">
-                        Open app
-                    </a>
-                )}
-                {!hasToken && <span className="field__hint">Get a token first.</span>}
-            </div>
+            {/*
+             * No link to the app root here. Altinn instantiates from it, so opening it left an
+             * empty instance behind every time, and the run log entry and the instance listing
+             * both open an instance you actually have.
+             */}
+            {/*
+             * No button. The probe is two reads that create nothing, so it runs on its own once
+             * there is a token and a target, and the badge in the panel header says when it
+             * landed. The only affordance left is a retry, and only when one failed.
+             */}
+            {!hasToken && <p className="field__hint">Get a token first, and the app is read automatically.</p>}
+
+            {probing && (
+                <p className="field__hint">
+                    <span className="btn__spinner" /> Reading the app's data types and parties…
+                </p>
+            )}
 
             {probeError ? (
                 <div style={{ marginTop: 12 }}>
                     <ErrorNotice error={probeError} />
+                    <button type="button" className="btn btn--ghost btn--tiny" style={{ marginTop: 8 }} onClick={onProbe} disabled={probing}>
+                        Try again
+                    </button>
                 </div>
             ) : null}
 

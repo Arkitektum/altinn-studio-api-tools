@@ -21,6 +21,8 @@ The panel only changes when something validates. Fetching an instance or a data 
 
 Every call in order with method, URL, status, duration, and both bodies, plus a link that opens the instance in the app.
 
+That link is a deep link, `{app}/#/instance/{party}/{guid}`, and the trailing slash before the hash matters: without it the app frontend is not served. Opening it needs a LocalTest session in the browser, which the tool cannot provide because its token lives in server memory. Until you have one, Altinn bounces to LocalTest's front page with a `goto` parameter, and the fragment is lost on the way back, so **Log in to LocalTest** sits next to the link for exactly that first trip.
+
 Runs are kept rather than replaced. Each one is a row showing what it was, how many steps it took, how long it ran and when, and the newest is open while the rest fold to a single line. Posts, fetches, validations, process moves and deletes all land here, so a fetch does not wipe the post you are looking at. **Clear history** empties it, and the last 25 runs are kept.
 
 A post and the read and validation that follow it share one entry, because they are separate requests but one story. Their steps are renumbered across the lot so the indexes stay unique.

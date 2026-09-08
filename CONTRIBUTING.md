@@ -68,7 +68,7 @@ Prettier owns it, configured in `.prettierrc`: four space indent, double quotes,
 Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide most questions:
 
 - A pure decision goes in `web/src/lib/` with a test, not inline in a component. `App.tsx` is state and wiring.
-- A call to Altinn goes through `altinnFetch` and is recorded by `StepRecorder`, so it shows up in the run log like everything else. A call that bypasses either is invisible to the operator, which defeats the point of the tool.
+- A call to Altinn goes through `altinnFetch`, always. Anything acting on an instance is also recorded by `StepRecorder` so it shows up in the run log, since a write the operator cannot see defeats the point of the tool. The two exceptions are `appService` and `localtestClient`, which answer a question rather than change anything, and report their findings instead of a step log.
 
 ## Adding things
 
