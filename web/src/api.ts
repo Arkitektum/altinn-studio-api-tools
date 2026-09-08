@@ -3,6 +3,7 @@ import type {
     AppMetadataResponse,
     AppParty,
     CatalogueApp,
+    DeleteInstanceResult,
     ExampleContent,
     ExampleKind,
     ExamplesResponse,
@@ -124,5 +125,14 @@ export const api = {
         request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`),
 
     advanceProcess: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
-        request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) })
+        request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) }),
+
+    deleteInstance: (params: {
+        tokenId: string;
+        org: string;
+        app: string;
+        instanceOwnerPartyId: string;
+        instanceGuid: string;
+        hard: "true" | "false";
+    }) => request<DeleteInstanceResult>(`/instances?${new URLSearchParams(params)}`, { method: "DELETE" })
 };

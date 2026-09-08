@@ -63,6 +63,16 @@ export interface ReadInstanceResult {
     process: ProcessSummary | null;
 }
 
+export interface DeleteInstanceResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    /** Whether the instance was removed outright or only marked as deleted. */
+    hard: boolean;
+}
+
 export interface AdvanceProcessResult {
     ok: boolean;
     steps: RunStep[];
@@ -261,6 +271,32 @@ export async function readInstance(token: string, request: ReadRequest): Promise
         instance,
         dataElements,
         process: toProcess(instance)
+    };
+}
+
+/**
+ * DELETE {app}/instances/{party}/{guid}
+ *
+ * Soft by default, which marks the instance deleted and takes it out of the active list while
+ * leaving it in storage. `hard` removes it outright, which is what a test run wants when it is
+ * clearing up after itself.
+ */
+export async function deleteInstance(token: string, request: ReadRequest & { hard?: boolean }): Promise<DeleteInstanceResult> {
+    const recorder = new StepRecorder();
+    const hard = request.hard === true;
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}?hard=${hard}`;
+
+    const response = await recorder.run(hard ? "Delete instance (hard)" : "Delete instance (soft)", "DELETE", url, () =>
+        altinnFetch({ url, method: "DELETE", token })
+    );
+
+    return {
+        ok: response.ok,
+        steps: recorder.steps,
+        failedAt: response.ok ? null : "Could not delete the instance.",
+        instanceOwnerPartyId: request.instanceOwnerPartyId,
+        instanceGuid: request.instanceGuid,
+        hard
     };
 }
 

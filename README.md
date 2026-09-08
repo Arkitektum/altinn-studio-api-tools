@@ -213,7 +213,7 @@ The tool detects the existing element and sends `PUT .../data/{dataElementId}` i
 
 ## Reading data back
 
-The **Fetch** panel does six GET requests: list the party's instances, then get and validate for the instance and for one data element, plus the pdf preview.
+The **Fetch** panel does six GET requests: list the party's instances, then get and validate for the instance and for one data element, plus the pdf preview. It also holds the delete, see [Deleting an instance](#deleting-an-instance).
 
 **List instances** calls `GET /{org}/{app}/instances/{party}/active`, the app's own list endpoint, the one its frontend uses to offer an unfinished form back to the user. It needs a party but no guid, since finding the guid is the point of it. The picker labels each instance by the first eight characters of its guid, when it was last changed and by whom, newest first, and choosing one fills in both the party id and the guid. Altinn lists the instances whose process has not ended, so an archived one is not in there and still has to be pasted.
 
@@ -236,6 +236,16 @@ Validation results are listed out rather than left as raw JSON. Issues are group
 **Validate instance** calls `GET /{org}/{app}/instances/{party}/{guid}/validate` and **Validate data element** calls `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes. The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`.
 
 **Preview pdf** calls `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, see [Pdf preview](#pdf-preview).
+
+### Deleting an instance
+
+At the bottom of the Fetch panel, behind a rule and away from the read buttons, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard={true|false}`.
+
+Soft is the default: Altinn marks the instance deleted, which takes it out of the active list while leaving it in storage. **Hard delete** removes it outright and cannot be undone, so it is a checkbox you tick rather than the default reading of a `hard` parameter that happens to be absent.
+
+Delete asks twice. The first click arms the button, which then names what it is about to do and which instance, as in "Confirm hard delete of 99d0632c". Changing the instance guid or the party drops a pending confirmation, so a second click never lands on an instance you did not mean. A refusal from Altinn, a locked instance or a party you may not act for, lands in the run log with the app's own reason.
+
+Afterwards the instance is dropped from the listing and the guid is cleared, which takes the data elements, the process state and the validation issues with it, since all of them described an instance that is no longer there.
 
 All six requests appear in the run log alongside posts, with method, URL, status, timing, and body.
 
@@ -267,6 +277,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                  |
 | `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                |
 | `GET`    | `/api/instances/pdf-preview`           | Render the receipt pdf. Same query as `/api/instances`                |
+| `DELETE` | `/api/instances`                       | Delete an instance. Same query plus `&hard=true` for a hard delete    |
 | `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query   |
 
 ```bash
@@ -327,7 +338,7 @@ server/src
   routes.ts           endpoints and zod schemas
   runService.ts       orchestrates create, upload, validate, advance
   runService.test.ts
-  readService.ts      list, get and validate, for instances and data elements
+  readService.ts      instance operations: list, get, validate, process, delete
   readService.test.ts
   stepRecorder.ts     shared request logging for both flows
   multipart.ts        hand-written multipart body, see the note below

@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { advanceProcess, listInstances, readDataElement, readInstance, severityLabel, validateDataElement, validateInstance } from "./readService.js";
+import {
+    advanceProcess,
+    deleteInstance,
+    listInstances,
+    readDataElement,
+    readInstance,
+    severityLabel,
+    validateDataElement,
+    validateInstance
+} from "./readService.js";
 
 const APP_BASE = "http://local.altinn.cloud:8000/dibk/et-v4";
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
@@ -224,6 +233,46 @@ describe("readInstance", () => {
             ended: "2026-09-03T10:05:00Z",
             endEvent: "EndEvent_1"
         });
+    });
+});
+
+describe("deleteInstance", () => {
+    it("soft deletes unless asked otherwise, since that is the reversible one", async () => {
+        const stub = stubAltinn(() => ({ body: JSON.stringify(instanceBody), contentType: "application/json" }));
+        active = stub;
+
+        const result = await deleteInstance("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.equal(result.hard, false);
+        assert.equal(stub.calls[0]?.method, "DELETE");
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}?hard=false`);
+        assert.equal(result.steps[0]?.name, "Delete instance (soft)");
+    });
+
+    it("hard deletes when asked, and says so in the step name", async () => {
+        const stub = stubAltinn(() => ({ body: JSON.stringify(instanceBody), contentType: "application/json" }));
+        active = stub;
+
+        const result = await deleteInstance("test-token", { ...target, hard: true });
+
+        assert.equal(result.hard, true);
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}?hard=true`);
+        assert.equal(result.steps[0]?.name, "Delete instance (hard)");
+    });
+
+    it("reports a refusal without throwing", async () => {
+        const stub = stubAltinn(() => ({
+            status: 403,
+            body: JSON.stringify({ detail: "Forbidden" }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await deleteInstance("test-token", target);
+        assert.equal(result.ok, false);
+        assert.equal(result.failedAt, "Could not delete the instance.");
+        assert.equal(result.steps[0]?.error, "Forbidden");
     });
 });
 

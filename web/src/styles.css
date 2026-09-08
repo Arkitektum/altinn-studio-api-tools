@@ -225,6 +225,13 @@ body {
     margin-bottom: 8px;
 }
 
+/* Set apart by a rule rather than by colour, so it is separate without shouting. */
+.danger {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
 .field__hint {
     margin: 2px 0 0;
     font-size: 12px;
@@ -462,6 +469,14 @@ textarea {
 }
 
 .btn--danger:hover:not(:disabled) {
+    color: var(--bad);
+    border-color: var(--bad-border);
+    background: var(--bad-bg);
+}
+
+/* A confirmation that is one click from doing something destructive, so it says so without hover. */
+.btn--armed,
+.btn--armed:hover:not(:disabled) {
     color: var(--bad);
     border-color: var(--bad-border);
     background: var(--bad-bg);
@@ -1062,6 +1077,10 @@ textarea {
 
 .method--put {
     color: var(--warn);
+}
+
+.method--delete {
+    color: var(--bad);
 }
 
 .step__method--get {

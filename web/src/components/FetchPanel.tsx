@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { instanceLabel } from "../lib/format";
 import { CopyButton } from "./CopyButton";
 import { ErrorNotice } from "./Notice";
@@ -31,6 +32,7 @@ interface FetchPanelProps {
     onValidateInstance: () => void;
     onValidateDataElement: () => void;
     onPreviewPdf: () => void;
+    onDeleteInstance: (hard: boolean) => void;
     busy: boolean;
     hasToken: boolean;
     error: unknown;
@@ -67,10 +69,21 @@ export function FetchPanel({
     onValidateInstance,
     onValidateDataElement,
     onPreviewPdf,
+    onDeleteInstance,
     busy,
     hasToken,
     error
 }: FetchPanelProps) {
+    /** Delete asks twice. Hard delete cannot be undone, and soft takes the instance out of use. */
+    const [confirming, setConfirming] = useState(false);
+    const [hard, setHard] = useState(false);
+
+    // Aiming at another instance drops a pending confirmation, so a second click never lands on
+    // an instance you did not mean.
+    useEffect(() => {
+        setConfirming(false);
+    }, [instanceGuid, instanceOwnerPartyId]);
+
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
     const guid = instanceGuid || "{instanceGuid}";
@@ -226,6 +239,51 @@ export function FetchPanel({
                     )}
                 </>
             )}
+
+            {/* Clearing up after a test run. Kept to the bottom, away from the read buttons. */}
+            <div className="danger">
+                <span className="legend">Delete instance</span>
+                <label className="check">
+                    <input type="checkbox" checked={hard} onChange={(event) => setHard(event.target.checked)} disabled={busy} />
+                    <span className="check__body">
+                        <span className="check__title">Hard delete</span>
+                        <span className="check__note">
+                            Off marks the instance deleted and takes it out of the active list, leaving it in storage. On removes it outright, which
+                            cannot be undone.
+                        </span>
+                    </span>
+                </label>
+
+                <div className="row" style={{ marginTop: 10 }}>
+                    {confirming ? (
+                        <>
+                            <button
+                                type="button"
+                                className="btn btn--danger btn--armed"
+                                onClick={() => {
+                                    setConfirming(false);
+                                    onDeleteInstance(hard);
+                                }}
+                                disabled={busy || !canGetInstance}
+                            >
+                                {busy && <span className="btn__spinner" />}
+                                Confirm {hard ? "hard" : "soft"} delete of {instanceGuid.slice(0, 8)}
+                            </button>
+                            <button type="button" className="btn btn--ghost" onClick={() => setConfirming(false)}>
+                                Cancel
+                            </button>
+                        </>
+                    ) : (
+                        <button type="button" className="btn" onClick={() => setConfirming(true)} disabled={busy || !canGetInstance}>
+                            Delete instance
+                        </button>
+                    )}
+                </div>
+
+                <p className="field__hint" style={{ marginTop: 8 }}>
+                    <span className="method method--delete">DELETE</span> {base}/instances/{party}/{guid}?hard={String(hard)}
+                </p>
+            </div>
 
             {error ? (
                 <div style={{ marginTop: 12 }}>

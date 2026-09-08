@@ -224,6 +224,15 @@ export interface ReadInstanceResult {
     process: ProcessSummary | null;
 }
 
+export interface DeleteInstanceResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    instanceOwnerPartyId: string;
+    instanceGuid: string;
+    hard: boolean;
+}
+
 export interface AdvanceProcessResult {
     ok: boolean;
     steps: RunStep[];

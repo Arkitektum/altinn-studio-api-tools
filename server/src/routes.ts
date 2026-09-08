@@ -6,7 +6,16 @@ import { createTestUserToken, listTestUsers } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
-import { advanceProcess, listInstances, previewPdf, readDataElement, readInstance, validateDataElement, validateInstance } from "./readService.js";
+import {
+    advanceProcess,
+    deleteInstance,
+    listInstances,
+    previewPdf,
+    readDataElement,
+    readInstance,
+    validateDataElement,
+    validateInstance
+} from "./readService.js";
 import { appCatalogue } from "./appCatalogue.js";
 import { listExamples, readExample } from "./examples.js";
 
@@ -222,6 +231,23 @@ router.get(
         const token = requireToken(query.tokenId);
         // 200 with ok:false on an Altinn error, matching /api/runs, so the caller keeps the log.
         res.json(await readInstance(token.token, query));
+    })
+);
+
+/** Destructive, so the intent is spelled out rather than defaulted to the stronger reading. */
+const deleteInstanceSchema = instanceLookupSchema.extend({
+    hard: z
+        .enum(["true", "false"])
+        .optional()
+        .transform((value) => value === "true")
+});
+
+router.delete(
+    "/instances",
+    asyncHandler(async (req, res) => {
+        const query = deleteInstanceSchema.parse(req.query);
+        const token = requireToken(query.tokenId);
+        res.json(await deleteInstance(token.token, query));
     })
 );
 

@@ -23,6 +23,7 @@ import type {
     AppParty,
     CatalogueApp,
     DataElementInput,
+    DeleteInstanceResult,
     DataElementSummary,
     ExampleGroup,
     FetchedDataElement,
@@ -202,6 +203,20 @@ function logFromAdvance(result: AdvanceProcessResult): LogResult {
         failedAt: result.failedAt,
         title: "Advanced process",
         rows: [{ label: "Instance", value: result.instanceGuid }, ...(result.ok ? [{ label: "Task", value: processLabel(result.process) }] : [])]
+    };
+}
+
+function logFromDelete(result: DeleteInstanceResult): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: result.hard ? "Deleted instance" : "Marked instance deleted",
+        rows: [
+            { label: "Party", value: result.instanceOwnerPartyId },
+            { label: "Instance", value: result.instanceGuid },
+            { label: "Delete", value: result.hard ? "hard" : "soft" }
+        ]
     };
 }
 
@@ -684,6 +699,34 @@ export function App() {
         }
     }
 
+    async function removeInstance(hard: boolean) {
+        if (!activeTokenId) return;
+        setFetching(true);
+        setFetchError(null);
+        try {
+            const result = await api.deleteInstance({
+                tokenId: activeTokenId,
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                hard: hard ? "true" : "false"
+            });
+            appendLog(logFromDelete(result));
+            if (!result.ok) return;
+
+            // Take it out of the listing, since a deleted instance is not one to offer next.
+            setInstanceList((current) => current?.filter((instance) => instance.instanceGuid !== result.instanceGuid) ?? null);
+            // Clearing the guid drops the data elements, process and issues along with it. Leaving
+            // them would describe an instance that is no longer there.
+            changeInstanceGuid("");
+        } catch (error) {
+            setFetchError(error);
+        } finally {
+            setFetching(false);
+        }
+    }
+
     async function advance() {
         if (!activeTokenId) return;
         setFetching(true);
@@ -868,6 +911,7 @@ export function App() {
                                 hasToken={tokenUsable}
                                 error={fetchError}
                                 onPreviewPdf={() => void renderPdf()}
+                                onDeleteInstance={(hard) => void removeInstance(hard)}
                             />
 
                             {/* Where the instance stands. Arrives with the first instance read. */}
