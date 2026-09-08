@@ -35,6 +35,7 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
     const [mode, setMode] = useState<Mode>("test-user");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<unknown>(null);
+    const [renewing, setRenewing] = useState(false);
     const [available, setAvailable] = useState<LocaltestUsers | null>(null);
     const [picked, setPicked] = useState("");
     /** A user id typed by hand, for a user LocalTest did not offer. */
@@ -95,6 +96,32 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
             onTokensChanged();
         } catch (caught) {
             setError(caught);
+        }
+    }
+
+    /**
+     * Fetches another token for the same user and activates it, so an expiry mid-session costs a
+     * click rather than a trip back through the picker.
+     */
+    async function renew(token: PublicToken) {
+        if (!token.userId) return;
+        setRenewing(true);
+        setError(null);
+        try {
+            const fresh = await api.createTestUserToken({ userId: token.userId, label: token.label });
+            onActivate(fresh.id);
+            try {
+                // The old one is spent, and keeping it would fill the list with dead tokens for
+                // the same person. It may already be gone: the server prunes expired tokens.
+                await api.deleteToken(token.id);
+            } catch {
+                /* already pruned, which is the same outcome */
+            }
+            onTokensChanged();
+        } catch (caught) {
+            setError(caught);
+        } finally {
+            setRenewing(false);
         }
     }
 
@@ -202,6 +229,25 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
                         <dt>Validity</dt>
                         <dd style={{ color: expired ? "var(--bad)" : undefined }}>{describeExpiry(activeToken.expiresAt, now)}</dd>
                     </dl>
+
+                    {/* Only a LocalTest token can be minted again. A pasted one came from elsewhere. */}
+                    {activeToken.kind === "test-user" && activeToken.userId && (
+                        <div className="row" style={{ marginTop: 10 }}>
+                            <button
+                                type="button"
+                                // Accented once it has expired, since renewing is then the thing to press.
+                                className={`btn btn--tiny ${expired ? "btn--primary" : "btn--ghost"}`}
+                                onClick={() => void renew(activeToken)}
+                                disabled={renewing || busy}
+                            >
+                                {renewing && <span className="btn__spinner" />}
+                                {renewing ? "Renewing…" : "Renew"}
+                            </button>
+                            <span className="field__hint" style={{ margin: 0 }}>
+                                Another token for user {activeToken.userId}, replacing this one.
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
 
