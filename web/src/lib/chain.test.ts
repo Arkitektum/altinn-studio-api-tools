@@ -48,6 +48,13 @@ describe("requestChain", () => {
         );
     });
 
+    it("leaves the test user out of the scroll marking, since the rail is always on screen", () => {
+        assert.deepEqual(
+            requestChain(nothing).map((step) => step.spy),
+            [false, true, true, true, true]
+        );
+    });
+
     it("shows a restored value while still calling it blocked", () => {
         // A party from a previous session with no token yet. The value is there and is worth
         // showing, but nothing downstream of it can be used, and the panels are absent to match.

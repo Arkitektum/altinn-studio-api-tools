@@ -1,4 +1,6 @@
+import { Fragment, useRef } from "react";
 import { requestChain, type ChainInputs, type ChainStep } from "../lib/chain";
+import { useScrollSpy } from "../lib/useScrollSpy";
 
 /**
  * The chain the tool hangs off, under the header: a user, an application, a party, an instance, a
@@ -11,6 +13,13 @@ import { requestChain, type ChainInputs, type ChainStep } from "../lib/chain";
  */
 export function Chain(inputs: ChainInputs) {
     const steps = requestChain(inputs);
+    const strip = useRef<HTMLElement>(null);
+    /*
+     * Which panel is on screen, so the strip reads as a position and not only as a state. The
+     * anchors are deduplicated because Application and Party are both set in Target: scrolling
+     * there marks them both, which is the truth rather than a rounding of it.
+     */
+    const here = useScrollSpy([...new Set(steps.filter((step) => step.spy).map((step) => step.anchor))], strip);
 
     /** Takes you to the panel a link is set in, since knowing where it is only half the help. */
     function go(step: ChainStep) {
@@ -18,7 +27,7 @@ export function Chain(inputs: ChainInputs) {
     }
 
     return (
-        <nav className="chain" aria-label="What the tool is working on">
+        <nav className="chain" aria-label="What the tool is working on" ref={strip}>
             {steps.map((step, position) => {
                 const text = (
                     <>
@@ -27,26 +36,34 @@ export function Chain(inputs: ChainInputs) {
                     </>
                 );
 
+                const onScreen = step.anchor === here;
+
                 return (
-                    <span key={step.label} className={`chain__link chain__link--${step.state}`}>
+                    <Fragment key={step.label}>
+                        {/* Outside the link, so the on-screen highlight sits on the link alone. */}
                         {position > 0 && (
                             <span className="chain__arrow" aria-hidden="true">
                                 ›
                             </span>
                         )}
-                        {/*
-                         * A waiting link stays plain text: the panel it names is not on screen
-                         * yet, so there is nowhere to go and a button that did nothing would be
-                         * worse than none.
-                         */}
-                        {step.state === "waiting" ? (
-                            text
-                        ) : (
-                            <button type="button" className="chain__go" onClick={() => go(step)} title={`Go to ${step.where}`}>
-                                {text}
-                            </button>
-                        )}
-                    </span>
+                        <span
+                            className={`chain__link chain__link--${step.state}${onScreen ? " chain__link--here" : ""}`}
+                            aria-current={onScreen ? "true" : undefined}
+                        >
+                            {/*
+                             * A waiting link stays plain text: the panel it names is not on screen
+                             * yet, so there is nowhere to go and a button that did nothing would be
+                             * worse than none.
+                             */}
+                            {step.state === "waiting" ? (
+                                text
+                            ) : (
+                                <button type="button" className="chain__go" onClick={() => go(step)} title={`Go to ${step.where}`}>
+                                    {text}
+                                </button>
+                            )}
+                        </span>
+                    </Fragment>
                 );
             })}
         </nav>

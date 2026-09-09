@@ -13,6 +13,8 @@ A strip under the header, showing what the tool is working on: a test user, an a
 
 Each link shows what it holds. The next one to fill in is in the accent colour and names the panel to do it in, so a cold start reads "Test user → in Test user" rather than leaving you to guess where to begin. Links that cannot be reached yet are faint, and are there to explain the order rather than to be read.
 
+The link whose panel you are looking at is marked as you scroll, so the strip reads as a position as well as a state. That marking is deliberately neutral, a soft background and a rule underneath rather than the accent, because the accent already means "the next thing to do" and where you happen to be is not a thing to do. Application and Party are both marked together, since both are set in Target. The test user is never marked: its panel is in the sticky rail, so it is always on screen and saying so would say nothing.
+
 A link you can act on is also a way to get there: clicking one scrolls to the panel it is set in. A faint link stays plain text, because the panel it names is not on screen yet and a button that did nothing would be worse than no button.
 
 Two details are worth knowing. A link only counts as settled when everything before it is, so a party restored from a previous session still shows its value while reading as blocked, because without a token nothing downstream of it can be used, and the panels are absent to match. And the instance link is settled as soon as there is a party, reading `new` when the new instance row is what is selected, because that is a choice rather than a gap: posting creates one. Only the reading side needs a real instance, which is why the data element link waits for one. `chain.test.ts` covers all of it.

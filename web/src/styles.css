@@ -150,13 +150,15 @@ body {
 
 .chain__link {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
     min-width: 0;
+    /* Room for the on-screen highlight to sit on without shifting the text. */
+    padding: 3px 6px;
+    margin: 0 -6px;
 }
 
 .chain__arrow {
-    margin-right: 4px;
     color: var(--border-strong);
 }
 
@@ -205,6 +207,20 @@ body {
 .chain__link--next .chain__label,
 .chain__link--next .chain__value {
     color: var(--accent);
+}
+
+/*
+ * The panel you are looking at. Neutral on purpose: the accent already means "the next thing to
+ * do", and a position is not a thing to do.
+ */
+.chain__link--here {
+    background: var(--bg-subtle);
+    box-shadow: inset 0 -2px 0 var(--border-strong);
+    border-radius: 3px;
+}
+
+.chain__link--here .chain__label {
+    color: var(--text-muted);
 }
 
 /* Not reachable yet, so it is there to explain the order rather than to be read. */

@@ -19,6 +19,11 @@ export interface ChainStep {
     where: string;
     /** The id of that panel, so the strip can take you there. */
     anchor: string;
+    /**
+     * Whether it is worth marking as the panel on screen. The test user sits in the sticky rail,
+     * so its panel is always on screen and saying so would say nothing.
+     */
+    spy: boolean;
 }
 
 export interface ChainInputs {
@@ -43,15 +48,15 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
      * reads as blocked until the links it depends on are filled in: without a token nothing
      * downstream of it can be used, and the panels are absent to match.
      */
-    const links: { label: string; value: string | null; where: string; anchor: string; needsRealInstance?: boolean }[] = [
-        { label: "Test user", value: inputs.user, where: "Test user", anchor: "panel-test-user" },
-        { label: "Application", value: inputs.application, where: "Target", anchor: "panel-target" },
-        { label: "Party", value: inputs.party, where: "Target", anchor: "panel-target" },
+    const links: { label: string; value: string | null; where: string; anchor: string; spy: boolean; needsRealInstance?: boolean }[] = [
+        { label: "Test user", value: inputs.user, where: "Test user", anchor: "panel-test-user", spy: false },
+        { label: "Application", value: inputs.application, where: "Target", anchor: "panel-target", spy: true },
+        { label: "Party", value: inputs.party, where: "Target", anchor: "panel-target", spy: true },
         // Once there is a party the instance list is showing and something in it is always
         // selected, so this link is settled either way: a guid, or the new instance row.
-        { label: "Instance", value: inputs.instance ?? "new", where: "Instances", anchor: "panel-instances" },
+        { label: "Instance", value: inputs.instance ?? "new", where: "Instances", anchor: "panel-instances", spy: true },
         // A new instance has no data elements yet, so this waits rather than inviting a click.
-        { label: "Data element", value: inputs.dataElement, where: "Fetch", anchor: "panel-fetch", needsRealInstance: true }
+        { label: "Data element", value: inputs.dataElement, where: "Fetch", anchor: "panel-fetch", spy: true, needsRealInstance: true }
     ];
 
     let blocked = false;
