@@ -3,6 +3,7 @@ import type {
     AppMetadataResponse,
     AppParty,
     CatalogueApp,
+    CompareResult,
     DeleteInstanceResult,
     ExampleContent,
     ExampleKind,
@@ -123,6 +124,16 @@ export const api = {
     }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`),
     previewPdf: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
         request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`),
+
+    compareStored: (input: {
+        tokenId: string;
+        org: string;
+        app: string;
+        instanceOwnerPartyId: string;
+        instanceGuid: string;
+        dataGuid: string;
+        left: string;
+    }) => request<CompareResult>("/instances/data-element/compare", jsonBody(input)),
 
     advanceProcess: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
         request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) }),

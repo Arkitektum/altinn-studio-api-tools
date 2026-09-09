@@ -6,6 +6,7 @@ import { createTestUserToken, listTestUsers } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
+import { compareStored } from "./compareService.js";
 import {
     advanceProcess,
     deleteInstance,
@@ -279,6 +280,24 @@ router.get(
         const query = readDataElementSchema.parse(req.query);
         const token = requireToken(query.tokenId);
         res.json(await validateDataElement(token.token, query));
+    })
+);
+
+/**
+ * The stored xml against the xml as written. A POST because the left-hand side is a whole
+ * document, which has no business in a query string.
+ */
+const compareSchema = instanceLookupSchema.extend({
+    dataGuid: z.string().trim().min(1, "dataGuid is required"),
+    left: z.string().min(1, "the xml to compare against is required")
+});
+
+router.post(
+    "/instances/data-element/compare",
+    asyncHandler(async (req, res) => {
+        const input = compareSchema.parse(req.body);
+        const token = requireToken(input.tokenId);
+        res.json(await compareStored(token.token, input));
     })
 );
 

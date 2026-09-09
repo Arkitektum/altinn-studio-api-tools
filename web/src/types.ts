@@ -272,6 +272,29 @@ export interface FetchedDataElement {
     size: number;
 }
 
+export type XmlDifferenceKind = "missing" | "added" | "changed";
+
+/** One way the stored xml differs from the xml as written. */
+export interface XmlDifference {
+    /** Where it is: /ettrinn/eiendom[2]/adresse, or the same with /@attribute. */
+    path: string;
+    /** missing: dropped on the way in. added: the model produced it. changed: rewritten. */
+    kind: XmlDifferenceKind;
+    left: string | null;
+    right: string | null;
+}
+
+export interface CompareResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    dataGuid: string;
+    storedContentType: string | null;
+    /** The stored xml itself, so the two can be read side by side. */
+    stored: string | null;
+    diff: { same: boolean; differences: XmlDifference[] } | null;
+}
+
 /** A validation issue, ready to render. Ids are resolved to names before it gets here. */
 export interface LogIssue {
     severity: number;

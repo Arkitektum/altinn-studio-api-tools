@@ -326,10 +326,10 @@ describe("readDataElement", () => {
 
         assert.equal(result.ok, true);
         assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/data/${DATA_GUID}`);
-        // XML first, since form data is serialised from the model and would otherwise come back
-        // as JSON, and anything at a lower weight so a streamed attachment is unaffected and an
-        // app without an XML formatter falls back rather than answering 406.
-        assert.equal(stub.calls[0]?.accept, "application/xml;q=1.0, */*;q=0.9");
+        // Asking for JSON would stop Altinn handing back a stored XML element as stored. Asking
+        // for XML was tried and does nothing: the app has no XML output formatter, so form data
+        // comes back as JSON whatever we ask for.
+        assert.equal(stub.calls[0]?.accept, "*/*");
         assert.equal(result.contentType, "application/xml");
         assert.equal(result.content, xml);
         assert.equal(result.dataGuid, DATA_GUID);

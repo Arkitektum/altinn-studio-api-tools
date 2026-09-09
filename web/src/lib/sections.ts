@@ -10,6 +10,8 @@ export interface SectionInputs {
     hasProcess: boolean;
     /** A party is set, so the instance list has something to ask about. */
     party: string;
+    /** A data element is selected, which is the thing a comparison is about. */
+    dataSelected: boolean;
     /** A request is in flight, so the log is about to have something in it. */
     busy: boolean;
 }
@@ -21,6 +23,8 @@ export interface VisibleSections {
     instances: boolean;
     /** Where the instance stands, and the button that moves it on. */
     process: boolean;
+    /** The stored xml against the xml as written. */
+    compare: boolean;
     validation: boolean;
     log: boolean;
 }
@@ -38,6 +42,9 @@ export function visibleSections(inputs: SectionInputs): VisibleSections {
         // Reading an instance is what fills this in, so it arrives with its first content like the
         // result panels do.
         process: inputs.hasProcess,
+        // Nothing to compare until a data element is picked, and nothing to compare it with
+        // without an app to read the stored blob for.
+        compare: inputs.hasToken && Boolean(inputs.org && inputs.app) && inputs.dataSelected,
         // Results stand on their own. An expired token does not make what you already read useless.
         validation: inputs.validationCount > 0,
         log: inputs.runCount > 0 || inputs.busy

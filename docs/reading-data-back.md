@@ -41,11 +41,9 @@ Besides logging the whole response, the read fills the data element select so yo
 
 `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size. The first is preselected after reading an instance, so fetching one is a single click.
 
-The request asks for `application/xml` first and anything after it, which needs explaining because the two kinds of data element answer differently.
+The request goes out with `Accept: */*`, and the two kinds of data element answer differently.
 
-A data type with `appLogic` is served through the app's model: Altinn reads the stored XML, deserialises it into the model class, and lets the framework choose a format for that object. Ask for anything and you get JSON, which is why the main form came back as JSON while a `Valideringsrapport`, which has no `appLogic` and is streamed as stored, came back as XML. Naming XML first gets the model serialised as XML instead, which is the format the examples, the editor and every post here already speak.
-
-The catch-all at a lower weight is what keeps that safe. A streamed element ignores `Accept` altogether, so attachments are unaffected, and an app with no XML output formatter falls back to JSON rather than answering 406.
+A data type with `appLogic` is served through the app's model: Altinn reads the stored XML, deserialises it into the model class and returns that object, which comes back as JSON. A data type without `appLogic`, a `Valideringsrapport` for instance, is streamed as stored, so its XML arrives as XML. Asking for `application/xml` instead was tried and changes nothing, because the app registers no XML output formatter; asking for JSON would be worse, since it would stop the streamed ones coming back as stored.
 
 Two content types are in play, and the tool shows both: the picker labels an element with the content type Altinn has it **stored** under, from the instance's `data` array, while the log entry's **Content type** row is what the response actually carried. They differ for form data, and that is Altinn's doing rather than a setting here.
 
@@ -64,6 +62,26 @@ Picking another data element, or another instance, drops what is held instead of
 **Load into payload** reuses an element that is standing empty rather than adding a second one next to it, and otherwise appends it with the others collapsed, so the loaded element is the one in front of you. The collapsed row and the editor hint both say `instance 99d0632c` where an example file would have named itself, so loaded and shipped content never look alike. A content type parameter is dropped on the way in, so a stored `application/xml; charset=utf-8` does not become an extra option in the picker.
 
 The selection is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick in Instances as usual. Posting it back to the same instance needs nothing else: it is still the selected one, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
+
+## Comparing with the stored xml
+
+Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. The **Compare with stored** panel puts the two side by side and reports only the differences that mean something.
+
+The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
+
+The left-hand side is the xml as written: the element in the payload editor of the same data type, or any example file for it. The example is fetched at the moment of comparing rather than held.
+
+Differences are reported as paths, with three kinds:
+
+| Kind        | What it means                                                                          |
+| ----------- | -------------------------------------------------------------------------------------- |
+| **dropped** | The file has it and the stored xml does not. The model had no place for it.            |
+| **added**   | The stored xml has it and the file does not. Usually a value the model defaulted.      |
+| **changed** | Both have it and the values differ. Usually a date, a number or a boolean reformatted. |
+
+So `/ettrinn/eiendom/festenr dropped` says the field never made it, and `/ettrinn/dato changed 2026-09-09 → 2026-09-09T00:00:00` says the model rewrote it. A whole subtree that went missing is reported once at its root rather than leaf by leaf, and repeated siblings are told apart by position, `/ettrinn/part[2]/navn`.
+
+What it ignores is everything that carries no meaning: whitespace, the xml declaration, comments, self-closing versus longhand empty elements, attribute order and namespace prefixes. Two documents that differ only in those ways are reported as identical, which is the point: the noise is what made this cumbersome by hand. `xmlDiff.test.ts` pins all of it, and `compareService.test.ts` covers the storage read.
 
 ## Validate a data element
 

@@ -1278,6 +1278,83 @@ a.btn {
 
 /* The browser's pdf viewer, sized to roughly a portrait page so it does not need scrolling to
    see the top of the receipt. */
+/* ------------------------------------------------------------------ diff */
+
+.diff {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.diff__row {
+    border: 1px solid var(--border);
+    border-left-width: 2px;
+    border-radius: 4px;
+    padding: 7px 9px;
+    background: var(--bg-subtle);
+}
+
+/* The three kinds are the point, so they carry the colour: dropped is the one that bites. */
+.diff__row--missing {
+    border-left-color: var(--bad-border);
+}
+
+.diff__row--added {
+    border-left-color: var(--warn-border);
+}
+
+.diff__row--changed {
+    border-left-color: var(--accent-border);
+}
+
+.diff__head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.diff__kind {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.diff__kind--missing {
+    color: var(--bad);
+}
+
+.diff__kind--added {
+    color: var(--warn);
+}
+
+.diff__kind--changed {
+    color: var(--accent);
+}
+
+.diff__path {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.diff__value {
+    margin-top: 3px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
+.diff__side {
+    display: inline-block;
+    min-width: 52px;
+    color: var(--text-faint);
+    font-family: var(--font);
+    font-size: 11px;
+}
+
 /* ------------------------------------------------------------------ modal */
 
 /* A native dialog, so Escape, the top layer and focus are the browser's job, not ours. */

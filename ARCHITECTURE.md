@@ -45,6 +45,8 @@ server/src
   routes.ts           endpoints and zod schemas
   runService.ts       orchestrates create, upload, validate, advance
   readService.ts      instance operations: list, get, validate, process, delete
+  compareService.ts   the stored blob from LocalTest's storage api, and the diff
+  xmlDiff.ts          comparing two xml documents, ignoring what carries no meaning
   stepRecorder.ts     shared request logging for both flows
   altinnClient.ts     fetch wrapper: bearer, timeout, never throws, redacts the token
   appService.ts       applicationmetadata, parties, content type resolution

@@ -333,21 +333,17 @@ export async function readDataElement(token: string, request: ReadRequest & { da
     const recorder = new StepRecorder();
     const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/data/${request.dataGuid}`;
 
-    // Ask for XML first, and accept anything.
+    // Accept anything, and expect two different answers.
     //
-    // Altinn serves a data type with `appLogic` through the app's model: it reads the stored XML,
-    // deserialises it, and lets the framework choose a format for the object, which for a plain
-    // accept-anything request is JSON. That is why the main form came back as JSON while a data
-    // type without appLogic, whose bytes are streamed as stored, came back as XML. Naming XML
-    // first gets the model serialised as XML instead, which is the format everything else here
-    // speaks: the examples, the editor and what we post.
+    // A data type with `appLogic` is served through the app's model: Altinn reads the stored XML,
+    // deserialises it into the model class and returns that object, which comes back as JSON. A
+    // data type without appLogic is streamed as stored, so XML arrives as XML. Asking for
+    // `application/xml` was tried and changes nothing, because the app registers no XML output
+    // formatter, so the only effect would have been a misleading header.
     //
-    // The lower-weighted catch-all is what makes it safe. A streamed element ignores Accept
-    // altogether, and an app with no XML output formatter falls back to JSON rather than
-    // answering 406. Read the bytes rather than text, because an attachment is not text.
-    const response = await recorder.run("Get data element", "GET", url, () =>
-        altinnFetch({ url, token, accept: "application/xml;q=1.0, */*;q=0.9", binaryResponse: true })
-    );
+    // Asking for JSON, on the other hand, would stop the streamed ones coming back as stored.
+    // Read the bytes rather than text, because an attachment is not text.
+    const response = await recorder.run("Get data element", "GET", url, () => altinnFetch({ url, token, accept: "*/*", binaryResponse: true }));
 
     const textual = isTextual(response.contentType);
     const bytes = response.bytes;

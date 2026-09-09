@@ -11,6 +11,7 @@ const ready: SectionInputs = {
     runCount: 0,
     hasProcess: false,
     party: "510001",
+    dataSelected: false,
     busy: false
 };
 
@@ -36,6 +37,12 @@ describe("visibleSections", () => {
         assert.equal(visibleSections({ ...ready, party: "" }).instances, false);
         // No token means no request it could make.
         assert.equal(visibleSections({ ...ready, hasToken: false }).instances, false);
+    });
+
+    it("shows the compare panel once a data element is selected", () => {
+        assert.equal(visibleSections(ready).compare, false);
+        assert.equal(visibleSections({ ...ready, dataSelected: true }).compare, true);
+        assert.equal(visibleSections({ ...ready, dataSelected: true, hasToken: false }).compare, false);
     });
 
     it("shows the process panel only once an instance read has said where it stands", () => {

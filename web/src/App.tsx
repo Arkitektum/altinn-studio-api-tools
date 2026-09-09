@@ -7,6 +7,7 @@ import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
 import {
     logFromAdvance,
+    logFromCompare,
     logFromDataElement,
     logFromDelete,
     logFromInstances,
@@ -20,6 +21,7 @@ import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { ErrorNotice } from "./components/Notice";
+import { ComparePanel, type CompareSource } from "./components/ComparePanel";
 import { FetchPanel } from "./components/FetchPanel";
 import { InstancesPanel } from "./components/InstancesPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
@@ -33,9 +35,11 @@ import type {
     AppMetadataResponse,
     AppParty,
     CatalogueApp,
+    CompareResult,
     DataElementInput,
     DataElementSummary,
     ExampleGroup,
+    ExampleKind,
     FetchedDataElement,
     InstanceSummary,
     LocaltestStatus,
@@ -113,6 +117,11 @@ export function App() {
 
     const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
     const [dataGuid, setDataGuid] = useState("");
+    /** The last comparison of the stored xml against the xml as written. */
+    const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
+    const [comparing, setComparing] = useState(false);
+    const [compareError, setCompareError] = useState<unknown>(null);
+
     /** The data element last read back, so it can be downloaded or copied rather than reread. */
     const [fetchedElement, setFetchedElement] = useState<FetchedDataElement | null>(null);
     const [fetching, setFetching] = useState(false);
@@ -137,6 +146,9 @@ export function App() {
     const changeDataGuid = useCallback((next: string) => {
         setDataGuid(next);
         setFetchedElement((current) => (current?.dataGuid === next ? current : null));
+        // A comparison describes one data element, so it is stale the moment another is picked.
+        setCompareResult((current) => (current?.dataGuid === next ? current : null));
+        setCompareError(null);
     }, []);
 
     /** Replaces the held preview, revoking the previous blob url so it is not leaked. */
@@ -582,6 +594,48 @@ export function App() {
         }
     }
 
+    /**
+     * Compares the stored xml against the xml as written. The left-hand side is either what is in
+     * the payload editor or an example file, which is fetched here rather than held, since it is
+     * only needed at the moment of comparing.
+     */
+    async function compareWithStored(source: string) {
+        if (!activeTokenId || !dataGuid) return;
+        const dataType = instanceDataElements.find((element) => element.id === dataGuid)?.dataType ?? "";
+        setComparing(true);
+        setCompareError(null);
+        try {
+            let left = "";
+            if (source === "payload") {
+                left = dataElements.find((element) => element.dataType === dataType && element.content.trim())?.content ?? "";
+            } else {
+                const [, kind, ...rest] = source.split(":");
+                const file = await api.getExampleFile({ kind: (kind ?? "form") as ExampleKind, group: dataType, name: rest.join(":") });
+                left = file.content;
+            }
+            if (!left.trim()) {
+                setCompareError(new Error("That source has no content to compare."));
+                return;
+            }
+
+            const result = await api.compareStored({
+                tokenId: activeTokenId,
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                dataGuid,
+                left
+            });
+            appendLog(logFromCompare(result));
+            setCompareResult(result);
+        } catch (error) {
+            setCompareError(error);
+        } finally {
+            setComparing(false);
+        }
+    }
+
     /** Saves the held data element as a file, under the name Altinn stored or the data type. */
     function downloadDataElement() {
         if (!fetchedElement) return;
@@ -703,6 +757,34 @@ export function App() {
     if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
 
+    const selectedDataType = instanceDataElements.find((element) => element.id === dataGuid)?.dataType ?? "";
+
+    /**
+     * What the stored xml can be compared against: an element in the payload editor of the same
+     * data type, and the example files for it. Base64 content is left out, since a comparison is
+     * about xml.
+     */
+    const compareSources: CompareSource[] = useMemo(() => {
+        if (!selectedDataType) return [];
+        const sources: CompareSource[] = [];
+        const payload = dataElements.find(
+            (element) => element.dataType === selectedDataType && element.content.trim() && element.encoding !== "base64"
+        );
+        if (payload) {
+            sources.push({
+                value: "payload",
+                label: `Payload element${payload.exampleName ? ` · from ${payload.exampleName}` : ""}`
+            });
+        }
+        for (const group of exampleGroups) {
+            if (group.kind === "attachment" || group.key !== selectedDataType) continue;
+            for (const file of group.files) {
+                sources.push({ value: `example:${group.kind}:${file.name}`, label: `Example · ${file.label}` });
+            }
+        }
+        return sources;
+    }, [selectedDataType, dataElements, exampleGroups]);
+
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
     /**
@@ -721,6 +803,7 @@ export function App() {
         runCount: logs.length,
         hasProcess: instanceProcess !== null,
         party: instanceOwnerPartyId,
+        dataSelected: Boolean(dataGuid),
         busy: running || fetching
     });
 
@@ -865,6 +948,17 @@ export function App() {
                                 error={fetchError}
                                 onPreviewPdf={() => void renderPdf()}
                             />
+
+                            {sections.compare && selectedDataType && (
+                                <ComparePanel
+                                    dataType={selectedDataType}
+                                    sources={compareSources}
+                                    onCompare={(source) => void compareWithStored(source)}
+                                    result={compareResult}
+                                    busy={comparing}
+                                    error={compareError}
+                                />
+                            )}
 
                             {/* Where the instance stands. Arrives with the first instance read. */}
                             {sections.process && instanceProcess && (

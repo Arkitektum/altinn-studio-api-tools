@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { appBaseUrl, appUiUrl, instanceUiUrl } from "./urls.js";
+import { appBaseUrl, appUiUrl, instanceUiUrl, storageDataUrl } from "./urls.js";
 
 const HOST = "http://local.altinn.cloud:8000";
 
@@ -21,6 +21,14 @@ describe("urls", () => {
         assert.equal(
             instanceUiUrl("dibk", "et-v4", "510001", "99d0632c-5917-448c-8ab6-a5d3b681376b"),
             `${HOST}/dibk/et-v4/#/instance/510001/99d0632c-5917-448c-8ab6-a5d3b681376b`
+        );
+    });
+
+    it("points storage at LocalTest, not at the app", () => {
+        // The app would answer with the model as JSON. Storage has the bytes it stored.
+        assert.equal(
+            storageDataUrl("510001", "99d0632c-5917-448c-8ab6-a5d3b681376b", "fdeb5550-f4e8-4f23-87d0-111234ac4771"),
+            "http://localhost:5101/storage/api/v1/instances/510001/99d0632c-5917-448c-8ab6-a5d3b681376b/data/fdeb5550-f4e8-4f23-87d0-111234ac4771"
         );
     });
 });

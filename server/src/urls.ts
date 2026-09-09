@@ -20,3 +20,13 @@ export function appUiUrl(org: string, app: string): string {
 export function instanceUiUrl(org: string, app: string, instanceOwnerPartyId: string | number, instanceGuid: string): string {
     return `${appBaseUrl(org, app)}/#/instance/${instanceOwnerPartyId}/${instanceGuid}`;
 }
+
+/**
+ * The platform storage endpoint for one data element, which LocalTest serves alongside the apps.
+ *
+ * Storage hands back the blob as stored, where the app serves a form data type through its model
+ * and so answers with JSON. This is the only way to see the XML Altinn actually wrote.
+ */
+export function storageDataUrl(instanceOwnerPartyId: string | number, instanceGuid: string, dataGuid: string): string {
+    return `${config.localtestUrl}/storage/api/v1/instances/${instanceOwnerPartyId}/${instanceGuid}/data/${dataGuid}`;
+}

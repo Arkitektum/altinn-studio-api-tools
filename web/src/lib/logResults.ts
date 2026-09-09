@@ -3,6 +3,7 @@ import type {
     AdvanceProcessResult,
     DataElementSummary,
     DeleteInstanceResult,
+    CompareResult,
     ListInstancesResult,
     LogResult,
     PdfPreviewResult,
@@ -129,6 +130,30 @@ export function logFromRead(instance: ReadInstanceResult, validation: ValidateRe
         // Offering to open an instance that could not be read would just 404 again.
         instanceUrl: instance.ok ? instance.instanceUrl : null,
         validation: toValidation(validation, instance.dataElements)
+    };
+}
+
+/** The log for a comparison against the stored xml. */
+export function logFromCompare(result: CompareResult): LogResult {
+    const differences = result.diff?.differences.length ?? 0;
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Compared with the stored xml",
+        rows: [
+            { label: "Data guid", value: result.dataGuid },
+            ...(result.storedContentType ? [{ label: "Stored as", value: result.storedContentType }] : []),
+            ...(result.diff
+                ? [
+                      {
+                          label: "Differences",
+                          value: result.diff.same ? "none" : String(differences),
+                          tone: (result.diff.same ? "ok" : "warn") as "ok" | "warn"
+                      }
+                  ]
+                : [])
+        ]
     };
 }
 
