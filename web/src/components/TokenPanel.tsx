@@ -21,6 +21,15 @@ function describeSource(users: LocaltestUsers | null): string {
     return `${users.users.length} test users from LocalTest${users.source === "page" ? ", read off its front page" : ""}.`;
 }
 
+/**
+ * The same thing in a few words, for the panel head. Where the list came from is worth saying but
+ * not worth three lines of a 300px rail, so the sentence above becomes the badge's title.
+ */
+function badgeSource(users: LocaltestUsers | null): string {
+    if (!users || users.source === "none") return "fallback list";
+    return `${users.users.length} users`;
+}
+
 interface TokenPanelProps {
     /** Anchor for the chain strip to scroll to. */
     id: string;
@@ -130,7 +139,17 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
     const expired = activeToken ? isExpired(activeToken.expiresAt, now) : false;
 
     return (
-        <Panel id={id} title="Test user">
+        <Panel
+            id={id}
+            title="Test user"
+            aside={
+                mode === "test-user" ? (
+                    <span className="badge" title={describeSource(available)}>
+                        {badgeSource(available)}
+                    </span>
+                ) : undefined
+            }
+        >
             <div className="tabs" role="tablist">
                 {(
                     [
@@ -174,14 +193,18 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 style={{ marginTop: 6 }}
                             />
                         )}
+                        {/*
+                         * Shortened to {localtest} rather than the resolved host, the way the
+                         * compare panel does it: the full URL wrapped over two lines here, and the
+                         * run log prints it in full for every request anyway.
+                         */}
                         <p className="field__hint">
-                            GET {serverConfig?.localtestUrl ?? "http://localhost:5101"}
+                            <span className="method method--get">GET</span>{" "}
+                            <span title={serverConfig?.localtestUrl ?? "http://localhost:5101"}>{"{localtest}"}</span>
                             /Home/GetTestUserToken/
                             <span style={{ color: "var(--accent)" }}>{userId || "{userId}"}</span>
                             <br />
-                            {describeSource(available)}
-                            <br />
-                            The party id is read from the token claims and prefilled below.
+                            The party id comes from the token claims.
                         </p>
                     </div>
                 ) : (
