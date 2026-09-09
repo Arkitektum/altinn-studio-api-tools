@@ -88,9 +88,22 @@ describe("resolveFieldTypes", () => {
         assert.deepEqual(resolveFieldTypes(ambiguous, ["/ettrinn/dato"]), {});
     });
 
+    it("takes the schema as text, which is how Altinn serves it", () => {
+        // The endpoint answers text/plain, so the body arrives verbatim rather than parsed.
+        assert.equal(resolveFieldTypes(JSON.stringify(schema), ["/ettrinn/dato"])["/ettrinn/dato"], "date");
+    });
+
+    it("matches the root element whatever case Studio gave it", () => {
+        // Studio's root element is the xsd's, so it is Planvarsel in one app and ettrinn in another.
+        const capitalised = { ...schema, "@xsdRootElement": "Ettrinn" };
+        assert.equal(resolveFieldTypes(capitalised, ["/ettrinn/dato"])["/ettrinn/dato"], "date");
+        assert.equal(resolveFieldTypes(schema, ["/Ettrinn/dato"])["/Ettrinn/dato"], "date");
+    });
+
     it("copes with something that is not a schema at all", () => {
         assert.deepEqual(resolveFieldTypes(null, ["/ettrinn/dato"]), {});
         assert.deepEqual(resolveFieldTypes("<html>", ["/ettrinn/dato"]), {});
+        assert.deepEqual(resolveFieldTypes("{not json", ["/ettrinn/dato"]), {});
         assert.deepEqual(resolveFieldTypes({ oneOf: [{ $ref: "#/nowhere" }] }, ["/ettrinn/dato"]), {});
     });
 });

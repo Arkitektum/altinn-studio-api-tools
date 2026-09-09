@@ -18,6 +18,24 @@ function asSchema(value: unknown): Schema | null {
     return value && typeof value === "object" && !Array.isArray(value) ? (value as Schema) : null;
 }
 
+/**
+ * The schema as an object, whether it arrived as one or as text.
+ *
+ * Altinn serves this endpoint as `text/plain`, so `altinnFetch` hands back the body verbatim
+ * rather than parsed, which is the right default everywhere else: it is what keeps a stored xml
+ * element coming back as stored.
+ */
+function asDocument(value: unknown): Schema | null {
+    if (typeof value === "string") {
+        try {
+            return asSchema(JSON.parse(value));
+        } catch {
+            return null;
+        }
+    }
+    return asSchema(value);
+}
+
 function asString(node: Schema, key: string): string | null {
     return typeof node[key] === "string" ? (node[key] as string) : null;
 }
@@ -107,7 +125,7 @@ function describeType(node: Schema): string | null {
  * its properties, so it is consumed against `@xsdRootElement` before the walk begins.
  */
 export function resolveFieldTypes(schema: unknown, paths: string[]): Record<string, string> {
-    const root = asSchema(schema);
+    const root = asDocument(schema);
     if (!root) return {};
     const rootElement = asString(root, "@xsdRootElement");
     const rootNode = deref(root, root);
@@ -123,7 +141,7 @@ export function resolveFieldTypes(schema: unknown, paths: string[]): Record<stri
         // as a property, that is followed instead.
         let node: Schema | null = rootNode;
         let rest = parts;
-        if (!rootElement || first.name === rootElement) {
+        if (!rootElement || first.name.toLowerCase() === rootElement.toLowerCase()) {
             rest = parts.slice(1);
         } else if (property(rootNode, first, root)) {
             node = property(rootNode, first, root);
