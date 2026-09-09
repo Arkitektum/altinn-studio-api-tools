@@ -41,7 +41,13 @@ Besides logging the whole response, the read fills the data element select so yo
 
 `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size. The first is preselected after reading an instance, so fetching one is a single click.
 
-The request goes out with `Accept: */*`, because asking for JSON would stop Altinn returning stored XML. XML comes back verbatim and JSON comes back parsed.
+The request asks for `application/xml` first and anything after it, which needs explaining because the two kinds of data element answer differently.
+
+A data type with `appLogic` is served through the app's model: Altinn reads the stored XML, deserialises it into the model class, and lets the framework choose a format for that object. Ask for anything and you get JSON, which is why the main form came back as JSON while a `Valideringsrapport`, which has no `appLogic` and is streamed as stored, came back as XML. Naming XML first gets the model serialised as XML instead, which is the format the examples, the editor and every post here already speak.
+
+The catch-all at a lower weight is what keeps that safe. A streamed element ignores `Accept` altogether, so attachments are unaffected, and an app with no XML output formatter falls back to JSON rather than answering 406.
+
+Two content types are in play, and the tool shows both: the picker labels an element with the content type Altinn has it **stored** under, from the instance's `data` array, while the log entry's **Content type** row is what the response actually carried. They differ for form data, and that is Altinn's doing rather than a setting here.
 
 ### What you can do with it
 
