@@ -21,13 +21,13 @@ Two details are worth knowing. A link only counts as settled when everything bef
 
 ## Post, then inspect
 
-The middle column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Data element, Compare with stored, Receipt pdf and Process: what is there now, in that order because the first two are about the same thing and the pdf is a different kind of action. Target and Instances sit above both, because they decide what everything else acts on.
+The middle column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Data element, Compare with stored, Pdf and Process: what is there now, in that order because the first two are about the same thing and the pdf is a different kind of action. Target and Instances sit above both, because they decide what everything else acts on.
 
 The headings are a rule and a word, not a container. They group what is already there rather than adding something to look at.
 
 ## Panels appear as they become usable
 
-Rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload and the post button arrive once you have a token and an app to aim at, and Instances once there is a party as well. Data element, Compare with stored and Receipt pdf arrive with a selected instance, Compare once a data element is picked, and Validation and the run log with their first content. The rendered pdf is not a panel at all: it opens in a window over the tool.
+Rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload and the post button arrive once you have a token and an app to aim at, and Instances once there is a party as well. Data element, Compare with stored and Pdf arrive with a selected instance, Compare once a data element is picked, and Validation and the run log with their first content. The rendered pdf is not a panel at all: it opens in a window over the tool.
 
 The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
 

@@ -31,7 +31,7 @@ The user id is the only thing you type:
 4. The first payload element already holds the ET example, loaded when the data type was set. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
 5. **New instance** is selected in Instances, so press **Post**.
 
-What you get back is the instance, read and validated automatically, with every request in the run log. Selecting any other instance reads and validates that one the same way. From there [read it back](reading-data-back.md), [advance the process](process.md), or preview the receipt pdf.
+What you get back is the instance, read and validated automatically, with every request in the run log. Selecting any other instance reads and validates that one the same way. From there [read it back](reading-data-back.md), [advance the process](process.md), or render the pdf.
 
 ## Doing it by hand instead
 

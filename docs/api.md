@@ -28,7 +28,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                                                            |
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                                                                         |
 | `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                                                                       |
-| `GET`    | `/api/instances/pdf-preview`           | Render the receipt pdf. Same query as `/api/instances`                                                                       |
+| `GET`    | `/api/instances/pdf-preview`           | Render the archived pdf. Same query as `/api/instances`                                                                      |
 | `POST`   | `/api/instances/data-element/compare`  | The stored xml against `left`. Body: the query fields plus `dataGuid`, `left` and an optional `dataType` for the field types |
 | `DELETE` | `/api/instances`                       | Delete an instance. Same query plus `&hard=true` for a hard delete                                                           |
 | `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query                                                          |

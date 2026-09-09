@@ -32,7 +32,7 @@ The quickest path to a full submission, where the user id is the only thing you 
 4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
 5. **New instance** is already selected in Instances, so press **Post**.
 
-The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, preview the receipt pdf, or delete the instance.
+The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, render the pdf, or delete the instance.
 
 For an app the catalogue does not list, pick **Other application** and type the org and app. Everything after that is the same. If the post button is disabled, the line above it says what is missing.
 

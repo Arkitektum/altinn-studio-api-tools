@@ -20,8 +20,8 @@ function describeSize(bytes: number): string {
 }
 
 /**
- * The rendered pdf, over the tool rather than under it. A receipt is something you look at and
- * dismiss, so it does not belong in the column with the panels you work in.
+ * The rendered pdf, over the tool rather than under it. It is something you look at and dismiss,
+ * so it does not belong in the column with the panels you work in.
  *
  * A native `<dialog>` rather than a hand-rolled overlay: Escape, the backdrop, the top layer and
  * keeping focus inside all come from the browser.
@@ -45,7 +45,7 @@ export function PdfModal({ preview, onClose }: PdfModalProps) {
             }}
         >
             <div className="modal__head">
-                <h2>Receipt pdf</h2>
+                <h2>Pdf</h2>
                 <span className="spacer" />
                 <span className="badge">
                     {describeSize(preview.size)} · {preview.at}
@@ -59,7 +59,7 @@ export function PdfModal({ preview, onClose }: PdfModalProps) {
             </div>
 
             {/* The browser's own pdf viewer, pointed at the blob. Nothing is written to disk. */}
-            <iframe className="modal__body" src={preview.url} title="Receipt pdf" />
+            <iframe className="modal__body" src={preview.url} title="Pdf" />
         </dialog>
     );
 }

@@ -362,7 +362,7 @@ export async function readDataElement(token: string, request: ReadRequest & { da
 /**
  * GET {app}/instances/{party}/{guid}/pdf/preview
  *
- * The app renders the receipt pdf it would archive, which is the quickest way to see what the
+ * The app renders the pdf it would archive, which is the quickest way to see what the
  * form data turns into without walking the process to the end.
  */
 export async function previewPdf(token: string, request: ReadRequest): Promise<PdfPreviewResult> {

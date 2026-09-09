@@ -24,7 +24,7 @@ import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
 import { ComparePanel } from "./components/ComparePanel";
 import { FetchPanel } from "./components/FetchPanel";
-import { ReceiptPdfPanel } from "./components/ReceiptPdfPanel";
+import { PdfPanel } from "./components/PdfPanel";
 import { InstancesPanel } from "./components/InstancesPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
 import { ProcessPanel } from "./components/ProcessPanel";
@@ -959,7 +959,7 @@ export function App() {
 
                             {/* After the comparison, since it is a different kind of action. */}
                             {sections.requests && instanceGuid && (
-                                <ReceiptPdfPanel
+                                <PdfPanel
                                     appHost={appHost}
                                     org={org}
                                     app={app}

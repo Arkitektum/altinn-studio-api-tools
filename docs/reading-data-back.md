@@ -5,7 +5,7 @@ nav_order: 9
 
 # Reading data back
 
-**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels below: **Data element**, then **Compare with stored** for the element picked there, then **Receipt pdf**.
+**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels below: **Data element**, then **Compare with stored** for the element picked there, then **Pdf**.
 
 None of those have fields of their own. They work on whatever is selected in Instances, and each names in its header what that is.
 
@@ -113,13 +113,13 @@ The instance's own validation runs with the read above. **Validate data element*
 
 The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`. The issues themselves are listed in the [Validation](validation-and-log.md) panel rather than left as raw JSON.
 
-## Receipt pdf
+## Pdf
 
-`GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, the receipt pdf the app would archive. It is the quickest way to see what the form data turns into without walking the process to the end.
+`GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, the pdf the app would archive. Altinn calls it the receipt pdf, and the panel does not, because some of the forms are themselves called receipts and the word would mean two things a line apart. It is the quickest way to see what the form data turns into without walking the process to the end.
 
 It has a panel of its own, last, because it is a different kind of action: everything above it reads data, and this renders a document from it. It is also the one read that is still a button, since rendering a pdf on every selection would be wasteful.
 
-The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: a receipt is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
+The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: it is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
 
 One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and selecting another instance clears it along with that instance's validation results.
 
