@@ -16,8 +16,8 @@ import {
     logFromRun,
     logFromValidation
 } from "./lib/logResults";
-import { placeLoaded } from "./lib/payload";
 import { useLocalStorage } from "./lib/useLocalStorage";
+import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { Chain } from "./components/Chain";
@@ -633,27 +633,6 @@ export function App() {
         downloadContent(fetchedElement.filename, fetchedElement.content, fetchedElement.encoding, fetchedElement.contentType);
     }
 
-    /**
-     * Puts what was read back into the payload editor, so stored data can be changed and posted
-     * again. The destination is left alone: posting it back to the same instance and using it as
-     * the payload for a new one are both real cases, and only you know which this is.
-     */
-    function loadFetchedIntoPayload() {
-        if (!fetchedElement) return;
-        const loaded: DataElementInput = {
-            dataType: fetchedElement.dataType,
-            content: fetchedElement.content,
-            // Parameters are dropped, so a stored "application/xml; charset=utf-8" does not become
-            // an extra option in the content type picker.
-            ...(fetchedElement.contentType ? { contentType: fetchedElement.contentType.split(";")[0]?.trim() } : {}),
-            ...(fetchedElement.encoding === "base64" ? { encoding: "base64" as const, filename: fetchedElement.filename } : {}),
-            exampleName: `instance ${instanceGuid.slice(0, 8)}`,
-            collapsed: false
-        };
-
-        setDataElements(placeLoaded(dataElements, loaded));
-    }
-
     async function renderPdf() {
         if (!activeTokenId) return;
         setFetching(true);
@@ -722,10 +701,33 @@ export function App() {
                 // Already read, so naming the action costs no extra request.
                 taskType: instanceProcess?.taskType ?? null
             });
-            appendLog(logFromAdvance(result));
-            // The response carries the process it landed in, so a refused move leaves the panel
-            // showing the task the instance is still in rather than blanking it.
-            if (result.ok && result.process) setInstanceProcess(result.process);
+            // Read the instance afterwards, because advancing can change more than the task: the
+            // app may add data elements on the way out of one, a generated pdf among them, and the
+            // panels below are showing the list from before the move. A failed read must not turn
+            // a successful advance into a failure, so it degrades to null with its step in the log.
+            let read: ReadInstanceResult | null = null;
+            if (result.ok) {
+                try {
+                    read = await api.getInstance({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
+                } catch {
+                    /* the advance still stands */
+                }
+            }
+            appendLog(logFromAdvance(result, read));
+
+            if (read?.ok) {
+                setInstanceDataElements(read.dataElements);
+                // Keep the element that is selected where it survived the move, since the panels
+                // below are about it, and fall back to the first of whatever is there now.
+                if (!read.dataElements.some((element) => element.id === dataGuid)) {
+                    changeDataGuid(read.dataElements[0]?.id ?? "");
+                }
+            }
+            // The read is the later answer, so it wins. Without one, the advance's own response
+            // still carries the process it landed in, and a refused move leaves the task the
+            // instance is still in on screen rather than blanking it.
+            const moved = read?.ok ? read.process : result.ok ? result.process : null;
+            if (moved) setInstanceProcess(moved);
         } catch (error) {
             setProcessError(error);
         } finally {
@@ -942,9 +944,12 @@ export function App() {
                                 onDataGuidChange={changeDataGuid}
                                 fetched={fetchedElement}
                                 onDownloadDataElement={downloadDataElement}
-                                onLoadIntoPayload={loadFetchedIntoPayload}
                                 onGetDataElement={() => void getDataElement()}
                                 onValidateDataElement={() => void validateDataElement()}
+                                validateBlockedBy={validationBlockedBy(
+                                    instanceProcess,
+                                    metadata?.metadata.dataTypes?.find((type) => type.id === selectedDataType)
+                                )}
                                 busy={fetching}
                                 hasToken={tokenUsable}
                                 error={fetchError}

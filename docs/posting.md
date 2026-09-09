@@ -39,7 +39,7 @@ POST /dibk/et-v4/instances?instanceOwnerPartyId=510001     instance already has 
 POST /dibk/et-v4/instances/510001/{guid}/data?dataType=ET  400, max count reached
 ```
 
-The tool detects the existing element and sends `PUT .../data/{dataElementId}` instead. When this happens the run log says "Replace" rather than "Add". This is what makes the round trip work: read an element back, change it, and post it to the same instance without Altinn refusing it.
+The tool detects the existing element and sends `PUT .../data/{dataElementId}` instead. When this happens the run log says "Replace" rather than "Add". This is what makes posting to an instance that already has its form work: a `maxCount: 1` data type has one element from the moment the instance is created, so a post to it is a change to that element rather than a second one Altinn would refuse.
 
 ## When the post button is disabled
 

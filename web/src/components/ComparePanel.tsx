@@ -59,8 +59,8 @@ export function ComparePanel({ dataType, payload, onCompare, result, busy, error
 
             {payload === null ? (
                 <p className="field__hint">
-                    Nothing to compare against: the payload has no {dataType} element with content. Load one there, or use{" "}
-                    <strong>Load into payload</strong> above to put what is stored into it and then change it.
+                    Nothing to compare against: the payload has no {dataType} element with content. Load an example file, or one from disk, into a{" "}
+                    {dataType} element in the <strong>Payload</strong> panel.
                 </p>
             ) : (
                 <>

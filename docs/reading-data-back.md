@@ -53,15 +53,16 @@ What came back is held, so it can be used rather than only read:
 
 - **Download** saves it as a file. The name is whatever Altinn stored, since an attachment was uploaded under a name someone chose, and otherwise the data type with an extension from the content type, so `ET` becomes `ET.xml`.
 - **Copy content** puts the text on the clipboard. Binary content offers no copy button, because copying base64 as text hands over the encoding rather than the file.
-- **Load into payload** puts it in the [Payload](payload.md) panel, which is the round trip: read a stored element, change one field, post it again.
 
 Picking another data element, or another instance, drops what is held instead of offering to download an element you are no longer looking at.
 
-### The round trip
+There was a **Load into payload** button here, putting what came back into the payload editor for a round trip. It is gone: what a form data element returns is the model as JSON, not the xml that was stored, so it was never the thing you wanted to post back, and the panel below compares the two rather than editing one into the other. Downloading it and picking the file up as a file from disk does the same job when it is really wanted.
 
-**Load into payload** reuses an element that is standing empty rather than adding a second one next to it, and otherwise appends it with the others collapsed, so the loaded element is the one in front of you. The collapsed row and the editor hint both say `instance 99d0632c` where an example file would have named itself, so loaded and shipped content never look alike. A content type parameter is dropped on the way in, so a stored `application/xml; charset=utf-8` does not become an extra option in the picker.
+### Validating an element
 
-The selection is deliberately left alone. Posting it back to the same instance and using it as the payload for a new one are both real cases, and only you know which this is, so pick in Instances as usual. Posting it back to the same instance needs nothing else: it is still the selected one, and a form data type with `maxCount: 1` is replaced with `PUT` rather than rejected, see [Max count behaviour](posting.md#max-count-behaviour).
+**Validate data element** calls `GET .../data/{dataGuid}/validate`, which Altinn answers against the task the element's data type belongs to. The button is disabled once that no longer holds: an ended process has no task to validate against, and an instance sitting in a later task would be answering about rules this element is not covered by. The reason takes the place of the URL preview, so the panel says why rather than making a call whose answer is about somewhere the instance has left.
+
+A data type the app declares with no `taskId` is never blocked. Nothing was said about which task it belongs to, so there is nothing to compare against, and guessing would take away a request that works.
 
 ## Comparing with the stored xml
 
@@ -69,7 +70,7 @@ Reading a form data element gives the model as JSON, so what Altinn actually wro
 
 The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
 
-The left-hand side is the xml as written, which is always the payload element of the same data type: that is where the file you are working on already is. There was a picker offering the example files as well, and it was never used for anything else, so it is gone. With no payload element of that type the panel says so and points at **Load into payload**, which puts what is stored into the editor for you to change and compare against.
+The left-hand side is the xml as written, which is always the payload element of the same data type: that is where the file you are working on already is. There was a picker offering the example files as well, and it was never used for anything else, so it is gone. With no payload element of that type the panel says so and points at the example files and the file picker, which is where content for one comes from.
 
 Differences are reported as paths, with three kinds:
 

@@ -24,7 +24,6 @@ Three ways, and one more if you count reading it back:
 - **Example data.** Each element has a picker listing the shipped files for its data type, so the common case needs no pasting. See [Example data](example-data.md).
 - **File from disk.** For a file the shipped dummies do not cover, a real pdf or a real GML rather than a placeholder.
 - **By hand.** Paste or type XML or JSON into the editor. **Format JSON** appears when the content looks like JSON.
-- **Read back off an instance.** **Load into payload** in the Data element panel puts a stored data element in here, see [Reading data back](reading-data-back.md).
 
 ## File from disk
 

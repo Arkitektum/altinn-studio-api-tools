@@ -199,13 +199,26 @@ export function logFromDataElement(result: ReadDataElementResult): LogResult {
     };
 }
 
-export function logFromAdvance(result: AdvanceProcessResult): LogResult {
+/**
+ * The log for advancing the process and reading the instance that came of it.
+ *
+ * Two requests, one story, the same as a read and its validation. Advancing changes more than the
+ * task: the app can add data elements on the way out of a task, a generated pdf among them, so the
+ * read is what tells you what the instance holds now. The task is taken from the read where there
+ * is one, since it is the later of the two answers.
+ */
+export function logFromAdvance(result: AdvanceProcessResult, read: ReadInstanceResult | null): LogResult {
+    const rows: LogResult["rows"] = [{ label: "Instance", value: result.instanceGuid }];
+    if (result.ok) rows.push({ label: "Task", value: processLabel(read?.ok ? read.process : result.process) });
+    if (read?.ok) rows.push({ label: "Data elements", value: String(read.dataElements.length) });
+
     return {
         ok: result.ok,
-        steps: result.steps,
+        steps: renumber([...result.steps, ...(read?.steps ?? [])]),
         failedAt: result.failedAt,
         title: "Advanced process",
-        rows: [{ label: "Instance", value: result.instanceGuid }, ...(result.ok ? [{ label: "Task", value: processLabel(result.process) }] : [])]
+        rows,
+        instanceUrl: read?.ok ? read.instanceUrl : null
     };
 }
 

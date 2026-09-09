@@ -18,9 +18,14 @@ interface FetchPanelProps {
     /** The data element last read back, for the download and copy buttons. */
     fetched: FetchedDataElement | null;
     onDownloadDataElement: () => void;
-    onLoadIntoPayload: () => void;
     onGetDataElement: () => void;
     onValidateDataElement: () => void;
+    /**
+     * Why validating the selected element would say nothing useful, or null when it would. The
+     * button is disabled with the reason under it rather than left to fail against a task the
+     * instance has already left.
+     */
+    validateBlockedBy: string | null;
     busy: boolean;
     hasToken: boolean;
     error: unknown;
@@ -48,9 +53,9 @@ export function FetchPanel({
     onDataGuidChange,
     fetched,
     onDownloadDataElement,
-    onLoadIntoPayload,
     onGetDataElement,
     onValidateDataElement,
+    validateBlockedBy,
     busy,
     hasToken,
     error
@@ -104,7 +109,8 @@ export function FetchPanel({
                             type="button"
                             className="btn btn--get"
                             onClick={onValidateDataElement}
-                            disabled={busy || !canGetInstance || !dataGuid}
+                            disabled={busy || !canGetInstance || !dataGuid || Boolean(validateBlockedBy)}
+                            title={validateBlockedBy ?? undefined}
                         >
                             Validate data element
                         </button>
@@ -114,7 +120,14 @@ export function FetchPanel({
                         <p className="field__hint" style={{ marginTop: 8 }}>
                             <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}
                             <br />
-                            <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
+                            {/* The second line is not a call to make while the first is, so it says so. */}
+                            {validateBlockedBy ? (
+                                <span style={{ color: "var(--warn)" }}>{validateBlockedBy}</span>
+                            ) : (
+                                <>
+                                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
+                                </>
+                            )}
                         </p>
                     )}
 
@@ -125,15 +138,11 @@ export function FetchPanel({
                                 <button type="button" className="btn btn--ghost" onClick={onDownloadDataElement}>
                                     Download {fetched.filename}
                                 </button>
-                                <button type="button" className="btn btn--ghost" onClick={onLoadIntoPayload}>
-                                    Load into payload
-                                </button>
                                 {/* Copying base64 as text would hand over the encoding, not the file. */}
                                 {fetched.encoding === "utf8" && <CopyButton label="Copy content" text={fetched.content} />}
                             </div>
                             <p className="field__hint" style={{ marginTop: 8 }}>
-                                {fetched.contentType ?? "unknown type"} · {fetched.size} B · Loading puts it in the Payload panel for editing, and
-                                leaves the destination alone, so you choose whether it goes back to this instance or into a new one.
+                                {fetched.contentType ?? "unknown type"} · {fetched.size} B
                             </p>
                         </>
                     )}
