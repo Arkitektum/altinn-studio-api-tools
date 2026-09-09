@@ -90,6 +90,8 @@ web/src
 
 **Colour encodes rather than decorates.** HTTP methods, status classes, payload element groups, severities. Everything else is grey. All colours are CSS variables in one `:root` block.
 
+That extends to buttons, which are all one height: a filled one is the primary action, an outlined one in a method colour sends that kind of request, and an outlined grey one only rearranges what is already here. There is no size variant, because height was encoding nothing and made the same action look different in two places.
+
 ## Decisions worth knowing
 
 **Content types are resolved, not guessed.** For a data element the order is: what you chose in the picker, then what the app declares in `allowedContentTypes` preferring a JSON or XML spelling, then a sniff of the payload's first character. A file picked off disk goes through `lib/fileUpload.ts`, which prefers the browser's own type, falls back to the extension, and then prefers whichever equivalent spelling the app declared, so an app asking for `text/xml` gets `text/xml`.

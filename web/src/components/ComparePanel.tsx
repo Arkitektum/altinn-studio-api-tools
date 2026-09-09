@@ -80,7 +80,7 @@ export function ComparePanel({ dataType, payload, onCompare, result, busy, error
                     </label>
 
                     <div className="row" style={{ marginTop: 12 }}>
-                        <button type="button" className="btn" onClick={onCompare} disabled={busy}>
+                        <button type="button" className="btn btn--get" onClick={onCompare} disabled={busy}>
                             {busy && <span className="btn__spinner" />}
                             Compare
                         </button>

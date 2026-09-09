@@ -117,7 +117,7 @@ export function ExamplePicker({ dataType, options, hasContent, onLoad }: Example
                 {selected && (
                     <button
                         type="button"
-                        className="btn btn--ghost btn--tiny"
+                        className="btn btn--get"
                         onClick={() => void load(selected)}
                         disabled={busy}
                         title="Re-load the file, discarding your edits"

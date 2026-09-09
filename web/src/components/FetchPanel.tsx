@@ -96,11 +96,16 @@ export function FetchPanel({
                     </div>
 
                     <div className="row" style={{ marginTop: 12 }}>
-                        <button type="button" className="btn" onClick={onGetDataElement} disabled={busy || !canGetInstance || !dataGuid}>
+                        <button type="button" className="btn btn--get" onClick={onGetDataElement} disabled={busy || !canGetInstance || !dataGuid}>
                             {busy && <span className="btn__spinner" />}
                             Get data element
                         </button>
-                        <button type="button" className="btn" onClick={onValidateDataElement} disabled={busy || !canGetInstance || !dataGuid}>
+                        <button
+                            type="button"
+                            className="btn btn--get"
+                            onClick={onValidateDataElement}
+                            disabled={busy || !canGetInstance || !dataGuid}
+                        >
                             Validate data element
                         </button>
                     </div>
@@ -117,10 +122,10 @@ export function FetchPanel({
                     {fetched && (
                         <>
                             <div className="row" style={{ marginTop: 12 }}>
-                                <button type="button" className="btn" onClick={onDownloadDataElement}>
+                                <button type="button" className="btn btn--ghost" onClick={onDownloadDataElement}>
                                     Download {fetched.filename}
                                 </button>
-                                <button type="button" className="btn" onClick={onLoadIntoPayload}>
+                                <button type="button" className="btn btn--ghost" onClick={onLoadIntoPayload}>
                                     Load into payload
                                 </button>
                                 {/* Copying base64 as text would hand over the encoding, not the file. */}

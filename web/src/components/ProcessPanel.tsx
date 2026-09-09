@@ -79,7 +79,7 @@ export function ProcessPanel({
             ) : (
                 <>
                     <div className="row" style={{ marginTop: 12 }}>
-                        <button type="button" className="btn" onClick={onAdvance} disabled={busy || !canAdvance}>
+                        <button type="button" className="btn btn--put" onClick={onAdvance} disabled={busy || !canAdvance}>
                             {busy && <span className="btn__spinner" />}
                             Advance process
                         </button>

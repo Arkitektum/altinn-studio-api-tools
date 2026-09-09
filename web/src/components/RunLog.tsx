@@ -36,7 +36,7 @@ export function RunLog({ entries, running, onClear, localtestUrl }: RunLogProps)
                     {entries.length > 0 && (
                         <>
                             {/* Named apart from the payload element's Clear, which does something else. */}
-                            <button type="button" className="btn btn--ghost btn--tiny" onClick={onClear}>
+                            <button type="button" className="btn btn--ghost" onClick={onClear}>
                                 Clear history
                             </button>
                             <span className="badge">

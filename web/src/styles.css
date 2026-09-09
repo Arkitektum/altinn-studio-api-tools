@@ -602,15 +602,57 @@ textarea {
     border-color: var(--border);
 }
 
-.btn--tiny {
-    padding: 3px 8px;
-    font-size: 12px;
+/*
+ * A button that sends a request wears the colour of the method it sends, the same four the run
+ * log and the will-call previews use: GET blue, POST green, PUT amber, DELETE red. So the ones
+ * that talk to Altinn are told apart from the ones that only rearrange what is already here,
+ * and by the colour of what they are about to do rather than by a decoration.
+ *
+ * Height is not part of it. Every button is the same height, whatever it does.
+ */
+.btn--get {
+    color: var(--accent);
+    border-color: var(--accent-border);
 }
 
-.btn--danger:hover:not(:disabled) {
+.btn--get:hover:not(:disabled) {
+    background: var(--accent-bg);
+}
+
+.btn--post {
+    color: var(--ok);
+    border-color: var(--ok-border);
+}
+
+.btn--post:hover:not(:disabled) {
+    background: var(--ok-bg);
+}
+
+.btn--put {
+    color: var(--warn);
+    border-color: var(--warn-border);
+}
+
+.btn--put:hover:not(:disabled) {
+    background: var(--warn-bg);
+}
+
+.btn--delete {
     color: var(--bad);
     border-color: var(--bad-border);
+}
+
+.btn--delete:hover:not(:disabled) {
     background: var(--bad-bg);
+}
+
+/* Disabled says so before it says which method: a colour you cannot act on is a lie. */
+.btn--get:disabled,
+.btn--post:disabled,
+.btn--put:disabled,
+.btn--delete:disabled {
+    color: var(--text-faint);
+    border-color: var(--border-strong);
 }
 
 /* A confirmation that is one click from doing something destructive, so it says so without hover. */
@@ -619,6 +661,7 @@ textarea {
     color: var(--bad);
     border-color: var(--bad-border);
     background: var(--bad-bg);
+    font-weight: 500;
 }
 
 .btn__spinner {

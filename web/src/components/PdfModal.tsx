@@ -50,10 +50,10 @@ export function PdfModal({ preview, onClose }: PdfModalProps) {
                 <span className="badge">
                     {describeSize(preview.size)} · {preview.at}
                 </span>
-                <a href={preview.url} target="_blank" rel="noreferrer" className="btn btn--ghost btn--tiny">
+                <a href={preview.url} target="_blank" rel="noreferrer" className="btn btn--ghost">
                     Open in new tab
                 </a>
-                <button type="button" className="btn btn--ghost btn--tiny" onClick={() => dialog.current?.close()}>
+                <button type="button" className="btn btn--ghost" onClick={() => dialog.current?.close()}>
                     Close
                 </button>
             </div>

@@ -164,7 +164,7 @@ export function TargetPanel({
             {probeError ? (
                 <div style={{ marginTop: 12 }}>
                     <ErrorNotice error={probeError} />
-                    <button type="button" className="btn btn--ghost btn--tiny" style={{ marginTop: 8 }} onClick={onProbe} disabled={probing}>
+                    <button type="button" className="btn btn--get" style={{ marginTop: 8 }} onClick={onProbe} disabled={probing}>
                         Try again
                     </button>
                 </div>

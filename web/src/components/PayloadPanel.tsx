@@ -152,7 +152,7 @@ export function PayloadPanel({
             aside={
                 <span className="row" style={{ gap: 6 }}>
                     {dataElements.length > 1 && (
-                        <button type="button" className="btn btn--ghost btn--tiny" onClick={() => setAllCollapsed(!allCollapsed)}>
+                        <button type="button" className="btn btn--ghost" onClick={() => setAllCollapsed(!allCollapsed)}>
                             {allCollapsed ? "Expand all" : "Collapse all"}
                         </button>
                     )}
@@ -194,14 +194,14 @@ export function PayloadPanel({
                             <span className="spacer" />
                             {/* Only useful for JSON payloads, since the shipped examples are all XML. */}
                             {!element.collapsed && /^\s*[[{]/.test(element.content) && (
-                                <button type="button" className="btn btn--ghost btn--tiny" onClick={() => formatJson(index)}>
+                                <button type="button" className="btn btn--ghost" onClick={() => formatJson(index)}>
                                     Format JSON
                                 </button>
                             )}
                             {!element.collapsed && (
                                 <button
                                     type="button"
-                                    className="btn btn--ghost btn--tiny"
+                                    className="btn btn--ghost"
                                     onClick={() =>
                                         update(index, {
                                             content: "",
@@ -215,12 +215,7 @@ export function PayloadPanel({
                                     Clear
                                 </button>
                             )}
-                            <button
-                                type="button"
-                                className="btn btn--ghost btn--tiny btn--danger"
-                                onClick={() => remove(index)}
-                                disabled={dataElements.length === 1}
-                            >
+                            <button type="button" className="btn btn--ghost" onClick={() => remove(index)} disabled={dataElements.length === 1}>
                                 Remove
                             </button>
                         </div>
@@ -400,7 +395,9 @@ export function PayloadPanel({
                 );
             })}
 
-            <button type="button" className="btn btn--ghost btn--tiny" onClick={add}>
+            {/* Ghost, since it is secondary to posting, but full height: it is an action of its
+                own rather than one of the inline ones on an element's bar. */}
+            <button type="button" className="btn btn--ghost" onClick={add}>
                 + Add data element
             </button>
 

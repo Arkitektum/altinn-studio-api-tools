@@ -53,7 +53,7 @@ export function ValidationPanel({ validations, onClear }: ValidationPanelProps) 
                 validations.length > 0 ? (
                     <span className="row" style={{ gap: 6 }}>
                         {/* Named apart from the run log's Clear history, which does something else. */}
-                        <button type="button" className="btn btn--ghost btn--tiny" onClick={onClear}>
+                        <button type="button" className="btn btn--ghost" onClick={onClear}>
                             Clear results
                         </button>
                         <span className="badge">

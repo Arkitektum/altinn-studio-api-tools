@@ -33,7 +33,7 @@ export function CopyButton({ text, label, title }: CopyButtonProps) {
     }
 
     return (
-        <button type="button" className="btn btn--ghost btn--tiny" onClick={() => void copy()} title={title ?? label}>
+        <button type="button" className="btn btn--ghost" onClick={() => void copy()} title={title ?? label}>
             {state === "idle" ? label : state === "copied" ? "Copied" : "Copy failed"}
         </button>
     );

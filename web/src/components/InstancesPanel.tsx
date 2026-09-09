@@ -91,10 +91,10 @@ export function InstancesPanel({
             title="Instances"
             aside={
                 <span className="row" style={{ gap: 6 }}>
-                    <a href={`${localtestUrl}/`} target="_blank" rel="noreferrer" className="btn btn--ghost btn--tiny">
+                    <a href={`${localtestUrl}/`} target="_blank" rel="noreferrer" className="btn btn--ghost">
                         Log in
                     </a>
-                    <button type="button" className="btn btn--ghost btn--tiny" onClick={onRefresh} disabled={busy}>
+                    <button type="button" className="btn btn--get" onClick={onRefresh} disabled={busy}>
                         {busy && <span className="btn__spinner" />}
                         Refresh
                     </button>
@@ -144,7 +144,7 @@ export function InstancesPanel({
                                 href={`${base}/#/instance/${instance.instanceOwnerPartyId}/${instance.instanceGuid}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="btn btn--ghost btn--tiny"
+                                className="btn btn--ghost"
                                 title="Open it in the app, which needs a LocalTest session in the browser"
                             >
                                 Open
@@ -154,20 +154,20 @@ export function InstancesPanel({
                                 <>
                                     <button
                                         type="button"
-                                        className="btn btn--danger btn--armed btn--tiny"
+                                        className="btn btn--delete btn--armed"
                                         onClick={() => onDelete(instance, hard)}
                                         disabled={busy}
                                     >
                                         Confirm {hard ? "hard" : "soft"} delete
                                     </button>
-                                    <button type="button" className="btn btn--ghost btn--tiny" onClick={() => setConfirming(null)}>
+                                    <button type="button" className="btn btn--ghost" onClick={() => setConfirming(null)}>
                                         Cancel
                                     </button>
                                 </>
                             ) : (
                                 <button
                                     type="button"
-                                    className="btn btn--ghost btn--tiny btn--danger"
+                                    className="btn btn--delete"
                                     onClick={() => setConfirming(instance.instanceGuid)}
                                     disabled={busy}
                                     aria-label={`Delete instance ${instance.instanceGuid}`}

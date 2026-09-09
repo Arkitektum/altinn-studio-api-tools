@@ -35,7 +35,7 @@ export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid
                 process to the end. It opens in a window over the tool.
             </p>
 
-            <button type="button" className="btn" onClick={onPreviewPdf} disabled={busy || !ready}>
+            <button type="button" className="btn btn--get" onClick={onPreviewPdf} disabled={busy || !ready}>
                 {busy && <span className="btn__spinner" />}
                 Render pdf
             </button>

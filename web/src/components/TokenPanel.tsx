@@ -238,7 +238,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                             <button
                                 type="button"
                                 // Accented once it has expired, since renewing is then the thing to press.
-                                className={`btn btn--tiny ${expired ? "btn--primary" : "btn--ghost"}`}
+                                className={`btn ${expired ? "btn--primary" : "btn--post"}`}
                                 onClick={() => void renew(activeToken)}
                                 disabled={renewing || busy}
                             >
@@ -274,7 +274,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 </button>
                                 <button
                                     type="button"
-                                    className="btn btn--ghost btn--tiny btn--danger"
+                                    className="btn btn--delete"
                                     onClick={() => remove(token.id)}
                                     aria-label={`Delete token ${token.label}`}
                                 >
