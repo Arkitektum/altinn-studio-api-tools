@@ -27,6 +27,14 @@ Runs are kept rather than replaced. Each one is a row showing what it was, how m
 
 A post and the read and validation that follow it share one entry, because they are separate requests but one story. Their steps are renumbered across the lot so the indexes stay unique.
 
+## Bodies
+
+**Show bodies** on a step reveals the request as it was sent and the response as it came back, coloured the same way the payload editor is. A step that made no request has neither.
+
+The log column is 480px wide, which is not enough for a form's XML, so each body has a **Maximize** button that opens it in a window over the tool at full size, with its own **Copy**. Widening the column for the one case that needs it would have cost the middle column the rest of the time.
+
+A request body is coloured by the content type it went out with, so a multipart body, which is several bodies with headers between them, is left plain rather than coloured as though it were one document.
+
 ## Copy curl
 
 Every step carries a **Copy curl** button, and each body a **Copy**, since the usual next move after a surprising log entry is handing the request to someone else. The command reads:

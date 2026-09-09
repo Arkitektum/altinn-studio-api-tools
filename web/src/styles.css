@@ -1310,6 +1310,14 @@ textarea {
     word-break: break-word;
 }
 
+/* Maximized: as tall as the window, since that is the point of maximizing it. */
+.dump--full {
+    max-height: none;
+    height: 100%;
+    margin: 0;
+    font-size: 12px;
+}
+
 .dump__label {
     display: flex;
     align-items: center;
@@ -1577,12 +1585,147 @@ a.btn {
     font-weight: 600;
 }
 
-.modal__body {
+/* A pdf fills the window as an iframe. */
+.modal__frame {
     flex: 1;
-    display: block;
+    display: flex;
+    min-height: 0;
+    background: var(--bg-inset);
+}
+
+.modal__frame iframe {
+    flex: 1;
     width: 100%;
     border: 0;
-    background: var(--bg-inset);
+}
+
+/* Code fills it too, but scrolls inside itself rather than being handed to a plugin. */
+.modal__code {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    padding: 12px;
+}
+
+.modal__code > * {
+    flex: 1;
+    min-width: 0;
+}
+
+/*
+ * Syntax colour.
+ *
+ * A different axis from the method and status colours, and it is only ever seen inside a code
+ * block, where nothing else is coloured. So the same palette serves both without either meaning
+ * being read for the other: blue is GET on a button and an element name in a document, and the
+ * two never share a surface.
+ *
+ * Element text and whitespace get no colour at all. They are the bulk of any document, and
+ * colouring them would leave nothing for the syntax to stand out against.
+ */
+.tok--tag {
+    color: var(--accent);
+}
+
+.tok--attr {
+    color: var(--violet);
+}
+
+.tok--string {
+    color: var(--ok);
+}
+
+.tok--number {
+    color: var(--warn);
+}
+
+.tok--keyword {
+    color: var(--violet);
+}
+
+.tok--meta,
+.tok--punct {
+    color: var(--text-faint);
+}
+
+/* The label's line, so the maximize button costs no height of its own. */
+.editor__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.editor__bar label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/*
+ * A textarea with a coloured copy of its own text behind it.
+ *
+ * The typography of both layers is declared once, together, because the two must agree to the
+ * pixel: same font, size, line height, padding, border box and wrapping. Anything that only one
+ * of them gets is a bug where the caret sits beside the character it is on.
+ */
+.editor {
+    position: relative;
+}
+
+.editor__paint,
+.editor__input {
+    margin: 0;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: normal;
+    tab-size: 4;
+    /*
+     * Both layers keep room for a scrollbar whether or not one is showing. Without it, the
+     * textarea growing a scrollbar would narrow its own text and not the painted copy behind,
+     * and the two would wrap in different places. A no-op where scrollbars overlay, as on macOS.
+     */
+    scrollbar-gutter: stable;
+}
+
+.editor__paint {
+    position: absolute;
+    inset: 0;
+    /* Scrolled in step with the textarea over it, which is why it hides its own bars. */
+    overflow: hidden;
+    color: var(--text);
+    background: var(--bg);
+    pointer-events: none;
+}
+
+.editor__input {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    border-color: var(--border-strong);
+    background: transparent;
+    /* The layer behind shows the text. This one shows the caret and the selection. */
+    color: transparent;
+    caret-color: var(--text);
+}
+
+/* Transparent text would make an ordinary selection invisible, so it gets a background. */
+.editor__input::selection {
+    background: var(--accent-border);
+}
+
+.editor--tall,
+.editor--tall .editor__input {
+    height: 100%;
+    min-height: 0;
+    resize: none;
 }
 
 /* Set apart by a rule, for an action that is not the same kind as the ones above it. */

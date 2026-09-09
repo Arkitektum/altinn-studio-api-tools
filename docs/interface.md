@@ -50,6 +50,8 @@ Everything you chose survives a reload: org, app, party, the selected instance a
 - **Validation counts**, amber for warnings only and red when there are errors.
 - **An element with no content**, whose summary turns amber and whose example picker gets an accent border, because that is the thing to press next.
 
+- **XML and JSON syntax**, inside code blocks only: element names blue, attribute names and keywords violet, strings green, numbers amber, comments and punctuation faint. This is the one place the palette carries a second meaning, and it can, because nothing else is coloured inside a code block: blue is GET on a button and an element name in a document, and the two never share a surface.
+
 Everything else stays grey.
 
 Buttons come in three kinds, all the same height, since height is not a thing worth encoding:

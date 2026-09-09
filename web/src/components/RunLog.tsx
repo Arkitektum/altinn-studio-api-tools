@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
 import { CopyButton } from "./CopyButton";
+import { Dump } from "./Dump";
 import { Panel } from "./Panel";
 import type { LogEntry, LogResult, RunStep } from "../types";
 
@@ -195,22 +196,14 @@ function Step({ step }: { step: RunStep }) {
             {hasDetail && open && (
                 <>
                     {step.requestPreview !== undefined && (
-                        <>
-                            <div className="dump__label">
-                                Request
-                                <CopyButton label="Copy" text={step.requestPreview} />
-                            </div>
-                            <pre className="dump">{step.requestPreview}</pre>
-                        </>
+                        // The request went out as it is written, so its own content type names the
+                        // language. A multipart body says multipart, and is left uncoloured.
+                        <Dump label="Request" text={step.requestPreview} contentType={step.requestHeaders?.["content-type"]} />
                     )}
                     {step.response !== undefined && step.response !== null && (
-                        <>
-                            <div className="dump__label">
-                                Response
-                                <CopyButton label="Copy" text={() => prettyJson(step.response)} />
-                            </div>
-                            <pre className="dump">{prettyJson(step.response)}</pre>
-                        </>
+                        // Always json by the time it is here: the api hands back parsed bodies, and
+                        // an xml one arrives as a string inside them.
+                        <Dump label="Response" text={prettyJson(step.response)} contentType="application/json" />
                     )}
                 </>
             )}

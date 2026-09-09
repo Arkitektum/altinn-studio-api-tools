@@ -9,6 +9,14 @@ One editor card per data element, holding the data type, the content type, and t
 
 Elements collapse to a single row, so a payload with several of them stays readable. Adding an element collapses the ones already there and leaves the new one open, and **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
 
+## The editor
+
+XML and JSON are coloured: element names in the accent blue, attribute names and JSON keywords in violet, strings in green, numbers in amber, and declarations, comments and punctuation faint. Element text and whitespace get no colour at all, since they are the bulk of any document and there would be nothing for the syntax to stand out against. A badge on the label's line names the language being coloured, and says nothing when the content is not something to colour.
+
+**Maximize** opens the same editor in a window over the tool. It is the same state, so what you type there is there when you close it, and Escape or the backdrop closes it.
+
+The colouring is a textarea with a coloured copy of its own text behind it, which keeps typing, undo, selection and the caret as the browser's rather than reimplementing an editor. Above 200,000 characters the colour is dropped and the text shown plain: the GML example alone is near a megabyte, and tokenizing that on every keystroke costs more than the colour is worth.
+
 ## Where content comes from
 
 Three ways, and one more if you count reading it back:

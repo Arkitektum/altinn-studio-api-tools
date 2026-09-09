@@ -3,6 +3,7 @@ import { contentTypeOptions, preferredContentType } from "../lib/contentType";
 import { dataTypeKindOf, groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
 import { exampleOptionsFor } from "../lib/exampleOptions";
 import { readPickedFile } from "../lib/fileUpload";
+import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
 import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup } from "../types";
@@ -340,22 +341,24 @@ export function PayloadPanel({
                             </div>
 
                             <div className="field">
-                                <label htmlFor={`content-${index}`}>Content</label>
                                 {element.encoding === "base64" ? (
                                     // Base64 bytes are not worth showing, and editing them as text would corrupt
                                     // the file. The picker and Clear are the only ways to change it.
-                                    <div className="binary">
-                                        <span className="badge">{element.contentType ?? "binary"}</span>
-                                        <span>{element.filename ?? "binary file"}</span>
-                                    </div>
+                                    <>
+                                        <label htmlFor={`content-${index}`}>Content</label>
+                                        <div className="binary">
+                                            <span className="badge">{element.contentType ?? "binary"}</span>
+                                            <span>{element.filename ?? "binary file"}</span>
+                                        </div>
+                                    </>
                                 ) : (
-                                    <textarea
+                                    <CodeEditor
                                         id={`content-${index}`}
-                                        className="code"
+                                        label="Content"
                                         value={element.content}
-                                        onChange={(event) => update(index, { content: event.target.value, exampleName: undefined })}
+                                        onChange={(content) => update(index, { content, exampleName: undefined })}
                                         placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
-                                        spellCheck={false}
+                                        contentType={element.contentType}
                                     />
                                 )}
                                 <p className="field__hint">

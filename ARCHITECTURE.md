@@ -90,6 +90,8 @@ web/src
 
 **Colour encodes rather than decorates.** HTTP methods, status classes, payload element groups, severities. Everything else is grey. All colours are CSS variables in one `:root` block.
 
+Syntax colouring is the one place the palette does double duty, and it earns it by never appearing outside a code block. Its tokenizer is hand written, in `web/src/lib/highlight.ts`, for the same reason the server's xml diff is: two formats, read-only, and a highlighter library is a large dependency for that. It must return the text it was given, exactly, and a test asserts it, because what it colours is often broken on purpose: a preview truncated at 4000 characters, or half-typed XML.
+
 That extends to buttons, which are all one height: a filled one is the primary action, an outlined one in a method colour sends that kind of request, and an outlined grey one only rearranges what is already here. There is no size variant, because height was encoding nothing and made the same action look different in two places.
 
 ## Decisions worth knowing
