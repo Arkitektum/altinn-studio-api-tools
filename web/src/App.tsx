@@ -713,7 +713,15 @@ export function App() {
         setFetching(true);
         setProcessError(null);
         try {
-            const result = await api.advanceProcess({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
+            const result = await api.advanceProcess({
+                tokenId: activeTokenId,
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                // Already read, so naming the action costs no extra request.
+                taskType: instanceProcess?.taskType ?? null
+            });
             appendLog(logFromAdvance(result));
             // The response carries the process it landed in, so a refused move leaves the panel
             // showing the task the instance is still in rather than blanking it.

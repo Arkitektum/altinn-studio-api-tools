@@ -2,6 +2,7 @@ import { altinnFetch, describeFailure } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
 import { buildMultipart, type MultipartPart } from "./multipart.js";
 import { appBaseUrl, instanceUiUrl } from "./urls.js";
+import { advanceBody, taskTypeOf } from "./processAction.js";
 import { fetchApplicationMetadata, resolveContentType, sniffContentType, type AppDataType, type ApplicationMetadata } from "./appService.js";
 
 export type { RunStep };
@@ -279,8 +280,15 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
 
     if (request.advanceProcess) {
         const url = `${base}/instances/${partyId}/${guid}/process/next`;
-        const response = await recorder.run("Advance process to next task", "PUT", url, () =>
-            altinnFetch({ url, method: "PUT", token, body: "{}", contentType: "application/json" })
+        // The action goes with the task the instance is in, and the instance says which that is,
+        // so posting and advancing in one run costs no extra request to find out.
+        const body = advanceBody(taskTypeOf(instance));
+        const response = await recorder.run(
+            "Advance process to next task",
+            "PUT",
+            url,
+            () => altinnFetch({ url, method: "PUT", token, body, contentType: "application/json" }),
+            { preview: body, verbatim: true }
         );
         if (!response.ok) {
             return failed(recorder, mode, "Process could not be advanced (the data is still stored).", at);

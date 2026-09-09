@@ -28,7 +28,7 @@ Every post is followed automatically by `GET .../instances/{party}/{guid}` and `
 
 The data element select is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
-**Advance process** is the one option that applies to any run, calling `PUT .../process/next` to submit the step. It runs after the data is stored, and after validation when both are asked for.
+**Advance process** is the one option that applies to any run, calling `PUT .../process/next` to submit the step, with the action for the task the instance is in, read off the instance itself. See [Process](process.md#advancing). It runs after the data is stored, and after validation when both are asked for.
 
 ## Max count behaviour
 

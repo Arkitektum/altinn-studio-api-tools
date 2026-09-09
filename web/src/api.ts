@@ -136,8 +136,15 @@ export const api = {
         left: string;
     }) => request<CompareResult>("/instances/data-element/compare", jsonBody(input)),
 
-    advanceProcess: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
-        request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) }),
+    advanceProcess: (params: {
+        tokenId: string;
+        org: string;
+        app: string;
+        instanceOwnerPartyId: string;
+        instanceGuid: string;
+        /** Task the instance sits in, which decides the action the request names. */
+        taskType?: string | null;
+    }) => request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) }),
 
     deleteInstance: (params: {
         tokenId: string;

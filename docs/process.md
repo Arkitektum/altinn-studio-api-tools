@@ -13,6 +13,17 @@ The state comes out of the instance read rather than from a request of its own, 
 
 **Advance process** calls `PUT .../instances/{party}/{guid}/process/next`, the same call the post flow's advance checkbox makes.
 
+The body names the action for the task the instance sits in, so a signing task is advanced with `{"action":"sign"}` and a data task with `{"action":"write"}`. Altinn authorises `process/next` against that action, which is what the app's policy is written against, so naming it means an app that grants only the specific action gets a body it recognises, and the log then shows which action was asked for rather than an empty object that says nothing. The panel prints the body under the URL, so you can see what is about to be sent.
+
+| Task type      | Action    |
+| -------------- | --------- |
+| `data`         | `write`   |
+| `confirmation` | `confirm` |
+| `signing`      | `sign`    |
+| `payment`      | `pay`     |
+
+The task type comes from the process the tool has already read, so naming the action costs no extra request. A task type not in the table, `feedback` among them since the app advances those itself, sends `{}` instead: naming an action the policy does not grant is a 403, where saying nothing lets Altinn pick the one it would have picked anyway.
+
 The app validates before it moves, so a refusal here is usually validation talking, and it lands in the run log with the app's own reason rather than as an error that hides it. The move answers with the process it landed in, so the panel updates without another read, and a refused move leaves the task the instance is still in on screen rather than blanking it.
 
 An ended process hides the button, since there is nowhere left to go. Post to a new instance to walk it again.

@@ -1,4 +1,5 @@
 import { processLabel } from "../lib/format";
+import { advanceBody } from "../lib/processAction";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
@@ -84,9 +85,17 @@ export function ProcessPanel({
                             Advance process
                         </button>
                     </div>
+                    {/*
+                     * The body is shown as well as the URL, because it is the body that decides
+                     * what Altinn authorises: the action for the task type, `sign` on a signing
+                     * task. A task type this does not recognise sends `{}` and leaves the choice
+                     * to Altinn, which the preview then says plainly.
+                     */}
                     <p className="field__hint" style={{ marginTop: 8 }}>
                         <span className="method method--put">PUT</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/
                         {instanceGuid || "{instanceGuid}"}/process/next
+                        <br />
+                        {advanceBody(process.taskType)}
                         <br />
                         Submits the current task. The app validates first, so this fails while validation does not pass.
                     </p>

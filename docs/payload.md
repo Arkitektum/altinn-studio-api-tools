@@ -44,4 +44,4 @@ Changing the data type clears the content and content type, since both belonged 
 
 ## After upload
 
-One checkbox, **Advance process to next task**, which calls `PUT .../process/next` after the data is stored. It submits the step and fails if validation does not pass. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
+One checkbox, **Advance process to next task**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It submits the step and fails if validation does not pass. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.

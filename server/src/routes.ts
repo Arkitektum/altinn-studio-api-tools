@@ -321,10 +321,16 @@ router.get(
     })
 );
 
+const advanceSchema = instanceLookupSchema.extend({
+    // The task the instance sits in, which decides the action the request is authorised against.
+    // Optional, and an absent one sends no action, leaving the choice to Altinn.
+    taskType: z.string().trim().nullish()
+});
+
 router.put(
     "/instances/process/next",
     asyncHandler(async (req, res) => {
-        const input = instanceLookupSchema.parse(req.body);
+        const input = advanceSchema.parse(req.body);
         const token = requireToken(input.tokenId);
         // 200 with ok:false on an Altinn error, matching the read endpoints. A refusal here is
         // usually the app's validation talking, which belongs in the log rather than in an error.

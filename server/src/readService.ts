@@ -1,6 +1,7 @@
 import { altinnFetch, isTextual } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
 import { appBaseUrl, instanceUiUrl } from "./urls.js";
+import { advanceBody } from "./processAction.js";
 
 export interface ReadRequest {
     org: string;
@@ -305,17 +306,22 @@ export async function deleteInstance(token: string, request: ReadRequest & { har
  *
  * Submits the current task and moves to the next one. The app validates before it moves, so this
  * failing on validation is an answer rather than a problem with the request.
+ *
+ * The body names the action for the task type the caller is looking at, `{"action":"sign"}` on a
+ * signing task. The task type comes from the process this tool has already read, so no extra
+ * request is needed to learn it.
  */
-export async function advanceProcess(token: string, request: ReadRequest): Promise<AdvanceProcessResult> {
+export async function advanceProcess(token: string, request: ReadRequest & { taskType?: string | null }): Promise<AdvanceProcessResult> {
     const recorder = new StepRecorder();
     const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/process/next`;
+    const body = advanceBody(request.taskType);
 
     const response = await recorder.run(
         "Advance process to next task",
         "PUT",
         url,
-        () => altinnFetch({ url, method: "PUT", token, body: "{}", contentType: "application/json" }),
-        { preview: "{}" }
+        () => altinnFetch({ url, method: "PUT", token, body, contentType: "application/json" }),
+        { preview: body, verbatim: true }
     );
 
     return {
