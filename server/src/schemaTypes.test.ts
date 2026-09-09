@@ -83,9 +83,109 @@ describe("resolveFieldTypes", () => {
         assert.deepEqual(resolveFieldTypes(schema, ["/ettrinn"]), {});
     });
 
-    it("gives up on a schema that offers a choice, rather than picking a branch", () => {
-        const ambiguous = { ...schema, oneOf: [{ $ref: "#/$defs/Ettrinn" }, { $ref: "#/$defs/Eiendom" }] };
-        assert.deepEqual(resolveFieldTypes(ambiguous, ["/ettrinn/dato"]), {});
+    it("follows allOf, which composes a type rather than offering a choice", () => {
+        const composed = {
+            "@xsdRootElement": "planvarsel",
+            oneOf: [{ $ref: "#/$defs/Planvarsel" }],
+            $defs: {
+                Planvarsel: {
+                    allOf: [{ $ref: "#/$defs/Base" }, { type: "object", properties: { egen: { type: "string" } } }]
+                },
+                Base: {
+                    type: "object",
+                    properties: { planforslag: { $ref: "#/$defs/Planforslag" } }
+                },
+                Planforslag: {
+                    type: "object",
+                    properties: {
+                        kommunensSaksnummer: {
+                            type: "object",
+                            properties: { sakssekvensnummer: { type: "integer", "@xsdType": "integer" } }
+                        }
+                    }
+                }
+            }
+        };
+
+        const types = resolveFieldTypes(composed, ["/Planvarsel/planforslag/kommunensSaksnummer/sakssekvensnummer", "/planvarsel/egen"]);
+        assert.equal(types["/Planvarsel/planforslag/kommunensSaksnummer/sakssekvensnummer"], "integer");
+        assert.equal(types["/planvarsel/egen"], "string");
+    });
+
+    it("says nothing when two branches of a choice disagree about a field", () => {
+        const ambiguous = {
+            "@xsdRootElement": "a",
+            oneOf: [{ $ref: "#/$defs/One" }, { $ref: "#/$defs/Two" }],
+            $defs: {
+                One: { type: "object", properties: { felt: { type: "string" } } },
+                Two: { type: "object", properties: { felt: { type: "integer" } } }
+            }
+        };
+        assert.deepEqual(resolveFieldTypes(ambiguous, ["/a/felt"]), {});
+    });
+
+    it("takes a field that only one branch of a choice has", () => {
+        const either = {
+            "@xsdRootElement": "a",
+            oneOf: [{ $ref: "#/$defs/One" }, { $ref: "#/$defs/Two" }],
+            $defs: {
+                One: { type: "object", properties: { bare: { type: "string" } } },
+                Two: { type: "object", properties: { annet: { type: "integer" } } }
+            }
+        };
+        const types = resolveFieldTypes(either, ["/a/bare", "/a/annet"]);
+        assert.equal(types["/a/bare"], "string");
+        assert.equal(types["/a/annet"], "integer");
+    });
+
+    it("says nothing for a field that is itself an object, only for the leaves under it", () => {
+        assert.deepEqual(resolveFieldTypes(schema, ["/ettrinn/eiendom"]), {});
+    });
+
+    it("resolves a real path through a real schema, nullable types and all", () => {
+        // Taken from dibk/varselplanoppstart-v3's Planvarsel schema: a root wrapper into $defs,
+        // a chain of $refs, and `type` as a union with null, which is how a nullable field is
+        // spelled. The XSD type is the one worth showing, and the union's null is not a type.
+        const planvarsel = {
+            type: "object",
+            "@xsdRootElement": "Planvarsel",
+            oneOf: [{ $ref: "#/$defs/PlanvarselType" }],
+            $defs: {
+                PlanvarselType: {
+                    type: ["object", "null"],
+                    properties: { planforslag: { $ref: "#/$defs/PlanforslagType" } }
+                },
+                PlanforslagType: {
+                    type: ["object", "null"],
+                    properties: { kommunensSaksnummer: { $ref: "#/$defs/SaksnummerType" } }
+                },
+                SaksnummerType: {
+                    type: ["object", "null"],
+                    properties: {
+                        sakssekvensnummer: { "@xsdType": "integer", type: ["integer", "null"], "@xsdMinOccurs": 0, "@xsdMaxOccurs": 1 },
+                        saksaar: { type: ["integer", "null"] }
+                    }
+                }
+            }
+        };
+
+        const types = resolveFieldTypes(planvarsel, [
+            "/Planvarsel/planforslag/kommunensSaksnummer/sakssekvensnummer",
+            "/Planvarsel/planforslag/kommunensSaksnummer/saksaar"
+        ]);
+
+        assert.equal(types["/Planvarsel/planforslag/kommunensSaksnummer/sakssekvensnummer"], "integer");
+        // No @xsdType on this one, so the nullable union has to be read instead.
+        assert.equal(types["/Planvarsel/planforslag/kommunensSaksnummer/saksaar"], "integer");
+    });
+
+    it("says nothing for a union of two real types, which is not a definite answer", () => {
+        const union = {
+            "@xsdRootElement": "a",
+            oneOf: [{ $ref: "#/$defs/A" }],
+            $defs: { A: { type: "object", properties: { felt: { type: ["string", "integer"] } } } }
+        };
+        assert.deepEqual(resolveFieldTypes(union, ["/a/felt"]), {});
     });
 
     it("takes the schema as text, which is how Altinn serves it", () => {

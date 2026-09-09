@@ -7,15 +7,36 @@
  * json one as `@xsdType`. That annotation is the useful half, because json schema calls a date a
  * string and the XSD does not.
  *
- * Nothing here guesses. A path that does not resolve exactly gets no type, because a wrong type
- * on a difference is worse than none: an unresolved path usually means the model has no such
- * field, which is why it was dropped in the first place.
+ * Composition is followed rather than refused. `allOf` means every branch applies, so a field may
+ * live in any of them, and `oneOf` or `anyOf` means one does, so a path is followed into each and
+ * the answer is taken only when the branches that resolve it agree. Ambiguity yields nothing.
+ *
+ * Nothing here guesses. A path that does not resolve gets no type, because a wrong type on a
+ * difference is worse than none: an unresolved path usually means the model has no such field,
+ * which is why it was dropped in the first place.
  */
 
 type Schema = Record<string, unknown>;
 
 function asSchema(value: unknown): Schema | null {
     return value && typeof value === "object" && !Array.isArray(value) ? (value as Schema) : null;
+}
+
+function asString(node: Schema, key: string): string | null {
+    return typeof node[key] === "string" ? (node[key] as string) : null;
+}
+
+/**
+ * A `type` that may be a union, which is how the schema spells a nullable field:
+ * `"type": ["integer", "null"]`. The null is not the field's type, it is permission to omit it,
+ * so it is dropped. A union of two real types says nothing definite and yields nothing.
+ */
+function typeOf(node: Schema): string | null {
+    const value = node["type"];
+    if (typeof value === "string") return value;
+    if (!Array.isArray(value)) return null;
+    const real = value.filter((entry): entry is string => typeof entry === "string" && entry !== "null");
+    return real.length === 1 ? (real[0] ?? null) : null;
 }
 
 /**
@@ -36,44 +57,39 @@ function asDocument(value: unknown): Schema | null {
     return asSchema(value);
 }
 
-function asString(node: Schema, key: string): string | null {
-    return typeof node[key] === "string" ? (node[key] as string) : null;
+/** Follows a local `$ref`. Only `#/…` pointers, which is all Studio emits. */
+function follow(ref: string, root: Schema): Schema | null {
+    if (!ref.startsWith("#/")) return null;
+    let target: unknown = root;
+    for (const step of ref.slice(2).split("/")) {
+        const here = asSchema(target);
+        if (!here) return null;
+        target = here[decodeURIComponent(step.replace(/~1/g, "/").replace(/~0/g, "~"))];
+    }
+    return asSchema(target);
 }
 
-/** Follows `$ref` into the document, and through a single-branch `oneOf`, `anyOf` or `allOf`. */
-function deref(node: Schema | null, root: Schema, depth = 0): Schema | null {
-    if (!node || depth > 20) return null;
+/**
+ * The nodes a schema node stands for: itself, and whatever its `$ref` and composition point at.
+ *
+ * A list rather than one node, because `allOf` composes several and `oneOf` offers several. The
+ * walk then carries every place the next segment could be found.
+ */
+function expand(node: Schema | null, root: Schema, depth = 0): Schema[] {
+    if (!node || depth > 20) return [];
 
     const ref = asString(node, "$ref");
-    if (ref) {
-        // Only local pointers, which is all Studio emits: #/$defs/Name.
-        if (!ref.startsWith("#/")) return null;
-        let target: unknown = root;
-        for (const step of ref.slice(2).split("/")) {
-            const here = asSchema(target);
-            if (!here) return null;
-            target = here[decodeURIComponent(step.replace(/~1/g, "/").replace(/~0/g, "~"))];
-        }
-        return deref(asSchema(target), root, depth + 1);
+    if (ref) return expand(follow(ref, root), root, depth + 1);
+
+    const branches: Schema[] = [];
+    for (const key of ["allOf", "oneOf", "anyOf"]) {
+        const value = node[key];
+        if (!Array.isArray(value)) continue;
+        for (const branch of value) branches.push(...expand(asSchema(branch), root, depth + 1));
     }
 
-    for (const key of ["oneOf", "anyOf", "allOf"]) {
-        const branches = node[key];
-        if (!Array.isArray(branches)) continue;
-        // More than one branch means the schema offers a choice, and picking one would be a
-        // guess. A single branch is the wrapper Studio emits at the root.
-        if (branches.length !== 1) return null;
-        return deref(asSchema(branches[0]), root, depth + 1);
-    }
-
-    return node;
-}
-
-/** A repeating group is an array in the schema, so its rows live one level down in `items`. */
-function intoItems(node: Schema | null, root: Schema): Schema | null {
-    if (!node) return null;
-    const items = asSchema(node["items"]);
-    return items ? deref(items, root) : node;
+    // A node can both compose and declare, so it stands for itself as well as for its branches.
+    return node["properties"] || node["type"] || node["items"] ? [node, ...branches] : branches;
 }
 
 interface Segment {
@@ -92,34 +108,43 @@ function segments(path: string): Segment[] {
         });
 }
 
-/** A property by name, allowing for an attribute that the schema may or may not prefix with @. */
-function property(node: Schema | null, segment: Segment, root: Schema): Schema | null {
-    const properties = asSchema(node?.["properties"]);
-    if (!properties) return null;
-    const candidates = segment.attribute ? [`@${segment.name}`, segment.name] : [segment.name];
-    for (const candidate of candidates) {
-        const found = asSchema(properties[candidate]);
-        if (found) return deref(found, root);
+/** Every node the named field could be, across the places the current nodes stand for. */
+function step(nodes: Schema[], segment: Segment, root: Schema): Schema[] {
+    const found: Schema[] = [];
+    for (const node of nodes) {
+        // A repeating group is an array, so its rows are one level down.
+        const items = asSchema(node["items"]);
+        const holders = items ? expand(items, root) : [node];
+
+        for (const holder of holders) {
+            const properties = asSchema(holder["properties"]);
+            if (!properties) continue;
+            // An attribute may or may not be prefixed in the schema, so try both spellings.
+            const candidates = segment.attribute ? [`@${segment.name}`, segment.name] : [segment.name];
+            for (const candidate of candidates) {
+                const property = asSchema(properties[candidate]);
+                if (property) found.push(...expand(property, root));
+            }
+        }
     }
-    return null;
+    return found;
 }
 
 /**
  * The type to show for a field: the XSD type where the schema kept it, otherwise the json schema
  * format, otherwise its plain type. An enumeration says so, since that is often why a value was
- * rejected or rewritten.
+ * rejected or rewritten. An object is not a type worth showing: the interesting ones are leaves.
  */
 function describeType(node: Schema): string | null {
     const xsd = asString(node, "@xsdType");
     const format = asString(node, "format");
-    const type = asString(node, "type");
-    const base = xsd ?? format ?? type;
-    if (!base) return null;
+    const base = xsd ?? format ?? typeOf(node);
+    if (!base || base === "object") return null;
     return Array.isArray(node["enum"]) ? `${base}, one of ${(node["enum"] as unknown[]).length}` : base;
 }
 
 /**
- * Resolves each path against the schema, returning only the ones it could place.
+ * Resolves each path against the schema, returning only the ones it could place unambiguously.
  *
  * The first segment is the xml root element, which is the schema's root object rather than one of
  * its properties, so it is consumed against `@xsdRootElement` before the walk begins.
@@ -128,8 +153,8 @@ export function resolveFieldTypes(schema: unknown, paths: string[]): Record<stri
     const root = asDocument(schema);
     if (!root) return {};
     const rootElement = asString(root, "@xsdRootElement");
-    const rootNode = deref(root, root);
-    if (!rootNode) return {};
+    const rootNodes = expand(root, root);
+    if (rootNodes.length === 0) return {};
 
     const types: Record<string, string> = {};
     for (const path of paths) {
@@ -139,24 +164,24 @@ export function resolveFieldTypes(schema: unknown, paths: string[]): Record<stri
 
         // The root element names the document, not a field in it. Where the schema does hold it
         // as a property, that is followed instead.
-        let node: Schema | null = rootNode;
+        let nodes = rootNodes;
         let rest = parts;
         if (!rootElement || first.name.toLowerCase() === rootElement.toLowerCase()) {
             rest = parts.slice(1);
-        } else if (property(rootNode, first, root)) {
-            node = property(rootNode, first, root);
+        } else if (step(rootNodes, first, root).length > 0) {
+            nodes = step(rootNodes, first, root);
             rest = parts.slice(1);
         }
+        if (rest.length === 0) continue;
 
         for (const segment of rest) {
-            node = property(intoItems(node, root), segment, root);
-            if (!node) break;
+            nodes = step(nodes, segment, root);
+            if (nodes.length === 0) break;
         }
 
-        // The root itself has no type worth showing, only its fields do.
-        if (!node || rest.length === 0) continue;
-        const described = describeType(node);
-        if (described) types[path] = described;
+        // Several branches may describe the same field. They have to agree, or this says nothing.
+        const described = [...new Set(nodes.map(describeType).filter((value): value is string => value !== null))];
+        if (described.length === 1 && described[0]) types[path] = described[0];
     }
     return types;
 }
