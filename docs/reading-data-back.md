@@ -89,6 +89,22 @@ So `/ettrinn/eiendom/festenr dropped` with no type says the model has no such fi
 
 The run log names them apart for the same reason, as "1, plus 2 altinnRowId", so the entry does not read as three problems when the panel is showing one.
 
+### The same thing over everything at once
+
+The panel confirms a problem you already suspect. `npm run diff --workspace server` finds the ones you do not:
+
+```bash
+npm run diff --workspace server                                 # the whole catalogue
+npm run diff --workspace server -- 1001 dibk/varselplanoppstart-v3
+npm run diff --workspace server -- 1001 dibk/et-v4 --keep
+```
+
+For every form data type an app declares and every example file on disk for it, it creates an instance, posts the file, compares the stored xml with it, and prints what the model changed, with the field types. The first argument is the LocalTest user id, defaulting to 1001, and the party is the token's own, which is the one it is certainly allowed to post as.
+
+Each instance is hard deleted once it has been compared, because a sweep that leaves a hundred instances behind is worse than no sweep. `--keep` leaves them, for when a difference needs looking at in the panel afterwards.
+
+The summary counts four outcomes: identical, row ids only, differs, and could not. Only the third is a finding, and each one lists up to five differences with their paths and types. An app the catalogue names but localtest does not serve is listed separately rather than counted as a failure, the same way the content type sweep does it.
+
 What it ignores is everything that carries no meaning: whitespace, the xml declaration, comments, self-closing versus longhand empty elements, attribute order and namespace prefixes. Two documents that differ only in those ways are reported as identical, which is the point: the noise is what made this cumbersome by hand. `xmlDiff.test.ts` pins all of it, and `compareService.test.ts` covers the storage read.
 
 ## Validate a data element

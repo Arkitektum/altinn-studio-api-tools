@@ -226,3 +226,16 @@ export function diffXml(left: string, right: string): XmlDiff {
 
     return { same: differences.length === 0, differences };
 }
+
+/**
+ * Splits differences into the ones that mean something and a count of Altinn's row ids.
+ *
+ * Altinn stamps every row of a repeating group with an `altinnRowId`, so the stored xml has one
+ * per row and a file written by hand has none. Left in, they are the majority of any report.
+ * Mirrors `partitionDifferences` in `web/src/lib/differences.ts`, which does the same for the
+ * panel, where it is a toggle rather than a rule.
+ */
+export function partitionRowIds<T extends XmlDifference>(differences: T[]): { meaningful: T[]; rowIds: number } {
+    const meaningful = differences.filter((difference) => !difference.path.toLowerCase().endsWith("@altinnrowid"));
+    return { meaningful, rowIds: differences.length - meaningful.length };
+}

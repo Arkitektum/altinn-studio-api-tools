@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { diffXml, parseXml } from "./xmlDiff.js";
+import { diffXml, parseXml, partitionRowIds } from "./xmlDiff.js";
 
 describe("parseXml", () => {
     it("reads elements, attributes and text", () => {
@@ -126,5 +126,26 @@ describe("diffXml", () => {
         const diff = diffXml("<ettrinn><a>1</a></ettrinn>", "<melding><a>1</a></melding>");
         assert.equal(diff.differences[0]?.path, "/");
         assert.equal(diff.differences[0]?.kind, "changed");
+    });
+});
+
+describe("partitionRowIds", () => {
+    const differences = [
+        { path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid" },
+        { path: "/ettrinn/festenr", kind: "missing" as const, left: "2", right: null },
+        { path: "/ettrinn/part[2]/@altinnrowid", kind: "added" as const, left: null, right: "guid" }
+    ];
+
+    it("separates Altinn's row ids from what means something", () => {
+        const { meaningful, rowIds } = partitionRowIds(differences);
+        assert.deepEqual(
+            meaningful.map((difference) => difference.path),
+            ["/ettrinn/festenr"]
+        );
+        assert.equal(rowIds, 2);
+    });
+
+    it("counts none when there are none", () => {
+        assert.deepEqual(partitionRowIds([differences[1]!]), { meaningful: [differences[1]], rowIds: 0 });
     });
 });

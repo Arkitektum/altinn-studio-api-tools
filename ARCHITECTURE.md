@@ -57,6 +57,7 @@ server/src
   examples.ts         reads examples/, with a path traversal guard
   appCatalogue.ts     generated list of known apps and their data types
   contentTypeGaps.ts  reports content types with no dummy attachment
+  storedDiffSweep.ts  posts every example and diffs it against what was stored
   jwt.ts              claim decoding, never verification
   urls.ts             app url building
   config.ts           env with defaults

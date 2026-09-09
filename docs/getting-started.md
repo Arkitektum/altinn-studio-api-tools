@@ -42,14 +42,15 @@ What you get back is the instance, read and validated automatically, with every 
 
 ## Scripts
 
-| Command                           |                                                          |
-| --------------------------------- | -------------------------------------------------------- |
-| `npm run dev`                     | Both servers with prefixed output                        |
-| `npm test`                        | Server and web tests, stubbed Altinn, no network         |
-| `npm run typecheck`               | Both workspaces                                          |
-| `npm run build`                   | Compile the server and bundle the UI                     |
-| `npm run format`                  | Format everything with Prettier                          |
-| `npm run format:check`            | Fail if anything is unformatted, for CI                  |
-| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy |
+| Command                           |                                                               |
+| --------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                     | Both servers with prefixed output                             |
+| `npm test`                        | Server and web tests, stubbed Altinn, no network              |
+| `npm run typecheck`               | Both workspaces                                               |
+| `npm run build`                   | Compile the server and bundle the UI                          |
+| `npm run format`                  | Format everything with Prettier                               |
+| `npm run format:check`            | Fail if anything is unformatted, for CI                       |
+| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
+| `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
 
 For the development loop in more detail, see [CONTRIBUTING.md](https://github.com/Arkitektum/altinn-studio-api-tools/blob/main/CONTRIBUTING.md).

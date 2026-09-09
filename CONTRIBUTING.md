@@ -15,15 +15,16 @@ For anything beyond the UI rendering you also need Altinn Studio localtest runni
 
 ## The loop
 
-| Command                           |                                                          |
-| --------------------------------- | -------------------------------------------------------- |
-| `npm run dev`                     | Both servers with prefixed output                        |
-| `npm test`                        | Server and web tests, stubbed Altinn, no network         |
-| `npm run typecheck`               | Both workspaces                                          |
-| `npm run format`                  | Apply Prettier                                           |
-| `npm run format:check`            | Fail if anything is unformatted                          |
-| `npm run build`                   | Compile the server and bundle the UI                     |
-| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy |
+| Command                           |                                                               |
+| --------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                     | Both servers with prefixed output                             |
+| `npm test`                        | Server and web tests, stubbed Altinn, no network              |
+| `npm run typecheck`               | Both workspaces                                               |
+| `npm run format`                  | Apply Prettier                                                |
+| `npm run format:check`            | Fail if anything is unformatted                               |
+| `npm run build`                   | Compile the server and bundle the UI                          |
+| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
+| `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
 
 CI runs `format:check`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `npm test` and `npm run format` before pushing and you will not be surprised.
 

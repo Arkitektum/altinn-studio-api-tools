@@ -54,14 +54,15 @@ For an app the catalogue does not list, pick **Other application** and type the 
 
 ## Scripts
 
-| Command                           |                                                          |
-| --------------------------------- | -------------------------------------------------------- |
-| `npm run dev`                     | Both servers with prefixed output                        |
-| `npm test`                        | Server and web tests, stubbed Altinn, no network         |
-| `npm run typecheck`               | Both workspaces                                          |
-| `npm run build`                   | Compile the server and bundle the UI                     |
-| `npm run format`                  | Format everything with Prettier                          |
-| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy |
+| Command                           |                                                               |
+| --------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                     | Both servers with prefixed output                             |
+| `npm test`                        | Server and web tests, stubbed Altinn, no network              |
+| `npm run typecheck`               | Both workspaces                                               |
+| `npm run build`                   | Compile the server and bundle the UI                          |
+| `npm run format`                  | Format everything with Prettier                               |
+| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
+| `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
 
 ## Working on it
 
