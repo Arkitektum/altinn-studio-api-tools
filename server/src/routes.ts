@@ -289,6 +289,9 @@ router.get(
  */
 const compareSchema = instanceLookupSchema.extend({
     dataGuid: z.string().trim().min(1, "dataGuid is required"),
+    // Optional: without it the differences come back with no field types, which is a loss and
+    // not a failure.
+    dataType: z.string().trim().optional(),
     left: z.string().min(1, "the xml to compare against is required")
 });
 

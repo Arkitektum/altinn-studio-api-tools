@@ -4,7 +4,7 @@ import { isRowIdDifference, partitionDifferences } from "./differences";
 import type { XmlDifference } from "../types";
 
 function difference(path: string, kind: XmlDifference["kind"] = "added"): XmlDifference {
-    return { path, kind, left: null, right: "x" };
+    return { path, kind, left: null, right: "x", type: null };
 }
 
 describe("isRowIdDifference", () => {

@@ -79,7 +79,11 @@ Differences are reported as paths, with three kinds:
 | **added**   | The stored xml has it and the file does not. Usually a value the model defaulted.      |
 | **changed** | Both have it and the values differ. Usually a date, a number or a boolean reformatted. |
 
-So `/ettrinn/eiendom/festenr dropped` says the field never made it, and `/ettrinn/dato changed 2026-09-09 → 2026-09-09T00:00:00` says the model rewrote it. A whole subtree that went missing is reported once at its root rather than leaf by leaf, and repeated siblings are told apart by position, `/ettrinn/part[2]/navn`.
+Each row also carries the field's declared type, read from the app's own json schema at `{app}/api/jsonschema/{dataType}`, which Studio generates from the same XSD the model came from. The XSD type is preferred over the json schema one, because json schema calls a date a string and the XSD does not, and an enumeration says how many values it allows, which is often why a value was rejected.
+
+A row with no type is informative rather than incomplete: it means the schema has no entry for that path, which for a dropped field is exactly why it was dropped. Nothing is guessed, and a schema that will not load costs the types and not the comparison. `schemaTypes.test.ts` covers the resolution, including `$ref` into `$defs`, repeating groups through `items`, attributes however the schema spells them, and a schema that offers a choice, where picking a branch would be a guess.
+
+So `/ettrinn/eiendom/festenr dropped` with no type says the model has no such field at all, and `/ettrinn/dato changed 2026-09-09 → 2026-09-09T00:00:00 date` says the model reformatted a date. A whole subtree that went missing is reported once at its root rather than leaf by leaf, and repeated siblings are told apart by position, `/ettrinn/part[2]/navn`.
 
 **Hide altinnRowId** is on by default. Altinn stamps every row of a repeating group with an `altinnRowId`, a guid it uses to keep track of rows, so the stored xml has one per row and a file written by hand has none. Left in, they are the majority of the report and bury everything else. The count of what was held back is always shown, so nothing disappears quietly, and the toggle is a view rather than a request: turning it off costs no round trip because the server reports everything it found either way.
 

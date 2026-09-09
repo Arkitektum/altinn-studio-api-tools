@@ -625,6 +625,7 @@ export function App() {
                 instanceOwnerPartyId,
                 instanceGuid,
                 dataGuid,
+                dataType,
                 left
             });
             appendLog(logFromCompare(result));

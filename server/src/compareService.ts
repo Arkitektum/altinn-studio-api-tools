@@ -1,14 +1,24 @@
 import { altinnFetch, isTextual } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
-import { storageDataUrl } from "./urls.js";
-import { diffXml, type XmlDiff } from "./xmlDiff.js";
+import { resolveFieldTypes } from "./schemaTypes.js";
+import { schemaUrl, storageDataUrl } from "./urls.js";
+import { diffXml, type XmlDiff, type XmlDifference } from "./xmlDiff.js";
 
 export interface CompareRequest {
+    org: string;
+    app: string;
+    /** Which data type the element is, so its schema can be read for the field types. */
+    dataType?: string;
     instanceOwnerPartyId: string;
     instanceGuid: string;
     dataGuid: string;
     /** The XML as written: an example file, or what is in the payload editor. */
     left: string;
+}
+
+/** A difference, with the field's declared type where the schema had one for that path. */
+export interface AnnotatedDifference extends XmlDifference {
+    type: string | null;
 }
 
 export interface CompareResult {
@@ -20,7 +30,7 @@ export interface CompareResult {
     storedContentType: string | null;
     /** The stored XML itself, so the two can be read side by side. */
     stored: string | null;
-    diff: XmlDiff | null;
+    diff: { same: boolean; differences: AnnotatedDifference[] } | null;
 }
 
 /**
@@ -41,6 +51,24 @@ export async function compareStored(token: string, request: CompareRequest): Pro
     const response = await recorder.run("Read the stored data element", "GET", url, () =>
         altinnFetch({ url, token, accept: "*/*", binaryResponse: true })
     );
+
+    /**
+     * The field types, best effort and after the comparison, so a schema that will not load costs
+     * the report nothing. Recorded as a step like any other call, so the log says it happened.
+     */
+    const annotate = async (differences: XmlDifference[]): Promise<AnnotatedDifference[]> => {
+        if (!request.dataType) return differences.map((difference) => ({ ...difference, type: null }));
+
+        const url = schemaUrl(request.org, request.app, request.dataType);
+        const schema = await recorder.run("Read the model schema", "GET", url, () => altinnFetch({ url, token }));
+        const types = schema.ok
+            ? resolveFieldTypes(
+                  schema.body,
+                  differences.map((difference) => difference.path)
+              )
+            : {};
+        return differences.map((difference) => ({ ...difference, type: types[difference.path] ?? null }));
+    };
 
     const failed = (reason: string): CompareResult => ({
         ok: false,
@@ -75,6 +103,8 @@ export async function compareStored(token: string, request: CompareRequest): Pro
         };
     }
 
+    const differences = await annotate(diff.differences);
+
     return {
         ok: true,
         steps: recorder.steps,
@@ -82,6 +112,6 @@ export async function compareStored(token: string, request: CompareRequest): Pro
         dataGuid: request.dataGuid,
         storedContentType: response.contentType,
         stored,
-        diff
+        diff: { same: diff.same, differences }
     };
 }

@@ -282,6 +282,12 @@ export interface XmlDifference {
     kind: XmlDifferenceKind;
     left: string | null;
     right: string | null;
+    /**
+     * The field's declared type from the app's json schema, `date` or `decimal` where the XSD
+     * kept one. Null when the schema has no entry for the path, which for a dropped field is
+     * itself the reason it was dropped.
+     */
+    type: string | null;
 }
 
 export interface CompareResult {

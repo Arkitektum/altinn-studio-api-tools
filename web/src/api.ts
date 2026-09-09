@@ -132,6 +132,7 @@ export const api = {
         instanceOwnerPartyId: string;
         instanceGuid: string;
         dataGuid: string;
+        dataType: string;
         left: string;
     }) => request<CompareResult>("/instances/data-element/compare", jsonBody(input)),
 

@@ -21,6 +21,11 @@ export function instanceUiUrl(org: string, app: string, instanceOwnerPartyId: st
     return `${appBaseUrl(org, app)}/#/instance/${instanceOwnerPartyId}/${instanceGuid}`;
 }
 
+/** The json schema for a data type's model, which the app generates from the same XSD. */
+export function schemaUrl(org: string, app: string, dataType: string): string {
+    return `${appBaseUrl(org, app)}/api/jsonschema/${encodeURIComponent(dataType)}`;
+}
+
 /**
  * The platform storage endpoint for one data element, which LocalTest serves alongside the apps.
  *

@@ -52,9 +52,11 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
             }
         >
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                What Altinn stored for <strong>{dataType}</strong> against the xml as written. Reading the element gives you the model as JSON, so
-                this is the only view of what the model did to the file: a field it has no place for is dropped without complaint, and a value it
-                formats its own way is rewritten. Formatting, namespace prefixes and attribute order are ignored.
+                What Altinn stored for <strong>{dataType}</strong> against the xml as written. Each difference carries the field's declared type from
+                the app's schema where there is one, and nothing where there is not, which for a dropped field is the reason it was dropped. Reading
+                the element gives you the model as JSON, so this is the only view of what the model did to the file: a field it has no place for is
+                dropped without complaint, and a value it formats its own way is rewritten. Formatting, namespace prefixes and attribute order are
+                ignored.
             </p>
 
             {sources.length === 0 ? (
@@ -110,6 +112,9 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
                             <div className="diff__head">
                                 <span className={`diff__kind diff__kind--${difference.kind}`}>{KIND_LABELS[difference.kind]}</span>
                                 <span className="diff__path">{difference.path}</span>
+                                {/* The field's declared type, where the schema had one. A blank
+                                    is informative for a dropped field: the model has no such field. */}
+                                {difference.type && <span className="diff__type">{difference.type}</span>}
                             </div>
                             {/* A dropped field has no right-hand value, and an added one no left. */}
                             {difference.left !== null && (

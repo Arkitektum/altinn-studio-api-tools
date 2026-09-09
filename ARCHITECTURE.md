@@ -47,6 +47,7 @@ server/src
   readService.ts      instance operations: list, get, validate, process, delete
   compareService.ts   the stored blob from LocalTest's storage api, and the diff
   xmlDiff.ts          comparing two xml documents, ignoring what carries no meaning
+  schemaTypes.ts      a field's declared type, from the app's json schema
   stepRecorder.ts     shared request logging for both flows
   altinnClient.ts     fetch wrapper: bearer, timeout, never throws, redacts the token
   appService.ts       applicationmetadata, parties, content type resolution

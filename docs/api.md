@@ -7,31 +7,31 @@ nav_order: 12
 
 The backend is usable on its own, which is useful for scripting a data load.
 
-| Method   | Path                                   | Notes                                                                            |
-| -------- | -------------------------------------- | -------------------------------------------------------------------------------- |
-| `GET`    | `/api/health`                          |                                                                                  |
-| `GET`    | `/api/config`                          | Resolved `appHost` and `localtestUrl`                                            |
-| `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                                   |
-| `GET`    | `/api/localtest/users`                 | Its test users, with `source` naming where the list came from                    |
-| `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms                       |
-| `GET`    | `/api/examples`                        | Example files grouped by data type                                               |
-| `GET`    | `/api/examples/file`                   | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml`                   |
-| `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                     |
-| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have                                |
-| `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                              |
-| `DELETE` | `/api/tokens/:id`                      |                                                                                  |
-| `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                               |
-| `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                               |
-| `POST`   | `/api/runs`                            | The orchestrator, described below                                                |
-| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`                |
-| `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid`            |
-| `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                |
-| `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                             |
-| `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                           |
-| `GET`    | `/api/instances/pdf-preview`           | Render the receipt pdf. Same query as `/api/instances`                           |
-| `POST`   | `/api/instances/data-element/compare`  | The stored xml against `left`. Body: the query fields plus `dataGuid` and `left` |
-| `DELETE` | `/api/instances`                       | Delete an instance. Same query plus `&hard=true` for a hard delete               |
-| `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query              |
+| Method   | Path                                   | Notes                                                                                                                        |
+| -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/health`                          |                                                                                                                              |
+| `GET`    | `/api/config`                          | Resolved `appHost` and `localtestUrl`                                                                                        |
+| `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                                                                               |
+| `GET`    | `/api/localtest/users`                 | Its test users, with `source` naming where the list came from                                                                |
+| `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms                                                                   |
+| `GET`    | `/api/examples`                        | Example files grouped by data type                                                                                           |
+| `GET`    | `/api/examples/file`                   | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml`                                                               |
+| `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                                                                 |
+| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have                                                                            |
+| `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                                                                          |
+| `DELETE` | `/api/tokens/:id`                      |                                                                                                                              |
+| `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                                                                           |
+| `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                                                                           |
+| `POST`   | `/api/runs`                            | The orchestrator, described below                                                                                            |
+| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`                                                            |
+| `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid`                                                        |
+| `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                                                            |
+| `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                                                                         |
+| `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                                                                       |
+| `GET`    | `/api/instances/pdf-preview`           | Render the receipt pdf. Same query as `/api/instances`                                                                       |
+| `POST`   | `/api/instances/data-element/compare`  | The stored xml against `left`. Body: the query fields plus `dataGuid`, `left` and an optional `dataType` for the field types |
+| `DELETE` | `/api/instances`                       | Delete an instance. Same query plus `&hard=true` for a hard delete                                                           |
+| `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query                                                          |
 
 ## Scripting a data load
 

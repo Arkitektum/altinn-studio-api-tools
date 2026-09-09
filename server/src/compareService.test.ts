@@ -6,9 +6,11 @@ const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
 const DATA_GUID = "fdeb5550-f4e8-4f23-87d0-111234ac4771";
 const STORAGE = `http://localhost:5101/storage/api/v1/instances/510001/${GUID}/data/${DATA_GUID}`;
 
-const target = { instanceOwnerPartyId: "510001", instanceGuid: GUID, dataGuid: DATA_GUID };
+// No dataType, so these cases compare without reading a schema. The schema path has its own
+// case below, and resolveFieldTypes is covered on its own in schemaTypes.test.ts.
+const target = { org: "dibk", app: "et-v4", instanceOwnerPartyId: "510001", instanceGuid: GUID, dataGuid: DATA_GUID };
 
-function stubStorage(respond: () => { status?: number; body: string | Uint8Array; contentType: string }) {
+function stubStorage(respond: (url: string) => { status?: number; body: string | Uint8Array; contentType: string }) {
     const calls: { method: string; url: string }[] = [];
     const original = globalThis.fetch;
 
@@ -17,7 +19,7 @@ function stubStorage(respond: () => { status?: number; body: string | Uint8Array
         calls.push({ method: (init?.method ?? "GET").toUpperCase(), url });
         assert.equal(new Headers(init?.headers ?? {}).get("authorization"), "Bearer test-token");
 
-        const { status = 200, body, contentType } = respond();
+        const { status = 200, body, contentType } = respond(url);
         return new Response(body, { status, headers: { "content-type": contentType } });
     }) as typeof fetch;
 
@@ -67,7 +69,8 @@ describe("compareStored", () => {
 
         assert.equal(result.ok, true);
         assert.equal(result.diff?.same, false);
-        assert.deepEqual(result.diff?.differences, [{ path: "/ettrinn/festenr", kind: "missing", left: "2", right: null }]);
+        // No data type was asked for, so there is no schema to type the field from.
+        assert.deepEqual(result.diff?.differences, [{ path: "/ettrinn/festenr", kind: "missing", left: "2", right: null, type: null }]);
     });
 
     it("explains a 403 rather than calling the element missing", async () => {
@@ -101,5 +104,67 @@ describe("compareStored", () => {
         assert.equal(result.ok, false);
         assert.match(result.failedAt ?? "", /does not look like XML/);
         assert.equal(result.stored, '{"ettrinn":{"gnr":"73"}}');
+    });
+});
+
+describe("compareStored with a schema", () => {
+    const schema = {
+        type: "object",
+        "@xsdRootElement": "ettrinn",
+        oneOf: [{ $ref: "#/$defs/Ettrinn" }],
+        $defs: {
+            Ettrinn: {
+                type: "object",
+                properties: { dato: { type: "string", format: "date", "@xsdType": "date" } }
+            }
+        }
+    };
+
+    it("puts the field's declared type on each difference it can place", async () => {
+        const stub = stubStorage((url) =>
+            url.includes("/api/jsonschema/")
+                ? { body: JSON.stringify(schema), contentType: "application/json" }
+                : { body: "<ettrinn><dato>2026-09-09T00:00:00</dato></ettrinn>", contentType: "application/xml" }
+        );
+        active = stub;
+
+        const result = await compareStored("test-token", {
+            ...target,
+            dataType: "ET",
+            left: "<ettrinn><dato>2026-09-09</dato></ettrinn>"
+        });
+
+        assert.equal(result.ok, true);
+        // Two calls, and the log says so: the blob, then the schema.
+        assert.equal(result.steps.length, 2);
+        assert.equal(result.steps[1]?.name, "Read the model schema");
+        assert.equal(result.diff?.differences[0]?.path, "/ettrinn/dato");
+        assert.equal(result.diff?.differences[0]?.type, "date");
+    });
+
+    it("still reports the differences when the schema will not load", async () => {
+        // A schema that 404s costs the types, not the comparison.
+        const stub = stubStorage((url) =>
+            url.includes("/api/jsonschema/")
+                ? { status: 404, body: "", contentType: "text/plain" }
+                : { body: "<ettrinn><dato>x</dato></ettrinn>", contentType: "application/xml" }
+        );
+        active = stub;
+
+        const result = await compareStored("test-token", { ...target, dataType: "ET", left: "<ettrinn><dato>y</dato></ettrinn>" });
+
+        assert.equal(result.ok, true);
+        assert.equal(result.diff?.differences.length, 1);
+        assert.equal(result.diff?.differences[0]?.type, null);
+    });
+
+    it("reads no schema at all without a data type, and says nothing about types", async () => {
+        const stub = stubStorage(() => ({ body: "<ettrinn><dato>x</dato></ettrinn>", contentType: "application/xml" }));
+        active = stub;
+
+        const result = await compareStored("test-token", { ...target, left: "<ettrinn><dato>y</dato></ettrinn>" });
+
+        assert.equal(result.steps.length, 1);
+        assert.equal(result.diff?.differences[0]?.type, null);
     });
 });

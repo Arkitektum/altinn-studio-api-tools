@@ -282,9 +282,9 @@ describe("logFromCompare", () => {
             diff: {
                 same: false,
                 differences: [
-                    { path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid" },
-                    { path: "/ettrinn/part[2]/@altinnRowId", kind: "added" as const, left: null, right: "guid" },
-                    { path: "/ettrinn/festenr", kind: "missing" as const, left: "2", right: null }
+                    { path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid", type: "uuid" },
+                    { path: "/ettrinn/part[2]/@altinnRowId", kind: "added" as const, left: null, right: "guid", type: "uuid" },
+                    { path: "/ettrinn/festenr", kind: "missing" as const, left: "2", right: null, type: null }
                 ]
             }
         });
@@ -303,7 +303,10 @@ describe("logFromCompare", () => {
     it("reads as ok when only row ids differ, since nothing meaningful did", () => {
         const entry = logFromCompare({
             ...compared,
-            diff: { same: false, differences: [{ path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid" }] }
+            diff: {
+                same: false,
+                differences: [{ path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid", type: "uuid" }]
+            }
         });
         const row = entry.rows.find((entry) => entry.label === "Differences");
         assert.equal(row?.value, "0, plus 1 altinnRowId");
