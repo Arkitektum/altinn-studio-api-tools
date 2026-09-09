@@ -54,6 +54,13 @@
     /* Wider than it was, because the log now carries validation descriptions. */
     --log: 480px;
     --header-h: 45px;
+    /*
+     * The chain strip's height, kept a constant so the sticky columns can offset by it. That is
+     * why the strip never wraps: a variable height would put the columns back under it.
+     */
+    --chain-h: 32px;
+    /* Everything sticky sits below both, since both are sticky themselves. */
+    --top-h: calc(var(--header-h) + var(--chain-h));
 }
 
 * {
@@ -126,10 +133,13 @@ body {
 /* Under the header and above everything, because everything below depends on it. */
 .chain {
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 10px;
-    padding: 7px 16px;
+    align-items: center;
+    /* One line, always: see --chain-h. A long chain scrolls sideways rather than growing. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    height: var(--chain-h);
+    gap: 10px;
+    padding: 0 16px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-inset);
     font-size: 12px;
@@ -223,14 +233,17 @@ body {
 .column--rail {
     border-right: 1px solid var(--border);
     position: sticky;
-    top: var(--header-h);
+    top: var(--top-h);
+    /* The token panel plus its stored tokens can outgrow a short window. */
+    max-height: calc(100vh - var(--top-h));
+    overflow-y: auto;
 }
 
 .column--log {
     border-left: 1px solid var(--border);
     position: sticky;
-    top: var(--header-h);
-    max-height: calc(100vh - var(--header-h));
+    top: var(--top-h);
+    max-height: calc(100vh - var(--top-h));
     overflow-y: auto;
 }
 
@@ -244,6 +257,7 @@ body {
         border-top: 1px solid var(--border);
         position: static;
         max-height: none;
+        overflow-y: visible;
     }
 }
 
@@ -255,6 +269,9 @@ body {
         border-right: none;
         border-bottom: 1px solid var(--border);
         position: static;
+        /* Stacked rather than beside, so it scrolls with the page like everything else. */
+        max-height: none;
+        overflow-y: visible;
     }
 }
 
@@ -265,6 +282,11 @@ body {
     border-radius: var(--radius);
     background: var(--bg);
     padding: 14px;
+    /*
+     * So a chain link that scrolls here lands below the header and the strip rather than under
+     * them. The same reason the sticky columns offset by --top-h.
+     */
+    scroll-margin-top: calc(var(--top-h) + 16px);
 }
 
 .panel__head {
