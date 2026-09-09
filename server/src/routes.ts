@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { z } from "zod";
 import { config } from "./config.js";
 import { appUiUrl } from "./urls.js";
-import { createTestUserToken, listTestUsers } from "./localtestClient.js";
+import { createTestUserToken, fetchTokenIdentity, listTestUsers } from "./localtestClient.js";
 import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from "./tokenStore.js";
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
@@ -158,15 +158,23 @@ router.post(
     })
 );
 
-router.post("/tokens/raw", (req, res) => {
-    const input = rawTokenSchema.parse(req.body);
-    const token = storeToken({
-        kind: "raw",
-        label: input.label?.trim() || "Pasted token",
-        token: input.token
-    });
-    res.status(201).json(toPublicToken(token));
-});
+router.post(
+    "/tokens/raw",
+    asyncHandler(async (req, res) => {
+        const input = rawTokenSchema.parse(req.body);
+        // A pasted token gets the same lookup, since a pasted LocalTest token is the common case
+        // and it is the only way to learn who it acts as. The bearer goes to the configured
+        // LocalTest, which is where every other request in this tool sends it too.
+        const identity = await fetchTokenIdentity(input.token);
+        const token = storeToken({
+            kind: "raw",
+            label: input.label?.trim() || identity.name || "Pasted token",
+            token: input.token,
+            ssn: identity.ssn
+        });
+        res.status(201).json(toPublicToken(token));
+    })
+);
 
 router.get("/tokens", (_req, res) => {
     res.json(listTokens());

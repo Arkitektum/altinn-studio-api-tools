@@ -17,6 +17,12 @@ export interface StoredToken {
     /** Party id from the token claims, used to prefill the instance owner. */
     partyId: string | null;
     userId: string | null;
+    /**
+     * Person number (fødselsnummer) of the person the token acts as, looked up rather than
+     * decoded, since a LocalTest token carries none. Null for an organisation, or when LocalTest
+     * would not say.
+     */
+    ssn: string | null;
 }
 
 /** What we are willing to send to the browser: everything except the bearer token itself. */
@@ -50,7 +56,7 @@ function claimAsString(claims: Record<string, unknown>, name: string): string | 
     return String(value);
 }
 
-export function storeToken(input: { kind: TokenKind; label: string; token: string }): StoredToken {
+export function storeToken(input: { kind: TokenKind; label: string; token: string; ssn?: string | null }): StoredToken {
     let decoded;
     try {
         decoded = decodeJwt(input.token);
@@ -69,7 +75,8 @@ export function storeToken(input: { kind: TokenKind; label: string; token: strin
         expiresAt: decoded.expiresAt,
         createdAt: new Date().toISOString(),
         partyId: claimAsString(decoded.claims, "urn:altinn:partyid"),
-        userId: claimAsString(decoded.claims, "urn:altinn:userid")
+        userId: claimAsString(decoded.claims, "urn:altinn:userid"),
+        ssn: input.ssn ?? null
     };
 
     pruneExpired();

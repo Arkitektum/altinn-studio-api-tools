@@ -179,6 +179,56 @@ export async function listTestUsers(): Promise<LocaltestUsers> {
     return { source: "none", users: [] };
 }
 
+export interface TokenIdentity {
+    /** Person number (fødselsnummer) of the person behind the token, where there is one. */
+    ssn: string | null;
+    /** The person's name as the register has it, which a pasted token has no label for. */
+    name: string | null;
+}
+
+/**
+ * Reads the person out of a profile response.
+ *
+ * The number sits on the party, and on the party's person as well, so either will do. Both are
+ * looked at because LocalTest has served a party without the nested person before.
+ */
+export function parseTokenIdentity(body: unknown): TokenIdentity {
+    const record = asRecord(body);
+    const party = asRecord(record?.["party"] ?? record?.["Party"]);
+    const person = asRecord(party?.["person"] ?? party?.["Person"]);
+    return {
+        ssn: (party ? pick(party, ["ssn"]) : null) ?? (person ? pick(person, ["ssn"]) : null),
+        name: (person ? pick(person, ["name"]) : null) ?? (party ? pick(party, ["name"]) : null)
+    };
+}
+
+/**
+ * The person behind a token, from LocalTest's profile API.
+ *
+ * A test user token carries nameid, urn:altinn:userid, urn:altinn:username, urn:altinn:partyid,
+ * urn:altinn:authlevel and a scope, and nothing else: there is no personal number in it, the way
+ * an ID-porten token has one in `pid`. So the number is read from the party the token belongs to,
+ * which
+ *   GET {localtest}/profile/api/v1/users/current
+ * returns for whoever the bearer is, without needing a user id of our own.
+ *
+ * Best effort throughout. An organisation party has no such number, and a LocalTest that moved
+ * this endpoint has no answer at all, but neither is a reason to refuse the token.
+ */
+export async function fetchTokenIdentity(token: string): Promise<TokenIdentity> {
+    const empty: TokenIdentity = { ssn: null, name: null };
+    try {
+        const response = await fetch(`${config.localtestUrl}/profile/api/v1/users/current`, {
+            headers: { accept: "application/json", authorization: `Bearer ${token}` },
+            signal: AbortSignal.timeout(3_000)
+        });
+        if (!response.ok || !response.headers.get("content-type")?.includes("json")) return empty;
+        return parseTokenIdentity(await response.json());
+    } catch {
+        return empty;
+    }
+}
+
 /**
  * Fetch a test user token from the LocalTest project:
  *   GET {localtest}/Home/GetTestUserToken/{userId}
@@ -228,9 +278,12 @@ export async function createTestUserToken(userId: string, label?: string): Promi
         );
     }
 
+    const identity = await fetchTokenIdentity(token);
+
     return storeToken({
         kind: "test-user",
-        label: label?.trim() || `Test user ${userId}`,
-        token
+        label: label?.trim() || identity.name || `Test user ${userId}`,
+        token,
+        ssn: identity.ssn
     });
 }

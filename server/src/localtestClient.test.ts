@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseTestUsersHtml, parseTestUsersJson } from "./localtestClient.js";
+import { parseTestUsersHtml, parseTestUsersJson, parseTokenIdentity } from "./localtestClient.js";
 
 describe("parseTestUsersJson", () => {
     it("reads a list of profiles, taking the party name", () => {
@@ -185,5 +185,51 @@ describe("parseTestUsersHtml", () => {
         assert.deepEqual(parseTestUsersHtml("<html><body>LocalTest</body></html>"), []);
         // Options loose on the page are not read either, since nothing says whose they are.
         assert.deepEqual(parseTestUsersHtml(`<option value="1001">Pengelens Partner</option>`), []);
+    });
+});
+
+describe("parseTokenIdentity", () => {
+    // Trimmed from what LocalTest's profile API actually answers for test user 1337.
+    const profile = {
+        userId: 1337,
+        userName: "SophieDDG",
+        partyId: 501337,
+        party: {
+            partyId: 501337,
+            partyTypeName: "Person",
+            orgNumber: "",
+            ssn: "01039012345",
+            name: "Sophie Salt",
+            person: { ssn: "01039012345", name: "Sophie Salt", firstName: "Sophie", lastName: "Salt" }
+        }
+    };
+
+    it("reads the fodselsnummer and the name off the party", () => {
+        assert.deepEqual(parseTokenIdentity(profile), { ssn: "01039012345", name: "Sophie Salt" });
+    });
+
+    it("falls back to the nested person when the party carries neither", () => {
+        assert.deepEqual(parseTokenIdentity({ party: { person: { ssn: "01039012345", name: "Sophie Salt" } } }), {
+            ssn: "01039012345",
+            name: "Sophie Salt"
+        });
+    });
+
+    it("copes with pascal case, as the user list has to", () => {
+        assert.deepEqual(parseTokenIdentity({ Party: { Ssn: "01039012345", Name: "Sophie Salt" } }), {
+            ssn: "01039012345",
+            name: "Sophie Salt"
+        });
+    });
+
+    it("gives nothing for an organisation, whose ssn is empty", () => {
+        const organisation = { party: { partyTypeName: "Organisation", orgNumber: "897069650", ssn: "", name: "DDG Fitness AS" } };
+        assert.deepEqual(parseTokenIdentity(organisation), { ssn: null, name: "DDG Fitness AS" });
+    });
+
+    it("gives nothing for a body that is not a profile", () => {
+        assert.deepEqual(parseTokenIdentity(null), { ssn: null, name: null });
+        assert.deepEqual(parseTokenIdentity("<html>"), { ssn: null, name: null });
+        assert.deepEqual(parseTokenIdentity({}), { ssn: null, name: null });
     });
 });

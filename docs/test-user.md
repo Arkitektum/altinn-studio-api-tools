@@ -9,6 +9,14 @@ Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{user
 
 The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and it follows the active token when you switch user. A party you typed yourself is left alone, since acting on behalf of another party is a real case.
 
+## Person number
+
+The token card shows the person number of the person the token acts as, the fødselsnummer, unformatted, because it is usually on its way into a form field. It is labelled **Person no.**, which is what the claim summary above it already calls the `pid` claim: the same number under the same name, and the looked-up row steps aside for the claim where a token carries one.
+
+It is not a claim. A LocalTest test user token carries `nameid`, `urn:altinn:userid`, `urn:altinn:username`, `urn:altinn:partyid`, `urn:altinn:authlevel` and a scope, and no personal identity number at all, so there is nothing to decode. The server reads it from the party the token belongs to instead, with one `GET {localtest}/profile/api/v1/users/current` sent as the new token. Using `current` rather than a user id means the same lookup works for a pasted token, where there is no id to ask about.
+
+The lookup is best effort and never blocks a token: an organisation has no such number, and a LocalTest version that moved the endpoint has no answer, and in both cases the row is simply absent. The register's name for the person is used as the token's label when nothing better was given, which is how a pasted token stops being called "Pasted token".
+
 ## Where the list comes from
 
 LocalTest itself. It has no documented endpoint for its users, so the server tries the json one some versions serve at `/Home/GetTestUsers` and otherwise reads the option list off the front page it already renders, which is where those names are shown anyway. Whichever it was is stated under the picker, since a scraped list deserves to say so.
@@ -31,10 +39,10 @@ The spent token is deleted rather than left to fill the list with dead tokens fo
 
 ## Pasting a token
 
-The **Paste** tab accepts a token obtained some other way. It is decoded for its claims and expiry and stored like any other.
+The **Paste** tab accepts a token obtained some other way. It is decoded for its claims and expiry and stored like any other, and gets the same profile lookup, since a pasted LocalTest token is the common case and it is the only way to learn who it acts as. The bearer goes to the configured LocalTest, which is where the rest of the tool sends it too.
 
 ## Token handling
 
-The token is held in server memory only. The browser receives an opaque id and the decoded claims, never the bearer token itself. Claims are decoded for display, never verified: the app that receives the token does that, and it holds the key.
+The token is held in server memory only. The browser receives an opaque id, the decoded claims and the looked-up person number, never the bearer token itself. Claims are decoded for display, never verified: the app that receives the token does that, and it holds the key.
 
 More in [SECURITY.md](https://github.com/Arkitektum/altinn-studio-api-tools/blob/main/SECURITY.md).

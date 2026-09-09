@@ -38,6 +38,8 @@ export interface PublicToken {
     createdAt: string;
     partyId: string | null;
     userId: string | null;
+    /** Person number (fødselsnummer) of the person the token acts as. Null for an organisation. */
+    ssn: string | null;
 }
 
 export interface AppDataType {

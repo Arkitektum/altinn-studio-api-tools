@@ -251,6 +251,22 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 <dd title={row.value}>{row.value}</dd>
                             </div>
                         ))}
+                        {/*
+                         * Not a claim, which is why it sits outside the summary: a LocalTest token
+                         * carries no personal number, so the server looks it up from the party the
+                         * token belongs to. Shown unformatted, since it is usually on its way into
+                         * a form field.
+                         *
+                         * Labelled as the claim summary labels the `pid` claim, which holds the same
+                         * number when a token has one, and skipped when it does: one number, one row,
+                         * under one name.
+                         */}
+                        {activeToken.ssn && !activeToken.claims["pid"] && (
+                            <>
+                                <dt>Person no.</dt>
+                                <dd title={activeToken.ssn}>{activeToken.ssn}</dd>
+                            </>
+                        )}
                         <dt>Validity</dt>
                         <dd style={{ color: expired ? "var(--bad)" : undefined }}>{describeExpiry(activeToken.expiresAt, now)}</dd>
                     </dl>
