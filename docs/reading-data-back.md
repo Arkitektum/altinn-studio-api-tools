@@ -81,6 +81,10 @@ Differences are reported as paths, with three kinds:
 
 So `/ettrinn/eiendom/festenr dropped` says the field never made it, and `/ettrinn/dato changed 2026-09-09 → 2026-09-09T00:00:00` says the model rewrote it. A whole subtree that went missing is reported once at its root rather than leaf by leaf, and repeated siblings are told apart by position, `/ettrinn/part[2]/navn`.
 
+**Hide altinnRowId** is on by default. Altinn stamps every row of a repeating group with an `altinnRowId`, a guid it uses to keep track of rows, so the stored xml has one per row and a file written by hand has none. Left in, they are the majority of the report and bury everything else. The count of what was held back is always shown, so nothing disappears quietly, and the toggle is a view rather than a request: turning it off costs no round trip because the server reports everything it found either way.
+
+The run log names them apart for the same reason, as "1, plus 2 altinnRowId", so the entry does not read as three problems when the panel is showing one.
+
 What it ignores is everything that carries no meaning: whitespace, the xml declaration, comments, self-closing versus longhand empty elements, attribute order and namespace prefixes. Two documents that differ only in those ways are reported as identical, which is the point: the noise is what made this cumbersome by hand. `xmlDiff.test.ts` pins all of it, and `compareService.test.ts` covers the storage read.
 
 ## Validate a data element

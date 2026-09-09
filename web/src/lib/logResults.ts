@@ -1,3 +1,4 @@
+import { partitionDifferences } from "./differences";
 import { processLabel, severityLabel } from "./format";
 import type {
     AdvanceProcessResult,
@@ -133,9 +134,15 @@ export function logFromRead(instance: ReadInstanceResult, validation: ValidateRe
     };
 }
 
-/** The log for a comparison against the stored xml. */
+/**
+ * The log for a comparison against the stored xml.
+ *
+ * The row-id count is named rather than folded in, so the log does not read as twelve problems
+ * when the panel, which hides them by default, is showing two.
+ */
 export function logFromCompare(result: CompareResult): LogResult {
-    const differences = result.diff?.differences.length ?? 0;
+    const all = result.diff?.differences ?? [];
+    const { shown, hiddenRowIds } = partitionDifferences(all, true);
     return {
         ok: result.ok,
         steps: result.steps,
@@ -148,8 +155,8 @@ export function logFromCompare(result: CompareResult): LogResult {
                 ? [
                       {
                           label: "Differences",
-                          value: result.diff.same ? "none" : String(differences),
-                          tone: (result.diff.same ? "ok" : "warn") as "ok" | "warn"
+                          value: all.length === 0 ? "none" : `${shown.length}${hiddenRowIds > 0 ? `, plus ${hiddenRowIds} altinnRowId` : ""}`,
+                          tone: (shown.length === 0 ? "ok" : "warn") as "ok" | "warn"
                       }
                   ]
                 : [])

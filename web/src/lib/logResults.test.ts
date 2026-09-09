@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { issueRow, logFromDataElement, logFromDelete, logFromRead, logFromRun, logFromValidation, renumber, toValidation } from "./logResults";
+import {
+    issueRow,
+    logFromCompare,
+    logFromDataElement,
+    logFromDelete,
+    logFromRead,
+    logFromRun,
+    logFromValidation,
+    renumber,
+    toValidation
+} from "./logResults";
 import type { DataElementSummary, ReadInstanceResult, RunResult, RunStep, ValidateResult } from "../types";
 
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
@@ -252,5 +262,59 @@ describe("logFromRead", () => {
             ["Party", "Instance"]
         );
         assert.equal(entry.validation, undefined);
+    });
+});
+
+describe("logFromCompare", () => {
+    const compared = {
+        ok: true,
+        steps: [step("Read the stored data element")],
+        failedAt: null,
+        dataGuid: DATA_GUID,
+        storedContentType: "application/xml",
+        stored: "<ettrinn/>"
+    };
+
+    it("counts the differences that mean something, and names the row ids apart", () => {
+        // The panel hides row ids by default, so a bare count of twelve would disagree with it.
+        const entry = logFromCompare({
+            ...compared,
+            diff: {
+                same: false,
+                differences: [
+                    { path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid" },
+                    { path: "/ettrinn/part[2]/@altinnRowId", kind: "added" as const, left: null, right: "guid" },
+                    { path: "/ettrinn/festenr", kind: "missing" as const, left: "2", right: null }
+                ]
+            }
+        });
+
+        assert.equal(entry.rows.find((row) => row.label === "Differences")?.value, "1, plus 2 altinnRowId");
+        assert.equal(entry.rows.find((row) => row.label === "Differences")?.tone, "warn");
+    });
+
+    it("reads as none for two documents that say the same thing", () => {
+        const entry = logFromCompare({ ...compared, diff: { same: true, differences: [] } });
+        const row = entry.rows.find((entry) => entry.label === "Differences");
+        assert.equal(row?.value, "none");
+        assert.equal(row?.tone, "ok");
+    });
+
+    it("reads as ok when only row ids differ, since nothing meaningful did", () => {
+        const entry = logFromCompare({
+            ...compared,
+            diff: { same: false, differences: [{ path: "/ettrinn/part[1]/@altinnRowId", kind: "added" as const, left: null, right: "guid" }] }
+        });
+        const row = entry.rows.find((entry) => entry.label === "Differences");
+        assert.equal(row?.value, "0, plus 1 altinnRowId");
+        assert.equal(row?.tone, "ok");
+    });
+
+    it("says nothing about differences when the comparison never happened", () => {
+        const entry = logFromCompare({ ...compared, ok: false, failedAt: "Could not read the stored data element.", diff: null });
+        assert.equal(
+            entry.rows.some((row) => row.label === "Differences"),
+            false
+        );
     });
 });

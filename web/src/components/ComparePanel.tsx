@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { partitionDifferences } from "../lib/differences";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { CompareResult, XmlDifferenceKind } from "../types";
@@ -34,16 +35,18 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
  */
 export function ComparePanel({ dataType, sources, onCompare, result, busy, error }: ComparePanelProps) {
     const [source, setSource] = useState(sources[0]?.value ?? "");
+    /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
+    const [hideRowIds, setHideRowIds] = useState(true);
     const chosen = sources.some((entry) => entry.value === source) ? source : (sources[0]?.value ?? "");
-    const differences = result?.diff?.differences ?? [];
+    const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
 
     return (
         <Panel
             title="Compare with stored"
             aside={
                 result?.diff ? (
-                    <span className={`badge ${result.diff.same ? "badge--ok" : ""}`}>
-                        {result.diff.same ? "identical" : `${differences.length} difference${differences.length === 1 ? "" : "s"}`}
+                    <span className={`badge ${differences.length === 0 ? "badge--ok" : ""}`}>
+                        {differences.length === 0 ? "identical" : `${differences.length} difference${differences.length === 1 ? "" : "s"}`}
                     </span>
                 ) : undefined
             }
@@ -69,6 +72,17 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
                         </select>
                     </div>
 
+                    <label className="check" style={{ marginTop: 12 }}>
+                        <input type="checkbox" checked={hideRowIds} onChange={(event) => setHideRowIds(event.target.checked)} />
+                        <span className="check__body">
+                            <span className="check__title">Hide altinnRowId</span>
+                            <span className="check__note">
+                                Altinn stamps one on every row of a repeating group, so the stored xml has them and a file written by hand never does.
+                                Left in, they bury everything else.
+                            </span>
+                        </span>
+                    </label>
+
                     <div className="row" style={{ marginTop: 12 }}>
                         <button type="button" className="btn" onClick={() => onCompare(chosen)} disabled={busy || !chosen}>
                             {busy && <span className="btn__spinner" />}
@@ -81,9 +95,11 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
                 </>
             )}
 
-            {result?.diff?.same && (
+            {result?.diff && differences.length === 0 && (
                 <p className="field__hint" style={{ marginTop: 12 }}>
-                    The two say the same thing. The model kept everything and changed nothing.
+                    {result.diff.same
+                        ? "The two say the same thing. The model kept everything and changed nothing."
+                        : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
                 </p>
             )}
 
@@ -109,6 +125,12 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
                         </div>
                     ))}
                 </div>
+            )}
+
+            {differences.length > 0 && hiddenRowIds > 0 && (
+                <p className="field__hint" style={{ marginTop: 8 }}>
+                    {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
+                </p>
             )}
 
             {error ? (
