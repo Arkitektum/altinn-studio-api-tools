@@ -246,8 +246,11 @@ body {
     gap: 16px;
 }
 
+/*
+ * No rule between the columns. The panels carry their own borders, so a divider only drew a second
+ * line beside the ones already there. The gap between columns is enough to read them apart.
+ */
 .column--rail {
-    border-right: 1px solid var(--border);
     position: sticky;
     top: var(--top-h);
     /* The token panel plus its stored tokens can outgrow a short window. */
@@ -256,7 +259,6 @@ body {
 }
 
 .column--log {
-    border-left: 1px solid var(--border);
     position: sticky;
     top: var(--top-h);
     max-height: calc(100vh - var(--top-h));
@@ -269,8 +271,6 @@ body {
     }
     .column--log {
         grid-column: 1 / -1;
-        border-left: none;
-        border-top: 1px solid var(--border);
         position: static;
         max-height: none;
         overflow-y: visible;
@@ -282,8 +282,6 @@ body {
         grid-template-columns: minmax(0, 1fr);
     }
     .column--rail {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
         position: static;
         /* Stacked rather than beside, so it scrolls with the page like everything else. */
         max-height: none;
