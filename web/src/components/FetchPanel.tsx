@@ -62,18 +62,20 @@ export function FetchPanel({
     const selected = dataElements.find((element) => element.id === dataGuid);
 
     return (
-        <Panel title="Fetch">
+        <Panel
+            title="Fetch"
+            aside={
+                instanceGuid ? (
+                    <span className="badge" title={`${instanceOwnerPartyId}/${instanceGuid}`}>
+                        {instanceGuid.slice(0, 8)}
+                    </span>
+                ) : undefined
+            }
+        >
             <p className="field__hint" style={{ marginBottom: 12 }}>
                 Reads whichever instance is selected in Instances above. Posting already reads the instance back and validates it, so these are for an
                 instance you did not just create.
             </p>
-
-            <dl className="claims" style={{ marginBottom: 12 }}>
-                <dt>Party</dt>
-                <dd>{instanceOwnerPartyId || "none"}</dd>
-                <dt>Instance</dt>
-                <dd>{instanceGuid || "none selected"}</dd>
-            </dl>
 
             {/* The instance itself is read and validated on selection, so only the pdf is a button. */}
             <p className="field__hint">

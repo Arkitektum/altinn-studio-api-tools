@@ -80,6 +80,8 @@ web/src
 
 **Panels appear when they become usable.** `lib/sections.ts` decides, from whether there is a token, an app, and any results. A panel you cannot act on is left out rather than shown dead. Results stand on their own, so an expired token does not hide what you already read.
 
+**The dependencies are stated, not left to be inferred.** `lib/chain.ts` turns the current state into the chain the tool hangs off, user to application to party to instance to data element, marking each link done, next or waiting. The strip under the header renders it. Hiding a panel is good behaviour and a poor explanation, so the chain is the explanation: it names the next thing to fill in and the panel to do it in.
+
 **Pure decisions live in `lib/`, and `App.tsx` only wires.** Anything that can be decided from its arguments alone goes into a `lib/` module with a test: which panels show, where a loaded element goes in the payload list, what a step looks like as curl, how a content type maps to a file extension, what each api result looks like as a log entry. `App.tsx` holds state, effects and the calls.
 
 **State that describes one instance is dropped together.** Changing the instance guid clears the validation issues, the data element list, the process state and the pdf preview in one place, `changeInstanceGuid`, because all of them described the instance you just left. Stale is more misleading than absent.

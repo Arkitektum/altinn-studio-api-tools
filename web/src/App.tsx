@@ -20,6 +20,7 @@ import { placeLoaded } from "./lib/payload";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
+import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
 import { ComparePanel, type CompareSource } from "./components/ComparePanel";
 import { FetchPanel } from "./components/FetchPanel";
@@ -827,6 +828,15 @@ export function App() {
                     </span>
                 </div>
             </header>
+
+            {/* What the tool is working on, and what the next thing to fill in is. */}
+            <Chain
+                user={activeToken && tokenUsable ? activeToken.label : null}
+                application={org && app ? `${org}/${app}` : null}
+                party={instanceOwnerPartyId || null}
+                instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
+                dataElement={selectedDataType || null}
+            />
 
             <div className="deck">
                 <div className="column column--rail">
