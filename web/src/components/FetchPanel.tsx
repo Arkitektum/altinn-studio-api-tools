@@ -4,6 +4,8 @@ import { Panel } from "./Panel";
 import type { DataElementSummary, FetchedDataElement } from "../types";
 
 interface FetchPanelProps {
+    /** Anchor for the chain strip to scroll to. */
+    id: string;
     appHost: string;
     org: string;
     app: string;
@@ -36,6 +38,7 @@ function describeElement(element: DataElementSummary): string {
 }
 
 export function FetchPanel({
+    id,
     appHost,
     org,
     app,
@@ -63,6 +66,7 @@ export function FetchPanel({
 
     return (
         <Panel
+            id={id}
             title="Fetch"
             aside={
                 instanceGuid ? (

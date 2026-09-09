@@ -22,6 +22,8 @@ function describeSource(users: LocaltestUsers | null): string {
 }
 
 interface TokenPanelProps {
+    /** Anchor for the chain strip to scroll to. */
+    id: string;
     serverConfig: ServerConfig | null;
     localtest: LocaltestStatus | null;
     tokens: PublicToken[];
@@ -31,7 +33,7 @@ interface TokenPanelProps {
     now: number;
 }
 
-export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onActivate, onTokensChanged, now }: TokenPanelProps) {
+export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate, onTokensChanged, now }: TokenPanelProps) {
     const [mode, setMode] = useState<Mode>("test-user");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<unknown>(null);
@@ -90,9 +92,9 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
         }
     }
 
-    async function remove(id: string) {
+    async function remove(tokenId: string) {
         try {
-            await api.deleteToken(id);
+            await api.deleteToken(tokenId);
             onTokensChanged();
         } catch (caught) {
             setError(caught);
@@ -128,7 +130,7 @@ export function TokenPanel({ serverConfig, localtest, tokens, activeToken, onAct
     const expired = activeToken ? isExpired(activeToken.expiresAt, now) : false;
 
     return (
-        <Panel title="Test user">
+        <Panel id={id} title="Test user">
             <div className="tabs" role="tablist">
                 {(
                     [

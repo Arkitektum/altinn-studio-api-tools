@@ -13,7 +13,15 @@ A strip under the header, showing what the tool is working on: a test user, an a
 
 Each link shows what it holds. The next one to fill in is in the accent colour and names the panel to do it in, so a cold start reads "Test user → in Test user" rather than leaving you to guess where to begin. Links that cannot be reached yet are faint, and are there to explain the order rather than to be read.
 
+A link you can act on is also a way to get there: clicking one scrolls to the panel it is set in. A faint link stays plain text, because the panel it names is not on screen yet and a button that did nothing would be worse than no button.
+
 Two details are worth knowing. A link only counts as settled when everything before it is, so a party restored from a previous session still shows its value while reading as blocked, because without a token nothing downstream of it can be used, and the panels are absent to match. And the instance link is settled as soon as there is a party, reading `new` when the new instance row is what is selected, because that is a choice rather than a gap: posting creates one. Only the reading side needs a real instance, which is why the data element link waits for one. `chain.test.ts` covers all of it.
+
+## Post, then inspect
+
+The middle column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Fetch, Compare with stored and Process: what is there now. Target and Instances sit above both, because they decide what everything else acts on.
+
+The headings are a rule and a word, not a container. They group what is already there rather than adding something to look at.
 
 ## Panels appear as they become usable
 

@@ -5,6 +5,8 @@ import { Panel } from "./Panel";
 import type { AppMetadataResponse, AppParty, CatalogueApp } from "../types";
 
 interface TargetPanelProps {
+    /** Anchor for the chain strip to scroll to. */
+    id: string;
     appHost: string;
     org: string;
     app: string;
@@ -28,6 +30,7 @@ interface TargetPanelProps {
 const OTHER = "other";
 
 export function TargetPanel({
+    id,
     appHost,
     org,
     app,
@@ -95,6 +98,7 @@ export function TargetPanel({
 
     return (
         <Panel
+            id={id}
             title="Target"
             aside={metadata ? <span className="badge badge--ok">{metadata.metadata.dataTypes?.length ?? 0} data types</span> : undefined}
         >

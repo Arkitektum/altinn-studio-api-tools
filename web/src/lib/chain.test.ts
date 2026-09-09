@@ -41,6 +41,13 @@ describe("requestChain", () => {
         );
     });
 
+    it("carries the panel id, so the strip can take you there", () => {
+        assert.deepEqual(
+            requestChain(nothing).map((step) => step.anchor),
+            ["panel-test-user", "panel-target", "panel-target", "panel-instances", "panel-fetch"]
+        );
+    });
+
     it("shows a restored value while still calling it blocked", () => {
         // A party from a previous session with no token yet. The value is there and is worth
         // showing, but nothing downstream of it can be used, and the panels are absent to match.

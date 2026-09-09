@@ -842,6 +842,7 @@ export function App() {
                 <div className="column column--rail">
                     {bootError ? <ErrorNotice error={bootError} /> : null}
                     <TokenPanel
+                        id="panel-test-user"
                         serverConfig={serverConfig}
                         localtest={localtest}
                         tokens={tokens}
@@ -854,6 +855,7 @@ export function App() {
 
                 <div className="column">
                     <TargetPanel
+                        id="panel-target"
                         appHost={appHost}
                         org={org}
                         app={app}
@@ -884,6 +886,7 @@ export function App() {
                     {/* Right under the destination, since choosing one is how you aim at it. */}
                     {sections.instances && (
                         <InstancesPanel
+                            id="panel-instances"
                             appHost={appHost}
                             org={org}
                             app={app}
@@ -903,6 +906,8 @@ export function App() {
                     {/* Nothing below can be aimed anywhere without a token and an app. */}
                     {sections.requests && (
                         <>
+                            <span className="group">Post</span>
+
                             <PayloadPanel
                                 dataElements={dataElements}
                                 onChange={setDataElements}
@@ -940,7 +945,10 @@ export function App() {
                                 </button>
                             </section>
 
+                            <span className="group">Inspect</span>
+
                             <FetchPanel
+                                id="panel-fetch"
                                 appHost={appHost}
                                 org={org}
                                 app={app}

@@ -150,6 +150,29 @@ body {
     color: var(--border-strong);
 }
 
+/* A link you can follow. Plain until hovered, so the strip stays a readout rather than a toolbar. */
+.chain__go {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.chain__go:hover .chain__label {
+    color: var(--text);
+}
+
+.chain__go:hover .chain__value {
+    text-decoration: underline;
+}
+
 .chain__label {
     color: var(--text-faint);
 }
@@ -282,6 +305,25 @@ body {
     font-weight: 600;
     color: var(--text);
     margin-bottom: 8px;
+}
+
+/*
+ * A heading over a run of panels, with a rule taking the rest of the line. Quiet on purpose: it
+ * groups what is already there rather than adding a thing to look at.
+ */
+.group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+}
+
+.group::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--border);
 }
 
 /* Set apart by a rule rather than by colour, so it is separate without shouting. */

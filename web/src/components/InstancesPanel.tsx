@@ -5,6 +5,8 @@ import { Panel } from "./Panel";
 import type { InstanceSummary } from "../types";
 
 interface InstancesPanelProps {
+    /** Anchor for the chain strip to scroll to. */
+    id: string;
     appHost: string;
     org: string;
     app: string;
@@ -29,6 +31,7 @@ interface InstancesPanelProps {
 }
 
 export function InstancesPanel({
+    id,
     appHost,
     org,
     app,
@@ -84,6 +87,7 @@ export function InstancesPanel({
 
     return (
         <Panel
+            id={id}
             title="Instances"
             aside={
                 <span className="row" style={{ gap: 6 }}>

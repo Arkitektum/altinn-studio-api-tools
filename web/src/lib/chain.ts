@@ -17,6 +17,8 @@ export interface ChainStep {
     state: ChainState;
     /** What sets it, so the strip can say where to go. */
     where: string;
+    /** The id of that panel, so the strip can take you there. */
+    anchor: string;
 }
 
 export interface ChainInputs {
@@ -41,15 +43,15 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
      * reads as blocked until the links it depends on are filled in: without a token nothing
      * downstream of it can be used, and the panels are absent to match.
      */
-    const links: { label: string; value: string | null; where: string; needsRealInstance?: boolean }[] = [
-        { label: "Test user", value: inputs.user, where: "Test user" },
-        { label: "Application", value: inputs.application, where: "Target" },
-        { label: "Party", value: inputs.party, where: "Target" },
+    const links: { label: string; value: string | null; where: string; anchor: string; needsRealInstance?: boolean }[] = [
+        { label: "Test user", value: inputs.user, where: "Test user", anchor: "panel-test-user" },
+        { label: "Application", value: inputs.application, where: "Target", anchor: "panel-target" },
+        { label: "Party", value: inputs.party, where: "Target", anchor: "panel-target" },
         // Once there is a party the instance list is showing and something in it is always
         // selected, so this link is settled either way: a guid, or the new instance row.
-        { label: "Instance", value: inputs.instance ?? "new", where: "Instances" },
+        { label: "Instance", value: inputs.instance ?? "new", where: "Instances", anchor: "panel-instances" },
         // A new instance has no data elements yet, so this waits rather than inviting a click.
-        { label: "Data element", value: inputs.dataElement, where: "Fetch", needsRealInstance: true }
+        { label: "Data element", value: inputs.dataElement, where: "Fetch", anchor: "panel-fetch", needsRealInstance: true }
     ];
 
     let blocked = false;
