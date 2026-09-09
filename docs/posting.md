@@ -18,7 +18,7 @@ The two used to be separate controls, a destination switch and a list, which cou
 
 The post button says which of the two it will do, and the **Will call** line in Target shows the URL.
 
-After a post the new instance becomes the selected one, so it is what Fetch, Process and validation now point at, and another post would add data to it. Pick **New instance** again to make a second one.
+After a post the new instance becomes the selected one, so it is what the Data element, Process and validation panels now point at, and another post would add data to it. Pick **New instance** again to make a second one.
 
 The api also takes `mode: "sequential"`, which creates the instance and then posts each data element in its own request. It was a third position on the old switch and is not offered any more: it stored the same thing as multipart with a longer log. `/api/runs` still accepts it, see [API](api.md).
 
@@ -26,7 +26,7 @@ The api also takes `mode: "sequential"`, which creates the instance and then pos
 
 Every post is followed automatically by `GET .../instances/{party}/{guid}` and `GET .../instances/{party}/{guid}/validate`, so the log always shows what Altinn actually stored and whether it validates. Those two requests are appended to the same log entry as the post, and the verdict gains a data element count, the current task and an issue summary.
 
-The data element select in the Fetch panel is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
+The data element select is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
 **Advance process** is the one option that applies to any run, calling `PUT .../process/next` to submit the step. It runs after the data is stored, and after validation when both are asked for.
 

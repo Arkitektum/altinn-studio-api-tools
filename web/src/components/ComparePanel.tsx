@@ -4,17 +4,17 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { CompareResult, XmlDifferenceKind } from "../types";
 
-/** Where the xml as written comes from: the payload editor, or a file that ships with the tool. */
-export interface CompareSource {
-    value: string;
-    label: string;
-}
-
 interface ComparePanelProps {
     /** The data type of the selected data element, which is what there is to compare. */
     dataType: string;
-    sources: CompareSource[];
-    onCompare: (source: string) => void;
+    /**
+     * What the payload element of that data type holds, or null when there is none to compare
+     * against. The xml as written is always that element: there was a picker offering the example
+     * files too, and it was never used for anything else, since the payload is where the file you
+     * are working on already is.
+     */
+    payload: string | null;
+    onCompare: () => void;
     result: CompareResult | null;
     busy: boolean;
     error: unknown;
@@ -33,11 +33,9 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
  * model did to the file: a field it has no place for is dropped on the way in, and a value it
  * formats its own way is rewritten. Neither is reported by anything else.
  */
-export function ComparePanel({ dataType, sources, onCompare, result, busy, error }: ComparePanelProps) {
-    const [source, setSource] = useState(sources[0]?.value ?? "");
+export function ComparePanel({ dataType, payload, onCompare, result, busy, error }: ComparePanelProps) {
     /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
     const [hideRowIds, setHideRowIds] = useState(true);
-    const chosen = sources.some((entry) => entry.value === source) ? source : (sources[0]?.value ?? "");
     const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
 
     return (
@@ -59,20 +57,16 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
                 ignored.
             </p>
 
-            {sources.length === 0 ? (
-                <p className="field__hint">Nothing to compare against: no payload element and no example file for {dataType}.</p>
+            {payload === null ? (
+                <p className="field__hint">
+                    Nothing to compare against: the payload has no {dataType} element with content. Load one there, or use{" "}
+                    <strong>Load into payload</strong> above to put what is stored into it and then change it.
+                </p>
             ) : (
                 <>
-                    <div className="field">
-                        <label htmlFor="compareSource">The xml as written</label>
-                        <select id="compareSource" value={chosen} onChange={(event) => setSource(event.target.value)}>
-                            {sources.map((entry) => (
-                                <option key={entry.value} value={entry.value}>
-                                    {entry.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <p className="field__hint">
+                        Against the payload element: <span style={{ color: "var(--accent)" }}>{payload}</span>
+                    </p>
 
                     <label className="check" style={{ marginTop: 12 }}>
                         <input type="checkbox" checked={hideRowIds} onChange={(event) => setHideRowIds(event.target.checked)} />
@@ -86,7 +80,7 @@ export function ComparePanel({ dataType, sources, onCompare, result, busy, error
                     </label>
 
                     <div className="row" style={{ marginTop: 12 }}>
-                        <button type="button" className="btn" onClick={() => onCompare(chosen)} disabled={busy || !chosen}>
+                        <button type="button" className="btn" onClick={onCompare} disabled={busy}>
                             {busy && <span className="btn__spinner" />}
                             Compare
                         </button>

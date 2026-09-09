@@ -22,8 +22,9 @@ import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
-import { ComparePanel, type CompareSource } from "./components/ComparePanel";
+import { ComparePanel } from "./components/ComparePanel";
 import { FetchPanel } from "./components/FetchPanel";
+import { ReceiptPdfPanel } from "./components/ReceiptPdfPanel";
 import { InstancesPanel } from "./components/InstancesPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
 import { ProcessPanel } from "./components/ProcessPanel";
@@ -40,7 +41,6 @@ import type {
     DataElementInput,
     DataElementSummary,
     ExampleGroup,
-    ExampleKind,
     FetchedDataElement,
     InstanceSummary,
     LocaltestStatus,
@@ -596,29 +596,18 @@ export function App() {
     }
 
     /**
-     * Compares the stored xml against the xml as written. The left-hand side is either what is in
-     * the payload editor or an example file, which is fetched here rather than held, since it is
-     * only needed at the moment of comparing.
+     * Compares the stored xml against what the payload holds for that data type. The payload is
+     * the only source: it is where the file you are working on already is, and a picker offering
+     * the example files as well was never used for anything else.
      */
-    async function compareWithStored(source: string) {
+    async function compareWithStored() {
         if (!activeTokenId || !dataGuid) return;
-        const dataType = instanceDataElements.find((element) => element.id === dataGuid)?.dataType ?? "";
+        const left = payloadForSelected?.content ?? "";
+        if (!left.trim()) return;
+
         setComparing(true);
         setCompareError(null);
         try {
-            let left = "";
-            if (source === "payload") {
-                left = dataElements.find((element) => element.dataType === dataType && element.content.trim())?.content ?? "";
-            } else {
-                const [, kind, ...rest] = source.split(":");
-                const file = await api.getExampleFile({ kind: (kind ?? "form") as ExampleKind, group: dataType, name: rest.join(":") });
-                left = file.content;
-            }
-            if (!left.trim()) {
-                setCompareError(new Error("That source has no content to compare."));
-                return;
-            }
-
             const result = await api.compareStored({
                 tokenId: activeTokenId,
                 org,
@@ -626,7 +615,7 @@ export function App() {
                 instanceOwnerPartyId,
                 instanceGuid,
                 dataGuid,
-                dataType,
+                dataType: selectedDataType,
                 left
             });
             appendLog(logFromCompare(result));
@@ -762,30 +751,16 @@ export function App() {
     const selectedDataType = instanceDataElements.find((element) => element.id === dataGuid)?.dataType ?? "";
 
     /**
-     * What the stored xml can be compared against: an element in the payload editor of the same
-     * data type, and the example files for it. Base64 content is left out, since a comparison is
-     * about xml.
+     * The payload element the comparison reads, which is the one of the same data type holding
+     * text. Base64 is left out: a comparison is about xml.
      */
-    const compareSources: CompareSource[] = useMemo(() => {
-        if (!selectedDataType) return [];
-        const sources: CompareSource[] = [];
-        const payload = dataElements.find(
-            (element) => element.dataType === selectedDataType && element.content.trim() && element.encoding !== "base64"
-        );
-        if (payload) {
-            sources.push({
-                value: "payload",
-                label: `Payload element${payload.exampleName ? ` · from ${payload.exampleName}` : ""}`
-            });
-        }
-        for (const group of exampleGroups) {
-            if (group.kind === "attachment" || group.key !== selectedDataType) continue;
-            for (const file of group.files) {
-                sources.push({ value: `example:${group.kind}:${file.name}`, label: `Example · ${file.label}` });
-            }
-        }
-        return sources;
-    }, [selectedDataType, dataElements, exampleGroups]);
+    const payloadForSelected = useMemo(
+        () =>
+            selectedDataType
+                ? dataElements.find((element) => element.dataType === selectedDataType && element.content.trim() && element.encoding !== "base64")
+                : undefined,
+        [selectedDataType, dataElements]
+    );
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
@@ -948,7 +923,7 @@ export function App() {
                             <span className="group">Inspect</span>
 
                             <FetchPanel
-                                id="panel-fetch"
+                                id="panel-data-element"
                                 appHost={appHost}
                                 org={org}
                                 app={app}
@@ -965,17 +940,34 @@ export function App() {
                                 busy={fetching}
                                 hasToken={tokenUsable}
                                 error={fetchError}
-                                onPreviewPdf={() => void renderPdf()}
                             />
 
                             {sections.compare && selectedDataType && (
                                 <ComparePanel
                                     dataType={selectedDataType}
-                                    sources={compareSources}
-                                    onCompare={(source) => void compareWithStored(source)}
+                                    payload={
+                                        payloadForSelected
+                                            ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
+                                            : null
+                                    }
+                                    onCompare={() => void compareWithStored()}
                                     result={compareResult}
                                     busy={comparing}
                                     error={compareError}
+                                />
+                            )}
+
+                            {/* After the comparison, since it is a different kind of action. */}
+                            {sections.requests && instanceGuid && (
+                                <ReceiptPdfPanel
+                                    appHost={appHost}
+                                    org={org}
+                                    app={app}
+                                    instanceOwnerPartyId={instanceOwnerPartyId}
+                                    instanceGuid={instanceGuid}
+                                    onPreviewPdf={() => void renderPdf()}
+                                    busy={fetching}
+                                    hasToken={tokenUsable}
                                 />
                             )}
 

@@ -56,7 +56,7 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
         // selected, so this link is settled either way: a guid, or the new instance row.
         { label: "Instance", value: inputs.instance ?? "new", where: "Instances", anchor: "panel-instances", spy: true },
         // A new instance has no data elements yet, so this waits rather than inviting a click.
-        { label: "Data element", value: inputs.dataElement, where: "Fetch", anchor: "panel-fetch", spy: true, needsRealInstance: true }
+        { label: "Data element", value: inputs.dataElement, where: "Data element", anchor: "panel-data-element", spy: true, needsRealInstance: true }
     ];
 
     let blocked = false;

@@ -21,7 +21,6 @@ interface FetchPanelProps {
     onLoadIntoPayload: () => void;
     onGetDataElement: () => void;
     onValidateDataElement: () => void;
-    onPreviewPdf: () => void;
     busy: boolean;
     hasToken: boolean;
     error: unknown;
@@ -52,7 +51,6 @@ export function FetchPanel({
     onLoadIntoPayload,
     onGetDataElement,
     onValidateDataElement,
-    onPreviewPdf,
     busy,
     hasToken,
     error
@@ -67,7 +65,7 @@ export function FetchPanel({
     return (
         <Panel
             id={id}
-            title="Fetch"
+            title="Data element"
             aside={
                 instanceGuid ? (
                     <span className="badge" title={`${instanceOwnerPartyId}/${instanceGuid}`}>
@@ -77,21 +75,12 @@ export function FetchPanel({
             }
         >
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                Reads whichever instance is selected in Instances above. Posting already reads the instance back and validates it, so these are for an
-                instance you did not just create.
-            </p>
-
-            {/* The instance itself is read and validated on selection, so only the pdf is a button. */}
-            <p className="field__hint">
-                Read and validated when the selection changes:
-                <br />
-                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}
-                <br />
-                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/validate
+                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Comparing what one holds
+                with what was written is the panel below.
             </p>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
-            {dataElements.length > 0 && (
+            {dataElements.length > 0 ? (
                 <>
                     <div className="field" style={{ marginTop: 16 }}>
                         <label htmlFor="dataGuid">Data element</label>
@@ -144,23 +133,9 @@ export function FetchPanel({
                         </>
                     )}
                 </>
+            ) : (
+                <p className="field__hint">No data elements on it yet. A new instance gets its form data element when it is created.</p>
             )}
-
-            {/* A different kind of action: it renders a document, and shows it over the tool. */}
-            <div className="apart">
-                <span className="legend">Receipt pdf</span>
-                <p className="field__hint" style={{ marginTop: 0, marginBottom: 10 }}>
-                    What the app would archive, rendered from the data as it stands. The quickest way to see what the form turns into without walking
-                    the process to the end. It opens in a window over the tool.
-                </p>
-                <button type="button" className="btn" onClick={onPreviewPdf} disabled={busy || !canGetInstance}>
-                    {busy && <span className="btn__spinner" />}
-                    Render receipt pdf
-                </button>
-                <p className="field__hint" style={{ marginTop: 8 }}>
-                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
-                </p>
-            </div>
 
             {error ? (
                 <div style={{ marginTop: 12 }}>

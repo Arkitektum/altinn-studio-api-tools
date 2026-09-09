@@ -5,9 +5,9 @@ nav_order: 9
 
 # Reading data back
 
-Two panels. **Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. **Fetch** reads whichever one that is.
+**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels below: **Data element**, then **Compare with stored** for the element picked there, then **Receipt pdf**.
 
-Fetch has no fields of its own: it works on whatever is selected in Instances, and says which party and instance that is.
+None of those have fields of their own. They work on whatever is selected in Instances, and each names in its header what that is.
 
 Every request appears in the run log alongside posts, with method, URL, status, timing, and body.
 
@@ -19,7 +19,7 @@ There is no button for it. It is one read, and a panel whose whole purpose is sh
 
 The first row is **New instance**, which is not an instance yet: with it selected, posting creates one. Under it come the party's instances, each the first eight characters of its guid, when it was last changed and by whom, newest first.
 
-Clicking a row points the whole tool at that instance: what a post adds data to, and what Fetch, Process and validation read. The selected row is marked.
+Clicking a row points the whole tool at that instance: what a post adds data to, and what the panels below it read. The selected row is marked.
 
 **Open** on a row is a link into the app, which is a session of its own. The token here lives in server memory so the browser never receives one, which means Altinn bounces to LocalTest's user picker until you have logged in there, and the deep link's fragment is dropped on the way back so you land on the app root. **Log in** in the panel header is that same picker, and opening the instance again afterwards works.
 
@@ -69,7 +69,7 @@ Reading a form data element gives the model as JSON, so what Altinn actually wro
 
 The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
 
-The left-hand side is the xml as written: the element in the payload editor of the same data type, or any example file for it. The example is fetched at the moment of comparing rather than held.
+The left-hand side is the xml as written, which is always the payload element of the same data type: that is where the file you are working on already is. There was a picker offering the example files as well, and it was never used for anything else, so it is gone. With no payload element of that type the panel says so and points at **Load into payload**, which puts what is stored into the editor for you to change and compare against.
 
 Differences are reported as paths, with three kinds:
 
@@ -117,7 +117,7 @@ The verdict summarises them by severity, for example "1 error, 1 warning, 1 othe
 
 `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, the receipt pdf the app would archive. It is the quickest way to see what the form data turns into without walking the process to the end.
 
-It sits apart from the rest of Fetch, behind a rule, because it is a different kind of action: everything else there reads data, and this renders a document. It is also the one thing that is not automatic, since rendering a pdf on every selection would be wasteful.
+It has a panel of its own, last, because it is a different kind of action: everything above it reads data, and this renders a document from it. It is also the one read that is still a button, since rendering a pdf on every selection would be wasteful.
 
 The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: a receipt is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
 
@@ -125,7 +125,7 @@ One preview is held at a time. Rendering again replaces it and revokes the previ
 
 ## Deleting an instance
 
-Every row in **Instances** has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard={true|false}` for that row, not for whatever is in the Fetch fields.
+Every row in **Instances** has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard={true|false}` for that row, not for whatever is selected.
 
 Soft is the default: Altinn marks the instance deleted, which takes it out of the active list while leaving it in storage. **Hard delete** removes it outright and cannot be undone, so it is a checkbox under the list rather than the default reading of a `hard` parameter that happens to be absent.
 

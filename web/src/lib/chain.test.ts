@@ -37,14 +37,14 @@ describe("requestChain", () => {
     it("names where each link is set, so the strip can say where to go", () => {
         assert.deepEqual(
             requestChain(nothing).map((step) => step.where),
-            ["Test user", "Target", "Target", "Instances", "Fetch"]
+            ["Test user", "Target", "Target", "Instances", "Data element"]
         );
     });
 
     it("carries the panel id, so the strip can take you there", () => {
         assert.deepEqual(
             requestChain(nothing).map((step) => step.anchor),
-            ["panel-test-user", "panel-target", "panel-target", "panel-instances", "panel-fetch"]
+            ["panel-test-user", "panel-target", "panel-target", "panel-instances", "panel-data-element"]
         );
     });
 

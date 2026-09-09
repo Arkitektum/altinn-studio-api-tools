@@ -212,6 +212,14 @@ export function InstancesPanel({
             )}
 
             <p className="field__hint" style={{ marginTop: 10 }}>
+                Selecting one reads it and validates it, and fills the data element panel below:
+                <br />
+                <span className="method method--get">GET</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/{"{instanceGuid}"}
+                <br />
+                <span className="method method--get">GET</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/{"{instanceGuid}"}/validate
+            </p>
+
+            <p className="field__hint" style={{ marginTop: 10 }}>
                 <strong>Open</strong> is a link into the app, which is a session of its own: the token here lives in server memory, so the browser
                 never gets one. If it bounces to a user picker, <strong>Log in</strong> above is that same picker, and opening the instance again then
                 works.
