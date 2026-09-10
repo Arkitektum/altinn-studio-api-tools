@@ -13,6 +13,7 @@ Nothing needs configuring if your localtest uses the default ports. Otherwise co
 | `ALTINN_LOCALTEST_URL`    | `http://localhost:5101`          | The LocalTest project, which mints test user tokens                          |
 | `ALTINN_EXAMPLE_DATA_DIR` | `examples/` in the repo          | Point it at your canonical example data, see [Example data](example-data.md) |
 | `PORT`                    | `4000`                           | The api                                                                      |
+| `HOST`                    | `127.0.0.1`                      | What the api binds to. `0.0.0.0` opens it to the network                     |
 | `WEB_ORIGIN`              | `http://localhost:5173`          | The single origin allowed through CORS                                       |
 | `REQUEST_TIMEOUT_MS`      | `30000`                          | How long a call to Altinn may take                                           |
 
@@ -23,6 +24,7 @@ The resolved `appHost` and `localtestUrl` are shown in the header and available 
 ## Limits
 
 - **Local only.** Everything is addressed relative to `ALTINN_APP_HOST`, so the tool has no knowledge of tt02 or production.
+- **This machine only.** The api binds loopback, because it holds live test tokens and will post with them for anyone who can reach it. `HOST` opens it if you need that.
 - **25 MB request bodies**, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - **30 second timeout** on calls to Altinn, `REQUEST_TIMEOUT_MS` to change it.
 - **25 runs** kept in the log.

@@ -27,15 +27,11 @@ No token, and no id of a token, is stored in the browser. The token list is fetc
 
 ## Network exposure
 
-The Vite dev server binds `127.0.0.1` deliberately, and proxies `/api` so the browser stays same-origin, which keeps token ids out of cross-origin request logs. The api itself listens on port 4000 on all interfaces, which is Express's default rather than a decision.
+Both halves bind `127.0.0.1`. The Vite dev server does, and proxies `/api` so the browser stays same-origin, which keeps token ids out of cross-origin request logs. The api does too, so it answers this machine and nothing else.
 
-On a trusted network that is unremarkable. On an untrusted one, anyone who can reach that port can use whatever tokens your server currently holds and post to your local apps. CORS does not help: it restrains browsers, not `curl`.
+That is a decision rather than a default. Anyone who can reach port 4000 can use whatever tokens the server currently holds and post to your local apps, and CORS does not help: it restrains browsers, not `curl`. The server says which address it bound to on startup, since it is the one setting that decides who else can use those tokens.
 
-If that matters where you work, bind it to loopback in `server/src/index.ts`:
-
-```ts
-app.listen(config.port, "127.0.0.1", () => { … });
-```
+`HOST=0.0.0.0` opens it to the network, for a container or a colleague's browser. Do that knowing what it hands out, and not on a network you do not trust.
 
 `WEB_ORIGIN` controls the single origin allowed through CORS, defaulting to `http://localhost:5173`.
 

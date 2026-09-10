@@ -7,6 +7,12 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 
 export const config = {
     port: Number(process.env.PORT ?? 4000),
+    /**
+     * Loopback, so the api answers this machine and nothing else. It holds live test tokens and
+     * will post with them for anyone who asks, and CORS does not help: it restrains browsers, not
+     * curl. Set `HOST=0.0.0.0` to reach it from elsewhere, knowing what that hands out.
+     */
+    host: process.env.HOST ?? "127.0.0.1",
     /** Origin allowed through CORS. The Vite dev server proxies /api, so this only matters if you serve the UI elsewhere. */
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
     requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS ?? 30_000),
