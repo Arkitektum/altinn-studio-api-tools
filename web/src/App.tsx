@@ -16,6 +16,7 @@ import {
     logFromRun,
     logFromValidation
 } from "./lib/logResults";
+import { pendingAutoRuns } from "./lib/autoRuns";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
@@ -109,6 +110,8 @@ export function App() {
     const [instanceList, setInstanceList] = useState<InstanceSummary[] | null>(null);
     const [listing, setListing] = useState(false);
     const [listError, setListError] = useState<unknown>(null);
+    /** Which token and app have already been probed, so a refusal is not retried forever. */
+    const [probeAttempted, setProbeAttempted] = useState<string | null>(null);
     /** Which token, app and party the listing has already been attempted for. */
     const [listAttempted, setListAttempted] = useState<string | null>(null);
     /** And which instance has already been read, so it is read once per selection. */
@@ -331,65 +334,51 @@ export function App() {
     }, [org, app, instanceOwnerPartyId]);
 
     /**
-     * Read and validate the selected instance without being asked. Both are reads, and the panels
-     * below exist to show what they return, so a button for them was busywork.
+     * The three reads the tool makes without being asked. Which of them are outstanding, and how
+     * long each waits for its field to settle, is decided in `lib/autoRuns.ts` and tested there.
+     * What is left here is the plumbing: a timer per scope, the marker that keeps it to once per
+     * selection, and the call.
      *
-     * Attempted once per token, app, party and instance, so it does not re-read on every render,
-     * and debounced because a guid typed into "Other instance" arrives a character at a time. A
-     * post marks its own instance as read, since it already reads and validates it.
+     * The calls are deliberately out of the dependency lists. They are rebuilt on every render,
+     * and listing one would make its effect fire in a loop.
      */
+    const {
+        probe: nextProbe,
+        list: nextList,
+        read: nextRead
+    } = pendingAutoRuns({
+        hasToken: tokenUsable,
+        selection,
+        attempted: { probe: probeAttempted, list: listAttempted, read: readAttempted }
+    });
+
     useEffect(() => {
-        if (!tokenUsable || !activeTokenId || !org || !app || !instanceOwnerPartyId || !instanceGuid) return;
-        if (readAttempted === keys.instance) return;
-
+        if (!nextProbe) return;
         const timer = window.setTimeout(() => {
-            setReadAttempted(keys.instance);
-            void readSelected(instanceOwnerPartyId, instanceGuid);
-        }, 500);
-        return () => window.clearTimeout(timer);
-    }, [tokenUsable, activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, readAttempted]);
-
-    /**
-     * List the party's instances without being asked. It is one read, and the panel exists to
-     * show them, so making anyone press a button for it was busywork.
-     *
-     * Debounced and attempted once per token, app and party, for the same reasons the app read
-     * is: the party is typed a character at a time, and a party that 403s should not be retried
-     * forever. Refresh in the panel header lists again on demand.
-     */
-    useEffect(() => {
-        if (!tokenUsable || !activeTokenId || !org || !app || !instanceOwnerPartyId) return;
-        if (listAttempted === keys.party) return;
-
-        const timer = window.setTimeout(() => {
-            setListAttempted(keys.party);
-            void listInstances();
-        }, 500);
-        return () => window.clearTimeout(timer);
-    }, [tokenUsable, activeTokenId, org, app, instanceOwnerPartyId, listAttempted]);
-
-    /**
-     * Probe on its own once there is a token and a target. It is two reads that create nothing,
-     * so there is no reason to make anyone press a button for it.
-     *
-     * Debounced, because org and app are typed a character at a time and "et-v4" would otherwise
-     * be five probes. Attempted once per token and target, so an app that is not running does not
-     * get retried forever; the button re-probes by hand, which is also how you pick up metadata
-     * that changed while the tool was open.
-     */
-    const [probeAttempted, setProbeAttempted] = useState<string | null>(null);
-    useEffect(() => {
-        if (!tokenUsable || !activeTokenId || !org || !app) return;
-        if (probeAttempted === keys.target) return;
-
-        const timer = window.setTimeout(() => {
-            setProbeAttempted(keys.target);
-            // Not in the dependencies on purpose: probe is rebuilt every render, and listing it
-            // would make this effect fire in a loop.
+            setProbeAttempted(nextProbe.key);
             void probe();
-        }, 400);
+        }, nextProbe.delayMs);
         return () => window.clearTimeout(timer);
-    }, [tokenUsable, activeTokenId, org, app, probeAttempted]);
+    }, [nextProbe?.key]);
+
+    useEffect(() => {
+        if (!nextList) return;
+        const timer = window.setTimeout(() => {
+            setListAttempted(nextList.key);
+            void listInstances();
+        }, nextList.delayMs);
+        return () => window.clearTimeout(timer);
+    }, [nextList?.key]);
+
+    // A post marks its own instance as read, since it already reads and validates it.
+    useEffect(() => {
+        if (!nextRead) return;
+        const timer = window.setTimeout(() => {
+            setReadAttempted(nextRead.key);
+            void readSelected(instanceOwnerPartyId, instanceGuid);
+        }, nextRead.delayMs);
+        return () => window.clearTimeout(timer);
+    }, [nextRead?.key]);
 
     async function probe() {
         if (!activeTokenId) return;
