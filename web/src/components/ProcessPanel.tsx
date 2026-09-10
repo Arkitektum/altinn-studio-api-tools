@@ -1,5 +1,5 @@
 import { processLabel } from "../lib/format";
-import { advanceBody } from "../lib/processAction";
+import { advanceBody, advanceInApp, advanceLabel } from "../lib/processAction";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
@@ -37,6 +37,7 @@ export function ProcessPanel({
     error
 }: ProcessPanelProps) {
     const ended = process.ended !== null;
+    const inApp = advanceInApp(process.taskType);
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const canAdvance = hasToken && !ended && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
 
@@ -80,24 +81,31 @@ export function ProcessPanel({
             ) : (
                 <>
                     <div className="row" style={{ marginTop: 12 }}>
+                        {/*
+                         * Named after what it does to the form rather than after what it does to
+                         * the process: moving a data task on is how a form is signed and
+                         * submitted, and "advance the process" only ever described the request.
+                         */}
                         <button type="button" className="btn btn--put" onClick={onAdvance} disabled={busy || !canAdvance}>
                             {busy && <span className="btn__spinner" />}
-                            Advance process
+                            {advanceLabel(process.taskType)}
                         </button>
                     </div>
                     {/*
-                     * The body is shown as well as the URL, because it is the body that decides
-                     * what Altinn authorises: the action for the task type, `sign` on a signing
-                     * task. A task type this does not recognise sends `{}` and leaves the choice
-                     * to Altinn, which the preview then says plainly.
+                     * The request is still spelled out underneath, because the button now says
+                     * what it means rather than what it sends. The body is part of that: it is
+                     * what Altinn authorises against, the action for the task type. A task type
+                     * this does not recognise sends `{}` and leaves the choice to Altinn.
                      */}
                     <p className="field__hint" style={{ marginTop: 8 }}>
+                        {inApp ? `This is the same step as ${inApp}. ` : ""}
+                        Moves the instance out of {process.currentTask ? <strong>{process.currentTask}</strong> : "the current task"}, and the app
+                        validates first, so it fails while validation does not pass.
+                        <br />
                         <span className="method method--put">PUT</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/
                         {instanceGuid || "{instanceGuid}"}/process/next
                         <br />
                         {advanceBody(process.taskType)}
-                        <br />
-                        Submits the current task. The app validates first, so this fails while validation does not pass.
                     </p>
                 </>
             )}

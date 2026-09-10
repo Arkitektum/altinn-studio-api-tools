@@ -4,6 +4,7 @@ import {
     issueRow,
     logFromCompare,
     logFromDataElement,
+    logFromAdvance,
     logFromDelete,
     logFromInstances,
     logFromRead,
@@ -362,5 +363,31 @@ describe("logFromInstances", () => {
     it("counts nothing when the listing itself failed", () => {
         const entry = logFromInstances({ ...listed, ok: false, failedAt: "Could not list the instances for this party.", instances: [] });
         assert.deepEqual(entry.rows, [{ label: "Party", value: "510001" }]);
+    });
+});
+
+describe("logFromAdvance", () => {
+    const advanced = {
+        ok: true,
+        steps: [step("Advance process to next task")],
+        failedAt: null,
+        instanceOwnerPartyId: "510001",
+        instanceGuid: GUID,
+        process: { currentTask: null, taskType: null, started: null, ended: "2026-09-10T09:00:00Z", endEvent: "EndEvent_1" }
+    };
+
+    it("names the move by the task it was asked from, not the one it landed in", () => {
+        // The result carries the task it landed in, which for a submission is no task at all.
+        assert.equal(logFromAdvance(advanced, null, "data").title, "Signed and submitted");
+        assert.equal(logFromAdvance(advanced, null, "signing").title, "Signed");
+    });
+
+    it("promises only the move when the task type was not known", () => {
+        assert.equal(logFromAdvance(advanced, null, null).title, "Advanced the process");
+    });
+
+    it("reports where the instance ended up", () => {
+        const entry = logFromAdvance(advanced, null, "data");
+        assert.equal(entry.rows.find((row) => row.label === "Task")?.value, "ended · EndEvent_1");
     });
 });

@@ -414,8 +414,15 @@ export function PayloadPanel({
                 <label className="check">
                     <input type="checkbox" checked={advanceProcess} onChange={(event) => onAdvanceProcessChange(event.target.checked)} />
                     <span className="check__body">
-                        <span className="check__title">Advance process to next task</span>
-                        <span className="check__note">PUT /process/next. Submits the step, and fails if validation does not pass.</span>
+                        <span className="check__title">Sign and submit once it is posted</span>
+                        {/*
+                         * Which task the instance lands in is the app's business, so this says
+                         * what the step is rather than naming an action it cannot know yet.
+                         */}
+                        <span className="check__note">
+                            PUT /process/next straight after the upload, the same step as pressing send in the app. The app validates first, so it
+                            fails while validation does not pass, and the data stays posted either way.
+                        </span>
                     </span>
                 </label>
             </div>

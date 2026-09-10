@@ -51,4 +51,4 @@ Changing the data type clears the content and content type, since both belonged 
 
 ## After upload
 
-One checkbox, **Advance process to next task**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It submits the step and fails if validation does not pass. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
+One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.

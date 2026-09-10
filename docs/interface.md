@@ -23,7 +23,7 @@ Two details are worth knowing. A link only counts as settled when everything bef
 
 ## Post, then inspect
 
-The middle column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Data element, Compare with stored, Pdf and Process: what is there now, in that order because the first two are about the same thing and the pdf is a different kind of action. Target and Instances sit above both, because they decide what everything else acts on.
+The working column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Data element, Compare with stored, Pdf and Process: what is there now, in that order because the first two are about the same thing and the pdf is a different kind of action. Target and Instances sit above both, because they decide what everything else acts on.
 
 The headings are a rule and a word, not a container. They group what is already there rather than adding something to look at.
 
@@ -69,7 +69,7 @@ Buttons come in three kinds, all the same height, since height is not a thing wo
 | Kind                    | Looks like                    | Means                                                                                                   |
 | ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
 | The primary action      | Filled accent                 | The main thing to press here: **Post**, **Get token**, a **Renew** on a token that has expired          |
-| Sends a request         | Outlined in its method colour | **Compare** and **Render pdf** are GET blue, **Advance process** is PUT amber, **Delete** is DELETE red |
+| Sends a request         | Outlined in its method colour | **Compare** and **Render pdf** are GET blue, **Sign and submit** is PUT amber, **Delete** is DELETE red |
 | Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Maximize**, **Collapse all**, **Clear**, **Cancel**                           |
 
 So the colour answers "will this talk to Altinn, and how", which is the question worth answering before clicking in a tool whose whole purpose is making requests. Primacy wins where the two disagree: the post button is filled rather than green, because being the main action says more than being a POST.

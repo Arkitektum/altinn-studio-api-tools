@@ -811,7 +811,9 @@ export function App() {
                     /* the advance still stands */
                 }
             }
-            appendLog(logFromAdvance(result, read));
+            // The task the instance was in when the move was asked for, which is what names it:
+            // the result carries the task it landed in.
+            appendLog(logFromAdvance(result, read, instanceProcess?.taskType ?? null));
             // Both of the below describe the instance that was advanced, not whichever is selected
             // by the time the move came back.
             if (movedOn(requested, "instance")) return;
