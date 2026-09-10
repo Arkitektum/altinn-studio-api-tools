@@ -178,7 +178,9 @@ function Step({ step }: { step: RunStep }) {
         <>
             <button
                 type="button"
-                className={`step${openable ? " step--openable" : ""}`}
+                // A failed step is what a long list is skimmed for, so it carries the colour its
+                // status already has rather than leaving it to the number at the end of the row.
+                className={`step${openable ? " step--openable" : ""}${step.ok ? "" : " step--bad"}`}
                 onClick={() => setOpen(true)}
                 disabled={!openable}
                 aria-haspopup="dialog"

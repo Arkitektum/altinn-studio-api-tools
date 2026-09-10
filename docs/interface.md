@@ -15,7 +15,7 @@ A strip under the header, showing what the tool is working on: a test user, an a
 
 Each link shows what it holds. The next one to fill in is in the accent colour and names the panel to do it in, so a cold start reads "Test user → in Test user" rather than leaving you to guess where to begin. Links that cannot be reached yet are faint, and are there to explain the order rather than to be read.
 
-The link whose panel you are looking at is marked as you scroll, so the strip reads as a position as well as a state. That marking is deliberately neutral, a soft background and a rule underneath rather than the accent, because the accent already means "the next thing to do" and where you happen to be is not a thing to do. Application and Party are both marked together, since both are set in Target. Every link is marked this way, the test user included: it scrolls with everything else now, where before it sat in a rail that was always on screen and marking it would have said nothing.
+The link whose panel you are looking at is marked as you scroll, so the strip reads as a position as well as a state. That marking is neutral rather than accented, a chip and a rule underneath, because the accent already means "the next thing to do" and where you happen to be is not a thing to do. Neutral is not the same as faint, which is what it was at first: a hint of a lighter background on the darkest strip in the tool, easy to miss entirely. Application and Party are both marked together, since both are set in Target. Every link is marked this way, the test user included: it scrolls with everything else now, where before it sat in a rail that was always on screen and marking it would have said nothing.
 
 A link you can act on is also a way to get there: clicking one scrolls to the panel it is set in. A faint link stays plain text, because the panel it names is not on screen yet and a button that did nothing would be worse than no button.
 
@@ -57,6 +57,9 @@ The reason it is more than a message is the paragraph above: what you chose is r
 - **Which example a collapsed element was filled from**, in the accent, so loaded and hand-typed content differ at a glance.
 - **Validation counts**, amber for warnings only and red when there are errors.
 - **An element with no content**, whose summary turns amber and whose example picker gets an accent border, because that is the thing to press next.
+- **An instance's state**, for the ones only storage lists: `completed` green, `deleted` red. Both were grey words after the label, where the thing they decide is what is left to do with the instance.
+- **The step that failed** in a run, which takes a red edge like a validation error does. It is what a long run is skimmed for, and the status code at the end of the row was the only thing saying so.
+- **A payload with everything the task requires**, which says so on a green notice, the same shape the amber one uses to say what is missing.
 
 - **XML and JSON syntax**, inside code blocks only: element names blue, attribute names and keywords violet, strings green, numbers amber, comments and punctuation faint. This is the one place the palette carries a second meaning, and it can, because nothing else is coloured inside a code block: blue is GET on a button and an element name in a document, and the two never share a surface.
 

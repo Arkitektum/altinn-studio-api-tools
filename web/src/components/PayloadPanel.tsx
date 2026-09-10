@@ -489,7 +489,7 @@ export function PayloadPanel({
              * so it never promises the instance will pass.
              */}
             {required.length > 0 && (
-                <div className={`notice ${missing.length > 0 ? "notice--warn" : ""}`} style={{ marginBottom: 12 }}>
+                <div className={`notice notice--${missing.length > 0 ? "warn" : "ok"}`} style={{ marginBottom: 12 }}>
                     {missing.length === 0 ? (
                         <>
                             Every data element {task ? <strong>{task}</strong> : "this app"} requires is here. Whether what is in them passes the

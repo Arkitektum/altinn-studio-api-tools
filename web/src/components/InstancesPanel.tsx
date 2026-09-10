@@ -167,9 +167,12 @@ export function InstancesPanel({
                                 <span>
                                     {instanceLabel(instance)}
                                     {absent ? " · not in the active list" : ""}
-                                    {/* Only storage lists these two, so the row says which it is. */}
-                                    {instance.state !== "active" ? ` · ${instance.state}` : ""}
                                 </span>
+                                {/* Only storage lists these two, and which it is decides what is
+                                    left to do with the instance, so it is a badge and not a word. */}
+                                {instance.state !== "active" && (
+                                    <span className={`badge badge--${instance.state === "completed" ? "ok" : "bad"}`}>{instance.state}</span>
+                                )}
                             </button>
 
                             <a
