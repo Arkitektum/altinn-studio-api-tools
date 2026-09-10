@@ -13,7 +13,9 @@ Elements collapse to a single row, so a payload with several of them stays reada
 
 XML and JSON are coloured: element names in the accent blue, attribute names and JSON keywords in violet, strings in green, numbers in amber, and declarations, comments and punctuation faint. Element text and whitespace get no colour at all, since they are the bulk of any document and there would be nothing for the syntax to stand out against. A badge on the label's line names the language being coloured, and says nothing when the content is not something to colour.
 
-**Maximize** opens the same editor in a window over the tool. It is the same state, so what you type there is there when you close it, and Escape or the backdrop closes it.
+**Full size** in the content's own top right corner opens the same editor in a window over the tool. It is the same state, so what you type there is there when you close it, and Escape or the backdrop closes it. The window carries the line that sits under the editor in the panel, how much content there is and which example it came from, above the editor the way a response body carries its type and size, so the two windows read the same way.
+
+The button sits in the corner of the content rather than on the label's line, and says "Full size" rather than "Maximize", which named a window operation instead of what you get.
 
 The colouring is a textarea with a coloured copy of its own text behind it, which keeps typing, undo, selection and the caret as the browser's rather than reimplementing an editor. Above 200,000 characters the colour is dropped and the text shown plain: the GML example alone is near a megabyte, and tokenizing that on every keystroke costs more than the colour is worth.
 

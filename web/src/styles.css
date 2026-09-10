@@ -1362,7 +1362,7 @@ textarea {
     word-break: break-word;
 }
 
-/* Maximized: as tall as the window, since that is the point of maximizing it. */
+/* Full size: as tall as the window, which is the point of opening it there. */
 .dump__label {
     display: flex;
     align-items: center;
@@ -1686,6 +1686,13 @@ a.btn {
     margin-top: 0;
 }
 
+/* An editor in a window fills what is left of it, and scrolls inside itself. */
+.modal__stack .editor,
+.modal__stack .editor__frame {
+    flex: 1;
+    min-height: 0;
+}
+
 /*
  * Each body takes a share of what the window has left and scrolls inside itself, rather than the
  * window scrolling as one. Two things follow from that, both of them the point: the url stays at
@@ -1782,6 +1789,22 @@ a.btn {
  * pixel: same font, size, line height, padding, border box and wrapping. Anything that only one
  * of them gets is a bug where the caret sits beside the character it is on.
  */
+/* Holds the full size button in the content's corner, the way a body holds its copy. */
+.editor__frame {
+    position: relative;
+}
+
+.editor__grow {
+    position: absolute;
+    top: 5px;
+    /* Clear of the textarea's own scrollbar, the same allowance the copy on a body makes. */
+    right: 18px;
+    /* Over the textarea, which covers the whole surface and would swallow the click. */
+    z-index: 2;
+    background: var(--bg);
+    border-radius: 4px;
+}
+
 .editor {
     position: relative;
 }

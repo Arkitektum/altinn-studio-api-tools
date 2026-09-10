@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Painted, languageOf } from "./Code";
 import { Modal } from "./Modal";
 import type { Language } from "../lib/highlight";
@@ -54,16 +54,20 @@ function Surface({ id, value, onChange, placeholder, language, tall }: SurfacePr
 
 interface CodeEditorProps {
     id: string;
-    /** Its own label, so the maximize button can share the label's line rather than take one. */
     label: string;
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
     contentType?: string | null;
+    /**
+     * The line under the editor: how much content there is and where it came from. Shown in the
+     * window too, above the editor, the way a response body carries its type and size there.
+     */
+    note?: ReactNode;
 }
 
-export function CodeEditor({ id, label, value, onChange, placeholder, contentType }: CodeEditorProps) {
-    const [maximized, setMaximized] = useState(false);
+export function CodeEditor({ id, label, value, onChange, placeholder, contentType, note }: CodeEditorProps) {
+    const [full, setFull] = useState(false);
     const language = languageOf(value, contentType);
 
     return (
@@ -73,20 +77,32 @@ export function CodeEditor({ id, label, value, onChange, placeholder, contentTyp
                 <span className="spacer" />
                 {/* Says what it is colouring, and says nothing when it is not colouring at all. */}
                 {language && <span className="badge">{language}</span>}
-                <button type="button" className="btn btn--ghost" onClick={() => setMaximized(true)}>
-                    Maximize
-                </button>
             </div>
 
-            <Surface id={id} value={value} onChange={onChange} placeholder={placeholder} language={language} />
+            <div className="editor__frame">
+                <Surface id={id} value={value} onChange={onChange} placeholder={placeholder} language={language} />
+                {/*
+                 * In the content's own corner rather than on the label's line, the way a body in
+                 * the run log carries its copy. "Full size" rather than "Maximize", which named a
+                 * window operation instead of what you get.
+                 */}
+                <span className="editor__grow">
+                    <button type="button" className="btn btn--ghost" onClick={() => setFull(true)} aria-haspopup="dialog">
+                        Full size
+                    </button>
+                </span>
+            </div>
+
+            {note && <p className="field__hint">{note}</p>}
 
             {/*
              * The same editor, larger. It edits the same state, so what is typed here is there on
              * close, and the panel behind needs no reconciling.
              */}
-            {maximized && (
-                <Modal title={label} bodyClassName="modal__code" onClose={() => setMaximized(false)}>
-                    <Surface id={`${id}-maximized`} value={value} onChange={onChange} placeholder={placeholder} language={language} tall />
+            {full && (
+                <Modal title={label} bodyClassName="modal__stack" onClose={() => setFull(false)}>
+                    {note && <p className="field__hint">{note}</p>}
+                    <Surface id={`${id}-full`} value={value} onChange={onChange} placeholder={placeholder} language={language} tall />
                 </Modal>
             )}
         </>

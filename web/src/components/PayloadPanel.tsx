@@ -241,6 +241,24 @@ export function PayloadPanel({
                 const kind = dataTypeKindOf(dataTypes, metadata, element.dataType);
                 const badgeClass = kind === "main" ? "badge badge--main" : kind === "sub" ? "badge badge--sub" : "badge";
                 const summary = describeContent(element);
+                /** How much content there is and where it came from, under the editor and in it. */
+                const note = element.content ? (
+                    <>
+                        {element.encoding === "base64"
+                            ? `${Math.ceil((element.content.length * 3) / 4).toLocaleString("nb")} bytes`
+                            : `${element.content.length.toLocaleString("nb")} characters`}
+                        {element.exampleName ? (
+                            <>
+                                {" · from "}
+                                <span style={{ color: "var(--accent)" }}>{element.exampleName}</span>
+                            </>
+                        ) : (
+                            " · edited"
+                        )}
+                    </>
+                ) : (
+                    "Load an example above, or paste XML/JSON."
+                );
                 return (
                     <div className="element" key={index}>
                         <div className="element__bar">
@@ -443,27 +461,13 @@ export function PayloadPanel({
                                         }
                                         placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
                                         contentType={element.contentType}
+                                        // Under the editor, and in the window it opens, since it
+                                        // says what is in there and where it came from.
+                                        note={note}
                                     />
                                 )}
-                                <p className="field__hint">
-                                    {element.content ? (
-                                        <>
-                                            {element.encoding === "base64"
-                                                ? `${Math.ceil((element.content.length * 3) / 4).toLocaleString("nb")} bytes`
-                                                : `${element.content.length.toLocaleString("nb")} characters`}
-                                            {element.exampleName ? (
-                                                <>
-                                                    {" · from "}
-                                                    <span style={{ color: "var(--accent)" }}>{element.exampleName}</span>
-                                                </>
-                                            ) : (
-                                                " · edited"
-                                            )}
-                                        </>
-                                    ) : (
-                                        "Load an example above, or paste XML/JSON."
-                                    )}
-                                </p>
+                                {/* The placeholder above has no editor to carry it. */}
+                                {element.encoding === "base64" && <p className="field__hint">{note}</p>}
                             </div>
 
                             {known && (

@@ -69,11 +69,11 @@ Colour is never the only carrier. A method is named next to its colour, a status
 
 Buttons come in three kinds, all the same height, since height is not a thing worth encoding:
 
-| Kind                    | Looks like                    | Means                                                                                                   |
-| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
-| The primary action      | Filled accent                 | The main thing to press here: **Post**, **Get token**, a **Renew** on a token that has expired          |
-| Sends a request         | Outlined in its method colour | **Refresh** and **Render pdf** are GET blue, **Sign and submit** is PUT amber, **Delete** is DELETE red |
-| Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Maximize**, **Collapse all**, **Open**, **Save**, **Clear** |
+| Kind                    | Looks like                    | Means                                                                                                    |
+| ----------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| The primary action      | Filled accent                 | The main thing to press here: **Post**, **Get token**, a **Renew** on a token that has expired           |
+| Sends a request         | Outlined in its method colour | **Refresh** and **Render pdf** are GET blue, **Sign and submit** is PUT amber, **Delete** is DELETE red  |
+| Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Full size**, **Collapse all**, **Open**, **Save**, **Clear** |
 
 So the colour answers "will this talk to Altinn, and how", which is the question worth answering before clicking in a tool whose whole purpose is making requests. Primacy wins where the two disagree: the post button is filled rather than green, because being the main action says more than being a POST.
 
