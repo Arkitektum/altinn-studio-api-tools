@@ -84,6 +84,8 @@ web/src
 
 `lib/scrollSpy.ts` decides which link to mark as the one on screen, and `lib/useScrollSpy.ts` feeds it positions read from the DOM on each scroll. Reading them fresh rather than subscribing with an observer is what keeps it right while panels come and go: a panel that has just appeared or gone needs no subscription kept in step with it.
 
+What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a link scrolls to it. Comparing against the strip's edge instead left the two disagreeing by exactly that margin, so clicking a link marked the panel above the one it scrolled to.
+
 **Pure decisions live in `lib/`, and `App.tsx` only wires.** Anything that can be decided from its arguments alone goes into a `lib/` module with a test: which panels show, where a loaded element goes in the payload list, what a step looks like as curl, how a content type maps to a file extension, what each api result looks like as a log entry. `App.tsx` holds state, effects and the calls.
 
 **State that describes one instance is dropped together.** Changing the instance guid clears the validation issues, the data element list, the process state and the pdf preview in one place, `changeInstanceGuid`, because all of them described the instance you just left. Stale is more misleading than absent.

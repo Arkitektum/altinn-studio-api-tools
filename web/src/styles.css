@@ -261,14 +261,15 @@ body {
 /*
  * The panel you are looking at.
  *
- * Neutral rather than accented, because the accent already means "the next thing to do" and a
- * position is not a thing to do. But neutral is not the same as faint: this was a hint of a
- * lighter background on the darkest strip in the tool, which is where it went unnoticed. A solid
- * chip, a brighter value and a rule under it read as a position without borrowing a meaning.
+ * Violet, which is the one hue that means nothing else in this strip. Grey was tried twice and
+ * read as a slightly lighter rectangle both times, and the accent was out of the question: it
+ * already means "the next thing to do", which a position is not. Violet is used categorically
+ * elsewhere, for subform data types and for attribute names in a code block, and as with those
+ * two the meanings never share a surface.
  */
 .chain__link--here {
-    background: var(--border);
-    box-shadow: inset 0 -2px 0 var(--text-faint);
+    background: var(--violet-border);
+    box-shadow: inset 0 -2px 0 var(--violet);
     border-radius: 3px;
 }
 

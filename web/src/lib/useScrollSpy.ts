@@ -21,15 +21,27 @@ export function useScrollSpy(anchors: string[], stripRef: RefObject<HTMLElement 
 
         const measure = (): void => {
             queued = false;
-            const offset = stripRef.current?.getBoundingClientRect().bottom ?? 0;
+            // Where a panel without a scroll margin of its own would have to reach.
+            const stripBottom = stripRef.current?.getBoundingClientRect().bottom ?? 0;
             const positions = key
                 .split(",")
                 .filter(Boolean)
                 .map((anchor) => ({ anchor, element: document.getElementById(anchor) }))
                 .filter((entry): entry is { anchor: string; element: HTMLElement } => entry.element !== null)
-                .map((entry) => ({ anchor: entry.anchor, top: entry.element.getBoundingClientRect().top }));
+                .map((entry) => {
+                    // The same number the browser uses when it scrolls this panel into view, so
+                    // the strip cannot disagree with where a click actually puts it.
+                    const margin = Number.parseFloat(window.getComputedStyle(entry.element).scrollMarginTop);
+                    return {
+                        anchor: entry.anchor,
+                        top: entry.element.getBoundingClientRect().top,
+                        reachedAt: Number.isFinite(margin) && margin > 0 ? margin : stripBottom
+                    };
+                });
 
-            const next = currentAnchor(positions, offset);
+            // Two pixels of tolerance, since a fractional viewport height never adds up exactly.
+            const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+            const next = currentAnchor(positions, atBottom);
             // Only on a change, or every frame of a scroll would be a render.
             setHere((current) => (current === next ? current : next));
         };
