@@ -1734,3 +1734,29 @@ a.btn {
     padding-top: 14px;
     border-top: 1px solid var(--border);
 }
+
+/* ------------------------------------------------------------------ crash */
+
+/*
+ * What is left when a render throws. Not a column of the deck, since there is no deck: one panel,
+ * held near the top where a reader starts rather than centred in a window of unknown height.
+ */
+.crash {
+    max-width: 620px;
+    margin: 48px auto;
+    padding: 0 16px;
+}
+
+.crash p {
+    margin: 12px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.crash__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}

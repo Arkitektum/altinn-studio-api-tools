@@ -41,6 +41,12 @@ Selecting another instance, or another party, clears the validation issues, the 
 
 Everything you chose survives a reload: org, app, party, the selected instance and the payload elements with their content all persist in `localStorage`. The destination is not among them, because it is not stored: a post follows the selection. Tokens do not. They live in server memory and are listed again when the page loads.
 
+## When the interface itself breaks
+
+A render that throws puts a single panel on screen with the message, rather than a blank page. The stack goes to the browser console, where it can be read and copied.
+
+The reason it is more than a message is the paragraph above: what you chose is restored from `localStorage`, so if one of those values is what the interface cannot draw, reloading lands in the same place. The panel offers to throw the saved work away as well as to reload, and asks twice before it does, since that is your payload. Nothing it clears is a credential, because no token is stored in the browser.
+
 ## Colour encodes rather than decorates
 
 - **HTTP methods**, so a long log can be scanned for the request that changed something. GET blue, POST green, PUT amber, DELETE red. The same colours appear in the "will call" URL previews and on the buttons, so a button, the preview of what it will call, and its entry in the log all read the same way.
