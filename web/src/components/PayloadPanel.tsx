@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { contentTypeOptions, preferredContentType } from "../lib/contentType";
 import { dataTypeKindOf, groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
 import { exampleOptionsFor } from "../lib/exampleOptions";
@@ -7,15 +7,21 @@ import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
 import { SavedPayloads } from "./SavedPayloads";
+import { elementsToAdd, requiredSummary } from "../lib/requiredData";
 import { loadingOverwrites } from "../lib/savedPayloads";
 import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup, SavedPayload } from "../types";
 
 interface PayloadPanelProps {
     dataElements: DataElementInput[];
-    onChange: (next: DataElementInput[]) => void;
+    /** Takes an updater as well as a list, since two elements can be filled in at once. */
+    onChange: Dispatch<SetStateAction<DataElementInput[]>>;
     /** The target, so a saved payload written for another app can say which. */
     org: string;
     app: string;
+    /** The task the selected instance sits in, for what that task requires. Null for a new one. */
+    currentTask: string | null;
+    /** Data types the selected instance already holds, which count towards those requirements. */
+    onInstance: string[];
     /** From applicationmetadata. Authoritative, but only available after probing. */
     dataTypes: AppDataType[];
     /** Drives the main form, sub form and attachment grouping. Null until the app is probed. */
@@ -65,6 +71,8 @@ export function PayloadPanel({
     onChange,
     org,
     app,
+    currentTask,
+    onInstance,
     dataTypes,
     metadata,
     suggestedDataTypes,
@@ -81,7 +89,7 @@ export function PayloadPanel({
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
 
     function update(index: number, patch: Partial<DataElementInput>) {
-        onChange(dataElements.map((element, i) => (i === index ? { ...element, ...patch } : element)));
+        onChange((current) => current.map((element, i) => (i === index ? { ...element, ...patch } : element)));
     }
 
     function noteFileError(index: number, message: string | null) {
@@ -141,7 +149,31 @@ export function PayloadPanel({
     }
 
     function setAllCollapsed(collapsed: boolean) {
-        onChange(dataElements.map((element) => ({ ...element, collapsed })));
+        onChange((current) => current.map((element) => ({ ...element, collapsed })));
+    }
+
+    /**
+     * What the app says this task cannot be completed without, and what of it is not here yet.
+     * Counted from applicationmetadata rather than guessed. See lib/requiredData.ts.
+     */
+    const { task, required, missing } = requiredSummary({
+        dataTypes,
+        metadata,
+        currentTask,
+        payload: dataElements.map((element) => element.dataType).filter(Boolean),
+        onInstance
+    });
+
+    /** Appends one element per element short, which the example picker then fills in on mount. */
+    function addMissing() {
+        const added = elementsToAdd(missing).map((dataType) => ({
+            dataType,
+            content: "",
+            contentType: preferredContentType(dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? [])
+        }));
+        // The list can be long by the time this is pressed, and what was just added is the part
+        // worth looking at, so what was already there folds.
+        onChange((current) => [...current.map((element) => ({ ...element, collapsed: true })), ...added]);
     }
 
     function add() {
@@ -152,11 +184,11 @@ export function PayloadPanel({
         const next = candidates.find((id) => !used.has(id));
         // Collapse what is already there, so the list stays short and the new element is the one
         // in front of you.
-        onChange([...dataElements.map((element) => ({ ...element, collapsed: true })), { dataType: next ?? "", content: "" }]);
+        onChange((current) => [...current.map((element) => ({ ...element, collapsed: true })), { dataType: next ?? "", content: "" }]);
     }
 
     function remove(index: number) {
-        onChange(dataElements.filter((_, i) => i !== index));
+        onChange((current) => current.filter((_, i) => i !== index));
     }
 
     function formatJson(index: number) {
@@ -449,6 +481,37 @@ export function PayloadPanel({
                     </div>
                 );
             })}
+
+            {/*
+             * What the app requires, from its own metadata: a data type bound to this task with a
+             * minCount, which `process/next` refuses while it is short. It says nothing about
+             * whether the xml inside a form is complete, which only the app's validation knows,
+             * so it never promises the instance will pass.
+             */}
+            {required.length > 0 && (
+                <div className={`notice ${missing.length > 0 ? "notice--warn" : ""}`} style={{ marginBottom: 12 }}>
+                    {missing.length === 0 ? (
+                        <>
+                            Every data element {task ? <strong>{task}</strong> : "this app"} requires is here. Whether what is in them passes the
+                            app's own validation is another question, and one only a post can answer.
+                        </>
+                    ) : (
+                        <div className="row" style={{ gap: 10, alignItems: "flex-start" }}>
+                            <span style={{ flex: 1 }}>
+                                {task ? <strong>{task}</strong> : "This app"} also needs{" "}
+                                {missing
+                                    .map((type) => `${type.missing} ${type.dataType}${type.missing > 1 ? " elements" : ""}`)
+                                    .join(", ")
+                                    .replace(/, ([^,]*)$/, " and $1")}
+                                . The app declares them with a minCount, so advancing the process fails while they are short.
+                            </span>
+                            <button type="button" className="btn btn--ghost" onClick={addMissing}>
+                                Add {elementsToAdd(missing).length === 1 ? "it" : "them"}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Ghost, since it is secondary to posting, but full height: it is an action of its
                 own rather than one of the inline ones on an element's bar. */}

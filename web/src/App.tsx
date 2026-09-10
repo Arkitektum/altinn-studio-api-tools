@@ -1172,6 +1172,8 @@ export function App() {
                                 onChange={setDataElements}
                                 org={org}
                                 app={app}
+                                currentTask={instanceProcess?.currentTask ?? null}
+                                onInstance={instanceDataElements.map((element) => element.dataType)}
                                 dataTypes={dataTypes}
                                 metadata={metadata?.metadata ?? null}
                                 suggestedDataTypes={suggestedDataTypes}

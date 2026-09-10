@@ -49,6 +49,21 @@ Apps that declare neither field fall back to grouping by app logic, where a sing
 
 Changing the data type clears the content and content type, since both belonged to the type you left, and the picker then loads the new type's first example.
 
+## What the app requires
+
+The app says what it cannot do without, and the panel says whether it is there. A data type in `applicationmetadata` carries a `minCount` and a `taskId`: completing that task needs at least that many data elements of the type, and `process/next` refuses while one is short. The tool already reads that metadata when it probes the app, so this costs no request.
+
+A line above **Add data element** names what is missing, `Task_1 also needs 1 GjennomfoeringsplanDataV7 and 2 vedlegg elements`, with a button that adds one element per element short. Each lands with its data type and content type filled in, and the example picker loads the first example for it the way it does for any new element, so a full payload is one click from an empty one.
+
+The counting is done in `lib/requiredData.ts`, and four things are worth knowing about it:
+
+- **The task decides the list.** A type bound to another task is not what this step is waiting for. With an instance selected the task is the one it sits in, so the list follows it through the process. Without one there is no instance to ask, and metadata never names the first task of a process, so the main form's own task stands in: a new instance starts where its form does.
+- **What the instance already holds counts.** Altinn counts data elements, and it makes no difference to the count whether this tool is about to post one or posted it an hour ago.
+- **What the app produces itself is left out**, the same list the picker hides. A receipt pdf the app writes at the end of the process is required and is not yours to add.
+- **An auto-created form data element counts, which is true and not the whole truth.** Altinn creates it with the instance, empty, so the count is met while the form is not filled in.
+
+Which is the honest limit of the whole thing: it counts data elements. Whether the xml inside one is complete is the model and the app's own validators talking, and nothing in the metadata knows it. That is what validation is for, so the line never promises the instance will pass, only that nothing it can count is missing.
+
 ## After upload
 
 One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
