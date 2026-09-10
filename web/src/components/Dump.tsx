@@ -1,51 +1,33 @@
-import { useState } from "react";
 import { CopyButton } from "./CopyButton";
 import { Painted, languageOf } from "./Code";
-import { Modal } from "./Modal";
 
 interface DumpProps {
-    /** "Request" or "Response". Also the title of the maximized window. */
+    /** "Request" or "Response". */
     label: string;
     text: string;
     /** Content type where one is known, so the language is not guessed from the first character. */
     contentType?: string | null;
-    /** Off inside a window that is already the full size, where maximizing means nothing. */
-    maximizable?: boolean;
 }
 
 /**
- * A request or response body: coloured, copyable, and openable in a window of its own.
+ * A request or response body, coloured, inside the window its step opens.
  *
- * The log column is not wide enough for a form's XML however wide it is made, so the body opens
- * over the tool at full size instead. Inside such a window it is already there, and says so by
- * not offering again.
+ * The copy sits in the body's own top right corner rather than on a row of its own. A row costs a
+ * button's height above every body, and what the window is for is the bodies. It stays put while
+ * the body scrolls under it, since it belongs to the block and not to the text.
  */
-export function Dump({ label, text, contentType, maximizable = true }: DumpProps) {
-    const [maximized, setMaximized] = useState(false);
-    const language = languageOf(text, contentType);
-
+export function Dump({ label, text, contentType }: DumpProps) {
     return (
         <>
-            <div className="dump__label">
-                {label}
-                <CopyButton label="Copy" text={text} />
-                {maximizable && (
-                    <button type="button" className="btn btn--ghost" onClick={() => setMaximized(true)}>
-                        Maximize
-                    </button>
-                )}
+            <div className="dump__label">{label}</div>
+            <div className="dump__body">
+                <pre className="dump">
+                    <Painted text={text} language={languageOf(text, contentType)} />
+                </pre>
+                <span className="dump__copy">
+                    <CopyButton label="Copy" text={text} />
+                </span>
             </div>
-            <pre className="dump">
-                <Painted text={text} language={language} />
-            </pre>
-
-            {maximized && (
-                <Modal title={label} aside={<CopyButton label="Copy" text={text} />} bodyClassName="modal__code" onClose={() => setMaximized(false)}>
-                    <pre className="dump dump--full">
-                        <Painted text={text} language={language} />
-                    </pre>
-                </Modal>
-            )}
         </>
     );
 }

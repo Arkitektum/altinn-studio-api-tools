@@ -210,10 +210,21 @@ function StepWindow({ step, onClose }: { step: RunStep; onClose: () => void }) {
     return (
         <Modal
             title={step.name}
+            // The status and the timing belong with the title rather than on a row of their own:
+            // what the window is for is the url and the bodies, and they may as well start at the
+            // top of it.
             aside={
-                step.url !== "-" ? (
-                    <CopyButton label="Copy curl" title="The request as a curl command, with the token left as $TOKEN" text={() => toCurl(step)} />
-                ) : undefined
+                <span className="row" style={{ gap: 8 }}>
+                    {step.status !== null && <span className={`step__status step__status--${statusTone(step.status)}`}>{step.status}</span>}
+                    <span className="step__status">{step.durationMs} ms</span>
+                    {step.url !== "-" && (
+                        <CopyButton
+                            label="Copy curl"
+                            title="The request as a curl command, with the token left as $TOKEN"
+                            text={() => toCurl(step)}
+                        />
+                    )}
+                </span>
             }
             bodyClassName="modal__stack"
             onClose={onClose}
@@ -225,23 +236,25 @@ function StepWindow({ step, onClose }: { step: RunStep; onClose: () => void }) {
                 </p>
             )}
 
-            <p className="field__hint">
-                {step.status !== null && <span className={`step__status step__status--${statusTone(step.status)}`}>{step.status}</span>}{" "}
-                {step.durationMs} ms
-                {step.requestVerbatim === false ? " · the request body is a summary, not what was sent" : ""}
-            </p>
-
             {step.error && <div className="notice notice--bad">{step.error}</div>}
 
             {step.requestPreview !== undefined && (
-                // The request went out as it is written, so its own content type names the
-                // language. A multipart body says multipart, and is left uncoloured.
-                <Dump label="Request" text={step.requestPreview} contentType={step.requestHeaders?.["content-type"]} maximizable={false} />
+                <>
+                    {/* Said here rather than in the header, since it is about this body and only
+                        two kinds of step have one: a base64 upload and a multipart instantiation. */}
+                    {step.requestVerbatim === false && (
+                        <p className="field__hint">A summary of what was sent, not the bytes themselves, so it cannot be replayed as written.</p>
+                    )}
+                    {/* The request went out as it is written, so its own content type names the
+                        language. A multipart body says multipart, and is left uncoloured. */}
+                    <Dump label="Request" text={step.requestPreview} contentType={step.requestHeaders?.["content-type"]} />
+                </>
             )}
+
             {step.response !== undefined && step.response !== null && (
                 // Always json by the time it is here: the api hands back parsed bodies, and an xml
                 // one arrives as a string inside them.
-                <Dump label="Response" text={prettyJson(step.response)} contentType="application/json" maximizable={false} />
+                <Dump label="Response" text={prettyJson(step.response)} contentType="application/json" />
             )}
 
             {step.requestPreview === undefined && step.response === undefined && (

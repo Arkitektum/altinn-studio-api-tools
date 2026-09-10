@@ -33,7 +33,7 @@ A post and the read and validation that follow it share one entry, because they 
 
 ## Bodies
 
-A step is one target: click the block anywhere and the request opens in a window over the tool, with the url at the top, the status and timing under it, and both bodies below that, coloured the same way the payload editor is. A step that made no request and carries no body is not clickable, and says so by not lighting up.
+A step is one target: click the block anywhere and the request opens in a window over the tool. The status and the timing sit with the title, so the body of the window starts with the url and gets to the bodies in a line or two, coloured the same way the payload editor is. Each body scrolls inside itself rather than the window scrolling as one, so the url stays where it was put, and each carries its **Copy** in its own top right corner rather than on a row above it, which would cost a button's height over every one of them. The copy is pinned there, clear of the body's own scrollbar, while the text moves under it. A step that made no request and carries no body is not clickable, and says so by not lighting up.
 
 The block itself carries no controls. It used to have two, a fold for the bodies and a copy for the curl, which put buttons inside a row that is already a fold inside a fold, and left the bodies to be read in a column too narrow for them. The log column takes 640px, or 42% of the window where that is more, which is still not enough for a form's XML, and widening it for the one case that needs it would cost the working column the rest of the time. The window is that width instead.
 

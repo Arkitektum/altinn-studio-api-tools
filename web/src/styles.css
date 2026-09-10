@@ -1336,13 +1336,6 @@ textarea {
 }
 
 /* Maximized: as tall as the window, since that is the point of maximizing it. */
-.dump--full {
-    max-height: none;
-    height: 100%;
-    margin: 0;
-    font-size: 12px;
-}
-
 .dump__label {
     display: flex;
     align-items: center;
@@ -1350,6 +1343,29 @@ textarea {
     margin-top: 8px;
     font-size: 11.5px;
     color: var(--text-faint);
+}
+
+/* Holds the copy in the corner of the body rather than on a row above it. */
+.dump__body {
+    position: relative;
+    min-height: 0;
+}
+
+/*
+ * Over the body's top right corner, on the body's own background so the code does not read
+ * through it. Outside the `pre`, so it stays there while the text scrolls under it.
+ */
+.dump__copy {
+    position: absolute;
+    top: 5px;
+    /*
+     * Clear of the body's own scrollbar, which is inside its right edge. A classic one is about
+     * 15px, so this sits beside it rather than over the top of the thumb; where scrollbars overlay,
+     * as on macOS, it is simply inset a little.
+     */
+    right: 18px;
+    background: var(--bg-inset);
+    border-radius: 4px;
 }
 
 .verdict {
@@ -1629,16 +1645,37 @@ a.btn {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     min-height: 0;
-    padding: 12px;
+    padding: 10px 12px 12px;
     overflow-y: auto;
 }
 
-/* Each body is as long as it is: the window scrolls, rather than three boxes scrolling inside it. */
+/*
+ * The label is a line above its body rather than a row of its own with space around it. What is
+ * above the first body is the window's padding, the url and this, and nothing else.
+ */
+.modal__stack .dump__label {
+    margin-top: 0;
+}
+
+/*
+ * Each body takes a share of what the window has left and scrolls inside itself, rather than the
+ * window scrolling as one. Two things follow from that, both of them the point: the url stays at
+ * the top where it was put, and the copy stays in the body's corner while the body moves under it.
+ */
+.modal__stack .dump__body {
+    flex: 1;
+    /* Enough to be worth scrolling in, and it will not be squeezed below this. */
+    min-height: 140px;
+}
+
 .modal__stack .dump {
+    height: 100%;
     max-height: none;
     margin: 0;
+    /* The gutter is there whether or not it scrolls, so the copy sits in the same place either way. */
+    scrollbar-gutter: stable;
 }
 
 .detail__url {
