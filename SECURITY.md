@@ -56,7 +56,7 @@ That is a decision rather than a default. Anyone who can reach port 4000 can use
 
 ## Destructive operations
 
-The tool can delete instances. Soft delete marks an instance deleted and leaves it in storage; **hard delete removes it and cannot be undone**, which is why it is a checkbox you tick rather than the default reading of an absent parameter, and why delete asks twice with the instance named in the confirmation.
+The tool can delete instances, and it deletes them outright: **the instance is removed and it cannot be undone**. Soft deletion, which marks an instance and leaves it in storage, was a checkbox once and is now only on the api. What made the choice pointless is what the tool can reach, which is local test data on your own machine, and what soft deletion left behind, which is a row the completed listing keeps finding. Delete asks twice, with the instance named in the confirmation.
 
 Advancing a process is not reversible either. It submits the current task.
 

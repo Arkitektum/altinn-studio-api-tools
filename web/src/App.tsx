@@ -919,7 +919,12 @@ export function App() {
         }
     }
 
-    async function removeInstance(instance: InstanceSummary, hard: boolean) {
+    /**
+     * Removes an instance outright. Soft deletion is still on the api, which the docs cover, but
+     * not offered here: everything this tool can reach is local test data, and a soft delete left
+     * the instance in storage where the completed listing would keep finding it.
+     */
+    async function removeInstance(instance: InstanceSummary) {
         if (!activeTokenId) return;
         setListing(true);
         setListError(null);
@@ -930,7 +935,7 @@ export function App() {
                 app,
                 instanceOwnerPartyId: instance.instanceOwnerPartyId,
                 instanceGuid: instance.instanceGuid,
-                hard: hard ? "true" : "false"
+                hard: "true"
             });
             appendLog(logFromDelete(result));
             if (!result.ok) return;
@@ -1148,7 +1153,7 @@ export function App() {
                             instanceGuid={instanceGuid}
                             onSelect={selectInstance}
                             onSelectTyped={selectTypedInstance}
-                            onDelete={(instance, hard) => void removeInstance(instance, hard)}
+                            onDelete={(instance) => void removeInstance(instance)}
                             onRefresh={refreshInstances}
                             includeCompleted={includeCompleted}
                             onIncludeCompletedChange={changeIncludeCompleted}

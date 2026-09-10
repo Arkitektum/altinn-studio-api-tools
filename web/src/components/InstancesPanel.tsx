@@ -24,7 +24,8 @@ interface InstancesPanelProps {
     onSelect: (instance: InstanceSummary | null) => void;
     /** A guid typed or pasted, for an instance the active list does not hold. */
     onSelectTyped: (value: string) => void;
-    onDelete: (instance: InstanceSummary, hard: boolean) => void;
+    /** Always a hard delete: this is local test data, and a soft one left the row in storage. */
+    onDelete: (instance: InstanceSummary) => void;
     onRefresh: () => void;
     /** Whether the listing also asks storage for the ones the app's active list leaves out. */
     includeCompleted: boolean;
@@ -58,7 +59,6 @@ export function InstancesPanel({
     const [confirming, setConfirming] = useState<string | null>(null);
     /** Whether the guid field is showing, for an instance the list does not hold. */
     const [typing, setTyping] = useState(false);
-    const [hard, setHard] = useState(false);
 
     // A list that changed under a pending confirmation is not the list it was armed against.
     useEffect(() => {
@@ -114,7 +114,26 @@ export function InstancesPanel({
         >
             <p className="field__hint" style={{ marginBottom: 10 }}>
                 What you post to. Pick <strong>New instance</strong> and posting creates one, or pick an instance and posting adds data to that one.
+                Delete removes an instance outright, and asks twice first.
             </p>
+
+            {/* Above the list, since what it decides is what the list holds. */}
+            <label className="check" style={{ marginBottom: 12 }}>
+                <input
+                    type="checkbox"
+                    checked={includeCompleted}
+                    onChange={(event) => onIncludeCompletedChange(event.target.checked)}
+                    disabled={busy}
+                />
+                <span className="check__body">
+                    <span className="check__title">Include completed</span>
+                    <span className="check__note">
+                        A second read, of <span className="method method--get">GET</span> {localtestUrl}
+                        /storage/api/v1/instances, which is the only place an instance whose process has ended is still listed. Soft deleted ones come
+                        with it, marked as such. Off by default, since it is a request that often has nothing to add.
+                    </span>
+                </span>
+            </label>
 
             <div className="picklist">
                 {/* The instance that does not exist yet. Selected means the post will create it. */}
@@ -165,13 +184,8 @@ export function InstancesPanel({
 
                             {armed ? (
                                 <>
-                                    <button
-                                        type="button"
-                                        className="btn btn--delete btn--armed"
-                                        onClick={() => onDelete(instance, hard)}
-                                        disabled={busy}
-                                    >
-                                        Confirm {hard ? "hard" : "soft"} delete
+                                    <button type="button" className="btn btn--delete btn--armed" onClick={() => onDelete(instance)} disabled={busy}>
+                                        Confirm delete
                                     </button>
                                     <button type="button" className="btn btn--ghost" onClick={() => setConfirming(null)}>
                                         Cancel
@@ -257,36 +271,6 @@ export function InstancesPanel({
                 <br />
                 Listed on its own for the party in Target. Altinn returns the instances whose process has not ended, so an archived one is not here.
             </p>
-
-            <label className="check" style={{ marginTop: 12 }}>
-                <input
-                    type="checkbox"
-                    checked={includeCompleted}
-                    onChange={(event) => onIncludeCompletedChange(event.target.checked)}
-                    disabled={busy}
-                />
-                <span className="check__body">
-                    <span className="check__title">Include completed</span>
-                    <span className="check__note">
-                        A second read, of <span className="method method--get">GET</span> {localtestUrl}
-                        /storage/api/v1/instances, which is the only place an instance whose process has ended is still listed. Soft deleted ones come
-                        with it, marked as such. Off by default, since it is a request that often has nothing to add.
-                    </span>
-                </span>
-            </label>
-
-            {instances !== null && instances.length > 0 && (
-                <label className="check" style={{ marginTop: 12 }}>
-                    <input type="checkbox" checked={hard} onChange={(event) => setHard(event.target.checked)} disabled={busy} />
-                    <span className="check__body">
-                        <span className="check__title">Hard delete</span>
-                        <span className="check__note">
-                            Off marks the instance deleted and takes it out of this list, leaving it in storage. On removes it outright, which cannot
-                            be undone. Either way delete asks twice.
-                        </span>
-                    </span>
-                </label>
-            )}
 
             {error ? (
                 <div style={{ marginTop: 12 }}>
