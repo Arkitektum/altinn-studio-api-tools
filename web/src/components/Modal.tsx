@@ -2,6 +2,8 @@ import { useEffect, useRef, type ReactNode } from "react";
 
 interface ModalProps {
     title: string;
+    /** A modifier on the window itself, for one that holds a form rather than a document. */
+    className?: string;
     /** Between the title and Close: a size, a time, a copy button. */
     aside?: ReactNode;
     /** Called once the dialog has closed, however it was closed. */
@@ -18,7 +20,7 @@ interface ModalProps {
  * keeping focus inside all come from the browser. One implementation, so the pdf preview and a
  * maximized code block behave the same way.
  */
-export function Modal({ title, aside, onClose, bodyClassName, children }: ModalProps) {
+export function Modal({ title, className, aside, onClose, bodyClassName, children }: ModalProps) {
     const dialog = useRef<HTMLDialogElement>(null);
 
     useEffect(() => {
@@ -28,7 +30,7 @@ export function Modal({ title, aside, onClose, bodyClassName, children }: ModalP
     return (
         <dialog
             ref={dialog}
-            className="modal"
+            className={`modal${className ? ` ${className}` : ""}`}
             // Escape and the close button both end up here, so whatever the caller holds is
             // released exactly once.
             onClose={onClose}

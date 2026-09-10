@@ -55,7 +55,9 @@ One checkbox, **Sign and submit once it is posted**, which calls `PUT .../proces
 
 ## Saved payloads
 
-The whole list of elements, under a name, for later. A run of a form and three subforms takes a few clicks to put together, and a payload you post twice a week is worth keeping.
+**Open** and **Save** in the panel header, each opening a window over the tool. A run of a form and three subforms takes a few clicks to put together, and a payload you post twice a week is worth keeping.
+
+They are two buttons rather than a section of the panel because neither is part of a payload: one is what you do before writing one, the other after finishing it. Windows rather than a fold, because opening a saved payload replaces every element in the panel behind it, and a list you are about to do that with deserves the foreground while you pick from it. **Open** counts what it holds and is disabled with nothing in it.
 
 **What is kept depends on where the content came from.** An element still holding an unedited example is kept as a reference to that file, `{kind, group, name}`, and nothing else. Loading the payload reads the file as it stands then, so a payload saved today posts the corrected example tomorrow. That is the common case here: the examples are the shipped test data, and a saved payload is usually a combination of them rather than a document of its own.
 
@@ -63,8 +65,8 @@ An element you have edited, typed, or picked off disk has no file to point at, s
 
 The file is authoritative for everything it knows about itself when the payload is loaded, its content type included. An example retyped from `text/xml` to `application/xml` since it was saved comes back as what it is now, which is the point of keeping a reference rather than a copy.
 
-**An example that has gone** leaves its element behind, with its data type and no content, and the load says which files it could not find. A payload quietly one element short would post quietly too. The example picker leaves that gap alone rather than filling it with the data type's first file, since the gap is what the payload said.
+**An example that has gone** leaves its element behind, with its data type and no content, and the load says which files it could not find, in the panel rather than in the window it just closed. A payload quietly one element short would post quietly too. The example picker leaves that gap alone rather than filling it with the data type's first file, since the gap is what the payload said.
 
-Saving under a name that is already taken replaces it, and the button reads **Replace** rather than **Save** while it would. Loading over a payload that has content in it asks first, since that content is about to go. Deleting asks twice, like everything else that cannot be undone.
+Saving under a name that is already taken replaces it, and the button in the save window reads **Replace** rather than **Save** while it would. Loading over a payload that has content in it asks first, in the row itself, since that content is about to go. Deleting asks twice, like everything else that cannot be undone. Both windows are the same `<dialog>` the pdf preview uses, so Escape, the backdrop and the focus trap are the browser's.
 
 They are kept in `localStorage`, in this browser, and go no further. A payload holding a file picked off disk keeps that file's bytes, which is the one way to fill the browser's storage quota from here: the save says so rather than failing quietly. Everything else in here is a reference or a document, and neither is large.

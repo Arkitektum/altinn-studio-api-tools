@@ -1765,3 +1765,28 @@ a.btn {
     gap: 8px;
     margin-top: 18px;
 }
+
+/* ------------------------------------------------------------------ saved payloads */
+
+/*
+ * A window holding a form or a short list, as tall as it needs rather than as tall as a document.
+ *
+ * `fit-content` rather than `auto`, which is what the browser gives a dialog for good reason: the
+ * top layer places it with `inset: 0`, and an absolutely positioned box with `height: auto` and
+ * both edges pinned fills the space between them. It stretched to the full 80vh with three rows
+ * in it.
+ */
+.modal--form {
+    width: min(620px, 92vw);
+    height: fit-content;
+    max-height: 80vh;
+}
+
+.modal__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+}

@@ -6,7 +6,8 @@ import { readPickedFile } from "../lib/fileUpload";
 import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
-import { loadingOverwrites, payloadNamed } from "../lib/savedPayloads";
+import { SavedPayloads } from "./SavedPayloads";
+import { loadingOverwrites } from "../lib/savedPayloads";
 import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup, SavedPayload } from "../types";
 
 interface PayloadPanelProps {
@@ -78,9 +79,6 @@ export function PayloadPanel({
 }: PayloadPanelProps) {
     /** Per element, since one element failing to read says nothing about the others. */
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
-    /** The name being typed for a save, and which saved payload is armed for loading or deleting. */
-    const [saveName, setSaveName] = useState("");
-    const [confirming, setConfirming] = useState<{ id: string; action: "load" | "delete" } | null>(null);
 
     function update(index: number, patch: Partial<DataElementInput>) {
         onChange(dataElements.map((element, i) => (i === index ? { ...element, ...patch } : element)));
@@ -172,13 +170,23 @@ export function PayloadPanel({
     }
 
     const allCollapsed = dataElements.length > 0 && dataElements.every((element) => element.collapsed);
-    const replacing = payloadNamed(savedPayloads, saveName);
 
     return (
         <Panel
             title="Payload"
             aside={
                 <span className="row" style={{ gap: 6 }}>
+                    {/* The payload as a whole, which is what these two act on. */}
+                    <SavedPayloads
+                        payloads={savedPayloads}
+                        org={org}
+                        app={app}
+                        overwrites={loadingOverwrites(dataElements)}
+                        canSave={dataElements.length > 0}
+                        onSave={onSavePayload}
+                        onLoad={onLoadPayload}
+                        onDelete={onDeletePayload}
+                    />
                     {dataElements.length > 1 && (
                         <button type="button" className="btn btn--ghost" onClick={() => setAllCollapsed(!allCollapsed)}>
                             {allCollapsed ? "Expand all" : "Collapse all"}
@@ -188,6 +196,13 @@ export function PayloadPanel({
                 </span>
             }
         >
+            {/* What the last load had to say, above the list it loaded. */}
+            {loadNotice && (
+                <div className="notice notice--warn" style={{ marginBottom: 14 }}>
+                    {loadNotice}
+                </div>
+            )}
+
             {dataElements.map((element, index) => {
                 const known = dataTypes.find((type) => type.id === element.dataType);
                 // Main form, subform and attachment each get their own badge colour.
@@ -462,106 +477,6 @@ export function PayloadPanel({
                         </span>
                     </span>
                 </label>
-            </div>
-
-            <div className="apart">
-                <span className="legend">Saved payloads</span>
-
-                <p className="field__hint" style={{ marginBottom: 10 }}>
-                    The whole list above, under a name, for later. Clicking one loads it, over what is in the list. An element still holding an
-                    unedited example is kept as a reference to that file, so a payload saved today loads the corrected file tomorrow. An element you
-                    have edited, typed or picked off disk has no file to point at, so its text is kept instead.
-                </p>
-
-                <div className="row">
-                    <input
-                        type="text"
-                        value={saveName}
-                        onChange={(event) => setSaveName(event.target.value)}
-                        placeholder="Name it"
-                        aria-label="Name for the saved payload"
-                        style={{ flex: 1 }}
-                    />
-                    <button
-                        type="button"
-                        className={`btn ${replacing ? "btn--armed btn--delete" : "btn--ghost"}`}
-                        onClick={() => {
-                            onSavePayload(saveName);
-                            setSaveName("");
-                        }}
-                        disabled={!saveName.trim() || dataElements.length === 0}
-                        // Saving over a name is the one destructive thing here, so it says so
-                        // rather than asking: the payload it replaces is one click from being
-                        // saved again under another name.
-                        title={replacing ? `Replaces the payload saved as "${replacing.name}"` : undefined}
-                    >
-                        {replacing ? "Replace" : "Save"}
-                    </button>
-                </div>
-
-                {loadNotice && (
-                    <div className="notice notice--warn" style={{ marginTop: 10 }}>
-                        {loadNotice}
-                    </div>
-                )}
-
-                {savedPayloads.length === 0 ? (
-                    <p className="field__hint" style={{ marginTop: 10 }}>
-                        Nothing saved yet. They are kept in this browser, so they survive a reload and go no further.
-                    </p>
-                ) : (
-                    <div className="picklist" style={{ marginTop: 10 }}>
-                        {savedPayloads.map((payload) => {
-                            const armed = confirming?.id === payload.id;
-                            const elsewhere = payload.org !== org || payload.app !== app;
-                            return (
-                                <div key={payload.id} style={{ display: "flex", gap: 6 }}>
-                                    <button
-                                        type="button"
-                                        className="picklist__item"
-                                        style={{ flex: 1 }}
-                                        onClick={() => {
-                                            // Loading throws away whatever is in the list, so it
-                                            // asks first, and only when there is something to lose.
-                                            if (loadingOverwrites(dataElements) && confirming?.action !== "load") {
-                                                setConfirming({ id: payload.id, action: "load" });
-                                                return;
-                                            }
-                                            setConfirming(null);
-                                            onLoadPayload(payload);
-                                        }}
-                                        title={`${payload.elements.length} element(s), saved for ${payload.org}/${payload.app}`}
-                                    >
-                                        <span className="led led--ok" aria-hidden="true" />
-                                        <span>
-                                            {armed && confirming?.action === "load" ? `Replace the payload with "${payload.name}"?` : payload.name}
-                                            {" · "}
-                                            {payload.elements.length} element(s)
-                                            {elsewhere ? ` · for ${payload.org}/${payload.app}` : ""}
-                                            {" · "}
-                                            {new Date(payload.savedAt).toLocaleString("nb")}
-                                        </span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`btn btn--delete${armed && confirming?.action === "delete" ? " btn--armed" : ""}`}
-                                        onClick={() => {
-                                            if (!armed || confirming?.action !== "delete") {
-                                                setConfirming({ id: payload.id, action: "delete" });
-                                                return;
-                                            }
-                                            setConfirming(null);
-                                            onDeletePayload(payload.id);
-                                        }}
-                                        aria-label={`Delete saved payload ${payload.name}`}
-                                    >
-                                        {armed && confirming?.action === "delete" ? "Confirm" : "Delete"}
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
             </div>
         </Panel>
     );
