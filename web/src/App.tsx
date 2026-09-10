@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
@@ -16,6 +16,7 @@ import {
     logFromRun,
     logFromValidation
 } from "./lib/logResults";
+import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
@@ -130,6 +131,28 @@ export function App() {
     // Kept apart from fetchError so a refused move is reported in the process panel, not in Fetch.
     const [processError, setProcessError] = useState<unknown>(null);
 
+    const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
+
+    /**
+     * What every request is aimed at, one key per scope. Nothing here cancels a request, so a call
+     * can answer after the selection it described has moved. Tagging the request with the key it
+     * was aimed at is what lets a late answer be dropped rather than written over the newer one.
+     */
+    const keys = useMemo(() => selectionKeys(selection), [activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid]);
+
+    /**
+     * The same selection through a ref, because a callback closes over the render that started it,
+     * and that is the value being tested. Kept in step on every render, and by hand where a flow
+     * moves the selection and reads it back without a render in between.
+     */
+    const aim = useRef(selection);
+    useEffect(() => {
+        aim.current = selection;
+    });
+
+    /** Whether the selection has moved on from what a request was aimed at. */
+    const movedOn = useCallback((requested: string, scope: keyof SelectionKeys) => hasMovedOn(requested, aim.current, scope), []);
+
     const HISTORY_LIMIT = 25;
     const appendLog = useCallback((result: LogResult) => {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -138,6 +161,10 @@ export function App() {
 
         const validation = result.validation;
         if (!validation) return;
+        // A validation view belongs to exactly one instance, so folding in one that answered
+        // after another instance was selected would replace the issues on screen with the ones
+        // you just left. The request itself keeps its place in the log either way.
+        if (validation.instanceGuid !== aim.current.instanceGuid) return;
         setValidations((current) => upsertValidation(current, validation, at, id));
     }, []);
 
@@ -313,11 +340,10 @@ export function App() {
      */
     useEffect(() => {
         if (!tokenUsable || !activeTokenId || !org || !app || !instanceOwnerPartyId || !instanceGuid) return;
-        const key = `${activeTokenId}:${org}/${app}:${instanceOwnerPartyId}/${instanceGuid}`;
-        if (readAttempted === key) return;
+        if (readAttempted === keys.instance) return;
 
         const timer = window.setTimeout(() => {
-            setReadAttempted(key);
+            setReadAttempted(keys.instance);
             void readSelected(instanceOwnerPartyId, instanceGuid);
         }, 500);
         return () => window.clearTimeout(timer);
@@ -333,11 +359,10 @@ export function App() {
      */
     useEffect(() => {
         if (!tokenUsable || !activeTokenId || !org || !app || !instanceOwnerPartyId) return;
-        const key = `${activeTokenId}:${org}/${app}:${instanceOwnerPartyId}`;
-        if (listAttempted === key) return;
+        if (listAttempted === keys.party) return;
 
         const timer = window.setTimeout(() => {
-            setListAttempted(key);
+            setListAttempted(keys.party);
             void listInstances();
         }, 500);
         return () => window.clearTimeout(timer);
@@ -355,11 +380,10 @@ export function App() {
     const [probeAttempted, setProbeAttempted] = useState<string | null>(null);
     useEffect(() => {
         if (!tokenUsable || !activeTokenId || !org || !app) return;
-        const key = `${activeTokenId}:${org}/${app}`;
-        if (probeAttempted === key) return;
+        if (probeAttempted === keys.target) return;
 
         const timer = window.setTimeout(() => {
-            setProbeAttempted(key);
+            setProbeAttempted(keys.target);
             // Not in the dependencies on purpose: probe is rebuilt every render, and listing it
             // would make this effect fire in a loop.
             void probe();
@@ -369,18 +393,25 @@ export function App() {
 
     async function probe() {
         if (!activeTokenId) return;
+        // Two probes are in flight whenever the target moves during one, and the older can answer
+        // last. Metadata for the app you have left would then sit under the app you are on.
+        const requested = keys.target;
         setProbing(true);
         setProbeError(null);
         const params = { tokenId: activeTokenId, org, app };
         try {
             const meta = await api.getAppMetadata(params);
+            if (movedOn(requested, "target")) return;
             setMetadata(meta);
             // Parties are a bonus: not every token is allowed to list them.
+            let partyList: AppParty[] = [];
             try {
-                setParties(await api.getAppParties(params));
+                partyList = await api.getAppParties(params);
             } catch {
-                setParties([]);
+                /* none, which is what the picker falls back to */
             }
+            if (movedOn(requested, "target")) return;
+            setParties(partyList);
             const types = meta.metadata.dataTypes ?? [];
 
             // Preselect the app's form data type if no type has been chosen yet.
@@ -402,8 +433,11 @@ export function App() {
                 setDataElements(next);
             }
         } catch (error) {
+            if (movedOn(requested, "target")) return;
             setProbeError(error);
         } finally {
+            // Unguarded: a newer probe sets this again on its way out, and a stuck spinner is
+            // worse than one that stops a moment early.
             setProbing(false);
         }
     }
@@ -442,7 +476,10 @@ export function App() {
             /* same */
         }
 
-        if (instance?.ok) {
+        // The post pointed the tool at this instance, so it is the selected one unless another was
+        // picked while the follow-up was in flight.
+        const requested = selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: guid }).instance;
+        if (instance?.ok && !movedOn(requested, "instance")) {
             setInstanceDataElements(instance.dataElements);
             changeDataGuid(instance.dataElements[0]?.id ?? "");
             setInstanceProcess(instance.process);
@@ -477,8 +514,13 @@ export function App() {
             // Chain naturally into "now post more data to that instance". The follow-up below
             // reads and validates it, so mark it read: the effect would otherwise do it twice.
             if (payload.instanceGuid) {
+                const party = payload.instanceOwnerPartyId ?? instanceOwnerPartyId;
                 setInstanceGuid(payload.instanceGuid);
-                setReadAttempted(`${activeTokenId}:${org}/${app}:${payload.instanceOwnerPartyId ?? instanceOwnerPartyId}/${payload.instanceGuid}`);
+                // By hand as well as through the render, because the follow-up reads and validates
+                // the new instance before React has re-rendered. Left to the effect, those answers
+                // would be checked against the instance this post replaced and thrown away.
+                aim.current = { ...aim.current, party, instanceGuid: payload.instanceGuid };
+                setReadAttempted(selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: payload.instanceGuid }).instance);
             }
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
@@ -493,15 +535,20 @@ export function App() {
 
     async function listInstances() {
         if (!activeTokenId || !org || !app || !instanceOwnerPartyId) return;
+        const requested = keys.party;
         setListing(true);
         setListError(null);
         try {
             const result = await api.listInstances({ tokenId: activeTokenId, org, app, instanceOwnerPartyId });
+            // The request happened, so it keeps its place in the log whatever is selected by now.
+            // The listing itself is another party's the moment the party moves.
             appendLog(logFromInstances(result));
+            if (movedOn(requested, "party")) return;
             // A failed listing stays null rather than empty, since "none" would be a claim we
             // cannot make when the request never answered.
             setInstanceList(result.ok ? result.instances : null);
         } catch (error) {
+            if (movedOn(requested, "party")) return;
             setListError(error);
         } finally {
             setListing(false);
@@ -516,7 +563,7 @@ export function App() {
      */
     function refreshInstances() {
         if (!activeTokenId) return;
-        setListAttempted(`${activeTokenId}:${org}/${app}:${instanceOwnerPartyId}`);
+        setListAttempted(keys.party);
         void listInstances();
     }
 
@@ -526,19 +573,29 @@ export function App() {
      */
     async function readSelected(party: string, guid: string) {
         if (!activeTokenId || !org || !app || !party || !guid) return;
+        // Aimed at the instance this was called for rather than the one selected now, since a post
+        // reads back the instance it just made.
+        const requested = selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: guid }).instance;
         setFetching(true);
         setFetchError(null);
         const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId: party, instanceGuid: guid };
         try {
             const read = await api.getInstance(params);
-            setInstanceDataElements(read.dataElements);
-            setInstanceProcess(read.process);
-            // Preselect one so reading a data element is a single click.
-            if (read.dataElements.length > 0) changeDataGuid(read.dataElements[0]?.id ?? "");
+            // Another instance can be selected while this is in flight. Its data elements would
+            // then be listed under the new instance's guid, and reading one would ask the new
+            // instance for an element that belongs to the old.
+            const stale = movedOn(requested, "instance");
+            if (!stale) {
+                setInstanceDataElements(read.dataElements);
+                setInstanceProcess(read.process);
+                // Preselect one so reading a data element is a single click.
+                if (read.dataElements.length > 0) changeDataGuid(read.dataElements[0]?.id ?? "");
+            }
 
-            // Validating an instance that could not be read would just fail the same way.
+            // Validating an instance that could not be read would just fail the same way, and one
+            // the tool has already left is not worth the request.
             let validated: ValidateResult | null = null;
-            if (read.ok) {
+            if (read.ok && !stale) {
                 try {
                     validated = await api.validateInstance(params);
                 } catch {
@@ -547,6 +604,7 @@ export function App() {
             }
             appendLog(logFromRead(read, validated));
         } catch (error) {
+            if (movedOn(requested, "instance")) return;
             setFetchError(error);
         } finally {
             setFetching(false);
@@ -555,6 +613,7 @@ export function App() {
 
     async function getDataElement() {
         if (!activeTokenId || !dataGuid) return;
+        const requested = keys.dataElement;
         setFetching(true);
         setFetchError(null);
         try {
@@ -567,6 +626,8 @@ export function App() {
                 dataGuid
             });
             appendLog(logFromDataElement(read));
+            // What is held is what is selected, so an answer about another element is not it.
+            if (movedOn(requested, "dataElement")) return;
 
             // Held so it can be saved as a file. A failed read clears it rather than leaving the
             // previous element looking like the one you just asked for.
@@ -589,6 +650,7 @@ export function App() {
                     : null
             );
         } catch (error) {
+            if (movedOn(requested, "dataElement")) return;
             setFetchError(error);
         } finally {
             setFetching(false);
@@ -605,6 +667,7 @@ export function App() {
         const left = payloadForSelected?.content ?? "";
         if (!left.trim()) return;
 
+        const requested = keys.dataElement;
         setComparing(true);
         setCompareError(null);
         try {
@@ -619,8 +682,11 @@ export function App() {
                 left
             });
             appendLog(logFromCompare(result));
+            // A comparison is about one data element, and the panel names the selected one.
+            if (movedOn(requested, "dataElement")) return;
             setCompareResult(result);
         } catch (error) {
+            if (movedOn(requested, "dataElement")) return;
             setCompareError(error);
         } finally {
             setComparing(false);
@@ -635,11 +701,14 @@ export function App() {
 
     async function renderPdf() {
         if (!activeTokenId) return;
+        const requested = keys.instance;
         setFetching(true);
         setFetchError(null);
         try {
             const result = await api.previewPdf({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
             appendLog(logFromPdf(result, result.size));
+            // A pdf of the instance you have left must not open as though it were this one.
+            if (movedOn(requested, "instance")) return;
             if (!result.ok || !result.content) {
                 // A failed render must not leave the previous pdf on screen looking current.
                 clearPdf();
@@ -652,6 +721,7 @@ export function App() {
                 at: new Date().toLocaleTimeString("nb")
             });
         } catch (error) {
+            if (movedOn(requested, "instance")) return;
             setFetchError(error);
         } finally {
             setFetching(false);
@@ -689,6 +759,7 @@ export function App() {
 
     async function advance() {
         if (!activeTokenId) return;
+        const requested = keys.instance;
         setFetching(true);
         setProcessError(null);
         try {
@@ -714,6 +785,9 @@ export function App() {
                 }
             }
             appendLog(logFromAdvance(result, read));
+            // Both of the below describe the instance that was advanced, not whichever is selected
+            // by the time the move came back.
+            if (movedOn(requested, "instance")) return;
 
             if (read?.ok) {
                 setInstanceDataElements(read.dataElements);
@@ -729,6 +803,7 @@ export function App() {
             const moved = read?.ok ? read.process : result.ok ? result.process : null;
             if (moved) setInstanceProcess(moved);
         } catch (error) {
+            if (movedOn(requested, "instance")) return;
             setProcessError(error);
         } finally {
             setFetching(false);
