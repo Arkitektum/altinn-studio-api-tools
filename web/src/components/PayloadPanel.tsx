@@ -6,11 +6,15 @@ import { readPickedFile } from "../lib/fileUpload";
 import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
-import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup } from "../types";
+import { loadingOverwrites, payloadNamed } from "../lib/savedPayloads";
+import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup, SavedPayload } from "../types";
 
 interface PayloadPanelProps {
     dataElements: DataElementInput[];
     onChange: (next: DataElementInput[]) => void;
+    /** The target, so a saved payload written for another app can say which. */
+    org: string;
+    app: string;
     /** From applicationmetadata. Authoritative, but only available after probing. */
     dataTypes: AppDataType[];
     /** Drives the main form, sub form and attachment grouping. Null until the app is probed. */
@@ -20,6 +24,13 @@ interface PayloadPanelProps {
     exampleGroups: ExampleGroup[];
     advanceProcess: boolean;
     onAdvanceProcessChange: (next: boolean) => void;
+    /** Payloads kept for later, newest first. */
+    savedPayloads: SavedPayload[];
+    onSavePayload: (name: string) => void;
+    onLoadPayload: (payload: SavedPayload) => void;
+    onDeletePayload: (id: string) => void;
+    /** What a load had to say for itself, an example that has gone missing being the one case. */
+    loadNotice: string | null;
 }
 
 /**
@@ -51,15 +62,25 @@ function describeDataType(dataType: AppDataType): string {
 export function PayloadPanel({
     dataElements,
     onChange,
+    org,
+    app,
     dataTypes,
     metadata,
     suggestedDataTypes,
     exampleGroups,
     advanceProcess,
-    onAdvanceProcessChange
+    onAdvanceProcessChange,
+    savedPayloads,
+    onSavePayload,
+    onLoadPayload,
+    onDeletePayload,
+    loadNotice
 }: PayloadPanelProps) {
     /** Per element, since one element failing to read says nothing about the others. */
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
+    /** The name being typed for a save, and which saved payload is armed for loading or deleting. */
+    const [saveName, setSaveName] = useState("");
+    const [confirming, setConfirming] = useState<{ id: string; action: "load" | "delete" } | null>(null);
 
     function update(index: number, patch: Partial<DataElementInput>) {
         onChange(dataElements.map((element, i) => (i === index ? { ...element, ...patch } : element)));
@@ -86,7 +107,9 @@ export function PayloadPanel({
                 // Altinn stores this as the data element filename, which an attachment wants and
                 // form data does not, the same rule the example picker follows.
                 ...(target.isAttachment ? { filename: picked.filename } : { filename: undefined }),
-                exampleName: picked.filename
+                exampleName: picked.filename,
+                // A file off disk is nothing the examples know about.
+                example: undefined
             });
         } catch (error) {
             noteFileError(index, error instanceof Error ? error.message : String(error));
@@ -108,7 +131,10 @@ export function PayloadPanel({
             content: "",
             encoding: undefined,
             filename: undefined,
-            exampleName: undefined
+            exampleName: undefined,
+            example: undefined,
+            // A new data type is a new offer, so the picker may fill this one in again.
+            restored: undefined
         });
     }
 
@@ -146,6 +172,7 @@ export function PayloadPanel({
     }
 
     const allCollapsed = dataElements.length > 0 && dataElements.every((element) => element.collapsed);
+    const replacing = payloadNamed(savedPayloads, saveName);
 
     return (
         <Panel
@@ -208,7 +235,8 @@ export function PayloadPanel({
                                             content: "",
                                             encoding: undefined,
                                             filename: undefined,
-                                            exampleName: undefined
+                                            exampleName: undefined,
+                                            example: undefined
                                         })
                                     }
                                     disabled={!element.content}
@@ -293,6 +321,7 @@ export function PayloadPanel({
                                     key={element.dataType}
                                     dataType={element.dataType}
                                     hasContent={Boolean(element.content)}
+                                    autoLoad={!element.restored}
                                     options={exampleOptionsFor(exampleGroups, element.dataType, known?.allowedContentTypes ?? [])}
                                     onLoad={(file, option) =>
                                         update(index, {
@@ -302,7 +331,10 @@ export function PayloadPanel({
                                             contentType: file.contentType,
                                             // Altinn stores this as the data element filename for attachments.
                                             ...(option.kind === "attachment" ? { filename: file.name } : {}),
-                                            exampleName: file.name
+                                            exampleName: file.name,
+                                            // What it is, not only what it is called, so a payload
+                                            // saved with it can point at the file rather than copy it.
+                                            example: { kind: option.kind, group: option.group, name: option.name }
                                         })
                                     }
                                 />
@@ -356,7 +388,12 @@ export function PayloadPanel({
                                         id={`content-${index}`}
                                         label="Content"
                                         value={element.content}
-                                        onChange={(content) => update(index, { content, exampleName: undefined })}
+                                        onChange={(content) =>
+                                            // An edit is no longer the example, so the name under
+                                            // the editor goes and so does the reference a saved
+                                            // payload would have kept.
+                                            update(index, { content, exampleName: undefined, example: undefined })
+                                        }
                                         placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
                                         contentType={element.contentType}
                                     />
@@ -425,6 +462,106 @@ export function PayloadPanel({
                         </span>
                     </span>
                 </label>
+            </div>
+
+            <div className="apart">
+                <span className="legend">Saved payloads</span>
+
+                <p className="field__hint" style={{ marginBottom: 10 }}>
+                    The whole list above, under a name, for later. Clicking one loads it, over what is in the list. An element still holding an
+                    unedited example is kept as a reference to that file, so a payload saved today loads the corrected file tomorrow. An element you
+                    have edited, typed or picked off disk has no file to point at, so its text is kept instead.
+                </p>
+
+                <div className="row">
+                    <input
+                        type="text"
+                        value={saveName}
+                        onChange={(event) => setSaveName(event.target.value)}
+                        placeholder="Name it"
+                        aria-label="Name for the saved payload"
+                        style={{ flex: 1 }}
+                    />
+                    <button
+                        type="button"
+                        className={`btn ${replacing ? "btn--armed btn--delete" : "btn--ghost"}`}
+                        onClick={() => {
+                            onSavePayload(saveName);
+                            setSaveName("");
+                        }}
+                        disabled={!saveName.trim() || dataElements.length === 0}
+                        // Saving over a name is the one destructive thing here, so it says so
+                        // rather than asking: the payload it replaces is one click from being
+                        // saved again under another name.
+                        title={replacing ? `Replaces the payload saved as "${replacing.name}"` : undefined}
+                    >
+                        {replacing ? "Replace" : "Save"}
+                    </button>
+                </div>
+
+                {loadNotice && (
+                    <div className="notice notice--warn" style={{ marginTop: 10 }}>
+                        {loadNotice}
+                    </div>
+                )}
+
+                {savedPayloads.length === 0 ? (
+                    <p className="field__hint" style={{ marginTop: 10 }}>
+                        Nothing saved yet. They are kept in this browser, so they survive a reload and go no further.
+                    </p>
+                ) : (
+                    <div className="picklist" style={{ marginTop: 10 }}>
+                        {savedPayloads.map((payload) => {
+                            const armed = confirming?.id === payload.id;
+                            const elsewhere = payload.org !== org || payload.app !== app;
+                            return (
+                                <div key={payload.id} style={{ display: "flex", gap: 6 }}>
+                                    <button
+                                        type="button"
+                                        className="picklist__item"
+                                        style={{ flex: 1 }}
+                                        onClick={() => {
+                                            // Loading throws away whatever is in the list, so it
+                                            // asks first, and only when there is something to lose.
+                                            if (loadingOverwrites(dataElements) && confirming?.action !== "load") {
+                                                setConfirming({ id: payload.id, action: "load" });
+                                                return;
+                                            }
+                                            setConfirming(null);
+                                            onLoadPayload(payload);
+                                        }}
+                                        title={`${payload.elements.length} element(s), saved for ${payload.org}/${payload.app}`}
+                                    >
+                                        <span className="led led--ok" aria-hidden="true" />
+                                        <span>
+                                            {armed && confirming?.action === "load" ? `Replace the payload with "${payload.name}"?` : payload.name}
+                                            {" · "}
+                                            {payload.elements.length} element(s)
+                                            {elsewhere ? ` · for ${payload.org}/${payload.app}` : ""}
+                                            {" · "}
+                                            {new Date(payload.savedAt).toLocaleString("nb")}
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`btn btn--delete${armed && confirming?.action === "delete" ? " btn--armed" : ""}`}
+                                        onClick={() => {
+                                            if (!armed || confirming?.action !== "delete") {
+                                                setConfirming({ id: payload.id, action: "delete" });
+                                                return;
+                                            }
+                                            setConfirming(null);
+                                            onDeletePayload(payload.id);
+                                        }}
+                                        aria-label={`Delete saved payload ${payload.name}`}
+                                    >
+                                        {armed && confirming?.action === "delete" ? "Confirm" : "Delete"}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </Panel>
     );

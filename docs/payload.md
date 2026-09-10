@@ -52,3 +52,19 @@ Changing the data type clears the content and content type, since both belonged 
 ## After upload
 
 One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
+
+## Saved payloads
+
+The whole list of elements, under a name, for later. A run of a form and three subforms takes a few clicks to put together, and a payload you post twice a week is worth keeping.
+
+**What is kept depends on where the content came from.** An element still holding an unedited example is kept as a reference to that file, `{kind, group, name}`, and nothing else. Loading the payload reads the file as it stands then, so a payload saved today posts the corrected example tomorrow. That is the common case here: the examples are the shipped test data, and a saved payload is usually a combination of them rather than a document of its own.
+
+An element you have edited, typed, or picked off disk has no file to point at, so its text is kept. Editing an example is what tells the two apart: the first keystroke drops the reference, the same moment the editor stops saying which example the content came from.
+
+The file is authoritative for everything it knows about itself when the payload is loaded, its content type included. An example retyped from `text/xml` to `application/xml` since it was saved comes back as what it is now, which is the point of keeping a reference rather than a copy.
+
+**An example that has gone** leaves its element behind, with its data type and no content, and the load says which files it could not find. A payload quietly one element short would post quietly too. The example picker leaves that gap alone rather than filling it with the data type's first file, since the gap is what the payload said.
+
+Saving under a name that is already taken replaces it, and the button reads **Replace** rather than **Save** while it would. Loading over a payload that has content in it asks first, since that content is about to go. Deleting asks twice, like everything else that cannot be undone.
+
+They are kept in `localStorage`, in this browser, and go no further. A payload holding a file picked off disk keeps that file's bytes, which is the one way to fill the browser's storage quota from here: the save says so rather than failing quietly. Everything else in here is a reference or a document, and neither is large.

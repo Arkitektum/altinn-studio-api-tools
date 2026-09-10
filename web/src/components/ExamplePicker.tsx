@@ -18,6 +18,11 @@ interface ExamplePickerProps {
     options: ExampleOption[];
     /** Suppresses the automatic load, so restored or hand-written content is never overwritten. */
     hasContent: boolean;
+    /**
+     * And so does this, for an element out of a saved payload. Empty there means the payload said
+     * empty, either deliberately or because the example it pointed at has gone.
+     */
+    autoLoad: boolean;
     onLoad: (file: ExampleContent, option: ExampleOption) => void;
 }
 
@@ -39,7 +44,7 @@ function describe(option: ExampleOption): string {
  * That is when the first example is loaded automatically, giving every element something valid
  * to post without a second click.
  */
-export function ExamplePicker({ dataType, options, hasContent, onLoad }: ExamplePickerProps) {
+export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad }: ExamplePickerProps) {
     const [selected, setSelected] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -73,7 +78,7 @@ export function ExamplePicker({ dataType, options, hasContent, onLoad }: Example
     useEffect(() => {
         // Mount only. Reacting to later content changes would pull the example back in every time
         // the operator cleared or edited the field.
-        if (autoLoaded.current || !first || hasContent) return;
+        if (autoLoaded.current || !first || hasContent || !autoLoad) return;
         autoLoaded.current = true;
         void load(first.name);
         // eslint-disable-next-line react-hooks/exhaustive-deps

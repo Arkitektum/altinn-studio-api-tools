@@ -17,6 +17,7 @@ import {
     logFromValidation
 } from "./lib/logResults";
 import { pendingAutoRuns } from "./lib/autoRuns";
+import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
@@ -42,6 +43,7 @@ import type {
     CompareResult,
     DataElementInput,
     DataElementSummary,
+    ExampleContent,
     ExampleGroup,
     FetchedDataElement,
     InstanceSummary,
@@ -53,6 +55,7 @@ import type {
     ReadInstanceResult,
     RunMode,
     RunResult,
+    SavedPayload,
     ServerConfig,
     ValidateResult,
     ValidationView
@@ -88,6 +91,10 @@ export function App() {
     // The party value this session last filled in from a token claim. See the effect below.
     const [autoFilledParty, setAutoFilledParty] = useLocalStorage<string | null>("partyAutoFilledFrom", null);
     const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>("dataElements", [EMPTY_ELEMENT]);
+    /** Whole payloads kept for later, newest first. See lib/savedPayloads.ts for what is kept. */
+    const [savedPayloads, setSavedPayloads] = useLocalStorage<SavedPayload[]>("savedPayloads", []);
+    /** What the last load had to say, an example that has gone since being the case worth saying. */
+    const [payloadLoadNotice, setPayloadLoadNotice] = useState<string | null>(null);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
 
     const [metadata, setMetadata] = useState<AppMetadataResponse | null>(null);
@@ -823,6 +830,60 @@ export function App() {
         if (comparable) void compareWithStored();
     }
 
+    /**
+     * Keeps the payload as it stands, under a name.
+     *
+     * localStorage can refuse, and a payload holding a file picked off disk is the way to make it:
+     * base64 of a few megabytes fills a quota that everything else in here is nowhere near. The
+     * refusal is worth saying out loud rather than losing the save silently.
+     */
+    function savePayload(name: string) {
+        const payload = toSavedPayload({
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name,
+            savedAt: new Date().toISOString(),
+            org,
+            app,
+            elements: dataElements
+        });
+        try {
+            setSavedPayloads(upsertPayload(savedPayloads, payload));
+            setPayloadLoadNotice(null);
+        } catch {
+            setPayloadLoadNotice(
+                "The browser would not store that payload. An element holding a file picked off disk is usually why: its bytes are kept in full, " +
+                    "where an example is only a reference. Remove it, or load it from disk again after loading the payload."
+            );
+        }
+    }
+
+    /**
+     * Puts a saved payload back, reading every example it points at as the file stands now. One
+     * that has gone since leaves its element behind, empty, and is named in the notice: a payload
+     * quietly one element short would post quietly too.
+     */
+    async function loadPayload(payload: SavedPayload) {
+        const files = new Map<string, ExampleContent>();
+        await Promise.all(
+            neededExamples(payload).map(async (ref) => {
+                try {
+                    files.set(refKey(ref), await api.getExampleFile(ref));
+                } catch {
+                    /* left out of the map, which is what marks it missing below */
+                }
+            })
+        );
+
+        const { elements, missing } = restoreElements(payload, files);
+        setDataElements(elements);
+        setPayloadLoadNotice(
+            missing.length === 0
+                ? null
+                : `Loaded "${payload.name}" without ${missing.length === 1 ? "one example that is" : `${missing.length} examples that are`} no longer on disk: ${missing.join(", ")}. ` +
+                      "Those elements are here with their data type and no content."
+        );
+    }
+
     /** Saves the held data element as a file, under the name Altinn stored or the data type. */
     function downloadDataElement() {
         if (!fetchedElement) return;
@@ -1109,12 +1170,19 @@ export function App() {
                             <PayloadPanel
                                 dataElements={dataElements}
                                 onChange={setDataElements}
+                                org={org}
+                                app={app}
                                 dataTypes={dataTypes}
                                 metadata={metadata?.metadata ?? null}
                                 suggestedDataTypes={suggestedDataTypes}
                                 exampleGroups={exampleGroups}
                                 advanceProcess={advanceProcess}
                                 onAdvanceProcessChange={setAdvanceProcess}
+                                savedPayloads={savedPayloads}
+                                onSavePayload={savePayload}
+                                onLoadPayload={(payload) => void loadPayload(payload)}
+                                onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
+                                loadNotice={payloadLoadNotice}
                             />
 
                             <section className="panel">

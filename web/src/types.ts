@@ -98,8 +98,55 @@ export interface DataElementInput {
      * from. Reads after "from" in the editor hint. Not sent to the server.
      */
     exampleName?: string;
+    /**
+     * UI-only: which shipped example this content is, while it is still that file unedited. An
+     * edit clears it, which is what lets a saved payload keep a reference to the file rather than
+     * a copy of it. Not sent to the server.
+     */
+    example?: ExampleRef;
+    /**
+     * UI-only: this element came out of a saved payload. The example picker leaves it alone,
+     * since an element restored empty is a gap the payload meant to leave, not one to fill.
+     * Cleared by changing the data type, which is when the picker's offer is worth having again.
+     */
+    restored?: boolean;
     /** UI-only: collapsed in the payload list. Not sent to the server. */
     collapsed?: boolean;
+}
+
+/** Enough to read a shipped example again: what `GET /api/examples/file` asks for. */
+export interface ExampleRef {
+    kind: ExampleKind;
+    /** Data type for forms and subforms, content type for attachments. */
+    group: string;
+    name: string;
+}
+
+/**
+ * One element of a saved payload.
+ *
+ * An element still holding an unedited example is kept as a reference to that file, so the saved
+ * payload follows the file when it is corrected or extended. Anything edited, hand written or
+ * picked off disk has nowhere to point, so its text is kept instead.
+ */
+export interface SavedElement {
+    dataType: string;
+    contentType?: string;
+    filename?: string;
+    encoding?: ExampleEncoding;
+    example?: ExampleRef;
+    content?: string;
+}
+
+export interface SavedPayload {
+    id: string;
+    name: string;
+    /** ISO, for the row that says when it was saved. */
+    savedAt: string;
+    /** The app it was written for. Loading it elsewhere is allowed, and the row says so. */
+    org: string;
+    app: string;
+    elements: SavedElement[];
 }
 
 export interface RunStep {
@@ -188,10 +235,10 @@ export interface DataElementSummary {
     lastChanged: string | null;
 }
 
-/** One entry of the party's instance list, as offered in the instance picker. */
 /** Active is what the app offers back. The other two are only ever listed by storage. */
 export type InstanceState = "active" | "completed" | "deleted";
 
+/** One entry of the party's instance list, as offered in the instance picker. */
 export interface InstanceSummary {
     /** "510001/99d0632c-…", as Altinn writes it. */
     id: string;

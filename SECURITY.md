@@ -19,7 +19,7 @@ Claims are decoded, never verified. `jwt.ts` says so at the top. The signature i
 
 ## What the browser stores
 
-`localStorage`, under the `altinn-api-tools:` prefix. Seven keys, all written by `useLocalStorage`:
+`localStorage`, under the `altinn-api-tools:` prefix. Eight keys, all written by `useLocalStorage`:
 
 | Key                   |                                                                                 |
 | --------------------- | ------------------------------------------------------------------------------- |
@@ -29,10 +29,11 @@ Claims are decoded, never verified. `jwt.ts` says so at the top. The signature i
 | `instanceGuid`        | The selected instance                                                           |
 | `advanceProcess`      | Whether a post also advances the process                                        |
 | `dataElements`        | **The payload elements including their content**                                |
+| `savedPayloads`       | **Payloads kept for later, by name**                                            |
 
-The last one is the only entry worth thinking about, because whatever you paste into an editor card stays on disk in your browser profile until you clear it. The destination is not stored: a post follows the selection rather than a setting of its own.
+The last two are the ones worth thinking about, because whatever you paste into an editor card stays on disk in your browser profile until you clear it, and saving a payload keeps a second copy of it under a name. A saved payload holds only a reference for an element that is still an unedited example, but an edited one keeps its text. The destination is not stored: a post follows the selection rather than a setting of its own.
 
-The tool is for test data. Do not paste real personal data into it, and if you already have, clear the payload elements or the site data. The screen that appears when the interface crashes offers to clear all seven, which is the same thing as clearing the site data for this origin.
+The tool is for test data. Do not paste real personal data into it, and if you already have, clear the payload elements and any saved payload holding them, or the site data. The screen that appears when the interface crashes offers to clear all eight, which is the same thing as clearing the site data for this origin.
 
 No token, and no id of a token, is stored in the browser. The token list is fetched from the server again on load.
 
