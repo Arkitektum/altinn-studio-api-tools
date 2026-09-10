@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
-import { CopyButton } from "./CopyButton";
+import { useState, type ReactNode } from "react";
+import { Dump } from "./Dump";
+import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DataElementSummary, FetchedDataElement } from "../types";
@@ -18,6 +19,7 @@ interface FetchPanelProps {
     onDataGuidChange: (next: string) => void;
     /** The data element last read back, for the download and copy buttons. */
     fetched: FetchedDataElement | null;
+    /** Saves what came back as a file. Offered in the window, where the content is. */
     onDownloadDataElement: () => void;
     /** Reads and compares again for the selection as it stands, since neither waits for a press. */
     onRefresh: () => void;
@@ -66,6 +68,9 @@ export function FetchPanel({
     error,
     children
 }: FetchPanelProps) {
+    /** Whether the content that came back is open in a window of its own. */
+    const [showing, setShowing] = useState(false);
+
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
     const guid = instanceGuid || "{instanceGuid}";
@@ -131,19 +136,50 @@ export function FetchPanel({
                         </p>
                     )}
 
-                    {/* What came back, as a file rather than as text in the log. */}
+                    {/*
+                     * What came back. One button, since a body is worth reading at full size and
+                     * not in a column this wide: the window it opens holds the copy and the
+                     * download, the way a run log step holds its own.
+                     */}
                     {fetched && (
                         <>
                             <div className="row" style={{ marginTop: 12 }}>
-                                <button type="button" className="btn btn--ghost" onClick={onDownloadDataElement}>
-                                    Download {fetched.filename}
+                                <button type="button" className="btn btn--ghost" onClick={() => setShowing(true)} aria-haspopup="dialog">
+                                    Show content
                                 </button>
-                                {/* Copying base64 as text would hand over the encoding, not the file. */}
-                                {fetched.encoding === "utf8" && <CopyButton label="Copy content" text={fetched.content} />}
+                                <span className="field__hint" style={{ margin: 0 }}>
+                                    {fetched.filename} · {fetched.contentType ?? "unknown type"} · {fetched.size} B
+                                </span>
                             </div>
-                            <p className="field__hint" style={{ marginTop: 8 }}>
-                                {fetched.contentType ?? "unknown type"} · {fetched.size} B
-                            </p>
+
+                            {showing && (
+                                <Modal
+                                    title={fetched.filename}
+                                    aside={
+                                        <button type="button" className="btn btn--ghost" onClick={onDownloadDataElement}>
+                                            Download
+                                        </button>
+                                    }
+                                    bodyClassName="modal__stack"
+                                    onClose={() => setShowing(false)}
+                                >
+                                    {fetched.encoding === "utf8" ? (
+                                        // The label carries what it is, since the title carries what it is called.
+                                        <Dump
+                                            label={`${fetched.contentType ?? "unknown type"} · ${fetched.size} B`}
+                                            text={fetched.content}
+                                            contentType={fetched.contentType}
+                                        />
+                                    ) : (
+                                        // Base64 on screen is the encoding rather than the file, and copying it
+                                        // would hand over the encoding too. Downloading is the only useful thing.
+                                        <p className="field__hint">
+                                            {fetched.size} bytes of {fetched.contentType ?? "an unknown type"}, which is a file rather than text.
+                                            Download it to see what it is.
+                                        </p>
+                                    )}
+                                </Modal>
+                            )}
                         </>
                     )}
                 </>

@@ -61,10 +61,13 @@ Two content types are in play, and the tool shows both: the picker labels an ele
 
 ### What you can do with it
 
-What came back is held, so it can be used rather than only read:
+What came back is held, so it can be used rather than only read. **Show content** opens it in a window over the tool, the way a step in the run log opens, and the window is where the rest of it is:
 
-- **Download** saves it as a file. The name is whatever Altinn stored, since an attachment was uploaded under a name someone chose, and otherwise the data type with an extension from the content type, so `ET` becomes `ET.xml`.
-- **Copy content** puts the text on the clipboard. Binary content offers no copy button, because copying base64 as text hands over the encoding rather than the file.
+- The content itself, coloured and scrolling inside its own block, with **Copy** pinned in the corner of it.
+- **Download** in the header, which saves it as a file. The name is whatever Altinn stored, since an attachment was uploaded under a name someone chose, and otherwise the data type with an extension from the content type, so `ET` becomes `ET.xml`. It is the window's title too.
+- For a binary element, no content and no copy: base64 on screen is the encoding rather than the file, and copying it would hand over the encoding too. The window says what it is and how big, and leaves you the download.
+
+The panel keeps one button and a line saying what came back, its name, type and size. Download and a copy sat there as two buttons of their own once, which spent a row on a body that is worth reading at full size and is not readable in a column that wide.
 
 Picking another data element, or another instance, drops what is held instead of offering to download an element you are no longer looking at.
 
