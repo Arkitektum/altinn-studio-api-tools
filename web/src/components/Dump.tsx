@@ -9,15 +9,18 @@ interface DumpProps {
     text: string;
     /** Content type where one is known, so the language is not guessed from the first character. */
     contentType?: string | null;
+    /** Off inside a window that is already the full size, where maximizing means nothing. */
+    maximizable?: boolean;
 }
 
 /**
  * A request or response body: coloured, copyable, and openable in a window of its own.
  *
- * The log column is 480px wide, which is not enough for a form's XML. Rather than make the column
- * wider for the one case that needs it, the body opens over the tool at full size.
+ * The log column is not wide enough for a form's XML however wide it is made, so the body opens
+ * over the tool at full size instead. Inside such a window it is already there, and says so by
+ * not offering again.
  */
-export function Dump({ label, text, contentType }: DumpProps) {
+export function Dump({ label, text, contentType, maximizable = true }: DumpProps) {
     const [maximized, setMaximized] = useState(false);
     const language = languageOf(text, contentType);
 
@@ -26,9 +29,11 @@ export function Dump({ label, text, contentType }: DumpProps) {
             <div className="dump__label">
                 {label}
                 <CopyButton label="Copy" text={text} />
-                <button type="button" className="btn btn--ghost" onClick={() => setMaximized(true)}>
-                    Maximize
-                </button>
+                {maximizable && (
+                    <button type="button" className="btn btn--ghost" onClick={() => setMaximized(true)}>
+                        Maximize
+                    </button>
+                )}
             </div>
             <pre className="dump">
                 <Painted text={text} language={language} />

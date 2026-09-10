@@ -33,15 +33,15 @@ A post and the read and validation that follow it share one entry, because they 
 
 ## Bodies
 
-**Show bodies** on a step reveals the request as it was sent and the response as it came back, coloured the same way the payload editor is. A step that made no request has neither.
+A step is one target: click the block anywhere and the request opens in a window over the tool, with the url at the top, the status and timing under it, and both bodies below that, coloured the same way the payload editor is. A step that made no request and carries no body is not clickable, and says so by not lighting up.
 
-The log column takes 640px, or 42% of the window where that is more, which is still not enough for a form's XML, so each body has a **Maximize** button that opens it in a window over the tool at full size, with its own **Copy**. Widening the column for the one case that needs it would cost the working column the rest of the time.
+The block itself carries no controls. It used to have two, a fold for the bodies and a copy for the curl, which put buttons inside a row that is already a fold inside a fold, and left the bodies to be read in a column too narrow for them. The log column takes 640px, or 42% of the window where that is more, which is still not enough for a form's XML, and widening it for the one case that needs it would cost the working column the rest of the time. The window is that width instead.
 
 A request body is coloured by the content type it went out with, so a multipart body, which is several bodies with headers between them, is left plain rather than coloured as though it were one document.
 
 ## Copy curl
 
-Every step carries a **Copy curl** button, and each body a **Copy**, since the usual next move after a surprising log entry is handing the request to someone else. The command reads:
+**Copy curl** sits in the header of the window a step opens, and each body has its own **Copy**, since the usual next move after a surprising log entry is handing the request to someone else. The command reads:
 
 ```bash
 curl -i -X POST 'http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/{guid}/data?dataType=ET' \

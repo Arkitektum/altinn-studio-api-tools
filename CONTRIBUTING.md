@@ -87,7 +87,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 There is an issue form for it, and one for a feature, under `.github/ISSUE_TEMPLATE/`. Blank issues are still on: the forms are for the common cases, not a gate.
 
-The one thing worth attaching either way is the run log entry. **Copy curl** on the failing step gives the exact request with the token left as `$TOKEN`, which is usually enough to see what happened without a screenshot.
+The one thing worth attaching either way is the run log entry. Click the failing step and **Copy curl** in the window it opens gives the exact request with the token left as `$TOKEN`, which is usually enough to see what happened without a screenshot.
 
 ## Opening a pull request
 

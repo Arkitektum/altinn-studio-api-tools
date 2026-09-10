@@ -1192,10 +1192,30 @@ textarea {
     gap: 8px;
 }
 
+/*
+ * A request, as one target. Everything it holds opens in a window, so the block carries no
+ * controls of its own: buttons inside a row that is itself inside two folds were three levels of
+ * things to press.
+ */
 .step {
+    display: block;
+    width: 100%;
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 8px 10px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.step--openable {
+    cursor: pointer;
+}
+
+.step--openable:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-inset);
 }
 
 .step__dot {
@@ -1206,6 +1226,16 @@ textarea {
     display: flex;
     align-items: baseline;
     gap: 8px;
+}
+
+/* A block element inside a button, which only takes phrasing content, so these are spans. */
+.step__url,
+.step__error {
+    display: block;
+}
+
+.step__error {
+    margin-top: 6px;
 }
 
 .step__name {
@@ -1287,21 +1317,6 @@ textarea {
 
 .step__method--delete {
     color: var(--bad);
-}
-
-.step__toggle {
-    margin-top: 5px;
-    padding: 0;
-    background: none;
-    border: none;
-    color: var(--accent);
-    font-family: inherit;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.step__toggle:hover {
-    text-decoration: underline;
 }
 
 .dump {
@@ -1607,6 +1622,31 @@ a.btn {
     flex: 1;
     width: 100%;
     border: 0;
+}
+
+/* A stack of things to read: a url, then the bodies, scrolling as one. */
+.modal__stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+/* Each body is as long as it is: the window scrolls, rather than three boxes scrolling inside it. */
+.modal__stack .dump {
+    max-height: none;
+    margin: 0;
+}
+
+.detail__url {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    word-break: break-all;
 }
 
 /* Code fills it too, but scrolls inside itself rather than being handed to a plugin. */

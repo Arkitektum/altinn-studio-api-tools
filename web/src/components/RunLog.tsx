@@ -3,6 +3,7 @@ import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
 import { CopyButton } from "./CopyButton";
 import { Dump } from "./Dump";
+import { Modal } from "./Modal";
 import { Panel } from "./Panel";
 import type { LogEntry, LogResult, RunStep } from "../types";
 
@@ -160,57 +161,92 @@ function statusTone(status: number): "ok" | "info" | "warn" | "bad" {
     return "bad";
 }
 
+/**
+ * One request, as a block you can open.
+ *
+ * The block itself is the button. It used to carry two of its own, a fold for the bodies and a
+ * copy for the curl, which put controls inside a list whose rows are already a fold inside a fold.
+ * Now the whole thing is one target and everything it holds is in the window it opens, at the size
+ * a request body actually needs.
+ */
 function Step({ step }: { step: RunStep }) {
-    const [open, setOpen] = useState(!step.ok);
-    const hasDetail = step.requestPreview !== undefined || step.response !== undefined;
+    const [open, setOpen] = useState(false);
+    // A step that made no request and carries no body has nothing to open.
+    const openable = step.url !== "-" || step.requestPreview !== undefined || step.response !== undefined;
 
     return (
-        <div className="step">
-            <div className="step__head">
-                <span className="step__name">{step.name}</span>
-                <span className="spacer" />
-                {step.status !== null && <span className={`step__status step__status--${statusTone(step.status)}`}>{step.status}</span>}
-                <span className="step__status">{step.durationMs} ms</span>
-            </div>
+        <>
+            <button
+                type="button"
+                className={`step${openable ? " step--openable" : ""}`}
+                onClick={() => setOpen(true)}
+                disabled={!openable}
+                aria-haspopup="dialog"
+                title={openable ? "Open this request, with its bodies and a curl command" : undefined}
+            >
+                <span className="step__head">
+                    <span className="step__name">{step.name}</span>
+                    <span className="spacer" />
+                    {step.status !== null && <span className={`step__status step__status--${statusTone(step.status)}`}>{step.status}</span>}
+                    <span className="step__status">{step.durationMs} ms</span>
+                </span>
 
-            {step.url !== "-" && (
-                <div className="step__url">
-                    <span className={`step__method step__method--${step.method.toLowerCase()}`}>{step.method}</span> {step.url}
-                </div>
-            )}
-
-            {step.error && (
-                <div className="notice notice--bad" style={{ marginTop: 7 }}>
-                    {step.error}
-                </div>
-            )}
-
-            <div className="row" style={{ gap: 8, marginTop: 5 }}>
-                {hasDetail && (
-                    <button type="button" className="step__toggle" onClick={() => setOpen(!open)}>
-                        {open ? "Hide bodies" : "Show bodies"}
-                    </button>
-                )}
-                {/* A step that made no request has nothing to replay. */}
                 {step.url !== "-" && (
-                    <CopyButton label="Copy curl" title="The request as a curl command, with the token left as $TOKEN" text={() => toCurl(step)} />
+                    <span className="step__url">
+                        <span className={`step__method step__method--${step.method.toLowerCase()}`}>{step.method}</span> {step.url}
+                    </span>
                 )}
-            </div>
 
-            {hasDetail && open && (
-                <>
-                    {step.requestPreview !== undefined && (
-                        // The request went out as it is written, so its own content type names the
-                        // language. A multipart body says multipart, and is left uncoloured.
-                        <Dump label="Request" text={step.requestPreview} contentType={step.requestHeaders?.["content-type"]} />
-                    )}
-                    {step.response !== undefined && step.response !== null && (
-                        // Always json by the time it is here: the api hands back parsed bodies, and
-                        // an xml one arrives as a string inside them.
-                        <Dump label="Response" text={prettyJson(step.response)} contentType="application/json" />
-                    )}
-                </>
+                {step.error && <span className="notice notice--bad step__error">{step.error}</span>}
+            </button>
+
+            {open && <StepWindow step={step} onClose={() => setOpen(false)} />}
+        </>
+    );
+}
+
+/** The request at full size: what was asked, what came back, and the command to ask again. */
+function StepWindow({ step, onClose }: { step: RunStep; onClose: () => void }) {
+    return (
+        <Modal
+            title={step.name}
+            aside={
+                step.url !== "-" ? (
+                    <CopyButton label="Copy curl" title="The request as a curl command, with the token left as $TOKEN" text={() => toCurl(step)} />
+                ) : undefined
+            }
+            bodyClassName="modal__stack"
+            onClose={onClose}
+        >
+            {/* The url first, since it is what the rest of the window is about. */}
+            {step.url !== "-" && (
+                <p className="detail__url">
+                    <span className={`step__method step__method--${step.method.toLowerCase()}`}>{step.method}</span> {step.url}
+                </p>
             )}
-        </div>
+
+            <p className="field__hint">
+                {step.status !== null && <span className={`step__status step__status--${statusTone(step.status)}`}>{step.status}</span>}{" "}
+                {step.durationMs} ms
+                {step.requestVerbatim === false ? " · the request body is a summary, not what was sent" : ""}
+            </p>
+
+            {step.error && <div className="notice notice--bad">{step.error}</div>}
+
+            {step.requestPreview !== undefined && (
+                // The request went out as it is written, so its own content type names the
+                // language. A multipart body says multipart, and is left uncoloured.
+                <Dump label="Request" text={step.requestPreview} contentType={step.requestHeaders?.["content-type"]} maximizable={false} />
+            )}
+            {step.response !== undefined && step.response !== null && (
+                // Always json by the time it is here: the api hands back parsed bodies, and an xml
+                // one arrives as a string inside them.
+                <Dump label="Response" text={prettyJson(step.response)} contentType="application/json" maximizable={false} />
+            )}
+
+            {step.requestPreview === undefined && step.response === undefined && (
+                <p className="field__hint">No bodies were recorded for this request.</p>
+            )}
+        </Modal>
     );
 }
