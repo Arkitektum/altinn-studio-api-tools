@@ -1,3 +1,4 @@
+import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 
 interface PdfPanelProps {
@@ -9,6 +10,8 @@ interface PdfPanelProps {
     onPreviewPdf: () => void;
     busy: boolean;
     hasToken: boolean;
+    /** A render that never reached the app. One the app refused is a step in the log instead. */
+    error: unknown;
 }
 
 /**
@@ -22,7 +25,7 @@ interface PdfPanelProps {
  * every selection would be wasteful, and it opens in a window over the tool rather than filling
  * a panel.
  */
-export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid, onPreviewPdf, busy, hasToken }: PdfPanelProps) {
+export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid, onPreviewPdf, busy, hasToken, error }: PdfPanelProps) {
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
     const guid = instanceGuid || "{instanceGuid}";
@@ -43,6 +46,12 @@ export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid
             <p className="field__hint" style={{ marginTop: 8 }}>
                 <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
             </p>
+
+            {error ? (
+                <div style={{ marginTop: 10 }}>
+                    <ErrorNotice error={error} />
+                </div>
+            ) : null}
         </Panel>
     );
 }

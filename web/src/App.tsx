@@ -129,9 +129,21 @@ export function App() {
 
     /** The data element last read back, so it can be downloaded or copied rather than reread. */
     const [fetchedElement, setFetchedElement] = useState<FetchedDataElement | null>(null);
-    const [fetching, setFetching] = useState(false);
+
+    /*
+     * One flag per action rather than one for all of them. They run at different times and belong
+     * to different panels: the instance read starts on its own when a selection changes, and it
+     * used to grey out Render pdf and Advance while it ran, neither of which it has anything to do
+     * with. The errors are split for the same reason. A read that failed without being asked for
+     * has no business appearing under the buttons in Data element.
+     */
+    const [reading, setReading] = useState(false);
+    const [readError, setReadError] = useState<unknown>(null);
+    const [fetchingElement, setFetchingElement] = useState(false);
     const [fetchError, setFetchError] = useState<unknown>(null);
-    // Kept apart from fetchError so a refused move is reported in the process panel, not in Fetch.
+    const [rendering, setRendering] = useState(false);
+    const [pdfError, setPdfError] = useState<unknown>(null);
+    const [advancing, setAdvancing] = useState(false);
     const [processError, setProcessError] = useState<unknown>(null);
 
     const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
@@ -565,8 +577,8 @@ export function App() {
         // Aimed at the instance this was called for rather than the one selected now, since a post
         // reads back the instance it just made.
         const requested = selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: guid }).instance;
-        setFetching(true);
-        setFetchError(null);
+        setReading(true);
+        setReadError(null);
         const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId: party, instanceGuid: guid };
         try {
             const read = await api.getInstance(params);
@@ -594,16 +606,16 @@ export function App() {
             appendLog(logFromRead(read, validated));
         } catch (error) {
             if (movedOn(requested, "instance")) return;
-            setFetchError(error);
+            setReadError(error);
         } finally {
-            setFetching(false);
+            setReading(false);
         }
     }
 
     async function getDataElement() {
         if (!activeTokenId || !dataGuid) return;
         const requested = keys.dataElement;
-        setFetching(true);
+        setFetchingElement(true);
         setFetchError(null);
         try {
             const read = await api.getDataElement({
@@ -642,7 +654,7 @@ export function App() {
             if (movedOn(requested, "dataElement")) return;
             setFetchError(error);
         } finally {
-            setFetching(false);
+            setFetchingElement(false);
         }
     }
 
@@ -691,8 +703,8 @@ export function App() {
     async function renderPdf() {
         if (!activeTokenId) return;
         const requested = keys.instance;
-        setFetching(true);
-        setFetchError(null);
+        setRendering(true);
+        setPdfError(null);
         try {
             const result = await api.previewPdf({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
             appendLog(logFromPdf(result, result.size));
@@ -711,9 +723,9 @@ export function App() {
             });
         } catch (error) {
             if (movedOn(requested, "instance")) return;
-            setFetchError(error);
+            setPdfError(error);
         } finally {
-            setFetching(false);
+            setRendering(false);
         }
     }
 
@@ -749,7 +761,7 @@ export function App() {
     async function advance() {
         if (!activeTokenId) return;
         const requested = keys.instance;
-        setFetching(true);
+        setAdvancing(true);
         setProcessError(null);
         try {
             const result = await api.advanceProcess({
@@ -795,14 +807,14 @@ export function App() {
             if (movedOn(requested, "instance")) return;
             setProcessError(error);
         } finally {
-            setFetching(false);
+            setAdvancing(false);
         }
     }
 
     /** Validates one data element. The instance's own validation runs with the read. */
     async function validateDataElement() {
         if (!activeTokenId || !dataGuid) return;
-        setFetching(true);
+        setFetchingElement(true);
         setFetchError(null);
         try {
             const result = await api.validateDataElement({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid });
@@ -811,7 +823,7 @@ export function App() {
         } catch (error) {
             setFetchError(error);
         } finally {
-            setFetching(false);
+            setFetchingElement(false);
         }
     }
 
@@ -845,6 +857,9 @@ export function App() {
      */
     const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
+    /** Anything at all in flight, which is what the log reports rather than any one action. */
+    const inFlight = running || reading || fetchingElement || rendering || advancing;
+
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
         hasToken: tokenUsable,
@@ -855,7 +870,7 @@ export function App() {
         hasProcess: instanceProcess !== null,
         party: instanceOwnerPartyId,
         dataSelected: Boolean(dataGuid),
-        busy: running || fetching
+        busy: inFlight
     });
 
     return (
@@ -947,8 +962,12 @@ export function App() {
                             onSelectTyped={selectTypedInstance}
                             onDelete={(instance, hard) => void removeInstance(instance, hard)}
                             onRefresh={refreshInstances}
+                            // Listing only. A read of the selected instance is reported by the
+                            // panels that show what it returns, and holding this one busy would
+                            // put a spinner on Refresh for a request it did not make.
                             busy={listing}
-                            error={listError}
+                            // The error does belong here: selecting a row is what starts the read.
+                            error={listError ?? readError}
                         />
                     )}
 
@@ -1014,7 +1033,9 @@ export function App() {
                                     instanceProcess,
                                     metadata?.metadata.dataTypes?.find((type) => type.id === selectedDataType)
                                 )}
-                                busy={fetching}
+                                // Also while the instance is being read, since that read is what
+                                // replaces the list this panel is choosing from.
+                                busy={fetchingElement || reading}
                                 hasToken={tokenUsable}
                                 error={fetchError}
                             />
@@ -1043,8 +1064,9 @@ export function App() {
                                     instanceOwnerPartyId={instanceOwnerPartyId}
                                     instanceGuid={instanceGuid}
                                     onPreviewPdf={() => void renderPdf()}
-                                    busy={fetching}
+                                    busy={rendering}
                                     hasToken={tokenUsable}
+                                    error={pdfError}
                                 />
                             )}
 
@@ -1058,7 +1080,7 @@ export function App() {
                                     instanceGuid={instanceGuid}
                                     process={instanceProcess}
                                     onAdvance={() => void advance()}
-                                    busy={fetching}
+                                    busy={advancing}
                                     hasToken={tokenUsable}
                                     error={processError}
                                 />
@@ -1073,7 +1095,7 @@ export function App() {
                         {sections.log && (
                             <RunLog
                                 entries={logs}
-                                running={running || fetching}
+                                running={inFlight}
                                 onClear={() => setLogs([])}
                                 localtestUrl={localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101"}
                             />
