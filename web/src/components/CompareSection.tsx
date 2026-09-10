@@ -13,7 +13,12 @@ interface CompareSectionProps {
      * are working on already is.
      */
     payload: string | null;
-    onCompare: () => void;
+    /**
+     * Whether that payload parses as xml. The comparison runs as the payload is edited, and a
+     * half-typed document is not a comparison waiting to happen, so it says it is waiting rather
+     * than asking the server to fail on it.
+     */
+    parses: boolean;
     result: CompareResult | null;
     busy: boolean;
     error: unknown;
@@ -37,7 +42,7 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
  * the order they happened to be in. Inside the same card, under the select it depends on, the
  * relationship is the layout rather than something the prose has to keep claiming.
  */
-export function CompareSection({ dataType, payload, onCompare, result, busy, error }: CompareSectionProps) {
+export function CompareSection({ dataType, payload, parses, result, busy, error }: CompareSectionProps) {
     /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
     const [hideRowIds, setHideRowIds] = useState(true);
     const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
@@ -69,6 +74,11 @@ export function CompareSection({ dataType, payload, onCompare, result, busy, err
                     Nothing to compare against: the payload has no {dataType} element with content. Load an example file, or one from disk, into a{" "}
                     {dataType} element in the <strong>Payload</strong> panel.
                 </p>
+            ) : !parses ? (
+                <p className="field__hint">
+                    Waiting: the {dataType} element in the payload is not well formed xml yet. The comparison runs on its own once it parses, so this
+                    is what it looks like half way through an edit.
+                </p>
             ) : (
                 <>
                     <p className="field__hint">
@@ -86,15 +96,12 @@ export function CompareSection({ dataType, payload, onCompare, result, busy, err
                         </span>
                     </label>
 
-                    <div className="row" style={{ marginTop: 12 }}>
-                        <button type="button" className="btn btn--get" onClick={onCompare} disabled={busy}>
-                            {busy && <span className="btn__spinner" />}
-                            Compare {dataType}
-                        </button>
-                        <span className="field__hint">
-                            <span className="method method--get">GET</span> {"{localtest}"}/storage/api/v1/…/data/{"{dataGuid}"}
-                        </span>
-                    </div>
+                    <p className="field__hint" style={{ marginTop: 12 }}>
+                        {busy ? <span className="btn__spinner" /> : null}
+                        Compared again whenever the element or the xml above changes:
+                        <br />
+                        <span className="method method--get">GET</span> {"{localtest}"}/storage/api/v1/…/data/{"{dataGuid}"}
+                    </p>
                 </>
             )}
 

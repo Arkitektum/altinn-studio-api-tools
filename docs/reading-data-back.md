@@ -47,7 +47,11 @@ Besides logging the whole response, the read fills the data element select so yo
 
 ## Get data element
 
-`GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size. The first is preselected after reading an instance, so fetching one is a single click.
+`GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size, and the first is preselected after reading an instance.
+
+There is no button for it either. Picking an element is asking to see it, so the read, the validation and the comparison all run on their own, the way selecting an instance reads and validates that. They are held to the same two rules as the other unprompted reads, in `lib/autoRuns.ts`: debounced, and asked once per key.
+
+The key is the element and what is stored under it, its `lastChanged`, so a post that rewrites an element in place is read again even though the guid never moved. **Refresh** in the panel header asks again on demand, for an element something outside the tool has changed.
 
 The request goes out with `Accept: */*`, and the two kinds of data element answer differently.
 
@@ -68,7 +72,7 @@ There was a **Load into payload** button here, putting what came back into the p
 
 ### Validating an element
 
-**Validate data element** calls `GET .../data/{dataGuid}/validate`, which Altinn answers against the task the element's data type belongs to. The button is disabled once that no longer holds: an ended process has no task to validate against, and an instance sitting in a later task would be answering about rules this element is not covered by. The reason takes the place of the URL preview, so the panel says why rather than making a call whose answer is about somewhere the instance has left.
+`GET .../data/{dataGuid}/validate` follows the read, which Altinn answers against the task the element's data type belongs to. It is skipped once that no longer holds: an ended process has no task to validate against, and an instance sitting in a later task would be answering about rules this element is not covered by. The reason takes the place of the URL preview, so the panel says why rather than making a call whose answer is about somewhere the instance has left.
 
 A data type the app declares with no `taskId` is never blocked. Nothing was said about which task it belongs to, so there is nothing to compare against, and guessing would take away a request that works.
 
@@ -78,7 +82,9 @@ Reading a form data element gives the model as JSON, so what Altinn actually wro
 
 The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
 
-The left-hand side is the xml as written, which is always the payload element of the same data type: that is where the file you are working on already is. There was a picker offering the example files as well, and it was never used for anything else, so it is gone. With no payload element of that type the panel says so and points at the example files and the file picker, which is where content for one comes from.
+The left-hand side is the xml as written, which is always the payload element of the same data type: that is where the file you are working on already is. There was a picker offering the example files as well, and it was never used for anything else, so it is gone. With no payload element of that type the section says so and points at the example files and the file picker, which is where content for one comes from.
+
+It runs on its own too, and on both of its sides: whenever the selected element changes, whenever a post rewrites what is stored under it, and whenever the payload above is edited. Editing is why it waits longer than the other unprompted reads, 800ms rather than 500ms, and why it waits for the payload to parse at all. Half-typed xml is not a comparison waiting to happen, and asking anyway would put a failed compare in the log at every pause in typing, so the section says it is waiting instead. The browser's own `DOMParser` decides that, which is the one decision in the web app that is not in `lib/`, since node's test runner has no parser to lend it.
 
 Differences are reported as paths, with three kinds:
 
@@ -118,7 +124,7 @@ What it ignores is everything that carries no meaning: whitespace, the xml decla
 
 ## Validate a data element
 
-The instance's own validation runs with the read above. **Validate data element** is its own button, since it is about one element: `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes.
+The instance's own validation runs with the read above. An element's runs with the read of that element, since it is about one element: `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}/validate`. Altinn answers with an array of issues, empty when everything passes.
 
 The verdict summarises them by severity, for example "1 error, 1 warning, 1 other", and the full array is in the step body. Severity 1 counts as an error and 2 as a warning, following Altinn's `ValidationIssueSeverity`. The issues themselves are listed in the [Validation](validation-and-log.md) panel rather than left as raw JSON.
 

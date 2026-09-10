@@ -18,14 +18,30 @@ export interface AutoRuns {
     list: AutoRun | null;
     /** Read the selected instance and validate it. */
     read: AutoRun | null;
+    /** Read the selected data element back, and validate it where that says anything. */
+    element: AutoRun | null;
+    /** Compare it with what the payload holds for its data type. */
+    compare: AutoRun | null;
 }
 
 export interface AutoRunInputs {
     /** A token that exists and has not expired. Nothing can be asked without one. */
     hasToken: boolean;
     selection: Selection;
+    /**
+     * When Altinn last changed the selected element. A post rewrites an element in place, so the
+     * guid stays where it was while what is stored under it does not: without this the tool would
+     * still be showing what it read before the post.
+     */
+    elementChangedAt: string | null;
+    /**
+     * The xml the comparison would run against, or null when there is none to compare, or when
+     * what is there will not parse. Half-typed xml is not a comparison waiting to happen, and
+     * asking anyway would put a failed compare in the log for every pause in typing.
+     */
+    comparable: string | null;
     /** The key each scope has already been attempted for, so a refusal is not retried forever. */
-    attempted: { probe: string | null; list: string | null; read: string | null };
+    attempted: { probe: string | null; list: string | null; read: string | null; element: string | null; compare: string | null };
 }
 
 /** Org and app are typed a character at a time, and "et-v4" should not be five probes. */
@@ -35,28 +51,50 @@ const PROBE_DELAY_MS = 400;
 const SELECTION_DELAY_MS = 500;
 
 /**
+ * The comparison waits longer, because what it depends on is a document being edited rather than
+ * a field being filled in, and a pause in typing is not the same as being finished.
+ */
+const EDIT_DELAY_MS = 800;
+
+/**
  * Which reads should run without being asked, and how long each waits first.
  *
- * All three create nothing and the panels below exist to show what they return, so a button for
- * them was busywork. They are held to two rules. Each waits for what it depends on to settle,
- * because these fields are typed rather than chosen. And each runs once per selection, because an
- * app that is not running, or a party the token may not act for, would otherwise be asked again on
- * every render for as long as it stays on screen. Refresh and the probe button ask again by hand,
- * which is also how metadata that changed while the tool was open is picked up.
+ * None of them create anything, and the panels exist to show what they return, so a button for any
+ * of them was busywork. They are held to two rules. Each waits for what it depends on to settle,
+ * because these are typed rather than chosen. And each runs once per key, because an app that is
+ * not running, or a party the token may not act for, would otherwise be asked again on every
+ * render for as long as it stays on screen. Refresh asks again by hand, which is also how anything
+ * that changed outside the tool is picked up.
  */
 export function pendingAutoRuns(inputs: AutoRunInputs): AutoRuns {
-    const { tokenId, org, app, party, instanceGuid } = inputs.selection;
+    const { tokenId, org, app, party, instanceGuid, dataGuid } = inputs.selection;
     const keys = selectionKeys(inputs.selection);
 
     // A token and somewhere to point it. Everything below narrows this further.
     const ready = inputs.hasToken && Boolean(tokenId) && Boolean(org) && Boolean(app);
+    const onInstance = ready && Boolean(party) && Boolean(instanceGuid);
+
+    /*
+     * What is stored under the element, rather than only which element it is. The timestamp moves
+     * whenever Altinn rewrites it, which is what makes a post something to read again.
+     */
+    const elementKey = `${keys.dataElement}@${inputs.elementChangedAt ?? ""}`;
+
+    /*
+     * And the text it is compared against, in full. A comparison is only stale when one of its two
+     * sides has moved, and the left-hand side is whatever the payload holds at this moment: a
+     * length or a timestamp would miss an edit that swapped one character for another.
+     */
+    const compareKey = `${elementKey}::${inputs.comparable ?? ""}`;
+
+    const onElement = onInstance && Boolean(dataGuid);
 
     return {
         probe: ready && inputs.attempted.probe !== keys.target ? { key: keys.target, delayMs: PROBE_DELAY_MS } : null,
         list: ready && Boolean(party) && inputs.attempted.list !== keys.party ? { key: keys.party, delayMs: SELECTION_DELAY_MS } : null,
-        read:
-            ready && Boolean(party) && Boolean(instanceGuid) && inputs.attempted.read !== keys.instance
-                ? { key: keys.instance, delayMs: SELECTION_DELAY_MS }
-                : null
+        read: onInstance && inputs.attempted.read !== keys.instance ? { key: keys.instance, delayMs: SELECTION_DELAY_MS } : null,
+        element: onElement && inputs.attempted.element !== elementKey ? { key: elementKey, delayMs: SELECTION_DELAY_MS } : null,
+        compare:
+            onElement && inputs.comparable !== null && inputs.attempted.compare !== compareKey ? { key: compareKey, delayMs: EDIT_DELAY_MS } : null
     };
 }

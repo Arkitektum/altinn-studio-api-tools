@@ -60,6 +60,17 @@ import type {
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
 
+/**
+ * Whether the payload is xml the server could compare, asked of the browser's own parser.
+ *
+ * Not in `lib/`, for once, because it is the one decision here that cannot be made without a
+ * browser: `DOMParser` is what does the work, and node's test runner has none to lend it.
+ */
+function isWellFormedXml(text: string): boolean {
+    const parsed = new DOMParser().parseFromString(text, "application/xml");
+    return parsed.getElementsByTagName("parsererror").length === 0;
+}
+
 export function App() {
     const [serverConfig, setServerConfig] = useState<ServerConfig | null>(null);
     const [localtest, setLocaltest] = useState<LocaltestStatus | null>(null);
@@ -124,6 +135,10 @@ export function App() {
     const [listAttempted, setListAttempted] = useState<string | null>(null);
     /** And which instance has already been read, so it is read once per selection. */
     const [readAttempted, setReadAttempted] = useState<string | null>(null);
+    /** Which data element has been read back, keyed by what was stored under it at the time. */
+    const [elementAttempted, setElementAttempted] = useState<string | null>(null);
+    /** And which element was compared against which payload text. */
+    const [compareAttempted, setCompareAttempted] = useState<string | null>(null);
 
     /** Where the instance stands, from the last instance read or process move. */
     const [instanceProcess, setInstanceProcess] = useState<ProcessSummary | null>(null);
@@ -155,6 +170,42 @@ export function App() {
     const [processError, setProcessError] = useState<unknown>(null);
 
     const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
+
+    /** The data element the whole Inspect column is about, from the last instance read. */
+    const selectedElement = instanceDataElements.find((element) => element.id === dataGuid) ?? null;
+    const selectedDataType = selectedElement?.dataType ?? "";
+
+    /** Why validating it would say nothing useful, or null when it would. */
+    const validateBlockedBy = validationBlockedBy(
+        instanceProcess,
+        metadata?.metadata.dataTypes?.find((type) => type.id === selectedDataType)
+    );
+
+    /**
+     * The payload element the comparison reads, which is the one of the same data type holding
+     * text. Base64 is left out: a comparison is about xml.
+     */
+    const payloadForSelected = useMemo(
+        () =>
+            selectedDataType
+                ? dataElements.find((element) => element.dataType === selectedDataType && element.content.trim() && element.encoding !== "base64")
+                : undefined,
+        [selectedDataType, dataElements]
+    );
+
+    /**
+     * And the text itself, once it parses. The comparison runs on its own as the payload is
+     * edited, and half-typed xml is not a comparison waiting to happen: without this, every pause
+     * in typing would put a "could not compare" entry in the run log.
+     */
+    const comparable = useMemo(() => {
+        // Only while there is something to compare it against. Parsing the payload on every
+        // keystroke of a document nothing is going to be compared with is work for nobody.
+        if (!dataGuid) return null;
+        const text = payloadForSelected?.content ?? "";
+        if (!text.trim()) return null;
+        return isWellFormedXml(text) ? text : null;
+    }, [payloadForSelected, dataGuid]);
 
     /**
      * What every request is aimed at, one key per scope. Nothing here cancels a request, so a call
@@ -356,9 +407,9 @@ export function App() {
     }, [org, app, instanceOwnerPartyId]);
 
     /**
-     * The three reads the tool makes without being asked. Which of them are outstanding, and how
-     * long each waits for its field to settle, is decided in `lib/autoRuns.ts` and tested there.
-     * What is left here is the plumbing: a timer per scope, the marker that keeps it to once per
+     * The reads the tool makes without being asked. Which of them are outstanding, and how long
+     * each waits for its field to settle, is decided in `lib/autoRuns.ts` and tested there. What
+     * is left here is the plumbing: a timer per scope, the marker that keeps it to once per
      * selection, and the call.
      *
      * The calls are deliberately out of the dependency lists. They are rebuilt on every render,
@@ -367,11 +418,21 @@ export function App() {
     const {
         probe: nextProbe,
         list: nextList,
-        read: nextRead
+        read: nextRead,
+        element: nextElement,
+        compare: nextCompare
     } = pendingAutoRuns({
         hasToken: tokenUsable,
         selection,
-        attempted: { probe: probeAttempted, list: listAttempted, read: readAttempted }
+        elementChangedAt: selectedElement?.lastChanged ?? null,
+        comparable,
+        attempted: {
+            probe: probeAttempted,
+            list: listAttempted,
+            read: readAttempted,
+            element: elementAttempted,
+            compare: compareAttempted
+        }
     });
 
     useEffect(() => {
@@ -401,6 +462,24 @@ export function App() {
         }, nextRead.delayMs);
         return () => window.clearTimeout(timer);
     }, [nextRead?.key]);
+
+    useEffect(() => {
+        if (!nextElement) return;
+        const timer = window.setTimeout(() => {
+            setElementAttempted(nextElement.key);
+            void readSelectedElement();
+        }, nextElement.delayMs);
+        return () => window.clearTimeout(timer);
+    }, [nextElement?.key]);
+
+    useEffect(() => {
+        if (!nextCompare) return;
+        const timer = window.setTimeout(() => {
+            setCompareAttempted(nextCompare.key);
+            void compareWithStored();
+        }, nextCompare.delayMs);
+        return () => window.clearTimeout(timer);
+    }, [nextCompare?.key]);
 
     async function probe() {
         if (!activeTokenId) return;
@@ -638,6 +717,17 @@ export function App() {
         }
     }
 
+    /**
+     * Reads the selected data element and validates it, the way selecting an instance reads and
+     * validates that. Both are reads of the thing the panel is already about, so neither is worth
+     * a button, and they run in order rather than together so the timings in the log stay honest.
+     */
+    async function readSelectedElement() {
+        await getDataElement();
+        // Only where it would say something: an ended process has no task to validate against.
+        if (!validateBlockedBy) await validateDataElement();
+    }
+
     async function getDataElement() {
         if (!activeTokenId || !dataGuid) return;
         const requested = keys.dataElement;
@@ -691,8 +781,9 @@ export function App() {
      */
     async function compareWithStored() {
         if (!activeTokenId || !dataGuid) return;
-        const left = payloadForSelected?.content ?? "";
-        if (!left.trim()) return;
+        // What parses, since that is what the server can diff. Nothing to compare is not an error.
+        const left = comparable;
+        if (!left) return;
 
         const requested = keys.dataElement;
         setComparing(true);
@@ -718,6 +809,18 @@ export function App() {
         } finally {
             setComparing(false);
         }
+    }
+
+    /**
+     * Asks for the selected element again, for the Refresh button.
+     *
+     * The markers are left where they are: nothing about the selection has changed, so they
+     * already hold the keys for it, and clearing them would only schedule the same two calls
+     * behind their debounce instead of making them now.
+     */
+    function refreshElement() {
+        void readSelectedElement();
+        if (comparable) void compareWithStored();
     }
 
     /** Saves the held data element as a file, under the name Altinn stored or the data type. */
@@ -861,20 +964,6 @@ export function App() {
     if (!instanceOwnerPartyId) blockers.push("an instance owner party id");
     if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
-
-    const selectedDataType = instanceDataElements.find((element) => element.id === dataGuid)?.dataType ?? "";
-
-    /**
-     * The payload element the comparison reads, which is the one of the same data type holding
-     * text. Base64 is left out: a comparison is about xml.
-     */
-    const payloadForSelected = useMemo(
-        () =>
-            selectedDataType
-                ? dataElements.find((element) => element.dataType === selectedDataType && element.content.trim() && element.encoding !== "base64")
-                : undefined,
-        [selectedDataType, dataElements]
-    );
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
@@ -1068,12 +1157,8 @@ export function App() {
                                 onDataGuidChange={changeDataGuid}
                                 fetched={fetchedElement}
                                 onDownloadDataElement={downloadDataElement}
-                                onGetDataElement={() => void getDataElement()}
-                                onValidateDataElement={() => void validateDataElement()}
-                                validateBlockedBy={validationBlockedBy(
-                                    instanceProcess,
-                                    metadata?.metadata.dataTypes?.find((type) => type.id === selectedDataType)
-                                )}
+                                onRefresh={refreshElement}
+                                validateBlockedBy={validateBlockedBy}
                                 // Also while the instance is being read, since that read is what
                                 // replaces the list this panel is choosing from.
                                 busy={fetchingElement || reading}
@@ -1091,7 +1176,7 @@ export function App() {
                                                 ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
                                                 : null
                                         }
-                                        onCompare={() => void compareWithStored()}
+                                        parses={comparable !== null}
                                         result={compareResult}
                                         busy={comparing}
                                         error={compareError}

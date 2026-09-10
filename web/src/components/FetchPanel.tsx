@@ -19,11 +19,11 @@ interface FetchPanelProps {
     /** The data element last read back, for the download and copy buttons. */
     fetched: FetchedDataElement | null;
     onDownloadDataElement: () => void;
-    onGetDataElement: () => void;
-    onValidateDataElement: () => void;
+    /** Reads and compares again for the selection as it stands, since neither waits for a press. */
+    onRefresh: () => void;
     /**
      * Why validating the selected element would say nothing useful, or null when it would. The
-     * button is disabled with the reason under it rather than left to fail against a task the
+     * validation is skipped with the reason in place of its url, rather than sent at a task the
      * instance has already left.
      */
     validateBlockedBy: string | null;
@@ -59,8 +59,7 @@ export function FetchPanel({
     onDataGuidChange,
     fetched,
     onDownloadDataElement,
-    onGetDataElement,
-    onValidateDataElement,
+    onRefresh,
     validateBlockedBy,
     busy,
     hasToken,
@@ -80,15 +79,23 @@ export function FetchPanel({
             title="Data element"
             aside={
                 instanceGuid ? (
-                    <span className="badge" title={`${instanceOwnerPartyId}/${instanceGuid}`}>
-                        {instanceGuid.slice(0, 8)}
+                    <span className="row" style={{ gap: 6 }}>
+                        <span className="badge" title={`${instanceOwnerPartyId}/${instanceGuid}`}>
+                            {instanceGuid.slice(0, 8)}
+                        </span>
+                        {/* Nothing here waits for a press, so the only button left is the one
+                            that asks again: for an element the app has changed underneath us. */}
+                        <button type="button" className="btn btn--get" onClick={onRefresh} disabled={busy || !canGetInstance || !dataGuid}>
+                            {busy && <span className="btn__spinner" />}
+                            Refresh
+                        </button>
                     </span>
                 ) : undefined
             }
         >
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Whichever one is picked
-                here is what the buttons act on, and what the comparison at the foot of this panel compares.
+                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Picking one here reads
+                it, validates it, and compares it at the foot of this panel, all on their own.
             </p>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
@@ -107,24 +114,10 @@ export function FetchPanel({
                         {selected && <p className="field__hint">{selected.id}</p>}
                     </div>
 
-                    <div className="row" style={{ marginTop: 12 }}>
-                        <button type="button" className="btn btn--get" onClick={onGetDataElement} disabled={busy || !canGetInstance || !dataGuid}>
-                            {busy && <span className="btn__spinner" />}
-                            Get data element
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn--get"
-                            onClick={onValidateDataElement}
-                            disabled={busy || !canGetInstance || !dataGuid || Boolean(validateBlockedBy)}
-                            title={validateBlockedBy ?? undefined}
-                        >
-                            Validate data element
-                        </button>
-                    </div>
-
                     {dataGuid && (
                         <p className="field__hint" style={{ marginTop: 8 }}>
+                            Read and validated on its own when you pick one, the way selecting an instance reads that:
+                            <br />
                             <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}
                             <br />
                             {/* The second line is not a call to make while the first is, so it says so. */}
