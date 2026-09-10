@@ -115,7 +115,8 @@ export function InstancesPanel({
                     onClick={() => onSelect(null)}
                     title="Posting creates a new instance for this party"
                 >
-                    <span className={`led ${instanceGuid === "" ? "led--ok" : "led--bad"}`} />
+                    {/* Which row is selected is on the button as aria-current, so this is decoration. */}
+                    <span className={`led ${instanceGuid === "" ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                     <span>New instance</span>
                 </button>
 
@@ -133,7 +134,7 @@ export function InstancesPanel({
                                 onClick={() => onSelect(instance)}
                                 title={instance.id}
                             >
-                                <span className={`led ${current ? "led--ok" : "led--warn"}`} />
+                                <span className={`led ${current ? "led--ok" : "led--warn"}`} aria-hidden="true" />
                                 <span>
                                     {instanceLabel(instance)}
                                     {absent ? " · not in the active list" : ""}
@@ -184,17 +185,21 @@ export function InstancesPanel({
                 <button
                     type="button"
                     className="picklist__item"
-                    aria-current={typing}
+                    // Expanded rather than current: this reveals the field below rather than
+                    // being one of the things you can select.
+                    aria-expanded={typing}
+                    aria-controls="typedInstanceGuid"
                     onClick={() => setTyping(!typing)}
                     title="Reach an instance the list does not hold, by its guid"
                 >
-                    <span className="led led--warn" />
+                    <span className="led led--warn" aria-hidden="true" />
                     <span>Other instance…</span>
                 </button>
             </div>
 
             {typing && (
                 <input
+                    id="typedInstanceGuid"
                     type="text"
                     value={instanceGuid}
                     onChange={(event) => onSelectTyped(event.target.value)}

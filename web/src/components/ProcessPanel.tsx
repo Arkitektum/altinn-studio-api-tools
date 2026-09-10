@@ -45,7 +45,7 @@ export function ProcessPanel({
             title="Process"
             aside={
                 <span className="badge">
-                    <span className={`led ${ended ? "led--ok" : "led--warn"}`} />
+                    <span className={`led ${ended ? "led--ok" : "led--warn"}`} aria-hidden="true" />
                     {processLabel(process)}
                 </span>
             }

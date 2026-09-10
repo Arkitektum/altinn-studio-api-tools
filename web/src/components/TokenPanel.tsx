@@ -239,7 +239,8 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             {activeToken && (
                 <div className="token token--active" style={{ marginTop: 14 }}>
                     <div className="token__top">
-                        <span className={`led ${expired ? "led--bad" : "led--ok"}`} />
+                        {/* The Expires row below says it in words, so this repeats it in colour. */}
+                        <span className={`led ${expired ? "led--bad" : "led--ok"}`} aria-hidden="true" />
                         <span className="token__label">{activeToken.label}</span>
                         <span className="spacer" />
                         <span className="badge">{activeToken.kind}</span>
@@ -305,10 +306,12 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                     aria-current={token.id === activeToken?.id}
                                     onClick={() => onActivate(token.id)}
                                 >
-                                    <span className={`led ${isExpired(token.expiresAt, now) ? "led--bad" : "led--ok"}`} />
+                                    <span className={`led ${isExpired(token.expiresAt, now) ? "led--bad" : "led--ok"}`} aria-hidden="true" />
                                     {/* Same user fetched twice gives identical labels, so the time disambiguates. */}
                                     <span>
                                         {token.label} · {new Date(token.createdAt).toLocaleTimeString("nb")}
+                                        {/* Nothing in this row says it otherwise. The dot is the only sign. */}
+                                        {isExpired(token.expiresAt, now) && <span className="sr-only"> expired</span>}
                                     </span>
                                 </button>
                                 <button

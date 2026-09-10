@@ -27,10 +27,13 @@ export function RunLog({ entries, running, onClear, localtestUrl }: RunLogProps)
         <Panel
             title="Run log"
             aside={
-                <span className="row" style={{ gap: 6 }}>
+                // A request starting or a run landing is worth hearing about, and this is the terse
+                // version of it. The runs themselves are not a live region: each one is a wall of
+                // steps, headers and bodies, and having that read out would bury the answer.
+                <span className="row" style={{ gap: 6 }} role="status">
                     {running && (
                         <span className="badge">
-                            <span className="led led--warn led--live" />
+                            <span className="led led--warn led--live" aria-hidden="true" />
                             running
                         </span>
                     )}
@@ -81,7 +84,8 @@ function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: b
                 <span className="element__chevron" aria-hidden="true">
                     {open ? "▼" : "▶"}
                 </span>
-                <span className={`led ${result.ok ? "led--ok" : "led--bad"}`} />
+                {/* The title already says "Failed" when it did, so the dot is decoration here. */}
+                <span className={`led ${result.ok ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                 <span className="run__title">{result.ok ? result.title : "Failed"}</span>
                 <span className="spacer" />
                 <span className="run__meta">

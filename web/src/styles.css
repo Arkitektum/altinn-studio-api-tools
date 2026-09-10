@@ -83,6 +83,32 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * The keyboard's own highlight. Buttons carry their own background, so the browser's default ring
+ * lands on a dark surface with little to separate it. Only on keyboard focus, since a ring around
+ * every clicked button would be noise.
+ */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/*
+ * Read aloud, never drawn. For the few places where the state is a coloured dot: colour is not
+ * available to everyone, and a title attribute is not read reliably.
+ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* ------------------------------------------------------------------ shell */
 
 .shell {

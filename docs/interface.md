@@ -60,6 +60,8 @@ The reason it is more than a message is the paragraph above: what you chose is r
 
 Everything else stays grey.
 
+Colour is never the only carrier. A method is named next to its colour, a status code is a number, a severity says "3 errors", and a failed run says "Failed". The three status dots in the header were the exception, since a green or red dot was the whole message, so each of them now carries its state in words for a screen reader. The dots that only repeat something already written next to them are marked as decoration, and are not read out twice.
+
 Buttons come in three kinds, all the same height, since height is not a thing worth encoding:
 
 | Kind                    | Looks like                    | Means                                                                                                   |

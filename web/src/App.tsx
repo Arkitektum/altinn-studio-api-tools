@@ -877,18 +877,26 @@ export function App() {
         <div className="shell">
             <header className="masthead">
                 <span className="masthead__mark">Altinn API tools</span>
-                <div className="masthead__meta">
+                {/*
+                 * Three states, each of them a coloured dot. The dot is the whole message, so each
+                 * one carries the same message in words for anyone the colour does not reach. The
+                 * region is polite: these change on their own, and they are worth hearing about.
+                 */}
+                <div className="masthead__meta" role="status">
                     <span className="gauge" title={appHost}>
-                        <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} />
+                        <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                         {appHost.replace(/^https?:\/\//, "")}
+                        <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
                     </span>
                     <span className="gauge" title={localtest?.error ?? localtest?.url}>
-                        <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} />
+                        <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                         LocalTest
+                        <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
                     </span>
                     <span className="gauge">
-                        <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} />
+                        <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                         {activeToken ? activeToken.label : "No token"}
+                        <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
                     </span>
                 </div>
             </header>
