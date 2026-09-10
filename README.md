@@ -64,6 +64,8 @@ For an app the catalogue does not list, pick **Other application** and type the 
 | `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
 | `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
 
+`npm run dev` is how you run the tool. `npm run build` is a check, and the fourth thing CI does: it compiles the server and bundles the UI to prove both still build. Nothing serves `web/dist`, and `npm start` runs the api alone. This is a local dev tool, so there is no deployment for the bundle to be part of.
+
 ## Working on it
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) for why there is a server at all, how a request flows through it, and where state lives.
