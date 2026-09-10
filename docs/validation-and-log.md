@@ -11,9 +11,13 @@ The right column. Both arrive with their first content and stay put afterwards, 
 
 Its own panel, separate from the run log, holding one result per thing validated: the instance, and each data element you have validated. Results are grouped by target so several can be on screen at once, with the instance first and the data elements after it by name. Validating the same target again replaces its result rather than adding another, so what you see is always current.
 
-Every result starts folded, showing its label, its worst severity and a count. Expanded issue lists run long enough to push the run log off screen, so the headers are the default view and you open the one you want. Inside an open result, issues are grouped by severity with the worst first and each group folds too. Errors start open because they are what blocks a submission, while warnings and anything else start folded with their counts still showing.
+Every result starts folded, showing its label, its worst severity and a count. Expanded issue lists run long enough to push the run log off screen, so the headers are the default view and you open the one you want. That one fold is the only one. Open a result and every issue in it is there, worst first, each run of a severity under a line naming it: "2 errors", then the two cards, then "2 warnings".
 
-Each issue shows its code, the data type it belongs to, the description and the field path, on a severity coloured card. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code.
+Those runs were collapsible blocks of their own once, errors open and the rest shut. It read as a box inside a box, a result already coloured by its worst severity holding a red block and an amber one, and a result whose groups were all shut held nothing but two badges. A line of text names a run just as well and adds no second thing to open. `issueGroups.test.ts` covers the grouping, which keeps issues of one severity together wherever they arrive in the list.
+
+The list is indented under the result that holds it, to the width of that result's chevron, so the two do not start at the same edge. Sharing one made the issues read as siblings of the result rather than as its contents.
+
+Each issue shows its code, the data type it belongs to, the description and the field path, on a card edged in the colour of its severity. The line above the run names that severity in words, since a colour says nothing to a reader who does not see it. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code.
 
 The panel only changes when something validates. Fetching an instance or a data element afterwards leaves the issues on screen, so they stay readable while you fix the payload. Issues describe one instance, so selecting another one clears them rather than leaving results that no longer apply, and **Clear results** empties the panel by hand. Posting creates a new instance, which likewise drops the previous instance's results.
 
@@ -31,7 +35,7 @@ A post and the read and validation that follow it share one entry, because they 
 
 **Show bodies** on a step reveals the request as it was sent and the response as it came back, coloured the same way the payload editor is. A step that made no request has neither.
 
-The log column is 480px wide, which is not enough for a form's XML, so each body has a **Maximize** button that opens it in a window over the tool at full size, with its own **Copy**. Widening the column for the one case that needs it would have cost the middle column the rest of the time.
+The log column takes 640px, or 42% of the window where that is more, which is still not enough for a form's XML, so each body has a **Maximize** button that opens it in a window over the tool at full size, with its own **Copy**. Widening the column for the one case that needs it would cost the working column the rest of the time.
 
 A request body is coloured by the content type it went out with, so a multipart body, which is several bodies with headers between them, is left plain rather than coloured as though it were one document.
 

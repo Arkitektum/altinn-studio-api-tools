@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { groupBySeverity } from "../lib/issueGroups";
 import { Panel } from "./Panel";
 import type { LogIssue, ValidationView } from "../types";
 
@@ -13,10 +14,6 @@ function severityTone(severity: number): "bad" | "warn" | "info" {
     if (severity === 1) return "bad";
     if (severity === 2) return "warn";
     return "info";
-}
-
-function badgeClass(severity: number): string {
-    return `badge badge--${severityTone(severity)}`;
 }
 
 /** Worst severity present, so a folded block still says whether it is blocking. */
@@ -115,58 +112,44 @@ export function ValidationPanel({ validations, onClear }: ValidationPanelProps) 
     );
 }
 
+/**
+ * The issues of one result, worst first, under a line naming each severity.
+ *
+ * They were folded by severity before, one collapsible block per group. That put a block inside a
+ * block: a result already coloured by its worst severity, holding a red group and an amber group,
+ * and holding nothing but two badges whenever both were shut. A run of cards under a plain line
+ * says the same thing without the boxes, and one fold, the result's own, is enough.
+ */
 function Groups({ issues }: { issues: LogIssue[] }) {
-    // Errors start open because they are what blocks a submission. The rest start folded, with
-    // their counts still visible, so a long list does not bury them.
-    const [overrides, setOverrides] = useState<Record<number, boolean>>({});
-    const isOpen = (severity: number) => overrides[severity] ?? severity === 1;
-
-    const bySeverity = new Map<number, LogIssue[]>();
-    for (const issue of issues) {
-        const bucket = bySeverity.get(issue.severity);
-        if (bucket) bucket.push(issue);
-        else bySeverity.set(issue.severity, [issue]);
-    }
-
     return (
         <div className="issues">
-            {[...bySeverity.entries()].map(([severity, group]) => {
-                const open = isOpen(severity);
-                return (
-                    <div key={severity}>
-                        <button
-                            type="button"
-                            className="issues__toggle"
-                            aria-expanded={open}
-                            onClick={() => setOverrides((current) => ({ ...current, [severity]: !open }))}
-                        >
-                            <span className="element__chevron" aria-hidden="true">
-                                {open ? "▼" : "▶"}
-                            </span>
-                            <span className={badgeClass(severity)}>
-                                {group.length} {group[0]?.severityLabel}
-                                {group.length === 1 ? "" : "s"}
-                            </span>
-                        </button>
+            {groupBySeverity(issues).map((group) => (
+                <div key={group.severity} className="issues__group">
+                    {/*
+                     * Named rather than only coloured. The cards carry the severity as a coloured
+                     * edge, which says nothing to anyone the colour does not reach.
+                     */}
+                    <span className="issues__legend">
+                        {group.issues.length} {group.label}
+                        {group.issues.length === 1 ? "" : "s"}
+                    </span>
 
-                        {open &&
-                            group.map((issue, position) => (
-                                <div key={`${issue.code}-${issue.field}-${position}`} className={`issue issue--${severityTone(severity)}`}>
-                                    <div className="issue__top">
-                                        {issue.code && (
-                                            <span className="issue__code" title={issue.source ?? undefined}>
-                                                {issue.code}
-                                            </span>
-                                        )}
-                                        {issue.dataElement && <span className="badge">{issue.dataElement}</span>}
-                                    </div>
-                                    {issue.description && <p className="issue__description">{issue.description}</p>}
-                                    {issue.field && <div className="issue__field">{issue.field}</div>}
-                                </div>
-                            ))}
-                    </div>
-                );
-            })}
+                    {group.issues.map((issue, position) => (
+                        <div key={`${issue.code}-${issue.field}-${position}`} className={`issue issue--${severityTone(group.severity)}`}>
+                            <div className="issue__top">
+                                {issue.code && (
+                                    <span className="issue__code" title={issue.source ?? undefined}>
+                                        {issue.code}
+                                    </span>
+                                )}
+                                {issue.dataElement && <span className="badge">{issue.dataElement}</span>}
+                            </div>
+                            {issue.description && <p className="issue__description">{issue.description}</p>}
+                            {issue.field && <div className="issue__field">{issue.field}</div>}
+                        </div>
+                    ))}
+                </div>
+            ))}
         </div>
     );
 }

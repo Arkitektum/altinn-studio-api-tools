@@ -1036,23 +1036,28 @@ textarea {
 
 /* ------------------------------------------------------------------ validation issues */
 
+/*
+ * One list, indented under the result that holds it, to the width of that result's chevron so the
+ * two do not start at the same edge.
+ */
 .issues {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    margin-bottom: 14px;
+    margin: 6px 0 10px 20px;
 }
 
-.issues__toggle {
+.issues__group {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 6px;
-    width: 100%;
-    margin-bottom: 6px;
-    padding: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
+}
+
+/* Names a run of issues. A line of text rather than a block, which is the whole point of it. */
+.issues__legend {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
 /* A severity coloured edge, so a long list can be skimmed by seriousness. */
@@ -1061,7 +1066,6 @@ textarea {
     border-left-width: 3px;
     border-radius: 4px;
     padding: 8px 10px;
-    margin-bottom: 6px;
 }
 
 .issue--bad {
