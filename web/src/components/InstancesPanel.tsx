@@ -26,6 +26,11 @@ interface InstancesPanelProps {
     onSelectTyped: (value: string) => void;
     onDelete: (instance: InstanceSummary, hard: boolean) => void;
     onRefresh: () => void;
+    /** Whether the listing also asks storage for the ones the app's active list leaves out. */
+    includeCompleted: boolean;
+    onIncludeCompletedChange: (next: boolean) => void;
+    /** False when they were asked for and storage would not answer, so the list is short. */
+    completedListed: boolean | null;
     busy: boolean;
     error: unknown;
 }
@@ -43,6 +48,9 @@ export function InstancesPanel({
     onSelectTyped,
     onDelete,
     onRefresh,
+    includeCompleted,
+    onIncludeCompletedChange,
+    completedListed,
     busy,
     error
 }: InstancesPanelProps) {
@@ -77,7 +85,9 @@ export function InstancesPanel({
                           instanceOwnerPartyId,
                           instanceGuid,
                           lastChanged: null,
-                          lastChangedBy: null
+                          lastChangedBy: null,
+                          // Reached by its guid, so nothing has said where it stands.
+                          state: "active" as const
                       },
                       absent: true
                   }
@@ -138,6 +148,8 @@ export function InstancesPanel({
                                 <span>
                                     {instanceLabel(instance)}
                                     {absent ? " · not in the active list" : ""}
+                                    {/* Only storage lists these two, so the row says which it is. */}
+                                    {instance.state !== "active" ? ` · ${instance.state}` : ""}
                                 </span>
                             </button>
 
@@ -213,7 +225,17 @@ export function InstancesPanel({
 
             {instances === null && !busy && <p className="field__hint">Nothing listed yet.</p>}
             {instances !== null && instances.length === 0 && (
-                <p className="field__hint">Nothing else here: this party has no active instances to add data to.</p>
+                <p className="field__hint">
+                    Nothing else here: this party has no {includeCompleted ? "instances at all" : "active instances to add data to"}.
+                </p>
+            )}
+
+            {/* Asked for and refused, so the list is short by however many there were. */}
+            {completedListed === false && (
+                <div className="notice notice--warn" style={{ marginTop: 10 }}>
+                    LocalTest&rsquo;s storage api would not list this party&rsquo;s instances, so only the active ones are here. The step in the run
+                    log says what it answered. A 403 usually means this token may not act for that party.
+                </div>
             )}
 
             <p className="field__hint" style={{ marginTop: 10 }}>
@@ -235,6 +257,23 @@ export function InstancesPanel({
                 <br />
                 Listed on its own for the party in Target. Altinn returns the instances whose process has not ended, so an archived one is not here.
             </p>
+
+            <label className="check" style={{ marginTop: 12 }}>
+                <input
+                    type="checkbox"
+                    checked={includeCompleted}
+                    onChange={(event) => onIncludeCompletedChange(event.target.checked)}
+                    disabled={busy}
+                />
+                <span className="check__body">
+                    <span className="check__title">Include completed</span>
+                    <span className="check__note">
+                        A second read, of <span className="method method--get">GET</span> {localtestUrl}
+                        /storage/api/v1/instances, which is the only place an instance whose process has ended is still listed. Soft deleted ones come
+                        with it, marked as such. Off by default, since it is a request that often has nothing to add.
+                    </span>
+                </span>
+            </label>
 
             {instances !== null && instances.length > 0 && (
                 <label className="check" style={{ marginTop: 12 }}>

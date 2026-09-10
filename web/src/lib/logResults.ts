@@ -165,6 +165,19 @@ export function logFromCompare(result: CompareResult): LogResult {
 }
 
 export function logFromInstances(result: ListInstancesResult): LogResult {
+    /*
+     * What the second read added, and only when there was one. A count on its own would not say
+     * whether an empty result means nothing is finished or that storage never answered, and those
+     * read the same way in a list.
+     */
+    const completed = result.instances.filter((instance) => instance.state !== "active").length;
+    const storageRow =
+        result.completedListed === null
+            ? []
+            : result.completedListed
+              ? [{ label: "From storage", value: `${completed} completed or deleted` }]
+              : [{ label: "From storage", value: "not listed", tone: "warn" as const }];
+
     return {
         ok: result.ok,
         steps: result.steps,
@@ -172,7 +185,7 @@ export function logFromInstances(result: ListInstancesResult): LogResult {
         title: "Listed instances",
         rows: [
             { label: "Party", value: result.instanceOwnerPartyId },
-            ...(result.ok ? [{ label: "Instances", value: String(result.instances.length) }] : [])
+            ...(result.ok ? [{ label: "Instances", value: String(result.instances.length) }, ...storageRow] : [])
         ]
     };
 }

@@ -110,6 +110,14 @@ export function App() {
     const [instanceList, setInstanceList] = useState<InstanceSummary[] | null>(null);
     const [listing, setListing] = useState(false);
     const [listError, setListError] = useState<unknown>(null);
+    /**
+     * Whether the listing also asks storage for the instances the app's active list leaves out.
+     * A view of the moment rather than something you chose, so it is not persisted: the cheaper
+     * listing is the right thing to come back to.
+     */
+    const [includeCompleted, setIncludeCompleted] = useState(false);
+    /** False when the completed ones were asked for and storage would not answer. */
+    const [completedListed, setCompletedListed] = useState<boolean | null>(null);
     /** Which token and app have already been probed, so a refusal is not retried forever. */
     const [probeAttempted, setProbeAttempted] = useState<string | null>(null);
     /** Which token, app and party the listing has already been attempted for. */
@@ -242,7 +250,9 @@ export function App() {
                           instanceOwnerPartyId: partyId ?? instanceOwnerPartyId,
                           instanceGuid: guid,
                           lastChanged: null,
-                          lastChangedBy: null
+                          lastChangedBy: null,
+                          // Nothing has said where it stands, and a guid alone does not.
+                          state: "active"
                       }
                     : null
             );
@@ -534,13 +544,20 @@ export function App() {
         }
     }
 
-    async function listInstances() {
+    /** The scope is an argument, so the toggle can list again without waiting for its own state. */
+    async function listInstances(completed = includeCompleted) {
         if (!activeTokenId || !org || !app || !instanceOwnerPartyId) return;
         const requested = keys.party;
         setListing(true);
         setListError(null);
         try {
-            const result = await api.listInstances({ tokenId: activeTokenId, org, app, instanceOwnerPartyId });
+            const result = await api.listInstances({
+                tokenId: activeTokenId,
+                org,
+                app,
+                instanceOwnerPartyId,
+                includeCompleted: completed ? "true" : "false"
+            });
             // The request happened, so it keeps its place in the log whatever is selected by now.
             // The listing itself is another party's the moment the party moves.
             appendLog(logFromInstances(result));
@@ -548,6 +565,7 @@ export function App() {
             // A failed listing stays null rather than empty, since "none" would be a claim we
             // cannot make when the request never answered.
             setInstanceList(result.ok ? result.instances : null);
+            setCompletedListed(result.completedListed);
         } catch (error) {
             if (movedOn(requested, "party")) return;
             setListError(error);
@@ -566,6 +584,14 @@ export function App() {
         if (!activeTokenId) return;
         setListAttempted(keys.party);
         void listInstances();
+    }
+
+    /** Turning the completed ones on or off is a different listing, so it asks again straight away. */
+    function changeIncludeCompleted(next: boolean) {
+        setIncludeCompleted(next);
+        if (!next) setCompletedListed(null);
+        setListAttempted(keys.party);
+        void listInstances(next);
     }
 
     /**
@@ -970,6 +996,9 @@ export function App() {
                             onSelectTyped={selectTypedInstance}
                             onDelete={(instance, hard) => void removeInstance(instance, hard)}
                             onRefresh={refreshInstances}
+                            includeCompleted={includeCompleted}
+                            onIncludeCompletedChange={changeIncludeCompleted}
+                            completedListed={completedListed}
                             // Listing only. A read of the selected instance is reported by the
                             // panels that show what it returns, and holding this one busy would
                             // put a spinner on Refresh for a request it did not make.

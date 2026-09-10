@@ -1,6 +1,6 @@
 import { altinnFetch, isTextual } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
-import { appBaseUrl, instanceUiUrl } from "./urls.js";
+import { appBaseUrl, instanceUiUrl, storageInstancesUrl } from "./urls.js";
 import { advanceBody } from "./processAction.js";
 
 export interface ReadRequest {
@@ -20,6 +20,14 @@ export interface DataElementSummary {
     lastChanged: string | null;
 }
 
+/**
+ * Where an instance stands, which is also why it may not be in the app's own list.
+ *
+ * `active` is what the app offers back to the user. The other two only ever come from storage,
+ * since that is the only place they are still listed.
+ */
+export type InstanceState = "active" | "completed" | "deleted";
+
 /** One entry of the party's instance list, trimmed to what the UI needs to pick one. */
 export interface InstanceSummary {
     /** "510001/99d0632c-…", as Altinn writes it. */
@@ -29,6 +37,7 @@ export interface InstanceSummary {
     lastChanged: string | null;
     /** Name of whoever last touched it, which is what Altinn's own list shows. */
     lastChangedBy: string | null;
+    state: InstanceState;
 }
 
 export interface ListInstancesResult {
@@ -37,6 +46,12 @@ export interface ListInstancesResult {
     failedAt: string | null;
     instanceOwnerPartyId: string;
     instances: InstanceSummary[];
+    /**
+     * Whether the finished ones are in there: true when storage answered, false when it was asked
+     * and would not, null when it was not asked. The difference matters, because a list missing
+     * half of what was requested should not read as a party with nothing finished.
+     */
+    completedListed: boolean | null;
 }
 
 /** Where an instance stands in its process, trimmed to what you need to decide what to do next. */
@@ -192,7 +207,25 @@ function toProcess(value: unknown): ProcessSummary | null {
     };
 }
 
-function toInstanceSummary(value: unknown, fallbackPartyId: string): InstanceSummary | null {
+/**
+ * What state a storage row is in. Both spellings of each flag are read, since Altinn has written
+ * `softDeleted` as a timestamp and `isSoftDeleted` as a boolean in different places, and a row
+ * whose state cannot be established is treated as active rather than hidden.
+ */
+function stateOf(record: Record<string, unknown>): InstanceState {
+    const status = record["status"];
+    if (status && typeof status === "object") {
+        const flags = status as Record<string, unknown>;
+        if (flags["softDeleted"] || flags["isSoftDeleted"] || flags["hardDeleted"] || flags["isHardDeleted"]) return "deleted";
+    }
+    const process = record["process"];
+    if (process && typeof process === "object" && typeof (process as Record<string, unknown>)["ended"] === "string") {
+        return "completed";
+    }
+    return "active";
+}
+
+function toInstanceSummary(value: unknown, fallbackPartyId: string, state?: InstanceState): InstanceSummary | null {
     if (!value || typeof value !== "object") return null;
     const record = value as Record<string, unknown>;
     const id = record["id"];
@@ -208,8 +241,21 @@ function toInstanceSummary(value: unknown, fallbackPartyId: string): InstanceSum
         instanceOwnerPartyId: second ? (first ?? fallbackPartyId) : fallbackPartyId,
         instanceGuid: guid,
         lastChanged: asString("lastChanged"),
-        lastChangedBy: asString("lastChangedBy")
+        lastChangedBy: asString("lastChangedBy"),
+        state: state ?? stateOf(record)
     };
+}
+
+/** Altinn's list endpoints answer with a bare array, storage with `{ instances: [...] }`. */
+function rowsOf(body: unknown): unknown[] {
+    if (Array.isArray(body)) return body;
+    const wrapped = (body as { instances?: unknown } | null)?.instances;
+    return Array.isArray(wrapped) ? wrapped : [];
+}
+
+/** Newest first, which is nearly always the one you just made or just finished. */
+function byLastChanged(a: InstanceSummary, b: InstanceSummary): number {
+    return (b.lastChanged ?? "").localeCompare(a.lastChanged ?? "");
 }
 
 /**
@@ -221,7 +267,7 @@ function toInstanceSummary(value: unknown, fallbackPartyId: string): InstanceSum
  */
 export async function listInstances(
     token: string,
-    request: { org: string; app: string; instanceOwnerPartyId: string }
+    request: { org: string; app: string; instanceOwnerPartyId: string; includeCompleted?: boolean }
 ): Promise<ListInstancesResult> {
     const recorder = new StepRecorder();
     const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/active`;
@@ -230,24 +276,44 @@ export async function listInstances(
 
     // The app answers with a bare array. Storage-style `{ instances: [...] }` is accepted too, so
     // pointing this at another endpoint still yields a list rather than nothing.
-    const body = response.ok ? response.body : null;
-    const rows = Array.isArray(body)
-        ? body
-        : Array.isArray((body as { instances?: unknown } | null)?.instances)
-          ? (body as { instances: unknown[] }).instances
-          : [];
-    const instances = rows
-        .map((row) => toInstanceSummary(row, request.instanceOwnerPartyId))
-        .filter((instance): instance is InstanceSummary => instance !== null)
-        // Newest first, which is nearly always the one you just made.
-        .sort((a, b) => (b.lastChanged ?? "").localeCompare(a.lastChanged ?? ""));
+    //
+    // Everything the app offers back is active by definition of the endpoint, so the state comes
+    // from which endpoint answered rather than from the row, which carries no process.
+    const active = rowsOf(response.ok ? response.body : null)
+        .map((row) => toInstanceSummary(row, request.instanceOwnerPartyId, "active"))
+        .filter((instance): instance is InstanceSummary => instance !== null);
+
+    let instances = [...active].sort(byLastChanged);
+    let completedListed: boolean | null = null;
+
+    /*
+     * The finished ones, from storage, and only when asked for. Two reads rather than one because
+     * the app's list is the one that must not depend on storage being there: LocalTest serves the
+     * storage api, and if it is down or refuses the party, an active listing still stands on its
+     * own. What storage adds is merged by guid, so an instance in both is listed once, as the app
+     * described it.
+     */
+    if (request.includeCompleted) {
+        const storageUrl = storageInstancesUrl(request.org, request.app, request.instanceOwnerPartyId);
+        const stored = await recorder.run("List every instance from storage", "GET", storageUrl, () => altinnFetch({ url: storageUrl, token }));
+        completedListed = stored.ok;
+
+        if (stored.ok) {
+            const known = new Set(active.map((instance) => instance.instanceGuid));
+            const extra = rowsOf(stored.body)
+                .map((row) => toInstanceSummary(row, request.instanceOwnerPartyId))
+                .filter((instance): instance is InstanceSummary => instance !== null && !known.has(instance.instanceGuid));
+            instances = [...active, ...extra].sort(byLastChanged);
+        }
+    }
 
     return {
         ok: response.ok,
         steps: recorder.steps,
         failedAt: response.ok ? null : "Could not list the instances for this party.",
         instanceOwnerPartyId: request.instanceOwnerPartyId,
-        instances
+        instances,
+        completedListed
     };
 }
 

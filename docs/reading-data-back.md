@@ -27,6 +27,14 @@ An instance whose process has ended leaves Altinn's active list, so the one bein
 
 Altinn lists the instances whose process has not ended, so an archived one is not here. **Other instance** at the bottom of the list is the way to one anyway: it reveals a field that takes a guid, or the whole `510001/99d0632c-…` pair as Altinn writes it, in which case the party comes along too. What you reach that way gets the same row as any other, marked "not in the active list", and is just as readable and deletable.
 
+### Include completed
+
+Which is only a way through if you know the guid, so the checkbox under the list is the way to all of them. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· deleted`.
+
+Two reads rather than one, because the app's own list is the one that must not depend on storage. If storage is not there, or refuses the party, the active listing still stands and the panel says the rest is missing rather than letting a short list read as a party with nothing finished. What both hold is listed once, as the app described it, and everything is ordered by when it was last changed, so the instance you just archived is where you left it rather than at the bottom.
+
+Off by default. It is a request that often has nothing to add, and it is a view of the moment rather than something you chose, so a reload comes back to the cheaper listing.
+
 Within a session it rarely comes up, since an instance stays selected after a post even once its process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
 
 ## Reading and validating, on selection

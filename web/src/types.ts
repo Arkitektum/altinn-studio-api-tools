@@ -189,6 +189,9 @@ export interface DataElementSummary {
 }
 
 /** One entry of the party's instance list, as offered in the instance picker. */
+/** Active is what the app offers back. The other two are only ever listed by storage. */
+export type InstanceState = "active" | "completed" | "deleted";
+
 export interface InstanceSummary {
     /** "510001/99d0632c-…", as Altinn writes it. */
     id: string;
@@ -196,6 +199,7 @@ export interface InstanceSummary {
     instanceGuid: string;
     lastChanged: string | null;
     lastChangedBy: string | null;
+    state: InstanceState;
 }
 
 export interface ListInstancesResult {
@@ -204,6 +208,8 @@ export interface ListInstancesResult {
     failedAt: string | null;
     instanceOwnerPartyId: string;
     instances: InstanceSummary[];
+    /** True when storage answered, false when it was asked and would not, null when not asked. */
+    completedListed: boolean | null;
 }
 
 /** Where an instance stands in its process. */

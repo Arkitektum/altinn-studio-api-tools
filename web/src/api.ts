@@ -102,8 +102,14 @@ export const api = {
 
     postRun: (input: Record<string, unknown>) => request<RunResult>("/runs", jsonBody(input)),
 
-    listInstances: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string }) =>
-        request<ListInstancesResult>(`/instances/active?${new URLSearchParams(params)}`),
+    listInstances: (params: {
+        tokenId: string;
+        org: string;
+        app: string;
+        instanceOwnerPartyId: string;
+        /** Ask storage for the finished ones too, which the app's active list leaves out. */
+        includeCompleted: "true" | "false";
+    }) => request<ListInstancesResult>(`/instances/active?${new URLSearchParams(params)}`),
 
     getInstance: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
         request<ReadInstanceResult>(`/instances?${new URLSearchParams(params)}`),

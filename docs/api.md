@@ -23,7 +23,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                                                                           |
 | `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                                                                           |
 | `POST`   | `/api/runs`                            | The orchestrator, described below                                                                                            |
-| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`                                                            |
+| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`, plus `&includeCompleted=true` for the finished ones       |
 | `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid`                                                        |
 | `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                                                            |
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                                                                         |

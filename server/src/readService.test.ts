@@ -98,8 +98,12 @@ describe("listInstances", () => {
             instanceOwnerPartyId: "510001",
             instanceGuid: "aaaaaaaa-1111-2222-3333-444444444444",
             lastChanged: "2026-09-05T08:30:00Z",
-            lastChangedBy: null
+            lastChangedBy: null,
+            // The endpoint only answers with unfinished ones, so the row need not say so itself.
+            state: "active"
         });
+        // Nothing was asked of storage, which is not the same as storage having nothing to add.
+        assert.equal(result.completedListed, null);
         assert.equal(result.instances[1]?.instanceGuid, GUID);
         assert.equal(result.instances[1]?.lastChangedBy, "Pengelens Partner");
     });
@@ -138,6 +142,78 @@ describe("listInstances", () => {
         assert.equal(result.ok, false);
         assert.equal(result.failedAt, "Could not list the instances for this party.");
         assert.deepEqual(result.instances, []);
+    });
+
+    describe("with the completed ones", () => {
+        const FINISHED = "bbbbbbbb-1111-2222-3333-444444444444";
+        const DELETED = "cccccccc-1111-2222-3333-444444444444";
+
+        /** The app's active list, and storage answering with everything it holds for the party. */
+        function stubBoth(storage: { status?: number; body: unknown }) {
+            return stubAltinn((url) =>
+                url.includes("/storage/api/v1/instances")
+                    ? { status: storage.status, body: JSON.stringify(storage.body), contentType: "application/json" }
+                    : {
+                          body: JSON.stringify([{ id: `510001/${GUID}`, lastChanged: "2026-09-03T10:00:00Z" }]),
+                          contentType: "application/json"
+                      }
+            );
+        }
+
+        const storageBody = {
+            count: 3,
+            instances: [
+                // The same instance the app already offered, which must not be listed twice.
+                { id: `510001/${GUID}`, lastChanged: "2026-09-03T10:00:00Z", process: { ended: null } },
+                { id: `510001/${FINISHED}`, lastChanged: "2026-09-04T12:00:00Z", process: { ended: "2026-09-04T12:00:00Z" } },
+                { id: `510001/${DELETED}`, lastChanged: "2026-09-02T09:00:00Z", status: { softDeleted: "2026-09-02T09:05:00Z" } }
+            ]
+        };
+
+        it("asks storage as well, and says which instance is in what state", async () => {
+            const stub = stubBoth({ body: storageBody });
+            active = stub;
+
+            const result = await listInstances("test-token", { ...party, includeCompleted: true });
+
+            assert.equal(result.ok, true);
+            assert.equal(result.completedListed, true);
+            assert.equal(stub.calls.length, 2);
+            assert.equal(stub.calls[1]?.url, "http://localhost:5101/storage/api/v1/instances?appId=dibk%2Fet-v4&instanceOwner.partyId=510001");
+            assert.equal(result.steps[1]?.name, "List every instance from storage");
+
+            // Three rows, newest first, and the one both endpoints hold is listed once.
+            assert.deepEqual(
+                result.instances.map((instance) => [instance.instanceGuid, instance.state]),
+                [
+                    [FINISHED, "completed"],
+                    [GUID, "active"],
+                    [DELETED, "deleted"]
+                ]
+            );
+        });
+
+        it("keeps the active list when storage will not answer", async () => {
+            const stub = stubBoth({ status: 403, body: { detail: "Forbidden" } });
+            active = stub;
+
+            const result = await listInstances("test-token", { ...party, includeCompleted: true });
+
+            // The listing that did answer still stands, and the refusal is a step in the log.
+            assert.equal(result.ok, true);
+            assert.equal(result.completedListed, false);
+            assert.equal(result.instances.length, 1);
+            assert.equal(result.instances[0]?.instanceGuid, GUID);
+            assert.equal(result.steps[1]?.ok, false);
+        });
+
+        it("treats a row it cannot place as active rather than hiding it", async () => {
+            const stub = stubBoth({ body: { instances: [{ id: `510001/${FINISHED}` }] } });
+            active = stub;
+
+            const result = await listInstances("test-token", { ...party, includeCompleted: true });
+            assert.equal(result.instances.find((instance) => instance.instanceGuid === FINISHED)?.state, "active");
+        });
     });
 });
 

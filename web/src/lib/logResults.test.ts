@@ -5,13 +5,14 @@ import {
     logFromCompare,
     logFromDataElement,
     logFromDelete,
+    logFromInstances,
     logFromRead,
     logFromRun,
     logFromValidation,
     renumber,
     toValidation
 } from "./logResults";
-import type { DataElementSummary, ReadInstanceResult, RunResult, RunStep, ValidateResult } from "../types";
+import type { DataElementSummary, InstanceState, ListInstancesResult, ReadInstanceResult, RunResult, RunStep, ValidateResult } from "../types";
 
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
 const DATA_GUID = "fdeb5550-f4e8-4f23-87d0-111234ac4771";
@@ -319,5 +320,47 @@ describe("logFromCompare", () => {
             entry.rows.some((row) => row.label === "Differences"),
             false
         );
+    });
+});
+
+describe("logFromInstances", () => {
+    function instance(guid: string, state: InstanceState) {
+        return { id: `510001/${guid}`, instanceOwnerPartyId: "510001", instanceGuid: guid, lastChanged: null, lastChangedBy: null, state };
+    }
+
+    const listed: ListInstancesResult = {
+        ok: true,
+        steps: [step("List active instances")],
+        failedAt: null,
+        instanceOwnerPartyId: "510001",
+        instances: [instance(GUID, "active"), instance("bbbb", "completed"), instance("cccc", "deleted")],
+        completedListed: null
+    };
+
+    it("says nothing about storage when storage was not asked", () => {
+        const entry = logFromInstances({ ...listed, instances: [instance(GUID, "active")] });
+        assert.equal(entry.rows.find((row) => row.label === "Instances")?.value, "1");
+        assert.equal(
+            entry.rows.some((row) => row.label === "From storage"),
+            false
+        );
+    });
+
+    it("counts what the second read added", () => {
+        const entry = logFromInstances({ ...listed, completedListed: true });
+        assert.equal(entry.rows.find((row) => row.label === "Instances")?.value, "3");
+        assert.equal(entry.rows.find((row) => row.label === "From storage")?.value, "2 completed or deleted");
+    });
+
+    it("says the completed ones are missing rather than letting the count imply none", () => {
+        const entry = logFromInstances({ ...listed, instances: [instance(GUID, "active")], completedListed: false });
+        const row = entry.rows.find((row) => row.label === "From storage");
+        assert.equal(row?.value, "not listed");
+        assert.equal(row?.tone, "warn");
+    });
+
+    it("counts nothing when the listing itself failed", () => {
+        const entry = logFromInstances({ ...listed, ok: false, failedAt: "Could not list the instances for this party.", instances: [] });
+        assert.deepEqual(entry.rows, [{ label: "Party", value: "510001" }]);
     });
 });

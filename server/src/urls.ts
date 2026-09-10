@@ -35,3 +35,18 @@ export function schemaUrl(org: string, app: string, dataType: string): string {
 export function storageDataUrl(instanceOwnerPartyId: string | number, instanceGuid: string, dataGuid: string): string {
     return `${config.localtestUrl}/storage/api/v1/instances/${instanceOwnerPartyId}/${instanceGuid}/data/${dataGuid}`;
 }
+
+/**
+ * Every instance storage holds for one party and one app, whatever state it is in.
+ *
+ * The app's own `/instances/{party}/active` answers with the unfinished ones, which is what its
+ * frontend needs and not what someone testing wants after advancing a process to the end. Storage
+ * is the only place the finished ones are still listed.
+ */
+export function storageInstancesUrl(org: string, app: string, instanceOwnerPartyId: string | number): string {
+    const query = new URLSearchParams({
+        appId: `${org}/${app}`,
+        "instanceOwner.partyId": String(instanceOwnerPartyId)
+    });
+    return `${config.localtestUrl}/storage/api/v1/instances?${query}`;
+}

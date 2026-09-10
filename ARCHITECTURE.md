@@ -106,6 +106,8 @@ That extends to buttons, which are all one height: a filled one is the primary a
 
 **LocalTest is read defensively.** It has no documented endpoint for its user list, so the server tries a json one and otherwise reads the `UserSelect` dropdown off the front page it already renders. Every part of that can fail without costing anything, because a user id can always be typed instead.
 
+The same holds for the instance listing. The app's `/instances/{party}/active` is the one that answers, and storage is asked separately, only when the completed ones were asked for. A refusal there costs the extra rows and nothing else, and `completedListed` says which of "none finished" and "storage would not say" the short list means.
+
 ## Deliberate limits
 
 - Everything is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production.

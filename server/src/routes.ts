@@ -224,10 +224,19 @@ router.post(
 // ---------------------------------------------------------------- reading data
 
 /** Which instances does this party have, so a guid never has to be pasted by hand. */
+const listInstancesSchema = partyLookupSchema.extend({
+    // A second read, of LocalTest's storage api, for the instances the app's active list leaves
+    // out. Opt in rather than always, since it is a request that often has nothing to add.
+    includeCompleted: z
+        .enum(["true", "false"])
+        .optional()
+        .transform((value) => value === "true")
+});
+
 router.get(
     "/instances/active",
     asyncHandler(async (req, res) => {
-        const query = partyLookupSchema.parse(req.query);
+        const query = listInstancesSchema.parse(req.query);
         const token = requireToken(query.tokenId);
         res.json(await listInstances(token.token, query));
     })
