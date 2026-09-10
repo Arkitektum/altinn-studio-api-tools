@@ -12,7 +12,7 @@ Everything is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to
 ## Where to start
 
 - [Getting started](getting-started.md) if you just want it running.
-- [The interface](interface.md) for how the three columns fit together and what the colours mean.
+- [The interface](interface.md) for how the two columns fit together and what the colours mean.
 - [API](api.md) if you want to script a data load instead of clicking.
 
 ## The panels

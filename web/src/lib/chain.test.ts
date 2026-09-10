@@ -48,10 +48,10 @@ describe("requestChain", () => {
         );
     });
 
-    it("leaves the test user out of the scroll marking, since the rail is always on screen", () => {
+    it("marks every link as you scroll, since all of their panels are in the one column", () => {
         assert.deepEqual(
             requestChain(nothing).map((step) => step.spy),
-            [false, true, true, true, true]
+            [true, true, true, true, true]
         );
     });
 

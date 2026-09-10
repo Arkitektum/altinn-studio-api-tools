@@ -50,9 +50,11 @@
     --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a2a9b1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
     --radius: 5px;
-    --rail: 300px;
-    /* Wider than it was, because the log now carries validation descriptions. */
-    --log: 480px;
+    /*
+     * Wider than it was twice over: the log carries validation descriptions, and it is where a
+     * request body, a response and a curl command are read, all of which wrap badly when narrow.
+     */
+    --log: 640px;
     --header-h: 45px;
     /*
      * The chain strip's height, kept a constant so the sticky columns can offset by it. That is
@@ -257,10 +259,21 @@ body {
 
 /* ------------------------------------------------------------------ layout */
 
+/*
+ * Two columns: what you do, and what came back. The test user used to have a rail of its own on
+ * the left, which spent 300px on a panel you touch once at the start of a session and then leave
+ * alone. It sits at the top of the working column now, where the chain already says it comes
+ * first, and the width it was holding went to the two columns that use it.
+ */
+/*
+ * A share of the width rather than a fixed slab, with --log as the floor. The extra width on a
+ * large screen is worth more to the log, which holds xml and curl commands, than to a column of
+ * fields that are full width whatever you give them.
+ */
 .deck {
     flex: 1;
     display: grid;
-    grid-template-columns: var(--rail) minmax(0, 1fr) var(--log);
+    grid-template-columns: minmax(0, 1fr) minmax(var(--log), 42%);
     align-items: start;
 }
 
@@ -276,14 +289,6 @@ body {
  * No rule between the columns. The panels carry their own borders, so a divider only drew a second
  * line beside the ones already there. The gap between columns is enough to read them apart.
  */
-.column--rail {
-    position: sticky;
-    top: var(--top-h);
-    /* The token panel plus its stored tokens can outgrow a short window. */
-    max-height: calc(100vh - var(--top-h));
-    overflow-y: auto;
-}
-
 .column--log {
     position: sticky;
     top: var(--top-h);
@@ -291,25 +296,13 @@ body {
     overflow-y: auto;
 }
 
-@media (max-width: 1400px) {
-    .deck {
-        grid-template-columns: var(--rail) minmax(0, 1fr);
-    }
-    .column--log {
-        grid-column: 1 / -1;
-        position: static;
-        max-height: none;
-        overflow-y: visible;
-    }
-}
-
-@media (max-width: 980px) {
+/* Below this the two would be squeezed into each other, so the log goes under the work instead. */
+@media (max-width: 1240px) {
     .deck {
         grid-template-columns: minmax(0, 1fr);
     }
-    .column--rail {
+    .column--log {
         position: static;
-        /* Stacked rather than beside, so it scrolls with the page like everything else. */
         max-height: none;
         overflow-y: visible;
     }

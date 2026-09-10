@@ -5,7 +5,9 @@ nav_order: 3
 
 # The interface
 
-Three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the validation results and run log on the right.
+Two columns: what you do on the left, from the test user down through the target app, the payload and the fetch controls, and what came back on the right, the validation results and the run log.
+
+The test user used to have a rail of its own on the far left. It spent 300px on a panel you use once at the start of a session and then leave alone, so it sits at the top of the working column now, where the chain already says it comes first. The width it was holding went to the two columns that use it, the log most of all, since that is where xml, a response body and a curl command are read.
 
 ## The chain
 
@@ -13,7 +15,7 @@ A strip under the header, showing what the tool is working on: a test user, an a
 
 Each link shows what it holds. The next one to fill in is in the accent colour and names the panel to do it in, so a cold start reads "Test user → in Test user" rather than leaving you to guess where to begin. Links that cannot be reached yet are faint, and are there to explain the order rather than to be read.
 
-The link whose panel you are looking at is marked as you scroll, so the strip reads as a position as well as a state. That marking is deliberately neutral, a soft background and a rule underneath rather than the accent, because the accent already means "the next thing to do" and where you happen to be is not a thing to do. Application and Party are both marked together, since both are set in Target. The test user is never marked: its panel is in the sticky rail, so it is always on screen and saying so would say nothing.
+The link whose panel you are looking at is marked as you scroll, so the strip reads as a position as well as a state. That marking is deliberately neutral, a soft background and a rule underneath rather than the accent, because the accent already means "the next thing to do" and where you happen to be is not a thing to do. Application and Party are both marked together, since both are set in Target. Every link is marked this way, the test user included: it scrolls with everything else now, where before it sat in a rail that was always on screen and marking it would have said nothing.
 
 A link you can act on is also a way to get there: clicking one scrolls to the panel it is set in. A faint link stays plain text, because the panel it names is not on screen yet and a button that did nothing would be worse than no button.
 

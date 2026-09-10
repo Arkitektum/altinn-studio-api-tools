@@ -22,7 +22,7 @@ No configuration is needed if your localtest uses the default ports. Otherwise c
 
 ## Using it
 
-The interface has three columns: the test user on the left, the target app, payload and fetch controls in the middle, and the validation results and run log on the right. Panels appear as they become usable rather than sitting there dead, so a cold start shows only the two you can act on.
+The interface has two columns: what you do on the left, from the test user down through the target app, the payload and the fetch controls, and what came back on the right, the validation results and the run log. Panels appear as they become usable rather than sitting there dead, so a cold start shows only the two you can act on.
 
 The quickest path to a full submission, where the user id is the only thing you type:
 

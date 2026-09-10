@@ -937,8 +937,10 @@ export function App() {
             />
 
             <div className="deck">
-                <div className="column column--rail">
+                <div className="column">
                     {bootError ? <ErrorNotice error={bootError} /> : null}
+
+                    {/* First, because everything below it needs a token and the chain says so. */}
                     <TokenPanel
                         id="panel-test-user"
                         serverConfig={serverConfig}
@@ -949,9 +951,7 @@ export function App() {
                         onTokensChanged={() => void refreshTokens()}
                         now={now}
                     />
-                </div>
 
-                <div className="column">
                     <TargetPanel
                         id="panel-target"
                         appHost={appHost}

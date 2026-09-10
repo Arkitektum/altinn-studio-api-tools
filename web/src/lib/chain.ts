@@ -20,8 +20,9 @@ export interface ChainStep {
     /** The id of that panel, so the strip can take you there. */
     anchor: string;
     /**
-     * Whether it is worth marking as the panel on screen. The test user sits in the sticky rail,
-     * so its panel is always on screen and saying so would say nothing.
+     * Whether it is worth marking as the panel on screen. Every link is, now that they all sit in
+     * one scrolling column. While the test user had a sticky rail of its own it was always on
+     * screen, and marking it would have said nothing.
      */
     spy: boolean;
 }
@@ -49,7 +50,7 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
      * downstream of it can be used, and the panels are absent to match.
      */
     const links: { label: string; value: string | null; where: string; anchor: string; spy: boolean; needsRealInstance?: boolean }[] = [
-        { label: "Test user", value: inputs.user, where: "Test user", anchor: "panel-test-user", spy: false },
+        { label: "Test user", value: inputs.user, where: "Test user", anchor: "panel-test-user", spy: true },
         { label: "Application", value: inputs.application, where: "Target", anchor: "panel-target", spy: true },
         { label: "Party", value: inputs.party, where: "Target", anchor: "panel-target", spy: true },
         // Once there is a party the instance list is showing and something in it is always
