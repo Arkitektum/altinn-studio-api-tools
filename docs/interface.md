@@ -60,7 +60,7 @@ The reason it is more than a message is the paragraph above: what you chose is r
 
 - **XML and JSON syntax**, inside code blocks only: element names blue, attribute names and keywords violet, strings green, numbers amber, comments and punctuation faint. This is the one place the palette carries a second meaning, and it can, because nothing else is coloured inside a code block: blue is GET on a button and an element name in a document, and the two never share a surface.
 
-Everything else stays grey.
+Everything else stays grey, marked text included. Selecting takes no colour from the palette, because inside a code block every one of them already means something, and it is translucent rather than solid: the editor paints its colours on a layer behind a transparent textarea, so a solid selection is drawn in front of the text it is marking rather than behind it.
 
 Colour is never the only carrier. A method is named next to its colour, a status code is a number, a severity says "3 errors", and a failed run says "Failed". The three status dots in the header were the exception, since a green or red dot was the whole message, so each of them now carries its state in words for a screen reader. The dots that only repeat something already written next to them are marked as decoration, and are not read out twice.
 
