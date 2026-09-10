@@ -17,6 +17,8 @@ export interface SectionInputs {
 }
 
 export interface VisibleSections {
+    /** Where to point the tool. It needs a token to read the app with. */
+    target: boolean;
     /** Payload, the post button and Fetch. All of them need a token and an app to aim at. */
     requests: boolean;
     /** The party's instances, to open or delete one. */
@@ -30,12 +32,14 @@ export interface VisibleSections {
 }
 
 /**
- * Which panels to show. A panel is hidden when there is nothing you could do with it yet: the
- * request panels need a token and an app, and the two result panels need results. Test user and
- * Target stay put, since they are how you get the rest.
+ * Which panels to show. A panel is hidden when there is nothing you could do with it yet, and
+ * without a token that is everything: the app is read with one, so Target cannot fill its data
+ * types or its parties, and nothing below it can be aimed anywhere. A cold start is one panel and
+ * one thing to do. Only Test user stays put, since it is how you get the rest.
  */
 export function visibleSections(inputs: SectionInputs): VisibleSections {
     return {
+        target: inputs.hasToken,
         requests: inputs.hasToken && Boolean(inputs.org && inputs.app),
         // Listing needs a party as well as an app, and it asks on its own once it has both.
         instances: inputs.hasToken && Boolean(inputs.org && inputs.app && inputs.party),

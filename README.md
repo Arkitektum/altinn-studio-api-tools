@@ -22,7 +22,7 @@ No configuration is needed if your localtest uses the default ports. Otherwise c
 
 ## Using it
 
-The interface has two columns: what you do on the left, from the test user down through the target app, the payload and the fetch controls, and what came back on the right, the validation results and the run log. Panels appear as they become usable rather than sitting there dead, so a cold start shows only the two you can act on.
+The interface has two columns: what you do on the left, from the test user down through the target app, the payload and the fetch controls, and what came back on the right, the validation results and the run log. Panels appear as they become usable rather than sitting there dead, so a cold start shows one panel and one thing to do: get a token.
 
 The quickest path to a full submission, where the user id is the only thing you type:
 
@@ -38,17 +38,17 @@ For an app the catalogue does not list, pick **Other application** and type the 
 
 ## What it can do
 
-|                                                                                                                              |                                                                                              |
-| ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                                                 | Tokens from LocalTest's own user list, any user id by hand, renew in place, or paste a token |
-| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                                       | 25 applications to pick from or one you type, read for its data types and parties            |
-| [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                                                     | One card per data element, from a shipped example, a file off disk, or by hand               |
-| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                                                     | A new instance or an existing one, read back and validated after every post                  |
-| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, load into the payload, delete         |
-| [Compare with stored](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/#comparing-with-the-stored-xml) | What the model dropped, added or rewrote when it stored your xml                             |
-| [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                                                     | Where the instance stands, and advancing it                                                  |
-| [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                         |
-| [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                                             | The backend on its own, for scripting a data load                                            |
+|                                                                                                                              |                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                                                 | Tokens from LocalTest's own user list, any user id by hand, and renew in place       |
+| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                                       | 25 applications to pick from or one you type, read for its data types and parties    |
+| [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                                                     | One card per data element, from a shipped example, a file off disk, or by hand       |
+| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                                                     | A new instance or an existing one, read back and validated after every post          |
+| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, load into the payload, delete |
+| [Compare with stored](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/#comparing-with-the-stored-xml) | What the model dropped, added or rewrote when it stored your xml                     |
+| [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                                                     | Where the instance stands, and advancing it                                          |
+| [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                 |
+| [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                                             | The backend on its own, for scripting a data load                                    |
 
 73 example XML files and 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
 

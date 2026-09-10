@@ -952,34 +952,36 @@ export function App() {
                         now={now}
                     />
 
-                    <TargetPanel
-                        id="panel-target"
-                        appHost={appHost}
-                        org={org}
-                        app={app}
-                        onOrgChange={setOrg}
-                        onAppChange={setApp}
-                        instanceOwnerPartyId={instanceOwnerPartyId}
-                        onPartyChange={changeParty}
-                        instanceGuid={instanceGuid}
-                        catalogue={catalogue}
-                        onPickCatalogueApp={(entry) => {
-                            setOrg(entry.org);
-                            setApp(entry.app);
-                            // Point the first element at this app's form data type unless the operator has
-                            // already put something there.
-                            if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
-                                setDataElements([{ dataType: entry.dataType, content: "" }]);
-                            }
-                        }}
-                        metadata={metadata}
-                        parties={parties}
-                        onProbe={() => void probe()}
-                        probing={probing}
-                        probeError={probeError}
-                        hasToken={tokenUsable}
-                        elementCount={dataElements.length}
-                    />
+                    {/* Nothing here can be read without a token, so the panel waits for one. */}
+                    {sections.target && (
+                        <TargetPanel
+                            id="panel-target"
+                            appHost={appHost}
+                            org={org}
+                            app={app}
+                            onOrgChange={setOrg}
+                            onAppChange={setApp}
+                            instanceOwnerPartyId={instanceOwnerPartyId}
+                            onPartyChange={changeParty}
+                            instanceGuid={instanceGuid}
+                            catalogue={catalogue}
+                            onPickCatalogueApp={(entry) => {
+                                setOrg(entry.org);
+                                setApp(entry.app);
+                                // Point the first element at this app's form data type unless the operator
+                                // has already put something there.
+                                if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
+                                    setDataElements([{ dataType: entry.dataType, content: "" }]);
+                                }
+                            }}
+                            metadata={metadata}
+                            parties={parties}
+                            onProbe={() => void probe()}
+                            probing={probing}
+                            probeError={probeError}
+                            elementCount={dataElements.length}
+                        />
+                    )}
 
                     {/* Right under the destination, since choosing one is how you aim at it. */}
                     {sections.instances && (

@@ -23,6 +23,16 @@ describe("visibleSections", () => {
         assert.equal(visibleSections(ready).requests, true);
     });
 
+    it("shows nothing but the test user until there is a token", () => {
+        // The app is read with the token, so Target has nothing to offer without one either.
+        const cold = visibleSections({ ...ready, hasToken: false, org: "", app: "", party: "" });
+        assert.deepEqual(Object.values(cold), Array(Object.keys(cold).length).fill(false));
+    });
+
+    it("shows Target as soon as there is a token, before anything is chosen", () => {
+        assert.equal(visibleSections({ ...ready, org: "", app: "", party: "" }).target, true);
+    });
+
     it("shows the result panels only once they hold something", () => {
         const nothing = visibleSections(ready);
         assert.equal(nothing.validation, false);

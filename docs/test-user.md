@@ -5,7 +5,7 @@ nav_order: 4
 
 # Test user
 
-Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The stored token is named after the person rather than the id.
+Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The stored token is named after the person rather than the id. That is the only way in: nothing else in the interface works without a token, so this is the one panel a cold start shows.
 
 The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and it follows the active token when you switch user. A party you typed yourself is left alone, since acting on behalf of another party is a real case.
 
@@ -39,7 +39,9 @@ The spent token is deleted rather than left to fill the list with dead tokens fo
 
 ## Pasting a token
 
-The **Paste** tab accepts a token obtained some other way. It is decoded for its claims and expiry and stored like any other, and gets the same profile lookup, since a pasted LocalTest token is the common case and it is the only way to learn who it acts as. The bearer goes to the configured LocalTest, which is where the rest of the tool sends it too.
+Not in the interface. There was a **Paste** tab beside **LocalTest**, and a switch between two ways of doing the same thing is worth its space only if both get used: minting one is a click, and every token this tool wants is one LocalTest will mint.
+
+`POST /api/tokens/raw` still takes one, for a script or a token obtained some other way, see [API](api.md). It is decoded for its claims and expiry and stored like any other, and gets the same profile lookup, since a pasted LocalTest token is the common case and it is the only way to learn who it acts as. The bearer goes to the configured LocalTest, which is where the rest of the tool sends it too. A token stored that way appears in the picker like any other, and only lacks **Renew**, since it cannot be minted again.
 
 ## Token handling
 

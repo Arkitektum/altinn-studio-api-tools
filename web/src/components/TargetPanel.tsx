@@ -20,7 +20,6 @@ interface TargetPanelProps {
     onProbe: () => void;
     probing: boolean;
     probeError: unknown;
-    hasToken: boolean;
     elementCount: number;
     catalogue: CatalogueApp[];
     onPickCatalogueApp: (entry: CatalogueApp) => void;
@@ -44,7 +43,6 @@ export function TargetPanel({
     onProbe,
     probing,
     probeError,
-    hasToken,
     elementCount,
     catalogue,
     onPickCatalogueApp
@@ -153,8 +151,6 @@ export function TargetPanel({
              * gone because Altinn instantiates from it, so it left an empty instance behind
              * every time, and both the run log entry and the instance listing open a real one.
              */}
-            {!hasToken && <p className="field__hint">Get a token first, and the app is read automatically.</p>}
-
             {probing && (
                 <p className="field__hint">
                     <span className="btn__spinner" /> Reading the app's data types and parties…

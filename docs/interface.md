@@ -29,7 +29,7 @@ The headings are a rule and a word, not a container. They group what is already 
 
 ## Panels appear as they become usable
 
-Rather than sitting there dead. On a cold start you get the test user and the target app, since that is all you can act on. Payload and the post button arrive once you have a token and an app to aim at, and Instances once there is a party as well. Data element, Compare with stored and Pdf arrive with a selected instance, Compare once a data element is picked, and Validation and the run log with their first content. The rendered pdf is not a panel at all: it opens in a window over the tool.
+Rather than sitting there dead. A cold start is one panel and one thing to do: Test user. Everything else is read with a token, Target included, since the app's data types and its parties are what fill that panel in. Target arrives with the token, Payload and the post button once there is an app to aim at, and Instances once there is a party as well. Data element, Compare with stored and Pdf arrive with a selected instance, Compare once a data element is picked, and Validation and the run log with their first content. The rendered pdf is not a panel at all: it opens in a window over the tool.
 
 The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
 

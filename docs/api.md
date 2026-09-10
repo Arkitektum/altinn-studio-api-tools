@@ -17,7 +17,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/examples`                        | Example files grouped by data type                                                                                           |
 | `GET`    | `/api/examples/file`                   | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml`                                                               |
 | `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                                                                 |
-| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have                                                                            |
+| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have. No longer offered in the interface                                        |
 | `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                                                                          |
 | `DELETE` | `/api/tokens/:id`                      |                                                                                                                              |
 | `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                                                                           |

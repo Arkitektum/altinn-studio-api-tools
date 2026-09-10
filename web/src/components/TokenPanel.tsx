@@ -5,8 +5,6 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { LocaltestStatus, LocaltestUser, LocaltestUsers, PublicToken, ServerConfig } from "../types";
 
-type Mode = "test-user" | "raw";
-
 /** Offered when LocalTest tells us nothing about its users. The two we work with. */
 const FALLBACK_USERS: LocaltestUser[] = [
     { userId: "1001", label: "Pengelens Partner" },
@@ -23,7 +21,7 @@ function describeSource(users: LocaltestUsers | null): string {
 
 /**
  * The same thing in a few words, for the panel head. Where the list came from is worth saying but
- * not worth three lines of a 300px rail, so the sentence above becomes the badge's title.
+ * not worth three lines of the panel, so the sentence above becomes the badge's title.
  */
 function badgeSource(users: LocaltestUsers | null): string {
     if (!users || users.source === "none") return "fallback list";
@@ -43,7 +41,6 @@ interface TokenPanelProps {
 }
 
 export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate, onTokensChanged, now }: TokenPanelProps) {
-    const [mode, setMode] = useState<Mode>("test-user");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<unknown>(null);
     const [renewing, setRenewing] = useState(false);
@@ -51,7 +48,6 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
     const [picked, setPicked] = useState("");
     /** A user id typed by hand, for a user LocalTest did not offer. */
     const [typedId, setTypedId] = useState("");
-    const [rawToken, setRawToken] = useState("");
 
     // Asked for once. A LocalTest that starts later is covered by the reload the operator does
     // anyway to get the status dot green.
@@ -83,17 +79,13 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
         setBusy(true);
         setError(null);
         try {
-            const token =
-                mode === "test-user"
-                    ? await api.createTestUserToken({
-                          userId,
-                          // Names the token after the person, rather than "Test user 1001".
-                          label: offered.find((user) => user.userId === userId)?.label
-                      })
-                    : await api.createRawToken({ token: rawToken.trim() });
+            const token = await api.createTestUserToken({
+                userId,
+                // Names the token after the person, rather than "Test user 1001".
+                label: offered.find((user) => user.userId === userId)?.label
+            });
             onActivate(token.id);
             onTokensChanged();
-            if (mode === "raw") setRawToken("");
         } catch (caught) {
             setError(caught);
         } finally {
@@ -143,90 +135,58 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             id={id}
             title="Test user"
             aside={
-                mode === "test-user" ? (
-                    <span className="badge" title={describeSource(available)}>
-                        {badgeSource(available)}
-                    </span>
-                ) : undefined
+                <span className="badge" title={describeSource(available)}>
+                    {badgeSource(available)}
+                </span>
             }
         >
-            <div className="tabs" role="tablist">
-                {(
-                    [
-                        ["test-user", "LocalTest"],
-                        ["raw", "Paste"]
-                    ] as [Mode, string][]
-                ).map(([value, label]) => (
-                    <button key={value} type="button" role="tab" aria-selected={mode === value} onClick={() => setMode(value)}>
-                        {label}
-                    </button>
-                ))}
-            </div>
-
-            {mode === "test-user" && localtest && !localtest.reachable && (
+            {localtest && !localtest.reachable && (
                 <div className="notice notice--warn" style={{ marginBottom: 12 }}>
                     LocalTest is not answering at {localtest.url}. Start it, or set ALTINN_LOCALTEST_URL in server/.env.
                 </div>
             )}
 
             <form onSubmit={submit}>
-                {mode === "test-user" ? (
-                    <div className="field" style={{ marginBottom: 12 }}>
-                        <label htmlFor="userId">Test user</label>
-                        <select id="userId" value={picked} onChange={(event) => setPicked(event.target.value)}>
-                            {offered.map((user) => (
-                                <option key={user.userId} value={user.userId}>
-                                    {user.label} ({user.userId})
-                                </option>
-                            ))}
-                            {/* LocalTest mints a token for any id it knows, listed or not. */}
-                            <option value={OTHER}>Other user id…</option>
-                        </select>
-                        {typing && (
-                            <input
-                                type="text"
-                                value={typedId}
-                                onChange={(event) => setTypedId(event.target.value.trim())}
-                                placeholder="1001"
-                                autoComplete="off"
-                                aria-label="Test user id"
-                                style={{ marginTop: 6 }}
-                            />
-                        )}
-                        {/*
-                         * Shortened to {localtest} rather than the resolved host, the way the
-                         * compare panel does it: the full URL wrapped over two lines here, and the
-                         * run log prints it in full for every request anyway.
-                         */}
-                        <p className="field__hint">
-                            <span className="method method--get">GET</span>{" "}
-                            <span title={serverConfig?.localtestUrl ?? "http://localhost:5101"}>{"{localtest}"}</span>
-                            /Home/GetTestUserToken/
-                            <span style={{ color: "var(--accent)" }}>{userId || "{userId}"}</span>
-                            <br />
-                            The party id comes from the token claims.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="field" style={{ marginBottom: 12 }}>
-                        <label htmlFor="rawToken">Bearer token (JWT)</label>
-                        <textarea
-                            id="rawToken"
-                            className="code"
-                            style={{ minHeight: 96 }}
-                            value={rawToken}
-                            onChange={(event) => setRawToken(event.target.value)}
-                            placeholder="eyJhbGciOi…"
-                            spellCheck={false}
-                            required
+                <div className="field" style={{ marginBottom: 12 }}>
+                    <label htmlFor="userId">Test user</label>
+                    <select id="userId" value={picked} onChange={(event) => setPicked(event.target.value)}>
+                        {offered.map((user) => (
+                            <option key={user.userId} value={user.userId}>
+                                {user.label} ({user.userId})
+                            </option>
+                        ))}
+                        {/* LocalTest mints a token for any id it knows, listed or not. */}
+                        <option value={OTHER}>Other user id…</option>
+                    </select>
+                    {typing && (
+                        <input
+                            type="text"
+                            value={typedId}
+                            onChange={(event) => setTypedId(event.target.value.trim())}
+                            placeholder="1001"
+                            autoComplete="off"
+                            aria-label="Test user id"
+                            style={{ marginTop: 6 }}
                         />
-                        <p className="field__hint">Stored in server memory only, never in the browser.</p>
-                    </div>
-                )}
+                    )}
+                    {/*
+                     * Shortened to {localtest} rather than the resolved host, the way the compare
+                     * panel does it: the full URL wrapped over two lines here, and the run log
+                     * prints it in full for every request anyway.
+                     */}
+                    <p className="field__hint">
+                        <span className="method method--get">GET</span>{" "}
+                        <span title={serverConfig?.localtestUrl ?? "http://localhost:5101"}>{"{localtest}"}</span>
+                        /Home/GetTestUserToken/
+                        <span style={{ color: "var(--accent)" }}>{userId || "{userId}"}</span>
+                        <br />
+                        The party id comes from the token claims.
+                    </p>
+                </div>
 
-                <button type="submit" className="btn btn--primary" style={{ width: "100%" }} disabled={busy || (mode === "test-user" && !userId)}>
+                <button type="submit" className="btn btn--primary" style={{ width: "100%" }} disabled={busy || !userId}>
                     {busy && <span className="btn__spinner" />}
-                    {mode === "test-user" ? "Get token" : "Store token"}
+                    Get token
                 </button>
             </form>
 
