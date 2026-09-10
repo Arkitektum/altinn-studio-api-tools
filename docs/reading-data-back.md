@@ -5,7 +5,7 @@ nav_order: 9
 
 # Reading data back
 
-**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels below: **Data element**, then **Compare with stored** for the element picked there, then **Pdf**.
+**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels below: **Data element**, which holds **Compare with stored** for the element picked in it, and then **Pdf**.
 
 None of those have fields of their own. They work on whatever is selected in Instances, and each names in its header what that is.
 
@@ -64,7 +64,7 @@ What came back is held, so it can be used rather than only read:
 
 Picking another data element, or another instance, drops what is held instead of offering to download an element you are no longer looking at.
 
-There was a **Load into payload** button here, putting what came back into the payload editor for a round trip. It is gone: what a form data element returns is the model as JSON, not the xml that was stored, so it was never the thing you wanted to post back, and the panel below compares the two rather than editing one into the other. Downloading it and picking the file up as a file from disk does the same job when it is really wanted.
+There was a **Load into payload** button here, putting what came back into the payload editor for a round trip. It is gone: what a form data element returns is the model as JSON, not the xml that was stored, so it was never the thing you wanted to post back, and the section at the foot of this panel compares the two rather than editing one into the other. Downloading it and picking the file up as a file from disk does the same job when it is really wanted.
 
 ### Validating an element
 
@@ -74,7 +74,7 @@ A data type the app declares with no `taskId` is never blocked. Nothing was said
 
 ## Comparing with the stored xml
 
-Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. The **Compare with stored** panel puts the two side by side and reports only the differences that mean something.
+Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. **Compare with stored** puts the two side by side and reports only the differences that mean something. It sits at the foot of the Data element panel rather than in a panel of its own: it compares the element that panel's select is pointing at, and side by side as two cards that was left to be worked out from the order they were in.
 
 The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
 

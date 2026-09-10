@@ -23,17 +23,17 @@ Two details are worth knowing. A link only counts as settled when everything bef
 
 ## Post, then inspect
 
-The working column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Data element, Compare with stored, Pdf and Process: what is there now, in that order because the first two are about the same thing and the pdf is a different kind of action. Target and Instances sit above both, because they decide what everything else acts on.
+The working column is two runs of panels under a quiet heading each. **Post** is Payload and the post button: what to send. **Inspect** is Data element, Pdf and Process: what is there now. Comparing with the stored xml is not a panel of its own but the foot of Data element, since it compares whatever that panel's select is pointing at. Target and Instances sit above both, because they decide what everything else acts on.
 
 The headings are a rule and a word, not a container. They group what is already there rather than adding something to look at.
 
 ## Panels appear as they become usable
 
-Rather than sitting there dead. A cold start is one panel and one thing to do: Test user. Everything else is read with a token, Target included, since the app's data types and its parties are what fill that panel in. Target arrives with the token, Payload and the post button once there is an app to aim at, and Instances once there is a party as well. Data element, Compare with stored and Pdf arrive with a selected instance, Compare once a data element is picked, and Validation and the run log with their first content. The rendered pdf is not a panel at all: it opens in a window over the tool.
+Rather than sitting there dead. A cold start is one panel and one thing to do: Test user. Everything else is read with a token, Target included, since the app's data types and its parties are what fill that panel in. Target arrives with the token, Payload and the post button once there is an app to aim at, and Instances once there is a party as well. Data element and Pdf arrive with a selected instance, the comparison inside Data element once an element is picked there, and Validation and the run log with their first content. The rendered pdf is not a panel at all: it opens in a window over the tool.
 
 The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
 
-A panel that acts on a selection names it in its header rather than repeating it in the body: Instances shows how many there are, Data element the instance it is reading, Process the task the instance sits in, Compare how many differences it found. The chain above says the same thing once for the whole tool.
+A panel that acts on a selection names it in its header rather than repeating it in the body: Instances shows how many there are, Data element the instance it is reading, Process the task the instance sits in. The comparison does the same for its own section, saying how many differences it found. The chain above says the same thing once for the whole tool.
 
 Results stand on their own. An expired token hides the request panels, because you cannot act with it, but it does not hide what you already read.
 

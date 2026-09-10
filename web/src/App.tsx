@@ -24,7 +24,7 @@ import { visibleSections } from "./lib/sections";
 import { upsertValidation } from "./lib/validations";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
-import { ComparePanel } from "./components/ComparePanel";
+import { CompareSection } from "./components/CompareSection";
 import { FetchPanel } from "./components/FetchPanel";
 import { PdfPanel } from "./components/PdfPanel";
 import { InstancesPanel } from "./components/InstancesPanel";
@@ -1079,24 +1079,27 @@ export function App() {
                                 busy={fetchingElement || reading}
                                 hasToken={tokenUsable}
                                 error={fetchError}
-                            />
+                            >
+                                {/* Inside the panel, because it compares what the select above it
+                                    is pointing at. Beside it as its own card, that was left to be
+                                    worked out from the order the two happened to be in. */}
+                                {sections.compare && selectedDataType && (
+                                    <CompareSection
+                                        dataType={selectedDataType}
+                                        payload={
+                                            payloadForSelected
+                                                ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
+                                                : null
+                                        }
+                                        onCompare={() => void compareWithStored()}
+                                        result={compareResult}
+                                        busy={comparing}
+                                        error={compareError}
+                                    />
+                                )}
+                            </FetchPanel>
 
-                            {sections.compare && selectedDataType && (
-                                <ComparePanel
-                                    dataType={selectedDataType}
-                                    payload={
-                                        payloadForSelected
-                                            ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
-                                            : null
-                                    }
-                                    onCompare={() => void compareWithStored()}
-                                    result={compareResult}
-                                    busy={comparing}
-                                    error={compareError}
-                                />
-                            )}
-
-                            {/* After the comparison, since it is a different kind of action. */}
+                            {/* After the data element, since it is a different kind of action. */}
                             {sections.requests && instanceGuid && (
                                 <PdfPanel
                                     appHost={appHost}

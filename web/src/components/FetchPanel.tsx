@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CopyButton } from "./CopyButton";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
@@ -29,6 +30,11 @@ interface FetchPanelProps {
     busy: boolean;
     hasToken: boolean;
     error: unknown;
+    /**
+     * The comparison, which acts on the element selected here. It is a section of this panel
+     * rather than a panel of its own, so that what it compares is not left to be inferred.
+     */
+    children?: ReactNode;
 }
 
 function describeElement(element: DataElementSummary): string {
@@ -58,7 +64,8 @@ export function FetchPanel({
     validateBlockedBy,
     busy,
     hasToken,
-    error
+    error,
+    children
 }: FetchPanelProps) {
     const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
     const party = instanceOwnerPartyId || "{partyId}";
@@ -80,8 +87,8 @@ export function FetchPanel({
             }
         >
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Comparing what one holds
-                with what was written is the panel below.
+                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Whichever one is picked
+                here is what the buttons act on, and what the comparison at the foot of this panel compares.
             </p>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
@@ -156,6 +163,8 @@ export function FetchPanel({
                     <ErrorNotice error={error} />
                 </div>
             ) : null}
+
+            {children}
         </Panel>
     );
 }

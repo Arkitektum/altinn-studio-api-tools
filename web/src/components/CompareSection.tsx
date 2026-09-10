@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { partitionDifferences } from "../lib/differences";
 import { ErrorNotice } from "./Notice";
-import { Panel } from "./Panel";
 import type { CompareResult, XmlDifferenceKind } from "../types";
 
-interface ComparePanelProps {
+interface CompareSectionProps {
     /** The data type of the selected data element, which is what there is to compare. */
     dataType: string;
     /**
@@ -32,29 +31,37 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
  * Reading a form data element gives the model as JSON, so this is the only way to see what the
  * model did to the file: a field it has no place for is dropped on the way in, and a value it
  * formats its own way is rewritten. Neither is reported by anything else.
+ *
+ * A section of the Data element panel rather than a panel of its own. It compares whatever that
+ * panel's select is pointing at, and as two cards side by side that was left to be inferred from
+ * the order they happened to be in. Inside the same card, under the select it depends on, the
+ * relationship is the layout rather than something the prose has to keep claiming.
  */
-export function ComparePanel({ dataType, payload, onCompare, result, busy, error }: ComparePanelProps) {
+export function CompareSection({ dataType, payload, onCompare, result, busy, error }: CompareSectionProps) {
     /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
     const [hideRowIds, setHideRowIds] = useState(true);
     const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
 
     return (
-        <Panel
-            title="Compare with stored"
-            aside={
-                result?.diff ? (
+        <div className="apart">
+            <div className="row">
+                <span className="legend" style={{ marginBottom: 0 }}>
+                    Compare with stored
+                </span>
+                <span className="spacer" />
+                {result?.diff && (
                     <span className={`badge ${differences.length === 0 ? "badge--ok" : ""}`}>
                         {differences.length === 0 ? "identical" : `${differences.length} difference${differences.length === 1 ? "" : "s"}`}
                     </span>
-                ) : undefined
-            }
-        >
-            <p className="field__hint" style={{ marginBottom: 12 }}>
-                What Altinn stored for <strong>{dataType}</strong> against the xml as written. Each difference carries the field's declared type from
-                the app's schema where there is one, and nothing where there is not, which for a dropped field is the reason it was dropped. Reading
-                the element gives you the model as JSON, so this is the only view of what the model did to the file: a field it has no place for is
-                dropped without complaint, and a value it formats its own way is rewritten. Formatting, namespace prefixes and attribute order are
-                ignored.
+                )}
+            </div>
+
+            <p className="field__hint" style={{ margin: "8px 0 12px" }}>
+                The <strong>{dataType}</strong> selected above, as Altinn stored it, against the xml as written. Each difference carries the field's
+                declared type from the app's schema where there is one, and nothing where there is not, which for a dropped field is the reason it was
+                dropped. Reading the element gives you the model as JSON, so this is the only view of what the model did to the file: a field it has
+                no place for is dropped without complaint, and a value it formats its own way is rewritten. Formatting, namespace prefixes and
+                attribute order are ignored.
             </p>
 
             {payload === null ? (
@@ -82,7 +89,7 @@ export function ComparePanel({ dataType, payload, onCompare, result, busy, error
                     <div className="row" style={{ marginTop: 12 }}>
                         <button type="button" className="btn btn--get" onClick={onCompare} disabled={busy}>
                             {busy && <span className="btn__spinner" />}
-                            Compare
+                            Compare {dataType}
                         </button>
                         <span className="field__hint">
                             <span className="method method--get">GET</span> {"{localtest}"}/storage/api/v1/…/data/{"{dataGuid}"}
@@ -137,6 +144,6 @@ export function ComparePanel({ dataType, payload, onCompare, result, busy, error
                     <ErrorNotice error={error} />
                 </div>
             ) : null}
-        </Panel>
+        </div>
     );
 }
