@@ -12,7 +12,7 @@ Nothing needs configuring if your localtest uses the default ports. Otherwise co
 | `ALTINN_APP_HOST`         | `http://local.altinn.cloud:8000`  | Where your locally running Altinn apps are served                            |
 | `ALTINN_LOCALTEST_URL`    | `http://localhost:5101`           | The LocalTest project, which mints test user tokens                          |
 | `ALTINN_EXAMPLE_DATA_DIR` | `examples/` in the repo           | Point it at your canonical example data, see [Example data](example-data.md) |
-| `VALIDATION_URL`          | DIBK's ft-test validation service | Where the validation report is asked for. Empty it to switch the feature off |
+| `VALIDATION_URL`          | DIBK's ft-test validation service | Where **Prevalidate** sends the payload. Empty it to switch the feature off  |
 | `PORT`                    | `4000`                            | The api                                                                      |
 | `HOST`                    | `127.0.0.1`                       | What the api binds to. `0.0.0.0` opens it to the network                     |
 | `WEB_ORIGIN`              | `http://localhost:5173`           | The single origin allowed through CORS                                       |
@@ -24,7 +24,7 @@ The resolved `appHost` and `localtestUrl` are shown in the header and available 
 
 ## Limits
 
-- **Local, with one exception.** Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool has no knowledge of tt02 or production. The validation report is posted to `VALIDATION_URL`, which is a hosted service and the only request that leaves your machine.
+- **Local, with one exception.** Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool has no knowledge of tt02 or production. **Prevalidate** posts to `VALIDATION_URL`, which is a hosted service and the only request that leaves your machine.
 - **This machine only.** The api binds loopback, because it holds live test tokens and will post with them for anyone who can reach it. `HOST` opens it if you need that.
 - **25 MB request bodies**, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - **30 second timeout** on calls to Altinn, `REQUEST_TIMEOUT_MS` to change it.

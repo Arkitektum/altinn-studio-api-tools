@@ -242,18 +242,17 @@ export function logFromAdvance(result: AdvanceProcessResult, read: ReadInstanceR
 }
 
 /**
- * The log entry for a validation report.
+ * The log entry for a prevalidation.
  *
- * The rows say what was asked rather than what came back, because what came back is a document
- * nothing here reads yet: it is in the step's response, at full size, which is where the reading
- * of it will be written from.
+ * The rows say what was asked rather than what came back. What came back is read for the documents
+ * it says are missing and no further, so the rest of it is in the step's response, at full size.
  */
 export function logFromValidationReport(result: ValidationReportResult, asked: ValidationReportRequest): LogResult {
     return {
         ok: result.ok,
         steps: result.steps,
         failedAt: result.failedAt,
-        title: "Validation report",
+        title: "Prevalidate",
         rows: [
             { label: "Submitter", value: asked.authenticatedSubmitter || "none" },
             { label: "Form", value: `${asked.formData.length.toLocaleString("nb")} characters` },

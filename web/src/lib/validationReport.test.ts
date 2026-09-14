@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { documentNames, documentsToAdd, isDocumentMessage, parseValidationReport, requirementsFrom } from "./validationReport";
+import { documentNames, documentsToAdd, isDocumentMessage, parseValidationReport, prevalidationStanding, requirementsFrom } from "./validationReport";
 import type { AppDataType } from "../types";
 import type { ReportMessage } from "./validationReport";
 
@@ -249,5 +249,32 @@ describe("documentsToAdd", () => {
     it("leaves out what it cannot select", () => {
         const { required } = requirementsFrom(report, { ...inputs, dataTypes: [] });
         assert.deepEqual(documentsToAdd(required), []);
+    });
+});
+
+describe("prevalidationStanding", () => {
+    const requirements = requirementsFrom(report, inputs);
+
+    it("is nothing at all until it has been asked", () => {
+        assert.deepEqual(prevalidationStanding(null), { state: "none", missing: 0 });
+    });
+
+    it("counts the documents the payload still does not have", () => {
+        assert.deepEqual(prevalidationStanding({ requirements, stale: false }), { state: "missing", missing: 4 });
+    });
+
+    it("says what is missing even when the report is behind the payload", () => {
+        // The list is counted live, so adding a document takes it off whether or not the rest of
+        // the report still describes the form.
+        assert.deepEqual(prevalidationStanding({ requirements, stale: true }), { state: "missing", missing: 4 });
+    });
+
+    it("is stale once nothing is missing but the payload has moved on", () => {
+        const met = requirementsFrom(report, {
+            ...inputs,
+            payload: ["Situasjonsplan", "TegningNyPlan", "Gjennomfoeringsplan", "GjenpartNabovarselData"]
+        });
+        assert.equal(prevalidationStanding({ requirements: met, stale: true }).state, "stale");
+        assert.equal(prevalidationStanding({ requirements: met, stale: false }).state, "clean");
     });
 });

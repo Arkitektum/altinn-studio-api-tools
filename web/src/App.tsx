@@ -21,6 +21,7 @@ import { pendingAutoRuns } from "./lib/autoRuns";
 import { withIdentity } from "./lib/formIdentity";
 import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
+import { parseValidationReport, prevalidationStanding, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
@@ -1110,6 +1111,26 @@ export function App() {
         token: activeToken ?? null
     });
 
+    /**
+     * What the validation service last said about this payload, counted against the payload as it
+     * stands. Here rather than in the panel because two places read it: the panel lists what is
+     * missing, and the post button says whether this has been through the service at all.
+     */
+    const prevalidation = useMemo((): Prevalidation | null => {
+        const report = parseValidationReport(validationAnswer?.report ?? null);
+        if (!report) return null;
+        return {
+            requirements: requirementsFrom(report, {
+                dataTypes,
+                payload: dataElements.map((element) => element.dataType).filter(Boolean),
+                onInstance: instanceDataElements.map((element) => element.dataType)
+            }),
+            stale: !sameSubmission(validationAnswer?.request ?? null, validationRequest.request)
+        };
+    }, [validationAnswer, dataTypes, dataElements, instanceDataElements, validationRequest.request]);
+
+    const standing = prevalidationStanding(prevalidation);
+
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
     /**
@@ -1256,7 +1277,6 @@ export function App() {
                                 onChange={setDataElements}
                                 org={org}
                                 app={app}
-                                onInstance={instanceDataElements.map((element) => element.dataType)}
                                 dataTypes={dataTypes}
                                 metadata={metadata?.metadata ?? null}
                                 suggestedDataTypes={suggestedDataTypes}
@@ -1272,16 +1292,43 @@ export function App() {
                                 validationBlockedBy={validationRequest.blockedBy}
                                 onValidationReport={() => void validationReport()}
                                 validating={validating}
-                                validationReport={validationAnswer?.report ?? null}
-                                validationReportStale={
-                                    Boolean(validationAnswer) && !sameSubmission(validationAnswer?.request ?? null, validationRequest.request)
-                                }
+                                prevalidation={prevalidation}
                             />
 
                             <section className="panel">
                                 {blockers.length > 0 && (
                                     <div className="notice notice--warn" style={{ marginBottom: 12 }}>
                                         Needs {blockers.join(", ")}.
+                                    </div>
+                                )}
+
+                                {/*
+                                 * Where the payload stands with the validation service, said again
+                                 * at the button that sends it. Prevalidating is a step you take
+                                 * before this one, and a step in another panel is easily one you
+                                 * did not know was there.
+                                 */}
+                                {serverConfig?.validationUrl && (
+                                    <div
+                                        className={`notice ${standing.state === "missing" ? "notice--warn" : standing.state === "clean" ? "notice--ok" : ""}`}
+                                        style={{ marginBottom: 12 }}
+                                    >
+                                        {standing.state === "none" && (
+                                            <>
+                                                Not prevalidated. <strong>Prevalidate</strong>, at the end of Payload, says what this submission is
+                                                missing, which is cheaper to read there than out of a refused submit.
+                                            </>
+                                        )}
+                                        {standing.state === "missing" && (
+                                            <>
+                                                Prevalidating found{" "}
+                                                {standing.missing === 1 ? "one document missing" : `${standing.missing} documents missing`} from this
+                                                submission. The data posts either way, and the process will not advance past a submission that is
+                                                short.
+                                            </>
+                                        )}
+                                        {standing.state === "stale" && <>The payload has changed since it was prevalidated.</>}
+                                        {standing.state === "clean" && <>Prevalidated, and the validation service asked for nothing more.</>}
                                     </div>
                                 )}
                                 {runError ? (

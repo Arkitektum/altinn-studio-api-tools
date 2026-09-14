@@ -199,6 +199,31 @@ export function requirementsFrom(report: ValidationReport | null, inputs: Requir
     };
 }
 
+/** The last report and whether the payload has moved on since. Null until it has been asked for. */
+export interface Prevalidation {
+    requirements: ReportRequirements;
+    stale: boolean;
+}
+
+/** Required documents the payload still does not have. */
+export function outstandingOf(requirements: ReportRequirements): DocumentRequirement[] {
+    return requirements.required.filter((requirement) => !requirement.satisfied);
+}
+
+/**
+ * Where the payload stands with the validation service, for the line above the post button.
+ *
+ * Missing documents outrank a stale report, because the list is counted against the payload as it
+ * stands: adding one takes it off the list even while the rest of the report describes an older
+ * form. What is left over when nothing is missing is whether the report still describes this.
+ */
+export function prevalidationStanding(prevalidation: Prevalidation | null): { state: "none" | "missing" | "stale" | "clean"; missing: number } {
+    if (!prevalidation) return { state: "none", missing: 0 };
+    const missing = outstandingOf(prevalidation.requirements).length;
+    if (missing > 0) return { state: "missing", missing };
+    return { state: prevalidation.stale ? "stale" : "clean", missing: 0 };
+}
+
 /**
  * The data types to append, one per document that is required and not here yet.
  *

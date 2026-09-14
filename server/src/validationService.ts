@@ -53,13 +53,13 @@ export async function fetchValidationReport(request: ValidationReportRequest): P
     const recorder = new StepRecorder();
 
     if (!config.validationUrl) {
-        recorder.note("Validation report", "No validation service is configured. Set VALIDATION_URL in server/.env.");
+        recorder.note("Prevalidate", "No validation service is configured. Set VALIDATION_URL in server/.env.");
         return { ok: false, steps: recorder.steps, failedAt: "No validation service is configured.", report: null };
     }
 
     const body = JSON.stringify(request, null, 2);
     const response = await recorder.run(
-        "Validation report",
+        "Prevalidate",
         "POST",
         config.validationUrl,
         () =>

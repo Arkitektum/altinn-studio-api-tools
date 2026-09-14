@@ -7,7 +7,7 @@ nav_order: 6
 
 One editor card per data element, holding the data type, the content type, and the body. The content type defaults to what the app declares in `allowedContentTypes`, falling back to detection from the payload itself.
 
-Elements collapse to a single row, so a payload with several of them stays readable. **Add data element** collapses the ones already there and leaves the new one open, since one element added by hand is one to work on. Elements that arrive as a set, from the validation report's **Add them** or from opening a saved payload, arrive folded: what you want to see is which of them came, not the first one's contents. **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
+Elements collapse to a single row, so a payload with several of them stays readable. **Add data element** collapses the ones already there and leaves the new one open, since one element added by hand is one to work on. Elements that arrive as a set, from prevalidation's **Add them** or from opening a saved payload, arrive folded: what you want to see is which of them came, not the first one's contents. **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
 
 ## The editor
 
@@ -47,7 +47,7 @@ In that one party, five values are set: `navn`, the number in the field for its 
 | A company | `HoeringOgOffentligEttersyn` | `Offentlig myndighet` |
 | A company | anything else                | `Organisasjon`        |
 
-Who you are is the party the instance is for, read from the app's own party list, falling back to the token's own claim before the app has been read. It is the same identity the validation report is sent with, so the two agree by construction rather than by luck.
+Who you are is the party the instance is for, read from the app's own party list, falling back to the token's own claim before the app has been read. It is the same identity prevalidation is sent with, so the two agree by construction rather than by luck.
 
 Four things are worth knowing about how it is written, all in `lib/formIdentity.ts`:
 
@@ -86,9 +86,11 @@ Changing the data type clears the content and content type, since both belonged 
 
 One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
 
-## Validation report
+## Prevalidate
 
-**Validation report**, under the elements, posts the payload to the DIBK validation service and puts what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
+**Prevalidate**, under **Before you post** at the end of the panel, sends the payload to the DIBK validation service and puts what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
+
+It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, so the line above the post button says where the payload stands with it: not prevalidated, this many documents missing, changed since it was prevalidated, or nothing more asked for.
 
 It exists because `applicationmetadata` is not a reliable answer to what a submission needs. The `minCount` an app declares does not match what the validation insists on, and the service does know, so the question goes where the answer is.
 

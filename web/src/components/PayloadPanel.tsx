@@ -7,9 +7,10 @@ import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
 import { SavedPayloads } from "./SavedPayloads";
-import { documentsToAdd, parseValidationReport, requirementsFrom } from "../lib/validationReport";
+import { documentsToAdd, outstandingOf } from "../lib/validationReport";
 import { loadingOverwrites } from "../lib/savedPayloads";
 import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup, SavedPayload } from "../types";
+import type { Prevalidation } from "../lib/validationReport";
 
 interface PayloadPanelProps {
     dataElements: DataElementInput[];
@@ -18,8 +19,6 @@ interface PayloadPanelProps {
     /** The target, so a saved payload written for another app can say which. */
     org: string;
     app: string;
-    /** Data types the selected instance already holds, which count as answered requirements. */
-    onInstance: string[];
     /** From applicationmetadata. Authoritative, but only available after probing. */
     dataTypes: AppDataType[];
     /** Drives the main form, sub form and attachment grouping. Null until the app is probed. */
@@ -42,10 +41,8 @@ interface PayloadPanelProps {
     validationBlockedBy: string | null;
     onValidationReport: () => void;
     validating: boolean;
-    /** The last report the service gave, unread. Null until it has been asked. */
-    validationReport: unknown;
-    /** Whether the payload has changed since, so the report describes something else now. */
-    validationReportStale: boolean;
+    /** What the service last said about this payload. Null until it has been asked. */
+    prevalidation: Prevalidation | null;
 }
 
 /**
@@ -84,7 +81,6 @@ export function PayloadPanel({
     onChange,
     org,
     app,
-    onInstance,
     dataTypes,
     metadata,
     suggestedDataTypes,
@@ -100,8 +96,7 @@ export function PayloadPanel({
     validationBlockedBy,
     onValidationReport,
     validating,
-    validationReport,
-    validationReportStale
+    prevalidation
 }: PayloadPanelProps) {
     /** Per element, since one element failing to read says nothing about the others. */
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
@@ -176,16 +171,13 @@ export function PayloadPanel({
      * counts a `minCount`: what an app declares is not what the validation insists on, which is
      * why the question is asked of the service at all. See lib/validationReport.ts.
      */
-    const report = parseValidationReport(validationReport);
-    const requirements = requirementsFrom(report, {
-        dataTypes,
-        payload: dataElements.map((element) => element.dataType).filter(Boolean),
-        onInstance
-    });
-    const outstanding = requirements.required.filter((requirement) => !requirement.satisfied);
+    const requirements = prevalidation?.requirements;
+    const outstanding = requirements ? outstandingOf(requirements) : [];
     /** Recommended and not here, by the name the message leads with where it offers a choice. */
-    const advised = requirements.recommended.filter((requirement) => !requirement.satisfied).map((requirement) => requirement.dataTypes[0] as string);
-    const other = requirements.otherErrors + requirements.otherWarnings;
+    const advised = (requirements?.recommended ?? [])
+        .filter((requirement) => !requirement.satisfied)
+        .map((requirement) => requirement.dataTypes[0] as string);
+    const other = (requirements?.otherErrors ?? 0) + (requirements?.otherWarnings ?? 0);
 
     /**
      * Appends one element per document still wanted, which the example picker fills in on mount:
@@ -193,7 +185,7 @@ export function PayloadPanel({
      * to do it.
      */
     function addMissing() {
-        const added = documentsToAdd(requirements.required).map((dataType) => ({
+        const added = documentsToAdd(requirements?.required ?? []).map((dataType) => ({
             dataType,
             content: "",
             contentType: preferredContentType(dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? []),
@@ -530,33 +522,36 @@ export function PayloadPanel({
 
             {/*
              * The one call this tool makes that leaves the machine, so it says where it goes and
-             * waits to be pressed. What comes back is a document nothing here reads yet: it lands
-             * in the run log whole, which is where the reading of it will be written from.
+             * waits to be pressed. Under its own heading, because the point of it is when you do
+             * it: what it answers is cheaper to read here than out of a refused submission.
              */}
             {validationUrl && (
-                <div className="row" style={{ marginTop: 12, alignItems: "flex-start" }}>
-                    <button
-                        type="button"
-                        className="btn btn--post"
-                        onClick={onValidationReport}
-                        disabled={validating || Boolean(validationBlockedBy)}
-                        title={validationBlockedBy ?? undefined}
-                    >
-                        {validating && <span className="btn__spinner" />}
-                        Validation report
-                    </button>
-                    <span className="field__hint" style={{ flex: 1, margin: 0 }}>
-                        {validationBlockedBy ? (
-                            <span style={{ color: "var(--warn)" }}>{validationBlockedBy}</span>
-                        ) : (
-                            <>
-                                What the DIBK validation service says about this payload, which knows what a submission requires where the app's own{" "}
-                                <code>minCount</code> does not. It leaves your machine, and no token goes with it.
-                            </>
-                        )}
-                        <br />
-                        <span className="method method--post">POST</span> {validationUrl}
-                    </span>
+                <div style={{ marginTop: 18 }}>
+                    <span className="legend">Before you post</span>
+                    <div className="row" style={{ alignItems: "flex-start" }}>
+                        <button
+                            type="button"
+                            className="btn btn--post"
+                            onClick={onValidationReport}
+                            disabled={validating || Boolean(validationBlockedBy)}
+                            title={validationBlockedBy ?? undefined}
+                        >
+                            {validating && <span className="btn__spinner" />}
+                            Prevalidate
+                        </button>
+                        <span className="field__hint" style={{ flex: 1, margin: 0 }}>
+                            {validationBlockedBy ? (
+                                <span style={{ color: "var(--warn)" }}>{validationBlockedBy}</span>
+                            ) : (
+                                <>
+                                    Asks the DIBK validation service what this submission is missing, which it knows and the app's own{" "}
+                                    <code>minCount</code> does not. It leaves your machine, and no token goes with it.
+                                </>
+                            )}
+                            <br />
+                            <span className="method method--post">POST</span> {validationUrl}
+                        </span>
+                    </div>
                 </div>
             )}
 
@@ -565,22 +560,22 @@ export function PayloadPanel({
              * about what is inside the form names no payload element, so it is counted and left to
              * the run log, where the whole report is.
              */}
-            {report && (
+            {requirements && (
                 <div className={`notice notice--${outstanding.length > 0 ? "warn" : "ok"}`} style={{ marginTop: 12 }}>
-                    {validationReportStale && (
+                    {prevalidation?.stale && (
                         <p style={{ margin: "0 0 6px" }}>
-                            <strong>The payload has changed since this report.</strong> The service reads the form to decide which documents its rules
-                            ask for, so ask it again to be sure.
+                            <strong>The payload has changed since it was prevalidated.</strong> The service reads the form to decide which documents
+                            its rules ask for, so run it again to be sure.
                         </p>
                     )}
 
                     {outstanding.length === 0 ? (
-                        <>The validation service asks for no document this {report.soknadtype} submission does not have.</>
+                        <>The validation service asks for no document this {requirements.soknadtype} submission does not have.</>
                     ) : (
                         <div className="row" style={{ gap: 10, alignItems: "flex-start" }}>
                             <div style={{ flex: 1 }}>
                                 The validation service wants {outstanding.length === 1 ? "one more document" : `${outstanding.length} more documents`}{" "}
-                                in this {report.soknadtype} submission:
+                                in this {requirements.soknadtype} submission:
                                 <ul>
                                     {outstanding.map((requirement) => (
                                         <li key={requirement.dataTypes.join("|")}>
