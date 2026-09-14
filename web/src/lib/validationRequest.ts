@@ -1,5 +1,6 @@
 import { dataTypeKindOf } from "./dataTypeGroups";
-import type { AppDataType, AppParty, ApplicationMetadata, DataElementInput, ValidationReportRequest } from "../types";
+import { identityFor } from "./identity";
+import type { AppDataType, AppParty, ApplicationMetadata, DataElementInput, PublicToken, ValidationReportRequest } from "../types";
 
 /**
  * The payload as the DIBK validation service wants to see it.
@@ -25,13 +26,14 @@ export function contentBytes(element: DataElementInput): number {
 }
 
 /**
- * The organisation number of the party being submitted for, or the person number when it is a
- * person. Empty when the app has not been read for its parties and nothing else knows.
+ * The number of the party being submitted for. Empty when the app has not been read for its
+ * parties and the token has no claim to fall back on.
+ *
+ * The same identity `lib/formIdentity.ts` writes into the form, deliberately: the service refuses
+ * a submission whose sender is not the party named in it, so the two agreeing is the point.
  */
-export function submitterFor(parties: AppParty[], partyId: string, ssn: string | null): string {
-    const flat = parties.flatMap((party) => [party, ...(party.childParties ?? [])]);
-    const party = flat.find((entry) => String(entry.partyId) === partyId);
-    return party?.orgNumber ?? party?.ssn ?? ssn ?? "";
+export function submitterFor(parties: AppParty[], partyId: string, token: PublicToken | null): string {
+    return identityFor(parties, partyId, token)?.number ?? "";
 }
 
 export interface ValidationRequestInputs {
@@ -40,8 +42,8 @@ export interface ValidationRequestInputs {
     metadata: ApplicationMetadata | null;
     parties: AppParty[];
     partyId: string;
-    /** The person number the token panel looked up, for a party that is a person. */
-    ssn: string | null;
+    /** For its claim, which is who you are before the app has been read for its parties. */
+    token: PublicToken | null;
 }
 
 /**
@@ -96,7 +98,7 @@ export function buildValidationRequest(inputs: ValidationRequestInputs): BuiltVa
 
     return {
         request: {
-            authenticatedSubmitter: submitterFor(inputs.parties, inputs.partyId, inputs.ssn),
+            authenticatedSubmitter: submitterFor(inputs.parties, inputs.partyId, inputs.token),
             formData: form.content,
             subForms,
             attachments

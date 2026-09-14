@@ -157,6 +157,7 @@ export function PayloadPanel({
             filename: undefined,
             exampleName: undefined,
             example: undefined,
+            identityIn: undefined,
             // A new data type is a new offer, so the picker may fill this one in again.
             restored: undefined
         });
@@ -276,6 +277,13 @@ export function PayloadPanel({
                             </>
                         ) : (
                             " · edited"
+                        )}
+                        {/* The one party in the form the test user was written into. */}
+                        {element.example && element.identityIn && (
+                            <>
+                                {" · you are "}
+                                <span style={{ color: "var(--accent)" }}>{element.identityIn}</span>
+                            </>
                         )}
                     </>
                 ) : (
@@ -477,9 +485,10 @@ export function PayloadPanel({
                                         value={element.content}
                                         onChange={(content) =>
                                             // An edit is no longer the example, so the name under
-                                            // the editor goes and so does the reference a saved
-                                            // payload would have kept.
-                                            update(index, { content, exampleName: undefined, example: undefined })
+                                            // the editor goes, and so do the reference a saved
+                                            // payload would have kept and the identity the tool
+                                            // stops writing in once the text is yours.
+                                            update(index, { content, exampleName: undefined, example: undefined, identityIn: undefined })
                                         }
                                         placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
                                         contentType={element.contentType}

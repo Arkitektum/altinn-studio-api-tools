@@ -18,6 +18,8 @@ import {
     logFromValidationReport
 } from "./lib/logResults";
 import { pendingAutoRuns } from "./lib/autoRuns";
+import { withIdentity } from "./lib/formIdentity";
+import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
@@ -380,6 +382,13 @@ export function App() {
     const tokenUsable = Boolean(activeToken) && !isExpired(activeToken?.expiresAt ?? null, now);
     const dataTypes = metadata?.metadata.dataTypes ?? [];
 
+    /**
+     * Who the payload is from: the party being acted for, or the token's own claim before the app
+     * has been read for its parties. Written into the form data as it is loaded, and sent to the
+     * validation service as the submitter, which is the same fact told twice on purpose.
+     */
+    const identity = useMemo(() => identityFor(parties, instanceOwnerPartyId, activeToken), [parties, instanceOwnerPartyId, activeToken]);
+
     const catalogueEntry = useMemo(() => catalogue.find((entry) => entry.org === org && entry.app === app) ?? null, [catalogue, org, app]);
 
     /**
@@ -411,6 +420,25 @@ export function App() {
         if (instanceOwnerPartyId !== claim) setInstanceOwnerPartyId(claim);
         if (autoFilledParty !== claim) setAutoFilledParty(claim);
     }, [activeToken, instanceOwnerPartyId, setInstanceOwnerPartyId, autoFilledParty, setAutoFilledParty]);
+
+    /**
+     * Puts the test user into the form data, so the submission is from whoever the token is.
+     *
+     * Only elements still holding a shipped example unedited, which is what `example` marks: an
+     * example is data to work from and this is part of loading it, but text you wrote or a file you
+     * picked is yours and is left alone. An edit clears the marker, so the tool stops writing into
+     * an element the moment you start.
+     *
+     * Here rather than at the example picker, because who you are arrives on its own schedule. The
+     * app is read for its parties while the first example is already loading, and the party can
+     * change afterwards. Running it again on every change keeps the two in step, and it settles
+     * after one pass: writing the same identity into a form it is already in changes nothing, and
+     * an unchanged list is returned as it was.
+     */
+    useEffect(() => {
+        if (!identity) return;
+        setDataElements((current) => withIdentity(current, identity));
+    }, [identity, dataElements, setDataElements]);
 
     // A probe result belongs to one org and app, so drop it when the target moves.
     useEffect(() => {
@@ -1079,7 +1107,7 @@ export function App() {
         metadata: metadata?.metadata ?? null,
         parties,
         partyId: instanceOwnerPartyId,
-        ssn: activeToken?.ssn ?? null
+        token: activeToken ?? null
     });
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";

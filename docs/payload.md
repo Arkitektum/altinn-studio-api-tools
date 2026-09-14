@@ -23,9 +23,40 @@ The colouring is a textarea with a coloured copy of its own text behind it, whic
 
 Three ways, and one more if you count reading it back:
 
-- **Example data.** Each element has a picker listing the shipped files for its data type, so the common case needs no pasting. See [Example data](example-data.md).
+- **Example data.** Each element has a picker listing the shipped files for its data type, so the common case needs no pasting. The test user is written into the form as it loads, see below. See [Example data](example-data.md).
 - **File from disk.** For a file the shipped dummies do not cover, a real pdf or a real GML rather than a placeholder.
 - **By hand.** Paste or type XML or JSON into the editor. **Format JSON** appears when the content looks like JSON.
+
+## The test user goes into the form
+
+A DIBK submission is refused when the identity it was sent with is not the identity written in it, so an example file with a company in it fails for everyone but that company. Loading an example writes the test user into it instead, and the line under the editor says which party you were made: `17 552 characters · from 01_Maksimumsversjon.xml · you are ansvarligSoeker`.
+
+A form names several parties and only one of them is the sender. Which one is a priority list, and the first the form has wins:
+
+| Acting as                              | The sender is the first of                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Yourself, with a fødselsnummer         | `ansvarligSoeker`, `plankonsulent`, `tiltakshaver`, `forslagsstiller`                                |
+| A company, with an organisasjonsnummer | `ansvarligForetak`, `kommune`, `plankonsulent`, `ansvarligSoeker`, `tiltakshaver`, `forslagsstiller` |
+
+In that one party, five values are set: `navn`, the number in the field for its kind with the other one cleared, and `partstype/kodeverdi` and `partstype/kodebeskrivelse`. What the party is called follows both what you are and which form it is.
+
+| Acting as | Data type                    | partstype             |
+| --------- | ---------------------------- | --------------------- |
+| Yourself  | any                          | `Privatperson`        |
+| A company | `AN`, `SA`, `KO`             | `Foretak`             |
+| A company | `HoeringOgOffentligEttersyn` | `Offentlig myndighet` |
+| A company | anything else                | `Organisasjon`        |
+
+Who you are is the party the instance is for, read from the app's own party list, falling back to the token's own claim before the app has been read. It is the same identity the validation report is sent with, so the two agree by construction rather than by luck.
+
+Four things are worth knowing about how it is written, all in `lib/formIdentity.ts`:
+
+- **Only an example is written into.** The `example` marker is what says an element still holds a shipped file unedited, and an edit clears it, so the tool stops writing into an element the moment the text is yours. A file you picked off disk is yours from the start and is never touched.
+- **It follows the identity rather than the moment of loading.** The app is read for its parties while the first example is already loading, and the party can change after that, so it is written again whenever who you are changes. Writing the same identity into a form it is already in changes nothing, so it settles.
+- **Only the five values change.** The edit is made in the text rather than through a parser and a serializer, because a round trip would reformat the document you are looking at and the one the [comparison with the stored xml](reading-data-back.md#comparing-with-the-stored-xml) is about. Everything else comes out byte for byte as it went in.
+- **A field the form does not carry is put in where the form keeps it.** These forms do not agree on the order, and one has `foedselsnummer` after `partstype` where another has it last, after the contact person. An xml schema counts the order, so the position is taken from another party element in the same form, which is the same type as this one. A form with nothing to learn from falls back to the usual order.
+
+The one thing it cannot do is take back what it wrote. In the five forms where the two lists pick different parties, `AN`, `SA`, `KO` and the two hearing forms, switching between yourself and a company writes the new identity into the new party and leaves the old one holding the old. Loading the example again is the way out.
 
 ## File from disk
 

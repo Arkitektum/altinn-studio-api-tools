@@ -107,6 +107,11 @@ export interface DataElementInput {
      */
     example?: ExampleRef;
     /**
+     * UI-only: the party element in the form data the test user's identity was written into, so
+     * the editor can say which one is you. Not sent to the server.
+     */
+    identityIn?: string;
+    /**
      * UI-only: this element came out of a saved payload. The example picker leaves it alone,
      * since an element restored empty is a gap the payload meant to leave, not one to fill.
      * Cleared by changing the data type, which is when the picker's offer is worth having again.

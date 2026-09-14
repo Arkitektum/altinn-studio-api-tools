@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildValidationRequest, contentBytes, sameSubmission, submitterFor } from "./validationRequest";
-import type { AppDataType, AppParty, ApplicationMetadata, DataElementInput } from "../types";
+import type { AppDataType, AppParty, ApplicationMetadata, DataElementInput, PublicToken } from "../types";
 
 const dataTypes: AppDataType[] = [
     { id: "ET", maxCount: 1, appLogic: { classRef: "Et" } },
@@ -29,23 +29,17 @@ const elements: DataElementInput[] = [
     { dataType: "vedlegg", content: "AAAA", encoding: "base64", contentType: "application/pdf", filename: "dummy.pdf" }
 ];
 
-const inputs = { elements, dataTypes, metadata, parties, partyId: "510001", ssn: "01899699552" };
+const token = { label: "Sophie Salt", ssn: "01899699552" } as PublicToken;
+const inputs = { elements, dataTypes, metadata, parties, partyId: "510001", token };
 
 describe("submitterFor", () => {
-    it("takes the party's organisation number", () => {
+    it("takes the number of the party being submitted for", () => {
         assert.equal(submitterFor(parties, "510001", null), "312949555");
-    });
-
-    it("falls back to the party's person number, then to the token's", () => {
         assert.equal(submitterFor(parties, "510002", null), "01899699552");
-        assert.equal(submitterFor(parties, "999", "01899699552"), "01899699552");
     });
 
-    it("finds a subunit, which Altinn nests under its parent", () => {
-        assert.equal(submitterFor(parties, "510003", null), "888888888");
-    });
-
-    it("is empty when nothing knows, rather than a guess", () => {
+    it("falls back to the token's claim, and is empty when nothing knows", () => {
+        assert.equal(submitterFor(parties, "999", token), "01899699552");
         assert.equal(submitterFor([], "510001", null), "");
     });
 });
