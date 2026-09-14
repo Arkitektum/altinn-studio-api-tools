@@ -21,7 +21,7 @@ import { pendingAutoRuns } from "./lib/autoRuns";
 import { withIdentity } from "./lib/formIdentity";
 import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
-import { parseValidationReport, prevalidationStanding, requirementsFrom, type Prevalidation } from "./lib/validationReport";
+import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
@@ -1129,8 +1129,6 @@ export function App() {
         };
     }, [validationAnswer, dataTypes, dataElements, instanceDataElements, validationRequest.request]);
 
-    const standing = prevalidationStanding(prevalidation);
-
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
     /**
@@ -1293,63 +1291,49 @@ export function App() {
                                 onValidationReport={() => void validationReport()}
                                 validating={validating}
                                 prevalidation={prevalidation}
-                            />
+                            >
+                                <div style={{ marginTop: 18 }}>
+                                    <span className="legend">Post</span>
 
-                            <section className="panel">
-                                {blockers.length > 0 && (
-                                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                        Needs {blockers.join(", ")}.
-                                    </div>
-                                )}
+                                    {blockers.length > 0 && (
+                                        <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                                            Needs {blockers.join(", ")}.
+                                        </div>
+                                    )}
 
-                                {/*
-                                 * Where the payload stands with the validation service, said again
-                                 * at the button that sends it. Prevalidating is a step you take
-                                 * before this one, and a step in another panel is easily one you
-                                 * did not know was there.
-                                 */}
-                                {serverConfig?.validationUrl && (
-                                    <div
-                                        className={`notice ${standing.state === "missing" ? "notice--warn" : standing.state === "clean" ? "notice--ok" : ""}`}
-                                        style={{ marginBottom: 12 }}
+                                    {/*
+                                     * The one thing the prevalidation notice above cannot say,
+                                     * because there is no report for it to be part of. The rest of
+                                     * what the service said is already on screen a few lines up.
+                                     */}
+                                    {serverConfig?.validationUrl && !prevalidation && (
+                                        <div className="notice" style={{ marginBottom: 12 }}>
+                                            Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you,
+                                            read before the submit rather than after.
+                                        </div>
+                                    )}
+
+                                    {runError ? (
+                                        <div style={{ marginBottom: 12 }}>
+                                            <ErrorNotice error={runError} />
+                                        </div>
+                                    ) : null}
+
+                                    <button
+                                        type="button"
+                                        className="btn btn--primary btn--fire"
+                                        onClick={() => void run()}
+                                        disabled={running || blockers.length > 0}
                                     >
-                                        {standing.state === "none" && (
-                                            <>
-                                                Not prevalidated. <strong>Prevalidate</strong>, at the end of Payload, says what this submission is
-                                                missing, which is cheaper to read there than out of a refused submit.
-                                            </>
-                                        )}
-                                        {standing.state === "missing" && (
-                                            <>
-                                                Prevalidating found{" "}
-                                                {standing.missing === 1 ? "one document missing" : `${standing.missing} documents missing`} from this
-                                                submission. The data posts either way, and the process will not advance past a submission that is
-                                                short.
-                                            </>
-                                        )}
-                                        {standing.state === "stale" && <>The payload has changed since it was prevalidated.</>}
-                                        {standing.state === "clean" && <>Prevalidated, and the validation service asked for nothing more.</>}
-                                    </div>
-                                )}
-                                {runError ? (
-                                    <div style={{ marginBottom: 12 }}>
-                                        <ErrorNotice error={runError} />
-                                    </div>
-                                ) : null}
-                                <button
-                                    type="button"
-                                    className="btn btn--primary btn--fire"
-                                    onClick={() => void run()}
-                                    disabled={running || blockers.length > 0}
-                                >
-                                    {running && <span className="btn__spinner" />}
-                                    {running
-                                        ? "Posting…"
-                                        : instanceGuid
-                                          ? `Add data to ${instanceGuid.slice(0, 8)}`
-                                          : `Post a new instance to ${org || "org"}/${app || "app"}`}
-                                </button>
-                            </section>
+                                        {running && <span className="btn__spinner" />}
+                                        {running
+                                            ? "Posting…"
+                                            : instanceGuid
+                                              ? `Add data to ${instanceGuid.slice(0, 8)}`
+                                              : `Post a new instance to ${org || "org"}/${app || "app"}`}
+                                    </button>
+                                </div>
+                            </PayloadPanel>
 
                             <span className="group">Inspect</span>
 

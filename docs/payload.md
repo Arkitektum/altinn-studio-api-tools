@@ -90,7 +90,7 @@ One checkbox, **Sign and submit once it is posted**, which calls `PUT .../proces
 
 **Prevalidate**, under **Before you post** at the end of the panel, sends the payload to the DIBK validation service and puts what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
 
-It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, so the line above the post button says where the payload stands with it: not prevalidated, this many documents missing, changed since it was prevalidated, or nothing more asked for.
+It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, which is why the button is the width of the post button below it and sits directly above it.
 
 It exists because `applicationmetadata` is not a reliable answer to what a submission needs. The `minCount` an app declares does not match what the validation insists on, and the service does know, so the question goes where the answer is.
 

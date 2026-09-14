@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { contentTypeOptions, preferredContentType } from "../lib/contentType";
 import { dataTypeKindOf, groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
 import { exampleOptionsFor } from "../lib/exampleOptions";
@@ -43,6 +43,11 @@ interface PayloadPanelProps {
     validating: boolean;
     /** What the service last said about this payload. Null until it has been asked. */
     prevalidation: Prevalidation | null;
+    /**
+     * The post itself, which acts on everything above it. A section of this panel rather than one
+     * of its own, so that what is about to be sent is the thing you were just looking at.
+     */
+    children?: ReactNode;
 }
 
 /**
@@ -96,7 +101,8 @@ export function PayloadPanel({
     validationBlockedBy,
     onValidationReport,
     validating,
-    prevalidation
+    prevalidation,
+    children
 }: PayloadPanelProps) {
     /** Per element, since one element failing to read says nothing about the others. */
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
@@ -528,30 +534,29 @@ export function PayloadPanel({
             {validationUrl && (
                 <div style={{ marginTop: 18 }}>
                     <span className="legend">Before you post</span>
-                    <div className="row" style={{ alignItems: "flex-start" }}>
-                        <button
-                            type="button"
-                            className="btn btn--post"
-                            onClick={onValidationReport}
-                            disabled={validating || Boolean(validationBlockedBy)}
-                            title={validationBlockedBy ?? undefined}
-                        >
-                            {validating && <span className="btn__spinner" />}
-                            Prevalidate
-                        </button>
-                        <span className="field__hint" style={{ flex: 1, margin: 0 }}>
-                            {validationBlockedBy ? (
-                                <span style={{ color: "var(--warn)" }}>{validationBlockedBy}</span>
-                            ) : (
-                                <>
-                                    Asks the DIBK validation service what this submission is missing, which it knows and the app's own{" "}
-                                    <code>minCount</code> does not. It leaves your machine, and no token goes with it.
-                                </>
-                            )}
-                            <br />
-                            <span className="method method--post">POST</span> {validationUrl}
-                        </span>
-                    </div>
+                    {/* The width of the post button below it, because it is the step before it. */}
+                    <button
+                        type="button"
+                        className="btn btn--post btn--fire"
+                        onClick={onValidationReport}
+                        disabled={validating || Boolean(validationBlockedBy)}
+                        title={validationBlockedBy ?? undefined}
+                    >
+                        {validating && <span className="btn__spinner" />}
+                        Prevalidate
+                    </button>
+                    <p className="field__hint" style={{ marginBottom: 0 }}>
+                        {validationBlockedBy ? (
+                            <span style={{ color: "var(--warn)" }}>{validationBlockedBy}</span>
+                        ) : (
+                            <>
+                                Asks the DIBK validation service what this submission is missing, which it knows and the app's own{" "}
+                                <code>minCount</code> does not. It leaves your machine, and no token goes with it.
+                            </>
+                        )}
+                        <br />
+                        <span className="method method--post">POST</span> {validationUrl}
+                    </p>
                 </div>
             )}
 
@@ -632,6 +637,8 @@ export function PayloadPanel({
                     </span>
                 </label>
             </div>
+
+            {children}
         </Panel>
     );
 }
