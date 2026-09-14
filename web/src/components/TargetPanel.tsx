@@ -14,13 +14,11 @@ interface TargetPanelProps {
     onAppChange: (next: string) => void;
     instanceOwnerPartyId: string;
     onPartyChange: (next: string) => void;
-    instanceGuid: string;
     metadata: AppMetadataResponse | null;
     parties: AppParty[];
     onProbe: () => void;
     probing: boolean;
     probeError: unknown;
-    elementCount: number;
     catalogue: CatalogueApp[];
     onPickCatalogueApp: (entry: CatalogueApp) => void;
 }
@@ -37,13 +35,11 @@ export function TargetPanel({
     onAppChange,
     instanceOwnerPartyId,
     onPartyChange,
-    instanceGuid,
     metadata,
     parties,
     onProbe,
     probing,
     probeError,
-    elementCount,
     catalogue,
     onPickCatalogueApp
 }: TargetPanelProps) {
@@ -85,14 +81,6 @@ export function TargetPanel({
     if (instanceOwnerPartyId && !partyOptions.some((option) => option.value === instanceOwnerPartyId)) {
         partyOptions.unshift({ value: instanceOwnerPartyId, label: `${instanceOwnerPartyId} · from the token` });
     }
-
-    const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
-    const party = instanceOwnerPartyId || "{partyId}";
-    // An instance selected in Instances means the data goes onto it, and none means the post
-    // creates one. There is no separate destination to read.
-    const preview = instanceGuid
-        ? `${base}/instances/${party}/${instanceGuid}/data?dataType=…`
-        : `${base}/instances  (multipart, ${elementCount} part${elementCount === 1 ? "" : "s"} + instance)`;
 
     return (
         <Panel
@@ -192,14 +180,6 @@ export function TargetPanel({
                         ? "Read from the app, which needs a token and an app above."
                         : "The parties this token may instantiate for, read from the app."}
                 </p>
-            </div>
-
-            <div style={{ marginTop: 14 }}>
-                <span className="legend">Will call</span>
-                <pre className="dump" style={{ margin: 0 }}>
-                    <span className="method method--post">POST</span> {preview}
-                </pre>
-                <p className="field__hint">{instanceGuid ? "Onto the instance selected in Instances." : "Creating a new instance."}</p>
             </div>
         </Panel>
     );

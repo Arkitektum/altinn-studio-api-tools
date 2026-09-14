@@ -15,21 +15,23 @@ Every request appears in the run log alongside posts, with method, URL, status, 
 
 `GET /{org}/{app}/instances/{party}/active`, the app's own list endpoint, the one its frontend uses to offer an unfinished form back to the user. It needs a party but no guid, since finding the guid is the point of it.
 
-There is no button for it. It is one read, and a panel whose whole purpose is showing the list may as well ask for it: the listing runs once there is a token, an app and a party, debounced because the party is typed a character at a time, and attempted once per target so a party that 403s is not retried forever. **Refresh** in the panel header lists again, and a post refreshes it too, since a post either makes an instance or changes one.
+There is no button for it. It is one read, and the panel may as well ask for it: the listing runs once there is a token, an app and a party, debounced because the party is typed a character at a time, and attempted once per target so a party that 403s is not retried forever. **Refresh** lists again, and a post refreshes it too, since a post either makes an instance or changes one.
 
-The first row is **New instance**, which is not an instance yet: with it selected, posting creates one. Under it come the party's instances, each the first eight characters of its guid, when it was last changed and by whom, newest first.
+The panel itself holds one thing, which is what a post goes to, and **Open** in its header opens the list in a window over the tool. Saved payloads work the same way, and the two are the same shape of thing: a list you visit to make one choice and then stop looking at. What the choice decides is directly under it, the **Will call** line, so the URL a post is about to use sits with the selection that decides it.
 
-Clicking a row points the whole tool at that instance: what a post adds data to, and what the panels below it read. The selected row is marked.
+The first row in the window is **New instance**, which is not an instance yet: with it selected, posting creates one. Under it come the party's instances, each the first eight characters of its guid, when it was last changed and by whom, newest first.
 
-**Open** on a row is a link into the app, which is a session of its own. The token here lives in server memory so the browser never receives one, which means Altinn bounces to LocalTest's user picker until you have logged in there, and the deep link's fragment is dropped on the way back so you land on the app root. **Log in** in the panel header is that same picker, and opening the instance again afterwards works.
+Picking a row closes the window and points the whole tool at that instance: what a post adds data to, and what the panels below it read.
 
-An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the post button says otherwise. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
+**Open** on a row is a link into the app, which is a session of its own. The token here lives in server memory so the browser never receives one, which means Altinn bounces to LocalTest's user picker until you have logged in there, and the deep link's fragment is dropped on the way back so you land on the app root. **Log in** in the window's header is that same picker, and opening the instance again afterwards works.
+
+An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the panel says otherwise. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
 
 Altinn lists the instances whose process has not ended, so an archived one is not here. **Other instance** at the bottom of the list is the way to one anyway: it reveals a field that takes a guid, or the whole `510001/99d0632c-…` pair as Altinn writes it, in which case the party comes along too. What you reach that way gets the same row as any other, marked "not in the active list", and is just as readable and deletable.
 
 ### Include completed
 
-Which is only a way through if you know the guid, so the checkbox above the list is the way to all of them. It sits there, before the list, because what it decides is what the list holds. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· deleted`.
+Which is only a way through if you know the guid, so the checkbox above the list is the way to all of them. It sits there, before the list and inside the same window, because what it decides is what the list holds. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· deleted`.
 
 Two reads rather than one, because the app's own list is the one that must not depend on storage. If storage is not there, or refuses the party, the active listing still stands and the panel says the rest is missing rather than letting a short list read as a party with nothing finished. What both hold is listed once, as the app described it, and everything is ordered by when it was last changed, so the instance you just archived is where you left it rather than at the bottom.
 
@@ -143,7 +145,7 @@ One preview is held at a time. Rendering again replaces it and revokes the previ
 
 ## Deleting an instance
 
-Every row in **Instances** has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard=true` for that row, not for whatever is selected.
+Every row in the instance window has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard=true` for that row, not for whatever is selected.
 
 It is always the hard one: the instance is removed rather than marked deleted. There was a checkbox for the choice, and the soft side of it earned its space nowhere: everything this tool can reach is local test data, and an instance marked deleted stays in storage, where **Include completed** keeps finding it and listing it as `· deleted`. The api still takes `hard=false` for a caller that wants it, see [API](api.md).
 

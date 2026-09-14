@@ -7,7 +7,7 @@ nav_order: 5
 
 The panel appears once there is a token, since reading the app takes one and without it there is nothing to fill the pickers with.
 
-Enter an org and app and the tool reads the app itself. `/api/v1/applicationmetadata` fills the data type picker, and `/api/v1/parties?allowedToInstantiateFilter=true` fills the party picker with subunits flattened, so you do not have to guess a party id that would return 403. A **Will call** line shows the exact URL that is about to be requested.
+Enter an org and app and the tool reads the app itself. `/api/v1/applicationmetadata` fills the data type picker, and `/api/v1/parties?allowedToInstantiateFilter=true` fills the party picker with subunits flattened, so you do not have to guess a party id that would return 403.
 
 There is no button for it. Both are reads, and `allowedToInstantiateFilter=true` filters the list of parties rather than instantiating anything, so nothing is created and there is nothing to decide: it happens once there is a token and a target. The badge in the panel header says how many data types came back.
 
@@ -35,7 +35,7 @@ Choosing a party drops the selected instance, since it belonged to the previous 
 
 ## Where a post goes
 
-Not here. Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, one of the party's instances, or **Other instance** for one the list does not hold. The **Will call** line at the bottom of this panel shows the URL either way, and says which of the two it is.
+Not here. Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, one of the party's instances, or **Other instance** for one the list does not hold. The **Will call** line lives there too, under the selection that decides it, and shows the URL either way.
 
 ## Instance template
 

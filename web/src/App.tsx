@@ -1218,7 +1218,6 @@ export function App() {
                             onAppChange={setApp}
                             instanceOwnerPartyId={instanceOwnerPartyId}
                             onPartyChange={changeParty}
-                            instanceGuid={instanceGuid}
                             catalogue={catalogue}
                             onPickCatalogueApp={(entry) => {
                                 setOrg(entry.org);
@@ -1234,7 +1233,6 @@ export function App() {
                             onProbe={() => void probe()}
                             probing={probing}
                             probeError={probeError}
-                            elementCount={dataElements.length}
                         />
                     )}
 
@@ -1247,6 +1245,7 @@ export function App() {
                             app={app}
                             instanceOwnerPartyId={instanceOwnerPartyId}
                             localtestUrl={localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101"}
+                            elementCount={dataElements.length}
                             instances={instanceList}
                             instanceGuid={instanceGuid}
                             onSelect={selectInstance}
