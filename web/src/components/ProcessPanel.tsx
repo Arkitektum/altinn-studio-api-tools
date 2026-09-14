@@ -43,6 +43,7 @@ export function ProcessPanel({
 
     return (
         <Panel
+            tone="process"
             title="Process"
             aside={
                 <span className="badge">

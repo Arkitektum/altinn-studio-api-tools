@@ -129,6 +129,7 @@ export function InstancesPanel({
 
     return (
         <Panel
+            tone="instances"
             id={id}
             title="Instances"
             aside={

@@ -32,7 +32,7 @@ export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid
     const ready = hasToken && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
 
     return (
-        <Panel title="Pdf">
+        <Panel title="Pdf" tone="pdf">
             <p className="field__hint" style={{ marginBottom: 10 }}>
                 What the app would archive, rendered from the data as it stands. The quickest way to see what the form turns into without walking the
                 process to the end. It opens in a window over the tool.

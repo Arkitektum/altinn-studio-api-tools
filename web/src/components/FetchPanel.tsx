@@ -80,6 +80,7 @@ export function FetchPanel({
 
     return (
         <Panel
+            tone="element"
             id={id}
             title="Data element"
             aside={

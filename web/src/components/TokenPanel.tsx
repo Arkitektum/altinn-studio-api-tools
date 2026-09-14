@@ -132,6 +132,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
 
     return (
         <Panel
+            tone="user"
             id={id}
             title="Test user"
             aside={

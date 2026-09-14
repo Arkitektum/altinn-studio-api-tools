@@ -53,6 +53,28 @@
     --pink-border: #5f3a4d;
 
     /*
+     * A surface per panel, so a column of them is a column of containers rather than one field.
+     * Every one is the same lightness, a step above the page and below anything raised inside it,
+     * and they differ only in hue.
+     *
+     * All of them are blue to purple. A first pass walked the whole wheel, and the warm half of it
+     * did not work: an amber or olive surface reads as dirty against a blue-grey page, and the one
+     * near the red reads as a warning. That leaves about a hundred degrees, which the seven panels
+     * sit in on a 13-degree grid, taken in an order that puts 40 degrees or more between any two
+     * panels that are next to each other.
+     *
+     * Seven and not nine: Validation and the run log are in the sidebar, where a column of their
+     * own already says they are not part of the one you work down.
+     */
+    --panel-user: #1b2024;
+    --panel-target: #1d1b24;
+    --panel-instances: #231b24;
+    --panel-payload: #1b1e24;
+    --panel-element: #1f1b24;
+    --panel-pdf: #241b24;
+    --panel-process: #1b2224;
+
+    /*
      * Marked text. Neutral and translucent, and it has to be both. Every hue in here already means
      * something in a code block, and the editor paints its colours on a layer behind a transparent
      * textarea, so an opaque selection is drawn over the very text it is marking.
@@ -353,6 +375,7 @@ body {
 .panel {
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    /* Panels that say what they are override this. The rest, the crash screen, keep the page. */
     background: var(--bg);
     padding: 14px;
     /*
@@ -360,6 +383,34 @@ body {
      * them. The same reason the sticky columns offset by --top-h.
      */
     scroll-margin-top: calc(var(--top-h) + 16px);
+}
+
+.panel--user {
+    background: var(--panel-user);
+}
+
+.panel--target {
+    background: var(--panel-target);
+}
+
+.panel--instances {
+    background: var(--panel-instances);
+}
+
+.panel--payload {
+    background: var(--panel-payload);
+}
+
+.panel--element {
+    background: var(--panel-element);
+}
+
+.panel--pdf {
+    background: var(--panel-pdf);
+}
+
+.panel--process {
+    background: var(--panel-process);
 }
 
 .panel__head {

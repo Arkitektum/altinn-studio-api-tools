@@ -231,6 +231,7 @@ export function PayloadPanel({
 
     return (
         <Panel
+            tone="payload"
             title="Payload"
             aside={
                 <span className="row" style={{ gap: 6 }}>

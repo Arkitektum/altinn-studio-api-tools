@@ -84,6 +84,7 @@ export function TargetPanel({
 
     return (
         <Panel
+            tone="target"
             id={id}
             title="Target"
             aside={metadata ? <span className="badge badge--ok">{metadata.metadata.dataTypes?.length ?? 0} data types</span> : undefined}
