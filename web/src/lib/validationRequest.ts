@@ -44,6 +44,18 @@ export interface ValidationRequestInputs {
     ssn: string | null;
 }
 
+/**
+ * Whether a report still describes the payload in front of you.
+ *
+ * What was sent is the whole of what the report was about, so comparing it with what would be sent
+ * now is the whole test. Any edit at all counts, down to a character in the form: the service reads
+ * the form to decide which documents its rules ask for, so there is no such thing as a change too
+ * small to matter.
+ */
+export function sameSubmission(sent: ValidationReportRequest | null, current: ValidationReportRequest | null): boolean {
+    return JSON.stringify(sent) === JSON.stringify(current);
+}
+
 export interface BuiltValidationRequest {
     request: ValidationReportRequest | null;
     /** Why there is nothing to send, or null when there is. */

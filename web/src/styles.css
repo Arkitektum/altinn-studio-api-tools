@@ -830,6 +830,23 @@ textarea {
     padding-left: 18px;
 }
 
+.notice li {
+    margin-bottom: 4px;
+}
+
+.notice li .badge {
+    margin-left: 6px;
+}
+
+/*
+ * Why a document is wanted, under the type that would answer it. It is the service's own sentence
+ * and it is long, so it drops out of the notice's colour: what is wanted stays the thing you read.
+ */
+.notice__why {
+    display: block;
+    color: var(--text-muted);
+}
+
 /* ------------------------------------------------------------------ token */
 
 .token {

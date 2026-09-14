@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildValidationRequest, contentBytes, submitterFor } from "./validationRequest";
+import { buildValidationRequest, contentBytes, sameSubmission, submitterFor } from "./validationRequest";
 import type { AppDataType, AppParty, ApplicationMetadata, DataElementInput } from "../types";
 
 const dataTypes: AppDataType[] = [
@@ -114,5 +114,27 @@ describe("buildValidationRequest", () => {
         // With nothing read, the form fallback is a single-instance form data type, which there is
         // none of, so there is no form to send.
         assert.equal(unread.request, null);
+    });
+});
+
+describe("sameSubmission", () => {
+    const { request } = buildValidationRequest(inputs);
+
+    it("is the same submission when nothing was touched", () => {
+        assert.equal(sameSubmission(request, buildValidationRequest(inputs).request), true);
+    });
+
+    it("is another one after a character in the form", () => {
+        const edited = elements.map((element) => (element.dataType === "ET" ? { ...element, content: `${element.content} ` } : element));
+        assert.equal(sameSubmission(request, buildValidationRequest({ ...inputs, elements: edited }).request), false);
+    });
+
+    it("is another one after an attachment is added", () => {
+        const added = [...elements, { dataType: "vedlegg", content: "AAAA", encoding: "base64" as const }];
+        assert.equal(sameSubmission(request, buildValidationRequest({ ...inputs, elements: added }).request), false);
+    });
+
+    it("is not the same as nothing", () => {
+        assert.equal(sameSubmission(request, null), false);
     });
 });

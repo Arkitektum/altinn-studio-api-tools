@@ -51,21 +51,6 @@ Apps that declare neither field fall back to grouping by app logic, where a sing
 
 Changing the data type clears the content and content type, since both belonged to the type you left, and the picker then loads the new type's first example.
 
-## What the app requires
-
-The app says what it cannot do without, and the panel says whether it is there. A data type in `applicationmetadata` carries a `minCount` and a `taskId`: completing that task needs at least that many data elements of the type, and `process/next` refuses while one is short. The tool already reads that metadata when it probes the app, so this costs no request.
-
-A line above **Add data element** names what is missing, `Task_1 also needs 1 GjennomfoeringsplanDataV7 and 2 vedlegg elements`, with a button that adds one element per element short. Each lands with its data type and content type filled in, and the example picker loads the first example for it the way it does for any new element, so a full payload is one click from an empty one.
-
-The counting is done in `lib/requiredData.ts`, and four things are worth knowing about it:
-
-- **The task decides the list.** A type bound to another task is not what this step is waiting for. With an instance selected the task is the one it sits in, so the list follows it through the process. Without one there is no instance to ask, and metadata never names the first task of a process, so the main form's own task stands in: a new instance starts where its form does.
-- **What the instance already holds counts.** Altinn counts data elements, and it makes no difference to the count whether this tool is about to post one or posted it an hour ago.
-- **What the app produces itself is left out**, the same list the picker hides. A receipt pdf the app writes at the end of the process is required and is not yours to add.
-- **An auto-created form data element counts, which is true and not the whole truth.** Altinn creates it with the instance, empty, so the count is met while the form is not filled in.
-
-Which is the honest limit of the whole thing: it counts data elements. Whether the xml inside one is complete is the model and the app's own validators talking, and nothing in the metadata knows it. That is what validation is for, so the line never promises the instance will pass, only that nothing it can count is missing.
-
 ## After upload
 
 One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
@@ -90,7 +75,20 @@ The payload becomes a submission on the way out, which is a translation rather t
 
 An element with nothing in it is left out, and a payload with no main form has nothing to ask about, which the line beside the button says instead of sending half a submission. The submitter comes from the app's parties, so pressing the button before the app has been read falls back to the token's own person number.
 
-The report itself is not read yet. It goes to the log whole, request and response, which is where the reading of it will be written from: what the tool wants to know is which parts of a submission are required, and that has to be written against a real report rather than guessed at. `VALIDATION_URL` points it elsewhere or, emptied, hides the button.
+### What it says is required
+
+The report is one message per rule the service has something to say about, and the ones about documents name the document. Those become the line under the button: **The validation service wants 4 more documents in this ET submission**, each named with the service's own reason under it and the checklist point beside it, and a button that adds one element per document. Each lands with its data type and content type filled in, and the example picker loads the first example for it, so a full payload is a click from an incomplete one.
+
+`lib/validationReport.ts` does the reading, and four things about it are worth knowing:
+
+- **A rule about a document has `Vedlegg` in its reference**, `Ettrinn.Vedlegg.Situasjonsplan`, and the last segment is the attachment type. Everything else the report says is about what is inside the form, which is no payload element, so it is counted and left to the log: **And 2 things about the form's own content**.
+- **A rule that takes any one of several documents quotes them**, so the names are read out of the prose as well as off the rule. `SnittPlanFasadeTegninger` is not something to attach; the six drawings its message lists are, and the line offers them as `TegningNyPlan or TegningNyFasade`.
+- **A name is matched against the data types the app declares**, and only the matches are offered, since a type the app does not have is not one you can select. A name that matches nothing is still named, and says it cannot be added here.
+- **An error is what the submission needs and a warning is what the service advises**, listed as one line of names. Adding one is your call, so it is a line rather than a list with a button.
+
+What is already in the payload, or already on the instance, drops off the list. That is a live count against a fixed report, so the payload can move past what was asked about: any edit at all makes the report stale, and it says so, because the service reads the form to decide which rules apply and there is no change too small to matter.
+
+The whole report goes to the run log either way, request and response, since the panel reads only the part of it about documents. `VALIDATION_URL` points the call elsewhere or, emptied, hides the button.
 
 ## Saved payloads
 

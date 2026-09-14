@@ -7,7 +7,7 @@ import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import { Panel } from "./Panel";
 import { SavedPayloads } from "./SavedPayloads";
-import { elementsToAdd, requiredSummary } from "../lib/requiredData";
+import { documentsToAdd, parseValidationReport, requirementsFrom } from "../lib/validationReport";
 import { loadingOverwrites } from "../lib/savedPayloads";
 import type { AppDataType, ApplicationMetadata, DataElementInput, ExampleGroup, SavedPayload } from "../types";
 
@@ -18,9 +18,7 @@ interface PayloadPanelProps {
     /** The target, so a saved payload written for another app can say which. */
     org: string;
     app: string;
-    /** The task the selected instance sits in, for what that task requires. Null for a new one. */
-    currentTask: string | null;
-    /** Data types the selected instance already holds, which count towards those requirements. */
+    /** Data types the selected instance already holds, which count as answered requirements. */
     onInstance: string[];
     /** From applicationmetadata. Authoritative, but only available after probing. */
     dataTypes: AppDataType[];
@@ -44,6 +42,10 @@ interface PayloadPanelProps {
     validationBlockedBy: string | null;
     onValidationReport: () => void;
     validating: boolean;
+    /** The last report the service gave, unread. Null until it has been asked. */
+    validationReport: unknown;
+    /** Whether the payload has changed since, so the report describes something else now. */
+    validationReportStale: boolean;
 }
 
 /**
@@ -62,6 +64,11 @@ function describeContent(element: DataElementInput): { size: string; source?: st
     };
 }
 
+/** Names in a sentence: "a", "a and b", "a, b and c". */
+function list(names: string[]): string {
+    return names.join(", ").replace(/, ([^,]*)$/, " and $1");
+}
+
 function describeDataType(dataType: AppDataType): string {
     const bits: string[] = [];
     if (dataType.appLogic) bits.push("form data");
@@ -77,7 +84,6 @@ export function PayloadPanel({
     onChange,
     org,
     app,
-    currentTask,
     onInstance,
     dataTypes,
     metadata,
@@ -93,7 +99,9 @@ export function PayloadPanel({
     validationUrl,
     validationBlockedBy,
     onValidationReport,
-    validating
+    validating,
+    validationReport,
+    validationReportStale
 }: PayloadPanelProps) {
     /** Per element, since one element failing to read says nothing about the others. */
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
@@ -163,20 +171,24 @@ export function PayloadPanel({
     }
 
     /**
-     * What the app says this task cannot be completed without, and what of it is not here yet.
-     * Counted from applicationmetadata rather than guessed. See lib/requiredData.ts.
+     * Which documents this submission needs, as the validation service answered it. Nothing here
+     * counts a `minCount`: what an app declares is not what the validation insists on, which is
+     * why the question is asked of the service at all. See lib/validationReport.ts.
      */
-    const { task, required, missing } = requiredSummary({
+    const report = parseValidationReport(validationReport);
+    const requirements = requirementsFrom(report, {
         dataTypes,
-        metadata,
-        currentTask,
         payload: dataElements.map((element) => element.dataType).filter(Boolean),
         onInstance
     });
+    const outstanding = requirements.required.filter((requirement) => !requirement.satisfied);
+    /** Recommended and not here, by the name the message leads with where it offers a choice. */
+    const advised = requirements.recommended.filter((requirement) => !requirement.satisfied).map((requirement) => requirement.dataTypes[0] as string);
+    const other = requirements.otherErrors + requirements.otherWarnings;
 
-    /** Appends one element per element short, which the example picker then fills in on mount. */
+    /** Appends one element per document still wanted, which the example picker fills in on mount. */
     function addMissing() {
-        const added = elementsToAdd(missing).map((dataType) => ({
+        const added = documentsToAdd(requirements.required).map((dataType) => ({
             dataType,
             content: "",
             contentType: preferredContentType(dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? [])
@@ -496,37 +508,6 @@ export function PayloadPanel({
                 );
             })}
 
-            {/*
-             * What the app requires, from its own metadata: a data type bound to this task with a
-             * minCount, which `process/next` refuses while it is short. It says nothing about
-             * whether the xml inside a form is complete, which only the app's validation knows,
-             * so it never promises the instance will pass.
-             */}
-            {required.length > 0 && (
-                <div className={`notice notice--${missing.length > 0 ? "warn" : "ok"}`} style={{ marginBottom: 12 }}>
-                    {missing.length === 0 ? (
-                        <>
-                            Every data element {task ? <strong>{task}</strong> : "this app"} requires is here. Whether what is in them passes the
-                            app's own validation is another question, and one only a post can answer.
-                        </>
-                    ) : (
-                        <div className="row" style={{ gap: 10, alignItems: "flex-start" }}>
-                            <span style={{ flex: 1 }}>
-                                {task ? <strong>{task}</strong> : "This app"} also needs{" "}
-                                {missing
-                                    .map((type) => `${type.missing} ${type.dataType}${type.missing > 1 ? " elements" : ""}`)
-                                    .join(", ")
-                                    .replace(/, ([^,]*)$/, " and $1")}
-                                . The app declares them with a minCount, so advancing the process fails while they are short.
-                            </span>
-                            <button type="button" className="btn btn--ghost" onClick={addMissing}>
-                                Add {elementsToAdd(missing).length === 1 ? "it" : "them"}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-
             {/* Ghost, since it is secondary to posting, but full height: it is an action of its
                 own rather than one of the inline ones on an element's bar. */}
             <button type="button" className="btn btn--ghost" onClick={add}>
@@ -562,6 +543,61 @@ export function PayloadPanel({
                         <br />
                         <span className="method method--post">POST</span> {validationUrl}
                     </span>
+                </div>
+            )}
+
+            {/*
+             * The answer, under the button that asked for it. Only the part about documents: a rule
+             * about what is inside the form names no payload element, so it is counted and left to
+             * the run log, where the whole report is.
+             */}
+            {report && (
+                <div className={`notice notice--${outstanding.length > 0 ? "warn" : "ok"}`} style={{ marginTop: 12 }}>
+                    {validationReportStale && (
+                        <p style={{ margin: "0 0 6px" }}>
+                            <strong>The payload has changed since this report.</strong> The service reads the form to decide which documents its rules
+                            ask for, so ask it again to be sure.
+                        </p>
+                    )}
+
+                    {outstanding.length === 0 ? (
+                        <>The validation service asks for no document this {report.soknadtype} submission does not have.</>
+                    ) : (
+                        <div className="row" style={{ gap: 10, alignItems: "flex-start" }}>
+                            <div style={{ flex: 1 }}>
+                                The validation service wants {outstanding.length === 1 ? "one more document" : `${outstanding.length} more documents`}{" "}
+                                in this {report.soknadtype} submission:
+                                <ul>
+                                    {outstanding.map((requirement) => (
+                                        <li key={requirement.dataTypes.join("|")}>
+                                            {/* Alternatives, where the rule takes any one of them. */}
+                                            <strong>{requirement.dataTypes.join(" or ")}</strong>
+                                            {requirement.checklistReference && <span className="badge">{requirement.checklistReference}</span>}
+                                            <span className="notice__why">
+                                                {requirement.message}
+                                                {!requirement.known && " This app declares no data type by that name, so it cannot be added here."}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            {documentsToAdd(requirements.required).length > 0 && (
+                                <button type="button" className="btn btn--ghost" onClick={addMissing}>
+                                    Add {documentsToAdd(requirements.required).length === 1 ? "it" : "them"}
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Named only, since a recommendation you decide against should be one line. */}
+                    {advised.length > 0 && <p style={{ margin: "6px 0 0" }}>It also recommends {list(advised)}.</p>}
+
+                    {other > 0 && (
+                        <p style={{ margin: "6px 0 0" }}>
+                            And {other === 1 ? "one thing" : `${other} things`} about the form's own content rather than what is attached to it. The
+                            whole report is in the run log.
+                        </p>
+                    )}
                 </div>
             )}
 

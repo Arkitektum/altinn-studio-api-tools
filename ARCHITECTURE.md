@@ -75,7 +75,7 @@ web/src
 
 - **Tokens: server memory.** A `Map` in `tokenStore.ts`, pruned when expired. Never written to disk, never sent to the browser.
 - **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid, the payload elements, the payloads saved by name and the two markers that go with them, under the `altinn-api-tools:` prefix by `useLocalStorage`. [SECURITY.md](SECURITY.md) lists all eight. Not the destination, which is derived from whether an instance is selected rather than stored. A refresh does not lose your work.
-- **Everything read back: React state.** The run log, validation results, the instance listing, the process state, the fetched data element and the pdf blob. Reloading drops them, which is correct: they describe a moment.
+- **Everything read back: React state.** The run log, validation results, the instance listing, the process state, the fetched data element, the pdf blob and the last validation report. Reloading drops them, which is correct: they describe a moment.
 
 ## Conventions the UI follows
 
@@ -100,6 +100,10 @@ That extends to buttons, which are all one height: a filled one is the primary a
 ## Decisions worth knowing
 
 **Content types are resolved, not guessed.** For a data element the order is: what you chose in the picker, then what the app declares in `allowedContentTypes` preferring a JSON or XML spelling, then a sniff of the payload's first character. A file picked off disk goes through `lib/fileUpload.ts`, which prefers the browser's own type, falls back to the extension, and then prefers whichever equivalent spelling the app declared, so an app asking for `text/xml` gets `text/xml`.
+
+**What a submission requires is asked, not counted.** The payload panel names the documents a submission is missing, and it gets them from the DIBK validation service rather than from `applicationmetadata`, because the `minCount` an app declares is not what the validation insists on. `lib/validationReport.ts` reads the report for the rules about documents, which are the ones with `Vedlegg` in their reference, and matches the names they use against the data types the app declares. Everything else in the report is about what is inside the form, so it is counted and left to the run log, where the whole report is.
+
+The report is a fixed answer about the payload as it was sent, and the list is counted against the payload as it stands, so the two can drift apart. Rather than clearing the report on the first keystroke, which would throw away the list you are working through, the panel keeps it and says it is stale.
 
 **A `maxCount: 1` form data type is replaced, not added.** Altinn creates that element itself when the instance is created, so a second POST fails on max count. `runService` notices the existing element and sends `PUT …/data/{id}` instead. The log says "Replace" rather than "Add".
 

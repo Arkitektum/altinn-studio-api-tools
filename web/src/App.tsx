@@ -18,7 +18,7 @@ import {
     logFromValidationReport
 } from "./lib/logResults";
 import { pendingAutoRuns } from "./lib/autoRuns";
-import { buildValidationRequest } from "./lib/validationRequest";
+import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
@@ -60,6 +60,7 @@ import type {
     SavedPayload,
     ServerConfig,
     ValidateResult,
+    ValidationReportRequest,
     ValidationView
 } from "./types";
 
@@ -178,6 +179,13 @@ export function App() {
     const [advancing, setAdvancing] = useState(false);
     const [processError, setProcessError] = useState<unknown>(null);
     const [validating, setValidating] = useState(false);
+    /**
+     * The last validation report, kept with the submission it was about. The payload panel reads it
+     * for which documents are required, and the pair is what tells it whether the payload has moved
+     * on since. React state rather than storage: it describes a moment, like everything else read
+     * back.
+     */
+    const [validationAnswer, setValidationAnswer] = useState<{ report: unknown; request: ValidationReportRequest } | null>(null);
 
     const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
 
@@ -890,24 +898,23 @@ export function App() {
     /**
      * Asks the DIBK validation service what it makes of the payload.
      *
-     * The report goes to the run log unread. What the tool wants from it is which parts of a
-     * submission are required, since `applicationmetadata` is not to be trusted for that, and
-     * that reading has to be written against a real report rather than guessed at.
+     * It answers which documents a submission of this form needs, which `applicationmetadata`
+     * cannot: a `minCount` is what the app declares and not what the validation insists on. The
+     * whole report goes to the run log as well, since the payload panel reads only the part of it
+     * about documents and the rest is about the form.
      */
     async function validationReport() {
-        const { request } = buildValidationRequest({
-            elements: dataElements,
-            dataTypes,
-            metadata: metadata?.metadata ?? null,
-            parties,
-            partyId: instanceOwnerPartyId,
-            ssn: activeToken?.ssn ?? null
-        });
+        const { request } = validationRequest;
         if (!request) return;
 
         setValidating(true);
         try {
-            appendLog(logFromValidationReport(await api.validationReport(request), request));
+            const result = await api.validationReport(request);
+            appendLog(logFromValidationReport(result, request));
+            // Kept with the submission it was about, so the panel can say when that has moved on.
+            // A refusal leaves the previous report alone: the log says what happened, and dropping
+            // what the service last said would lose the list you were working through.
+            if (result.ok) setValidationAnswer({ report: result.report, request });
         } catch (error) {
             setRunError(error);
         } finally {
@@ -1062,6 +1069,19 @@ export function App() {
     if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
     if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
 
+    /**
+     * The payload as the validation service would be told it, which is both what the button sends
+     * and what says whether the report on screen still describes the payload in front of you.
+     */
+    const validationRequest = buildValidationRequest({
+        elements: dataElements,
+        dataTypes,
+        metadata: metadata?.metadata ?? null,
+        parties,
+        partyId: instanceOwnerPartyId,
+        ssn: activeToken?.ssn ?? null
+    });
+
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
 
     /**
@@ -1208,7 +1228,6 @@ export function App() {
                                 onChange={setDataElements}
                                 org={org}
                                 app={app}
-                                currentTask={instanceProcess?.currentTask ?? null}
                                 onInstance={instanceDataElements.map((element) => element.dataType)}
                                 dataTypes={dataTypes}
                                 metadata={metadata?.metadata ?? null}
@@ -1222,18 +1241,13 @@ export function App() {
                                 onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
                                 loadNotice={payloadLoadNotice}
                                 validationUrl={serverConfig?.validationUrl ?? ""}
-                                validationBlockedBy={
-                                    buildValidationRequest({
-                                        elements: dataElements,
-                                        dataTypes,
-                                        metadata: metadata?.metadata ?? null,
-                                        parties,
-                                        partyId: instanceOwnerPartyId,
-                                        ssn: activeToken?.ssn ?? null
-                                    }).blockedBy
-                                }
+                                validationBlockedBy={validationRequest.blockedBy}
                                 onValidationReport={() => void validationReport()}
                                 validating={validating}
+                                validationReport={validationAnswer?.report ?? null}
+                                validationReportStale={
+                                    Boolean(validationAnswer) && !sameSubmission(validationAnswer?.request ?? null, validationRequest.request)
+                                }
                             />
 
                             <section className="panel">
