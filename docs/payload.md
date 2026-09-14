@@ -7,7 +7,7 @@ nav_order: 6
 
 One editor card per data element, holding the data type, the content type, and the body. The content type defaults to what the app declares in `allowedContentTypes`, falling back to detection from the payload itself.
 
-Elements collapse to a single row, so a payload with several of them stays readable. Adding an element collapses the ones already there and leaves the new one open, and **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
+Elements collapse to a single row, so a payload with several of them stays readable. **Add data element** collapses the ones already there and leaves the new one open, since one element added by hand is one to work on. Elements that arrive as a set, from the validation report's **Add them** or from opening a saved payload, arrive folded: what you want to see is which of them came, not the first one's contents. **Collapse all** in the panel header folds the lot. A collapsed row still shows its data type, size and which example it came from, and an element with no content says so in the warning colour, since that is what blocks the post. Collapsing hides the editor rather than unmounting it, so nothing is lost and the state survives a reload.
 
 ## The editor
 
@@ -108,7 +108,7 @@ An element with nothing in it is left out, and a payload with no main form has n
 
 ### What it says is required
 
-The report is one message per rule the service has something to say about, and the ones about documents name the document. Those become the line under the button: **The validation service wants 4 more documents in this ET submission**, each named with the service's own reason under it and the checklist point beside it, and a button that adds one element per document. Each lands with its data type and content type filled in, and the example picker loads the first example for it, so a full payload is a click from an incomplete one.
+The report is one message per rule the service has something to say about, and the ones about documents name the document. Those become the line under the button: **The validation service wants 4 more documents in this ET submission**, each named with the service's own reason under it and the checklist point beside it, and a button that adds one element per document. Each lands folded, with its data type and content type filled in, and the example picker loads the first example for it, so a full payload is a click from an incomplete one.
 
 `lib/validationReport.ts` does the reading, and four things about it are worth knowing:
 

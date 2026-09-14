@@ -124,6 +124,14 @@ describe("restoreElements", () => {
         );
     });
 
+    it("folds them, since a payload arrives as a set and the set is what you look at", () => {
+        const { elements } = restoreElements(saved([fromExample, edited]), new Map());
+        assert.deepEqual(
+            elements.map((element) => element.collapsed),
+            [true, true]
+        );
+    });
+
     it("leaves an element behind when its example has gone, rather than dropping it", () => {
         // A payload one element short would post silently, which is worse than an empty card.
         const { elements, missing } = restoreElements(saved([fromExample, edited]), new Map());

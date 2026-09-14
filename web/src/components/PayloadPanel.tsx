@@ -187,15 +187,20 @@ export function PayloadPanel({
     const advised = requirements.recommended.filter((requirement) => !requirement.satisfied).map((requirement) => requirement.dataTypes[0] as string);
     const other = requirements.otherErrors + requirements.otherWarnings;
 
-    /** Appends one element per document still wanted, which the example picker fills in on mount. */
+    /**
+     * Appends one element per document still wanted, which the example picker fills in on mount:
+     * the body of a folded element is hidden rather than left unrendered, so the picker is there
+     * to do it.
+     */
     function addMissing() {
         const added = documentsToAdd(requirements.required).map((dataType) => ({
             dataType,
             content: "",
-            contentType: preferredContentType(dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? [])
+            contentType: preferredContentType(dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? []),
+            // Folded, and so is everything already in the list. Four documents arriving at once is
+            // a list to look down, and four open editors is one element and a scrollbar.
+            collapsed: true
         }));
-        // The list can be long by the time this is pressed, and what was just added is the part
-        // worth looking at, so what was already there folds.
         onChange((current) => [...current.map((element) => ({ ...element, collapsed: true })), ...added]);
     }
 

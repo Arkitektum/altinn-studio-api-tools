@@ -82,8 +82,9 @@ export function restoreElements(saved: SavedPayload, examples: Map<string, Examp
 
     const elements = saved.elements.map((element): DataElementInput => {
         // Marked, so the example picker does not load its first file into an element this payload
-        // meant to leave empty.
-        const base = { dataType: element.dataType, restored: true as const };
+        // meant to leave empty. Folded, because a saved payload arrives as a set: what you want to
+        // see first is which elements came back, not the first one's contents.
+        const base = { dataType: element.dataType, restored: true as const, collapsed: true as const };
         if (!element.example) {
             return {
                 ...base,
