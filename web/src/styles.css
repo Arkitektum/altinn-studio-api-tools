@@ -65,14 +65,25 @@
      *
      * Seven and not nine: Validation and the run log are in the sidebar, where a column of their
      * own already says they are not part of the one you work down.
+     *
+     * The border of each takes the same hue at the lightness of the plain one, so the outline is
+     * the panel's own rather than a grey drawn around it. A little more saturation than the
+     * surface, because a hairline needs it to read as coloured at all.
      */
     --panel-user: #1b2024;
+    --panel-user-border: #2e3842;
     --panel-target: #1d1b24;
+    --panel-target-border: #312e42;
     --panel-instances: #231b24;
+    --panel-instances-border: #3f2e42;
     --panel-payload: #1b1e24;
+    --panel-payload-border: #2e3442;
     --panel-element: #1f1b24;
+    --panel-element-border: #362e42;
     --panel-pdf: #241b24;
+    --panel-pdf-border: #422e41;
     --panel-process: #1b2224;
+    --panel-process-border: #2e3d42;
 
     /*
      * Marked text. Neutral and translucent, and it has to be both. Every hue in here already means
@@ -387,30 +398,37 @@ body {
 
 .panel--user {
     background: var(--panel-user);
+    border-color: var(--panel-user-border);
 }
 
 .panel--target {
     background: var(--panel-target);
+    border-color: var(--panel-target-border);
 }
 
 .panel--instances {
     background: var(--panel-instances);
+    border-color: var(--panel-instances-border);
 }
 
 .panel--payload {
     background: var(--panel-payload);
+    border-color: var(--panel-payload-border);
 }
 
 .panel--element {
     background: var(--panel-element);
+    border-color: var(--panel-element-border);
 }
 
 .panel--pdf {
     background: var(--panel-pdf);
+    border-color: var(--panel-pdf-border);
 }
 
 .panel--process {
     background: var(--panel-process);
+    border-color: var(--panel-process-border);
 }
 
 .panel__head {
