@@ -265,7 +265,9 @@ export function PayloadPanel({
                 const known = dataTypes.find((type) => type.id === element.dataType);
                 // Main form, subform and attachment each get their own badge colour.
                 const kind = dataTypeKindOf(dataTypes, metadata, element.dataType);
-                const badgeClass = kind === "main" ? "badge badge--main" : kind === "sub" ? "badge badge--sub" : "badge";
+                // Null is a data type the app has not been read for, which is grey because it is unknown
+                // rather than because it is an attachment.
+                const badgeClass = kind ? `badge badge--${kind}` : "badge";
                 const summary = describeContent(element);
                 /** How much content there is and where it came from, under the editor and in it. */
                 const note = element.content ? (

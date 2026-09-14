@@ -37,10 +37,20 @@
     --warn-bg: #2b2519;
     --warn-border: #4d422a;
 
-    /* Categorical, not semantic. Used to tell subform data types from the main form. */
+    /*
+     * Categorical, not semantic: the three kinds of payload element, which sit in one list and so
+     * have to be told apart at a glance. Blue, violet and pink, spread as far as the four hues
+     * that mean a verdict leave room for: 66 degrees between the closest pair, and the pink is
+     * further from the red than it looks, since these three never share a surface with it. The
+     * blue is --accent.
+     */
     --violet: #b49ae2;
     --violet-bg: #2a2437;
     --violet-border: #453a5c;
+
+    --pink: #ea90bd;
+    --pink-bg: #39232e;
+    --pink-border: #5f3a4d;
 
     /*
      * Marked text. Neutral and translucent, and it has to be both. Every hue in here already means
@@ -773,7 +783,8 @@ textarea {
     color: var(--accent);
 }
 
-/* Payload element groups, so a collapsed list can be scanned by kind. */
+/* Payload element groups, so a collapsed list can be scanned by kind. A type the app has not
+   been read for yet is none of them, and stays grey: that is not knowing rather than a fourth kind. */
 .badge--main {
     border-color: var(--accent-border);
     background: var(--accent-bg);
@@ -784,6 +795,12 @@ textarea {
     border-color: var(--violet-border);
     background: var(--violet-bg);
     color: var(--violet);
+}
+
+.badge--attachment {
+    border-color: var(--pink-border);
+    background: var(--pink-bg);
+    color: var(--pink);
 }
 
 /* ------------------------------------------------------------------ notices */

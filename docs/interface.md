@@ -53,7 +53,7 @@ The reason it is more than a message is the paragraph above: what you chose is r
 
 - **HTTP methods**, so a long log can be scanned for the request that changed something. GET blue, POST green, PUT amber, DELETE red. The same colours appear in the "will call" URL previews and on the buttons, so a button, the preview of what it will call, and its entry in the log all read the same way.
 - **Status codes by class**, since 4xx is usually something about the request and 5xx is the app falling over. 2xx green, 3xx blue, 4xx amber, 5xx red.
-- **Payload element badges by group**, with the main form in the accent blue, subforms in violet and attachments left neutral.
+- **Payload element badges by group**, the main form in the accent blue, subforms in violet and attachments in pink. The three sit in one list, so they are spread as far apart as the four hues that mean a verdict leave room for, and none of them is one of those four. A data type the app has not been read for yet stays grey, which is not knowing rather than a fourth kind.
 - **Which example a collapsed element was filled from**, in the accent, so loaded and hand-typed content differ at a glance.
 - **Validation counts**, amber for warnings only and red when there are errors.
 - **An element with no content**, whose summary turns amber and whose example picker gets an accent border, because that is the thing to press next.
