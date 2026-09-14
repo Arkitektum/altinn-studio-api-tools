@@ -70,6 +70,28 @@ Which is the honest limit of the whole thing: it counts data elements. Whether t
 
 One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
 
+## Validation report
+
+**Validation report**, under the elements, posts the payload to the DIBK validation service and puts what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
+
+It exists because `applicationmetadata` is not a reliable answer to what a submission needs. The `minCount` an app declares does not match what the validation insists on, and the service does know, so the question goes where the answer is.
+
+The payload becomes a submission on the way out, which is a translation rather than a decision, since the tool already knows which element is which:
+
+| Sent as                            | Taken from                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `formData`                         | The main form element's content                                           |
+| `subForms[].formName`              | The subform element's Altinn data type id                                 |
+| `subForms[].subFormData`           | Its content                                                               |
+| `attachments[].attachmentTypeName` | The data type of everything else with content                             |
+| `attachments[].filename`           | Its filename, else the example it came from, else its data type           |
+| `attachments[].fileSize`           | Bytes, decoded for base64 and counted as utf-8 for text                   |
+| `authenticatedSubmitter`           | The organisation number of the party, its person number, else the token's |
+
+An element with nothing in it is left out, and a payload with no main form has nothing to ask about, which the line beside the button says instead of sending half a submission. The submitter comes from the app's parties, so pressing the button before the app has been read falls back to the token's own person number.
+
+The report itself is not read yet. It goes to the log whole, request and response, which is where the reading of it will be written from: what the tool wants to know is which parts of a submission are required, and that has to be written against a real report rather than guessed at. `VALIDATION_URL` points it elsewhere or, emptied, hides the button.
+
 ## Saved payloads
 
 **Open** and **Save** in the panel header, each opening a window over the tool. A run of a form and three subforms takes a few clicks to put together, and a payload you post twice a week is worth keeping.

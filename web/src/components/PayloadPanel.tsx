@@ -38,6 +38,12 @@ interface PayloadPanelProps {
     onDeletePayload: (id: string) => void;
     /** What a load had to say for itself, an example that has gone missing being the one case. */
     loadNotice: string | null;
+    /** Where the validation service lives, for the line under its button. Empty when switched off. */
+    validationUrl: string;
+    /** Why the payload cannot be sent to it yet, or null when it can. */
+    validationBlockedBy: string | null;
+    onValidationReport: () => void;
+    validating: boolean;
 }
 
 /**
@@ -83,7 +89,11 @@ export function PayloadPanel({
     onSavePayload,
     onLoadPayload,
     onDeletePayload,
-    loadNotice
+    loadNotice,
+    validationUrl,
+    validationBlockedBy,
+    onValidationReport,
+    validating
 }: PayloadPanelProps) {
     /** Per element, since one element failing to read says nothing about the others. */
     const [fileErrors, setFileErrors] = useState<Record<number, string>>({});
@@ -522,6 +532,38 @@ export function PayloadPanel({
             <button type="button" className="btn btn--ghost" onClick={add}>
                 + Add data element
             </button>
+
+            {/*
+             * The one call this tool makes that leaves the machine, so it says where it goes and
+             * waits to be pressed. What comes back is a document nothing here reads yet: it lands
+             * in the run log whole, which is where the reading of it will be written from.
+             */}
+            {validationUrl && (
+                <div className="row" style={{ marginTop: 12, alignItems: "flex-start" }}>
+                    <button
+                        type="button"
+                        className="btn btn--post"
+                        onClick={onValidationReport}
+                        disabled={validating || Boolean(validationBlockedBy)}
+                        title={validationBlockedBy ?? undefined}
+                    >
+                        {validating && <span className="btn__spinner" />}
+                        Validation report
+                    </button>
+                    <span className="field__hint" style={{ flex: 1, margin: 0 }}>
+                        {validationBlockedBy ? (
+                            <span style={{ color: "var(--warn)" }}>{validationBlockedBy}</span>
+                        ) : (
+                            <>
+                                What the DIBK validation service says about this payload, which knows what a submission requires where the app's own{" "}
+                                <code>minCount</code> does not. It leaves your machine, and no token goes with it.
+                            </>
+                        )}
+                        <br />
+                        <span className="method method--post">POST</span> {validationUrl}
+                    </span>
+                </div>
+            )}
 
             <div style={{ marginTop: 18 }}>
                 <span className="legend">After upload</span>

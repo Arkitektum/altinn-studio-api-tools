@@ -14,9 +14,11 @@ import {
     logFromRead,
     logFromPdf,
     logFromRun,
-    logFromValidation
+    logFromValidation,
+    logFromValidationReport
 } from "./lib/logResults";
 import { pendingAutoRuns } from "./lib/autoRuns";
+import { buildValidationRequest } from "./lib/validationRequest";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useLocalStorage } from "./lib/useLocalStorage";
@@ -175,6 +177,7 @@ export function App() {
     const [pdfError, setPdfError] = useState<unknown>(null);
     const [advancing, setAdvancing] = useState(false);
     const [processError, setProcessError] = useState<unknown>(null);
+    const [validating, setValidating] = useState(false);
 
     const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
 
@@ -884,6 +887,34 @@ export function App() {
         );
     }
 
+    /**
+     * Asks the DIBK validation service what it makes of the payload.
+     *
+     * The report goes to the run log unread. What the tool wants from it is which parts of a
+     * submission are required, since `applicationmetadata` is not to be trusted for that, and
+     * that reading has to be written against a real report rather than guessed at.
+     */
+    async function validationReport() {
+        const { request } = buildValidationRequest({
+            elements: dataElements,
+            dataTypes,
+            metadata: metadata?.metadata ?? null,
+            parties,
+            partyId: instanceOwnerPartyId,
+            ssn: activeToken?.ssn ?? null
+        });
+        if (!request) return;
+
+        setValidating(true);
+        try {
+            appendLog(logFromValidationReport(await api.validationReport(request), request));
+        } catch (error) {
+            setRunError(error);
+        } finally {
+            setValidating(false);
+        }
+    }
+
     /** Saves the held data element as a file, under the name Altinn stored or the data type. */
     function downloadDataElement() {
         if (!fetchedElement) return;
@@ -1190,6 +1221,19 @@ export function App() {
                                 onLoadPayload={(payload) => void loadPayload(payload)}
                                 onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
                                 loadNotice={payloadLoadNotice}
+                                validationUrl={serverConfig?.validationUrl ?? ""}
+                                validationBlockedBy={
+                                    buildValidationRequest({
+                                        elements: dataElements,
+                                        dataTypes,
+                                        metadata: metadata?.metadata ?? null,
+                                        parties,
+                                        partyId: instanceOwnerPartyId,
+                                        ssn: activeToken?.ssn ?? null
+                                    }).blockedBy
+                                }
+                                onValidationReport={() => void validationReport()}
+                                validating={validating}
                             />
 
                             <section className="panel">

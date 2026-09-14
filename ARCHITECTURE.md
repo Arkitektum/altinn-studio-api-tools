@@ -46,6 +46,7 @@ server/src
   runService.ts       orchestrates create, upload, validate, advance
   readService.ts      instance operations: list, get, validate, process, delete
   compareService.ts   the stored blob from LocalTest's storage api, and the diff
+  validationService.ts the DIBK validation service, the one call that leaves the machine
   xmlDiff.ts          comparing two xml documents, ignoring what carries no meaning
   schemaTypes.ts      a field's declared type, from the app's json schema
   stepRecorder.ts     shared request logging for both flows
@@ -112,7 +113,7 @@ The same holds for the instance listing. The app's `/instances/{party}/active` i
 
 ## Deliberate limits
 
-- Everything is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production.
+- Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. The one exception is `validationService.ts`, which posts a payload to the DIBK validation service because that service knows what a submission requires and `applicationmetadata` does not. No token goes with it, and `VALIDATION_URL` switches it off.
 - Token claims are decoded for display, never verified. The app does that, and it holds the key.
 - Request bodies are parsed up to 25 MB, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - Altinn calls time out after 30 seconds, configurable with `REQUEST_TIMEOUT_MS`.

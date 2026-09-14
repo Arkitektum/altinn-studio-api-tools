@@ -3,6 +3,8 @@ export interface ServerConfig {
     appHost: string;
     /** The LocalTest project, e.g. http://localhost:5101 */
     localtestUrl: string;
+    /** The DIBK validation service, the one call that leaves this machine. Empty when switched off. */
+    validationUrl: string;
     /** Directory the example form data is read from. */
     exampleDataDir: string;
 }
@@ -147,6 +149,36 @@ export interface SavedPayload {
     org: string;
     app: string;
     elements: SavedElement[];
+}
+
+// ---------------------------------------------------------------- validation service
+
+export interface ValidationSubForm {
+    /** The Altinn data type id of the subform. */
+    formName: string;
+    subFormData: string;
+}
+
+export interface ValidationAttachment {
+    attachmentTypeName: string;
+    filename: string;
+    fileSize: number;
+}
+
+/** A submission as the DIBK validation service wants it: one form, its subforms, its attachments. */
+export interface ValidationReportRequest {
+    authenticatedSubmitter: string;
+    formData: string;
+    subForms: ValidationSubForm[];
+    attachments: ValidationAttachment[];
+}
+
+export interface ValidationReportResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    /** The report as the service answered it. Nothing reads it yet, so it goes to the log whole. */
+    report: unknown;
 }
 
 export interface RunStep {

@@ -13,7 +13,9 @@ import type {
     ReadInstanceResult,
     RunResult,
     RunStep,
-    ValidateResult
+    ValidateResult,
+    ValidationReportRequest,
+    ValidationReportResult
 } from "../types";
 
 /**
@@ -236,6 +238,34 @@ export function logFromAdvance(result: AdvanceProcessResult, read: ReadInstanceR
         title: advancedLabel(fromTaskType),
         rows,
         instanceUrl: read?.ok ? read.instanceUrl : null
+    };
+}
+
+/**
+ * The log entry for a validation report.
+ *
+ * The rows say what was asked rather than what came back, because what came back is a document
+ * nothing here reads yet: it is in the step's response, at full size, which is where the reading
+ * of it will be written from.
+ */
+export function logFromValidationReport(result: ValidationReportResult, asked: ValidationReportRequest): LogResult {
+    return {
+        ok: result.ok,
+        steps: result.steps,
+        failedAt: result.failedAt,
+        title: "Validation report",
+        rows: [
+            { label: "Submitter", value: asked.authenticatedSubmitter || "none" },
+            { label: "Form", value: `${asked.formData.length.toLocaleString("nb")} characters` },
+            { label: "Subforms", value: asked.subForms.length === 0 ? "none" : asked.subForms.map((form) => form.formName).join(", ") },
+            {
+                label: "Attachments",
+                value:
+                    asked.attachments.length === 0
+                        ? "none"
+                        : asked.attachments.map((attachment) => `${attachment.attachmentTypeName} (${attachment.fileSize} B)`).join(", ")
+            }
+        ]
     };
 }
 

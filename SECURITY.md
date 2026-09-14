@@ -2,7 +2,9 @@
 
 ## What this tool is
 
-A development tool that runs on your own machine and talks to an Altinn Studio localtest instance on the same machine. Everything it addresses is relative to `ALTINN_APP_HOST`, which defaults to `http://local.altinn.cloud:8000`, so it has no knowledge of tt02 or production and no way to reach them without being reconfigured to.
+A development tool that runs on your own machine and talks to an Altinn Studio localtest instance on the same machine. Every Altinn call it makes is relative to `ALTINN_APP_HOST`, which defaults to `http://local.altinn.cloud:8000`, so it has no knowledge of tt02 or production and no way to reach them without being reconfigured to.
+
+One request is not local, and it is worth knowing about: **Validation report** posts the payload to the DIBK validation service at `VALIDATION_URL`, hosted, because that service knows what a submission requires and the app's own metadata does not. It goes out when you press that button and at no other time, it carries no token, and the form data you are testing with goes with it. Empty `VALIDATION_URL` to switch it off.
 
 It is not built to be deployed, exposed, or shared. The considerations below are about keeping a local tool from becoming a liability, not about hardening a service.
 

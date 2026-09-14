@@ -24,6 +24,15 @@ export const config = {
     localtestUrl: (process.env.ALTINN_LOCALTEST_URL ?? "http://localhost:5101").replace(/\/+$/, ""),
 
     /**
+     * The DIBK validation service, the one thing here that is not on your machine.
+     *
+     * It answers what a submission actually requires, which `applicationmetadata` does not: the
+     * `minCount` an app declares is not what the validation insists on. No token is sent with the
+     * request. Empty it to switch the feature off.
+     */
+    validationUrl: (process.env.VALIDATION_URL ?? "https://validering.ft-test.dibk.no/api/validationReport").replace(/\/+$/, ""),
+
+    /**
      * Example form data, laid out as {dir}/forms/{dataType}/*.xml and
      * {dir}/subforms/{dataType}/*.xml. Point this at your canonical copy to avoid a second
      * copy drifting out of date.

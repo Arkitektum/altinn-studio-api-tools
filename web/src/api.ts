@@ -17,7 +17,9 @@ import type {
     ReadInstanceResult,
     RunResult,
     ServerConfig,
-    ValidateResult
+    ValidateResult,
+    ValidationReportRequest,
+    ValidationReportResult
 } from "./types";
 
 export class ApiError extends Error {
@@ -130,6 +132,9 @@ export const api = {
     }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`),
     previewPdf: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
         request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`),
+
+    /** No tokenId: the validation service is not Altinn, and no token is sent to it. */
+    validationReport: (input: ValidationReportRequest) => request<ValidationReportResult>("/validation-report", jsonBody(input)),
 
     compareStored: (input: {
         tokenId: string;

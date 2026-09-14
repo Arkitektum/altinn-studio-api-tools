@@ -7,7 +7,7 @@ nav_order: 1
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest. It fetches a test user token from LocalTest, targets an org and app, posts one or more data elements, and shows the full request and response log for every call it made. It reads data back as well, so an instance can be inspected, validated, previewed as a pdf, edited and reposted, or deleted.
 
-Everything is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production.
+Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. One call goes elsewhere, to the DIBK validation service, and carries no token.
 
 ## Where to start
 

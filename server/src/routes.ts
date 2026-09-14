@@ -7,6 +7,7 @@ import { deleteToken, listTokens, requireToken, storeToken, toPublicToken } from
 import { fetchApplicationMetadata, fetchInstantiableParties } from "./appService.js";
 import { postDataToApp } from "./runService.js";
 import { compareStored } from "./compareService.js";
+import { fetchValidationReport } from "./validationService.js";
 import {
     advanceProcess,
     deleteInstance,
@@ -87,6 +88,7 @@ router.get("/config", (_req, res) => {
     res.json({
         appHost: config.appHost,
         localtestUrl: config.localtestUrl,
+        validationUrl: config.validationUrl,
         exampleDataDir: config.exampleDataDir
     });
 });
@@ -318,6 +320,28 @@ router.post(
         const input = compareSchema.parse(req.body);
         const token = requireToken(input.tokenId);
         res.json(await compareStored(token.token, input));
+    })
+);
+
+/**
+ * What the DIBK validation service says about a payload. No token: it is not Altinn, and nothing
+ * here hands it one.
+ */
+const validationReportSchema = z.object({
+    authenticatedSubmitter: z.string().trim().default(""),
+    formData: z.string().min(1, "formData is required"),
+    subForms: z.array(z.object({ formName: z.string().trim().min(1), subFormData: z.string() })).default([]),
+    attachments: z
+        .array(z.object({ attachmentTypeName: z.string().trim().min(1), filename: z.string(), fileSize: z.number().int().nonnegative() }))
+        .default([])
+});
+
+router.post(
+    "/validation-report",
+    asyncHandler(async (req, res) => {
+        const input = validationReportSchema.parse(req.body);
+        // 200 with ok:false when the service refuses, matching every other call that got an answer.
+        res.json(await fetchValidationReport(input));
     })
 );
 
