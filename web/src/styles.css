@@ -396,6 +396,27 @@ body {
     scroll-margin-top: calc(var(--top-h) + 16px);
 }
 
+/*
+ * A panel that cannot be used yet. It keeps its place and its heading, so the order the tool works
+ * in is visible from the first screen, and it is quiet enough not to compete with the one panel you
+ * can actually act on. Its own surface colour is dropped: a tone says what a panel is for, and a
+ * panel that is waiting is not for anything yet.
+ */
+.panel--waiting {
+    background: var(--bg);
+    border-style: dashed;
+}
+
+.panel--waiting .panel__head h2 {
+    color: var(--text-muted);
+}
+
+.panel__waiting {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
 .panel--user {
     background: var(--panel-user);
     border-color: var(--panel-user-border);

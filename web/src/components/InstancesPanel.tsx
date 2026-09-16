@@ -13,6 +13,8 @@ import { Panel } from "./Panel";
 import type { InstanceSummary, ListInstancesResult } from "../types";
 
 interface InstancesPanelProps {
+    /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
+    notReady: string | null;
     /** Anchor for the chain strip to scroll to. */
     id: string;
     /** How many data elements the payload holds, for the multipart part count in Will call. */
@@ -31,7 +33,7 @@ interface InstancesPanelProps {
  * choice is what the panel is for. What the choice decides is directly under it: an instance means
  * the data is added to that one, and no instance means the post creates one.
  */
-export function InstancesPanel({ id, elementCount, onSelect, onSelectTyped }: InstancesPanelProps) {
+export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectTyped }: InstancesPanelProps) {
     const { base, party, tokenId, tokenUsable, org, app, partyId, instanceGuid, localtestUrl } = useTarget();
     const { append } = useRunLog();
     const queryClient = useQueryClient();
@@ -169,6 +171,7 @@ export function InstancesPanel({ id, elementCount, onSelect, onSelectTyped }: In
 
     return (
         <Panel
+            notReady={notReady}
             tone="instances"
             id={id}
             title="Instances"

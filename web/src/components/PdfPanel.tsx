@@ -3,6 +3,8 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 
 interface PdfPanelProps {
+    /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
+    notReady: string | null;
     onPreviewPdf: () => void;
     busy: boolean;
     hasToken: boolean;
@@ -21,12 +23,12 @@ interface PdfPanelProps {
  * every selection would be wasteful, and it opens in a window over the tool rather than filling
  * a panel.
  */
-export function PdfPanel({ onPreviewPdf, busy, hasToken, error }: PdfPanelProps) {
+export function PdfPanel({ notReady, onPreviewPdf, busy, hasToken, error }: PdfPanelProps) {
     const { instance, org, app, partyId, instanceGuid } = useTarget();
     const ready = hasToken && Boolean(org && app && partyId && instanceGuid);
 
     return (
-        <Panel title="Pdf" tone="pdf">
+        <Panel notReady={notReady} title="Pdf" tone="pdf">
             <p className="field__hint" style={{ marginBottom: 10 }}>
                 What the app would archive, rendered from the data as it stands. The quickest way to see what the form turns into without walking the
                 process to the end. It opens in a window over the tool.

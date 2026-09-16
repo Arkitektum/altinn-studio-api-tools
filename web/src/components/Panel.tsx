@@ -16,17 +16,25 @@ interface PanelProps {
      */
     tone?: PanelTone;
     aside?: ReactNode;
+    /**
+     * Why this panel cannot be used yet, or null when it can.
+     *
+     * Rendered in place of the controls rather than beside them, so a panel that is waiting cannot
+     * be half operated. One place decides how waiting looks, which is the reason this is a prop
+     * here rather than each panel drawing its own.
+     */
+    notReady?: string | null;
     children: ReactNode;
 }
 
-export function Panel({ title, id, tone, aside, children }: PanelProps) {
+export function Panel({ title, id, tone, aside, notReady, children }: PanelProps) {
     return (
-        <section className={`panel${tone ? ` panel--${tone}` : ""}`} id={id}>
+        <section className={`panel${tone ? ` panel--${tone}` : ""}${notReady ? " panel--waiting" : ""}`} id={id}>
             <div className="panel__head">
                 <h2>{title}</h2>
-                {aside}
+                {!notReady && aside}
             </div>
-            {children}
+            {notReady ? <p className="panel__waiting">{notReady}</p> : children}
         </section>
     );
 }

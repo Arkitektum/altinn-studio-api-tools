@@ -12,6 +12,8 @@ import { Panel } from "./Panel";
 import type { DataElementSummary } from "../types";
 
 interface FetchPanelProps {
+    /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
+    notReady: string | null;
     /** Anchor for the chain strip to scroll to. */
     id: string;
     dataGuid: string;
@@ -36,7 +38,7 @@ function describeElement(element: DataElementSummary): string {
     return bits.join(" · ");
 }
 
-export function FetchPanel({ id, dataGuid, onDataGuidChange, written, writtenLabel }: FetchPanelProps) {
+export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, writtenLabel }: FetchPanelProps) {
     /** Whether the content that came back is open in a window of its own. */
     const [showing, setShowing] = useState(false);
 
@@ -78,6 +80,7 @@ export function FetchPanel({ id, dataGuid, onDataGuidChange, written, writtenLab
 
     return (
         <Panel
+            notReady={notReady}
             tone="element"
             id={id}
             title="Data element"

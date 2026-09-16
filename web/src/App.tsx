@@ -15,7 +15,7 @@ import { buildValidationRequest, sameSubmission } from "./lib/validationRequest"
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage } from "./lib/useLocalStorage";
-import { visibleSections } from "./lib/sections";
+import { readiness } from "./lib/readiness";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
@@ -640,16 +640,15 @@ export function App() {
     const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
     // Panels you cannot use yet are left out rather than shown dead.
-    const sections = visibleSections({
+    // Every panel is on screen from the start, and one you cannot use yet says what it is waiting
+    // for. See lib/readiness.ts.
+    const waiting = readiness({
         hasToken: tokenUsable,
         org,
         app,
-        validationCount: runLog.validations.length,
-        runCount: runLog.entries.length,
-        hasProcess: instanceProcess !== null,
         party: instanceOwnerPartyId,
-        dataSelected: Boolean(dataGuid),
-        busy: false
+        instance: instanceGuid,
+        dataElement: dataGuid
     });
 
     return (
@@ -708,150 +707,142 @@ export function App() {
                         onActivate={setPreferredTokenId}
                     />
 
-                    {/* Nothing here can be read without a token, so the panel waits for one. */}
-                    {sections.target && (
-                        <TargetPanel
-                            id="panel-target"
-                            org={org}
-                            app={app}
-                            onOrgChange={setOrg}
-                            onAppChange={setApp}
-                            instanceOwnerPartyId={instanceOwnerPartyId}
-                            onPartyChange={changeParty}
-                            catalogue={catalogue}
-                            onPickCatalogueApp={(entry) => {
-                                setOrg(entry.org);
-                                setApp(entry.app);
-                                // Point the first element at this app's form data type unless the operator
-                                // has already put something there.
-                                if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
-                                    setDataElements([{ dataType: entry.dataType, content: "" }]);
-                                }
-                            }}
-                            metadata={metadata}
-                            parties={parties}
-                            onProbe={appRead.refetch}
-                            probing={appRead.probing}
-                            probeError={appRead.error}
-                        />
-                    )}
+                    <TargetPanel
+                        notReady={waiting.target}
+                        id="panel-target"
+                        org={org}
+                        app={app}
+                        onOrgChange={setOrg}
+                        onAppChange={setApp}
+                        instanceOwnerPartyId={instanceOwnerPartyId}
+                        onPartyChange={changeParty}
+                        catalogue={catalogue}
+                        onPickCatalogueApp={(entry) => {
+                            setOrg(entry.org);
+                            setApp(entry.app);
+                            // Point the first element at this app's form data type unless the operator
+                            // has already put something there.
+                            if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
+                                setDataElements([{ dataType: entry.dataType, content: "" }]);
+                            }
+                        }}
+                        metadata={metadata}
+                        parties={parties}
+                        onProbe={appRead.refetch}
+                        probing={appRead.probing}
+                        probeError={appRead.error}
+                    />
 
                     {/* Right under the destination, since choosing one is how you aim at it. */}
-                    {sections.instances && (
-                        <InstancesPanel
-                            id="panel-instances"
-                            elementCount={dataElements.length}
-                            onSelect={selectInstance}
-                            onSelectTyped={selectTypedInstance}
+                    <InstancesPanel
+                        notReady={waiting.instances}
+                        id="panel-instances"
+                        elementCount={dataElements.length}
+                        onSelect={selectInstance}
+                        onSelectTyped={selectTypedInstance}
+                    />
+
+                    <>
+                        <span className="group">Post</span>
+
+                        <PayloadPanel
+                            notReady={waiting.requests}
+                            dataElements={dataElements}
+                            onChange={setDataElements}
+                            suggestedDataTypes={suggestedDataTypes}
+                            advanceProcess={advanceProcess}
+                            onAdvanceProcessChange={setAdvanceProcess}
+                            savedPayloads={savedPayloads}
+                            onSavePayload={savePayload}
+                            onLoadPayload={(payload) => void loadPayload(payload)}
+                            onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
+                            loadNotice={payloadLoadNotice}
+                            validationUrl={serverConfig?.validationUrl ?? ""}
+                            validationBlockedBy={validationRequest.blockedBy}
+                            onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
+                            validating={validationReport.isPending}
+                            prevalidation={prevalidation}
+                        >
+                            <div style={{ marginTop: 18 }}>
+                                <span className="legend">Post</span>
+
+                                {blockers.length > 0 && (
+                                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                                        Needs {blockers.join(", ")}.
+                                    </div>
+                                )}
+
+                                {/*
+                                 * The one thing the prevalidation notice above cannot say,
+                                 * because there is no report for it to be part of. The rest of
+                                 * what the service said is already on screen a few lines up.
+                                 */}
+                                {serverConfig?.validationUrl && !prevalidation && (
+                                    <div className="notice" style={{ marginBottom: 12 }}>
+                                        Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you, read
+                                        before the submit rather than after.
+                                    </div>
+                                )}
+
+                                {/* Both are asked for from this panel, and only one at a time. */}
+                                {(run.error ?? validationReport.error) ? (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <ErrorNotice error={run.error ?? validationReport.error} />
+                                    </div>
+                                ) : null}
+
+                                <button
+                                    type="button"
+                                    className="btn btn--primary btn--fire"
+                                    onClick={() => run.mutate()}
+                                    disabled={run.isPending || blockers.length > 0}
+                                >
+                                    {run.isPending && <span className="btn__spinner" />}
+                                    {run.isPending
+                                        ? "Posting…"
+                                        : instanceGuid
+                                          ? `Add data to ${instanceGuid.slice(0, 8)}`
+                                          : `Post a new instance to ${org || "org"}/${app || "app"}`}
+                                </button>
+                            </div>
+                        </PayloadPanel>
+
+                        <span className="group">Inspect</span>
+
+                        <FetchPanel
+                            notReady={waiting.requests}
+                            id="panel-data-element"
+                            dataGuid={dataGuid}
+                            onDataGuidChange={changeDataGuid}
+                            written={comparable}
+                            writtenLabel={writtenLabel}
                         />
-                    )}
 
-                    {/* Nothing below can be aimed anywhere without a token and an app. */}
-                    {sections.requests && (
-                        <>
-                            <span className="group">Post</span>
+                        {/* After the data element, since it is a different kind of action. */}
+                        <PdfPanel
+                            notReady={waiting.process}
+                            onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
+                            busy={renderPdf.isPending}
+                            hasToken={tokenUsable}
+                            error={renderPdf.error}
+                        />
 
-                            <PayloadPanel
-                                dataElements={dataElements}
-                                onChange={setDataElements}
-                                suggestedDataTypes={suggestedDataTypes}
-                                advanceProcess={advanceProcess}
-                                onAdvanceProcessChange={setAdvanceProcess}
-                                savedPayloads={savedPayloads}
-                                onSavePayload={savePayload}
-                                onLoadPayload={(payload) => void loadPayload(payload)}
-                                onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
-                                loadNotice={payloadLoadNotice}
-                                validationUrl={serverConfig?.validationUrl ?? ""}
-                                validationBlockedBy={validationRequest.blockedBy}
-                                onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
-                                validating={validationReport.isPending}
-                                prevalidation={prevalidation}
-                            >
-                                <div style={{ marginTop: 18 }}>
-                                    <span className="legend">Post</span>
-
-                                    {blockers.length > 0 && (
-                                        <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                            Needs {blockers.join(", ")}.
-                                        </div>
-                                    )}
-
-                                    {/*
-                                     * The one thing the prevalidation notice above cannot say,
-                                     * because there is no report for it to be part of. The rest of
-                                     * what the service said is already on screen a few lines up.
-                                     */}
-                                    {serverConfig?.validationUrl && !prevalidation && (
-                                        <div className="notice" style={{ marginBottom: 12 }}>
-                                            Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you,
-                                            read before the submit rather than after.
-                                        </div>
-                                    )}
-
-                                    {/* Both are asked for from this panel, and only one at a time. */}
-                                    {(run.error ?? validationReport.error) ? (
-                                        <div style={{ marginBottom: 12 }}>
-                                            <ErrorNotice error={run.error ?? validationReport.error} />
-                                        </div>
-                                    ) : null}
-
-                                    <button
-                                        type="button"
-                                        className="btn btn--primary btn--fire"
-                                        onClick={() => run.mutate()}
-                                        disabled={run.isPending || blockers.length > 0}
-                                    >
-                                        {run.isPending && <span className="btn__spinner" />}
-                                        {run.isPending
-                                            ? "Posting…"
-                                            : instanceGuid
-                                              ? `Add data to ${instanceGuid.slice(0, 8)}`
-                                              : `Post a new instance to ${org || "org"}/${app || "app"}`}
-                                    </button>
-                                </div>
-                            </PayloadPanel>
-
-                            <span className="group">Inspect</span>
-
-                            <FetchPanel
-                                id="panel-data-element"
-                                dataGuid={dataGuid}
-                                onDataGuidChange={changeDataGuid}
-                                written={comparable}
-                                writtenLabel={writtenLabel}
-                            />
-
-                            {/* After the data element, since it is a different kind of action. */}
-                            {sections.requests && instanceGuid && (
-                                <PdfPanel
-                                    onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
-                                    busy={renderPdf.isPending}
-                                    hasToken={tokenUsable}
-                                    error={renderPdf.error}
-                                />
-                            )}
-
-                            {/* Where the instance stands. Arrives with the first instance read. */}
-                            {sections.process && instanceProcess && (
-                                <ProcessPanel
-                                    process={instanceProcess}
-                                    onAdvance={() => advance.mutate()}
-                                    busy={advance.isPending}
-                                    hasToken={tokenUsable}
-                                    error={advance.error}
-                                />
-                            )}
-                        </>
-                    )}
+                        {/* Where the instance stands, once a read has said. */}
+                        <ProcessPanel
+                            notReady={waiting.process ?? (instanceProcess ? null : "Reading the instance…")}
+                            process={instanceProcess}
+                            onAdvance={() => advance.mutate()}
+                            busy={advance.isPending}
+                            hasToken={tokenUsable}
+                            error={advance.error}
+                        />
+                    </>
                 </div>
 
-                {(sections.validation || sections.log) && (
-                    <div className="column column--log">
-                        {sections.validation && <ValidationPanel />}
-                        {sections.log && <RunLog />}
-                    </div>
-                )}
+                <div className="column column--log">
+                    <ValidationPanel />
+                    <RunLog />
+                </div>
             </div>
 
             {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}

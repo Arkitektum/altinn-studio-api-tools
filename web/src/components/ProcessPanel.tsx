@@ -6,7 +6,10 @@ import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
 
 interface ProcessPanelProps {
-    process: ProcessSummary;
+    /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
+    notReady: string | null;
+    /** Null until the instance has been read, which the panel says it is waiting for. */
+    process: ProcessSummary | null;
     onAdvance: () => void;
     busy: boolean;
     hasToken: boolean;
@@ -20,14 +23,28 @@ function describeMoment(value: string | null): string {
     return Number.isNaN(parsed) ? value : new Date(parsed).toLocaleString("nb");
 }
 
-export function ProcessPanel({ process, onAdvance, busy, hasToken, error }: ProcessPanelProps) {
+export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, error }: ProcessPanelProps) {
     const { instance, org, app, partyId, instanceGuid } = useTarget();
+    /*
+     * Where the instance stands is the instance read's to say, so until it has there is nothing to
+     * show. Returned early rather than guarded field by field: the panel is about one answer, and
+     * half of it is not a state worth rendering.
+     */
+    if (!process) {
+        return (
+            <Panel notReady={notReady ?? "Reading the instance…"} tone="process" title="Process">
+                {null}
+            </Panel>
+        );
+    }
+
     const ended = process.ended !== null;
     const inApp = advanceInApp(process.taskType);
     const canAdvance = hasToken && !ended && Boolean(org && app && partyId && instanceGuid);
 
     return (
         <Panel
+            notReady={notReady}
             tone="process"
             title="Process"
             aside={

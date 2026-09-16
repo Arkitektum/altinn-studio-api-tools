@@ -12,6 +12,8 @@ import type { DataElementInput, SavedPayload } from "../types";
 import type { Prevalidation } from "../lib/validationReport";
 
 interface PayloadPanelProps {
+    /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
+    notReady: string | null;
     dataElements: DataElementInput[];
     /** Takes an updater as well as a list, since two elements can be filled in at once. */
     onChange: Dispatch<SetStateAction<DataElementInput[]>>;
@@ -47,6 +49,7 @@ function list(names: string[]): string {
 }
 
 export function PayloadPanel({
+    notReady,
     dataElements,
     onChange,
     suggestedDataTypes,
@@ -128,6 +131,7 @@ export function PayloadPanel({
 
     return (
         <Panel
+            notReady={notReady}
             tone="payload"
             title="Payload"
             aside={

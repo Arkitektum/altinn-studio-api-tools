@@ -5,6 +5,8 @@ import { Panel } from "./Panel";
 import type { AppMetadataResponse, AppParty, CatalogueApp } from "../types";
 
 interface TargetPanelProps {
+    /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
+    notReady: string | null;
     /** Anchor for the chain strip to scroll to. */
     id: string;
     org: string;
@@ -26,6 +28,7 @@ interface TargetPanelProps {
 const OTHER = "other";
 
 export function TargetPanel({
+    notReady,
     id,
     org,
     app,
@@ -82,6 +85,7 @@ export function TargetPanel({
 
     return (
         <Panel
+            notReady={notReady}
             tone="target"
             id={id}
             title="Target"

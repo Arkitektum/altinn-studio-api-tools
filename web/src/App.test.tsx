@@ -133,6 +133,16 @@ async function openInstances(app: Rendered): Promise<void> {
  * that was made and is meant to: what an instance read said stays in the history after the tool
  * has been pointed somewhere else, and only the panels are supposed to follow the selection.
  */
+/**
+ * The panels that are on screen but cannot be used yet, by heading.
+ *
+ * Returned as strings rather than the elements themselves: a failed `assert` on a jsdom node tries
+ * to print the node, and the object graph behind one is large enough to take the process out.
+ */
+function waitingPanels(app: Rendered): string[] {
+    return [...app.container.querySelectorAll(".panel--waiting h2")].map((heading) => heading.textContent ?? "");
+}
+
 function elementsListed(app: Rendered): string {
     return app.container.querySelector("#dataGuid")?.textContent ?? "";
 }
@@ -143,6 +153,24 @@ describe("App", () => {
 
         assert.match(app.container.textContent ?? "", /Sophie Salt/);
         assert.ok(stub.calls.includes("GET /api/tokens"));
+    });
+
+    /*
+     * Every panel is on screen from the first render, and the ones you cannot use yet say what they
+     * are waiting for. The order the tool works in is then visible on the page, which is what the
+     * chain strip above the panels used to have to explain.
+     */
+    it("shows every panel from the start, waiting where it cannot be used yet", async (t) => {
+        const { app } = await mount(t, boot);
+
+        // A token and nothing else. The panel you pick an application in is ready; the five below it
+        // are on screen and waiting, which is what a first screen of one panel used to hide.
+        assert.deepEqual(waitingPanels(app), ["Instances", "Payload", "Data element", "Pdf", "Process"]);
+
+        // And each names the first thing missing rather than its own nearest one: with no
+        // application there is no point asking for an instance.
+        assert.match(app.container.textContent ?? "", /InstancesNeeds an application\./);
+        assert.match(app.container.textContent ?? "", /ProcessNeeds an application\./);
     });
 
     /*
@@ -307,7 +335,7 @@ describe("App", () => {
         // Reading the selected instance waits for the guid to settle, the way the probe does.
         await app.wait(700);
         assert.match(elementsListed(app), /GammelType/, "the first instance's data element should be listed");
-        assert.ok(app.container.querySelector(".panel--process"), "and where it stands should be on screen");
+        assert.equal(waitingPanels(app).includes("Process"), false, "and where it stands should be on screen");
 
         // Reached by its guid rather than by a row, which is the panel's own way to an instance the
         // active list leaves out. The window it lives in has to be opened first.
@@ -316,7 +344,8 @@ describe("App", () => {
         await type(app, find<HTMLInputElement>(app, "#typedInstanceGuid"), B);
 
         assert.doesNotMatch(elementsListed(app), /GammelType/, "the previous instance's data element should have gone");
-        assert.equal(app.container.querySelector(".panel--process"), null, "and so should its process");
+        // Not gone: every panel stays on screen and says what it is waiting for. See lib/readiness.ts.
+        assert.equal(waitingPanels(app).includes("Process"), true, "and its process should be back to waiting");
     });
 
     /*
