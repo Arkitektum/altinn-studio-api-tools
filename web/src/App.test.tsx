@@ -172,9 +172,11 @@ describe("App", () => {
     it("shows every panel from the start, waiting where it cannot be used yet", async (t) => {
         const { app } = await mount(t, boot);
 
-        // A token and nothing else. The panel you pick an application in is ready; the five below it
+        // A token and nothing else. The panel you pick an application in is ready; the ones below it
         // are on screen and waiting, which is what a first screen of one panel used to hide.
-        assert.deepEqual(waitingPanels(app), ["Instances", "Payload", "Data element", "Pdf", "Process"]);
+        // Prevalidation is not among them: this boot has no validation service, so there is no such
+        // step to be waiting on.
+        assert.deepEqual(waitingPanels(app), ["Instances", "Payload", "Post", "Data element", "Pdf", "Process"]);
 
         // And each names the first thing missing rather than its own nearest one: with no
         // application there is no point asking for an instance.
@@ -459,6 +461,8 @@ describe("App", () => {
         assert.ok(stub.calls.includes("POST /api/runs"), "the post should have gone out");
         assert.equal(stub.calls.filter((made) => made === "GET /api/instances").length, 1, "the follow-up read, and only that");
         assert.match(elementsListed(app), /TypeFraPost/, "the tool should be pointed at what it posted");
+        // The rail counts what is on the instance, which is the only thing that says a post landed.
+        assert.equal(railValue(app, "Post"), "1 stored");
         assert.ok(
             stub.calls.filter((made) => made === "GET /api/instances/active").length > listings,
             "and the listing should have been asked again, being out of date"
@@ -500,7 +504,7 @@ describe("App", () => {
         assert.equal(railValue(app, "Payload"), "1 element", "the payload has a type and something in it");
         assert.equal(railValue(app, "Prevalidation"), "not run");
 
-        await click(app, findByText(app, "#panel-payload button", "Prevalidate"));
+        await click(app, findByText(app, "#panel-prevalidation button", "Prevalidate"));
         await app.wait(50);
 
         assert.equal(railValue(app, "Prevalidation"), "1 document missing");

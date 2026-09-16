@@ -80,11 +80,13 @@
      *
      * All of them are blue to purple. A first pass walked the whole wheel, and the warm half of it
      * did not work: an amber or olive surface reads as dirty against a blue-grey page, and the one
-     * near the red reads as a warning. That leaves about a hundred degrees, which the seven panels
-     * sit in on a 13-degree grid, taken in an order that puts 40 degrees or more between any two
-     * panels that are next to each other.
+     * near the red reads as a warning. That leaves about a hundred degrees, which the nine panels
+     * sit in on a 13-degree grid, taken in an order that puts 35 degrees or more between any two
+     * panels that are next to each other. It said 40 while the closest pair was already 35, which
+     * was wrong about the palette rather than about the intent: 35 is the floor, and adding
+     * Prevalidation and Post kept it by swapping the hues of Element and Pdf.
      *
-     * Seven and not nine: Validation and the run log are in the sidebar, where a column of their
+     * Nine and not eleven: Validation and the run log are in the sidebar, where a column of their
      * own already says they are not part of the one you work down.
      *
      * The border of each takes the same hue at the lightness of the plain one, so the outline is
@@ -99,10 +101,16 @@
     --panel-instances-border: #49344c;
     --panel-payload: #1e222a;
     --panel-payload-border: #323b4c;
-    --panel-element: #25202c;
-    --panel-element-border: #3e344c;
-    --panel-pdf: #2b202b;
-    --panel-pdf-border: #4c344b;
+    --panel-prevalidation: #251e2a;
+    --panel-prevalidation-border: #41324c;
+    --panel-post: #1e1f2a;
+    --panel-post-border: #32344c;
+    /* Element and Pdf swapped hues when Prevalidation and Post came between them, to keep the
+       neighbours apart: these two now sit either side of the gap the new pair opened. */
+    --panel-element: #2b202b;
+    --panel-element-border: #4c344b;
+    --panel-pdf: #25202c;
+    --panel-pdf-border: #3e344c;
     --panel-process: #1e272a;
     --panel-process-border: #32464c;
 

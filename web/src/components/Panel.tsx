@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
  * Which surface the panel sits on. One per panel in the column you work down, see the `--panel-*`
  * block in styles.css. The two in the sidebar have none: a column of its own is separation enough.
  */
-export type PanelTone = "user" | "target" | "instances" | "payload" | "element" | "pdf" | "process";
+export type PanelTone = "user" | "target" | "instances" | "payload" | "prevalidation" | "post" | "element" | "pdf" | "process";
 
 interface PanelProps {
     title: string;

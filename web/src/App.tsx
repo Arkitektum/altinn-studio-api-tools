@@ -17,12 +17,15 @@ import { fingerprintInstance, pdfStand } from "./lib/pdfCache";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
+import type { PrevalidationSummary } from "./lib/chain";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
 import { FetchPanel } from "./components/FetchPanel";
 import { PdfPanel } from "./components/PdfPanel";
 import { InstancesPanel } from "./components/InstancesPanel";
 import { PayloadPanel } from "./components/PayloadPanel";
+import { PrevalidationPanel } from "./components/PrevalidationPanel";
+import { PostPanel } from "./components/PostPanel";
 import { ProcessPanel } from "./components/ProcessPanel";
 import { RunLog } from "./components/RunLog";
 import { PdfModal, type PdfPreview } from "./components/PdfModal";
@@ -487,6 +490,20 @@ export function App() {
         ready: dataElements.length > 0 && dataElements.every((element) => element.dataType && element.content.trim())
     };
 
+    /**
+     * What the service last said, or null when it is switched off.
+     *
+     * Built once and handed to both the rail and the post panel, which want the same fact for
+     * different reasons: one says where you are, the other says what you are about to skip.
+     */
+    const prevalidationSummary: PrevalidationSummary | null = prevalidation.url
+        ? {
+              run: prevalidation.prevalidation !== null,
+              stale: prevalidation.prevalidation?.stale ?? false,
+              outstanding: prevalidation.prevalidation ? outstandingOf(prevalidation.prevalidation.requirements).length : 0
+          }
+        : null;
+
     // Every panel is on screen from the start, and one you cannot use yet says what it is waiting
     // for. See lib/readiness.ts.
     const waiting = readiness({
@@ -540,15 +557,8 @@ export function App() {
                     instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
                     dataElement={selectedDataType || null}
                     payload={payloadSummary}
-                    prevalidation={
-                        prevalidation.url
-                            ? {
-                                  run: prevalidation.prevalidation !== null,
-                                  stale: prevalidation.prevalidation?.stale ?? false,
-                                  outstanding: prevalidation.prevalidation ? outstandingOf(prevalidation.prevalidation.requirements).length : 0
-                              }
-                            : null
-                    }
+                    prevalidation={prevalidationSummary}
+                    post={{ stored: instanceDataElements.length }}
                 />
 
                 <div className="column">
@@ -607,13 +617,28 @@ export function App() {
                             dataElements={dataElements}
                             onChange={setDataElements}
                             suggestedDataTypes={suggestedDataTypes}
-                            advanceProcess={advanceProcess}
-                            onAdvanceProcessChange={setAdvanceProcess}
                             savedPayloads={savedPayloads}
                             onSavePayload={savePayload}
                             onLoadPayload={(payload) => void loadPayload(payload)}
                             onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
                             loadNotice={payloadLoadNotice}
+                        />
+
+                        {/*
+                         * Only where a service is configured. Switched off is not a step you
+                         * skipped, so there is nothing to show rather than a panel that would wait
+                         * for ever. The rail leaves the step out on the same condition.
+                         */}
+                        {prevalidationSummary && (
+                            <PrevalidationPanel notReady={waiting.requests} dataElements={dataElements} onChange={setDataElements} />
+                        )}
+
+                        <PostPanel
+                            notReady={waiting.requests}
+                            dataElements={dataElements}
+                            advanceProcess={advanceProcess}
+                            onAdvanceProcessChange={setAdvanceProcess}
+                            prevalidation={prevalidationSummary}
                         />
 
                         <span className="group">Inspect</span>

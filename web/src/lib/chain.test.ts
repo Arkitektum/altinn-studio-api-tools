@@ -10,7 +10,8 @@ const nothing: ChainInputs = {
     instance: null,
     dataElement: null,
     payload: { elements: 1, ready: false },
-    prevalidation: { run: false, stale: false, outstanding: 0 }
+    prevalidation: { run: false, stale: false, outstanding: 0 },
+    post: { stored: 0 }
 };
 
 const onApp = { ...nothing, user: "Sophie Salt", application: "dibk/et-v4" };
@@ -19,12 +20,12 @@ const labels = (inputs: ChainInputs) => requestChain(inputs).map((each) => each.
 
 describe("requestChain", () => {
     it("runs in the order the panels do, so a row and the column agree", () => {
-        assert.deepEqual(labels(nothing), ["Test user", "Application", "Party", "Instance", "Payload", "Prevalidation", "Data element"]);
+        assert.deepEqual(labels(nothing), ["Test user", "Application", "Party", "Instance", "Payload", "Prevalidation", "Post", "Data element"]);
     });
 
     it("points at the token on a cold start, and everything else waits on it", () => {
         const states = requestChain(nothing).map((each) => each.state);
-        assert.deepEqual(states, ["next", "waiting", "waiting", "waiting", "waiting", "waiting", "waiting"]);
+        assert.deepEqual(states, ["next", "waiting", "waiting", "waiting", "waiting", "waiting", "waiting", "waiting"]);
     });
 
     /*
@@ -80,10 +81,42 @@ describe("requestChain", () => {
         assert.equal(step({ ...onInstance, dataElement: "ET" }, "Data element")?.state, "done");
     });
 
+    /*
+     * The send needs a party as well as something to send, which the payload does not: a payload can
+     * be written against an application alone, but a post is made for someone.
+     */
+    it("waits to post until there is a party and a payload worth sending", () => {
+        const ready = { ...onApp, payload: { elements: 1, ready: true } };
+        assert.equal(step(ready, "Post")?.state, "waiting", "there is no party yet");
+        assert.equal(step({ ...onApp, party: "510001" }, "Post")?.state, "waiting", "and the payload is incomplete");
+        assert.equal(step({ ...ready, party: "510001" }, "Post")?.state, "next");
+    });
+
+    /*
+     * What is stored rather than whether a post was made. An instance picked from the list was
+     * posted to by someone, and one you posted to yourself is the same instance from here on.
+     */
+    it("counts what is on the instance rather than what was sent", () => {
+        const posting = { ...onApp, party: "510001", payload: { elements: 1, ready: true } };
+        assert.equal(step(posting, "Post")?.value, "nothing stored");
+        assert.equal(step({ ...posting, post: { stored: 3 } }, "Post")?.value, "3 stored");
+        assert.equal(step({ ...posting, post: { stored: 3 } }, "Post")?.state, "done");
+    });
+
+    /* Three steps in a row that used to be one panel, so each has to lead somewhere of its own. */
     it("carries the panel each row scrolls to", () => {
         assert.deepEqual(
             requestChain(nothing).map((each) => each.anchor),
-            ["panel-test-user", "panel-target", "panel-target", "panel-instances", "panel-payload", "panel-payload", "panel-data-element"]
+            [
+                "panel-test-user",
+                "panel-target",
+                "panel-target",
+                "panel-instances",
+                "panel-payload",
+                "panel-prevalidation",
+                "panel-post",
+                "panel-data-element"
+            ]
         );
     });
 });

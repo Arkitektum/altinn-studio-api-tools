@@ -1,15 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useAppRead } from "../reads";
-import { usePostRun, usePrevalidation } from "../writes";
-import { postBlockers } from "../lib/postBlockers";
-import { ErrorNotice } from "./Notice";
 import { useSession } from "../session";
-import { preferredContentType } from "../lib/contentType";
 import { groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
 import { PayloadElement } from "./PayloadElement";
 import { Panel } from "./Panel";
 import { SavedPayloads } from "./SavedPayloads";
-import { documentsToAdd, outstandingOf } from "../lib/validationReport";
 import { loadingOverwrites } from "../lib/savedPayloads";
 import type { DataElementInput, SavedPayload } from "../types";
 
@@ -21,8 +16,6 @@ interface PayloadPanelProps {
     onChange: Dispatch<SetStateAction<DataElementInput[]>>;
     /** Data types worth offering before the app has been probed. */
     suggestedDataTypes: string[];
-    advanceProcess: boolean;
-    onAdvanceProcessChange: (next: boolean) => void;
     /** Payloads kept for later, newest first. */
     savedPayloads: SavedPayload[];
     onSavePayload: (name: string) => void;
@@ -32,18 +25,19 @@ interface PayloadPanelProps {
     loadNotice: string | null;
 }
 
-/** Names in a sentence: "a", "a and b", "a, b and c". */
-function list(names: string[]): string {
-    return names.join(", ").replace(/, ([^,]*)$/, " and $1");
-}
-
+/**
+ * What you are about to send: the data elements, and nothing that acts on them.
+ *
+ * It used to be all three steps in one panel, the payload then the prevalidation then the post, set
+ * apart by legends inside it. Three things you do in order are three steps, and a rail that points
+ * at them had two rows going to the same place. They are three panels now, and the legends are gone
+ * with the split: a heading does the same work and the rail can name it.
+ */
 export function PayloadPanel({
     notReady,
     dataElements,
     onChange,
     suggestedDataTypes,
-    advanceProcess,
-    onAdvanceProcessChange,
     savedPayloads,
     onSavePayload,
     onLoadPayload,
@@ -52,64 +46,17 @@ export function PayloadPanel({
 }: PayloadPanelProps) {
     /* The target, so a saved payload written for another app can say which, and what the app
        declares, which is authoritative but only there once it has been read. */
-    const { org, app, tokenUsable, partyId, instanceGuid } = useSession();
+    const { org, app } = useSession();
     const { metadata: appMetadata } = useAppRead();
     const metadata = appMetadata?.metadata ?? null;
     const dataTypes = metadata?.dataTypes ?? [];
 
-    /*
-     * Both of the things that act on the payload, which is what this panel is. The prevalidation
-     * asks what a submission of it would be missing, and the post sends it; each belongs with the
-     * payload rather than with whoever happens to render the panel. See writes.ts.
-     */
-    const {
-        prevalidation,
-        blockedBy: validationBlockedBy,
-        url: validationUrl,
-        asking: validating,
-        error: prevalidationError,
-        ask: onValidationReport
-    } = usePrevalidation(dataElements);
-    const post = usePostRun();
-
-    /** What the post is still missing, all of it at once. See lib/postBlockers.ts. */
-    const blockers = postBlockers({ hasToken: tokenUsable, org, app, party: partyId, elements: dataElements });
     function update(index: number, patch: Partial<DataElementInput>) {
         onChange((current) => current.map((element, i) => (i === index ? { ...element, ...patch } : element)));
     }
 
     function setAllCollapsed(collapsed: boolean) {
         onChange((current) => current.map((element) => ({ ...element, collapsed })));
-    }
-
-    /**
-     * Which documents this submission needs, as the validation service answered it. Nothing here
-     * counts a `minCount`: what an app declares is not what the validation insists on, which is
-     * why the question is asked of the service at all. See lib/validationReport.ts.
-     */
-    const requirements = prevalidation?.requirements;
-    const outstanding = requirements ? outstandingOf(requirements) : [];
-    /** Recommended and not here, by the name the message leads with where it offers a choice. */
-    const advised = (requirements?.recommended ?? [])
-        .filter((requirement) => !requirement.satisfied)
-        .map((requirement) => requirement.dataTypes[0] as string);
-    const other = (requirements?.otherErrors ?? 0) + (requirements?.otherWarnings ?? 0);
-
-    /**
-     * Appends one element per document still wanted, which the example picker fills in on mount:
-     * the body of a folded element is hidden rather than left unrendered, so the picker is there
-     * to do it.
-     */
-    function addMissing() {
-        const added = documentsToAdd(requirements?.required ?? []).map((dataType) => ({
-            dataType,
-            content: "",
-            contentType: preferredContentType(dataTypes.find((type) => type.id === dataType)?.allowedContentTypes ?? []),
-            // Folded, and so is everything already in the list. Four documents arriving at once is
-            // a list to look down, and four open editors is one element and a scrollbar.
-            collapsed: true
-        }));
-        onChange((current) => [...current.map((element) => ({ ...element, collapsed: true })), ...added]);
     }
 
     function add() {
@@ -181,157 +128,6 @@ export function PayloadPanel({
             <button type="button" className="btn btn--ghost" onClick={add}>
                 + Add data element
             </button>
-
-            {/*
-             * The one call this tool makes that leaves the machine, so it says where it goes and
-             * waits to be pressed. Under its own heading, because the point of it is when you do
-             * it: what it answers is cheaper to read here than out of a refused submission.
-             */}
-            {validationUrl && (
-                <div style={{ marginTop: 18 }}>
-                    <span className="legend">Before you post</span>
-                    {/* The width of the post button below it, because it is the step before it. */}
-                    <button
-                        type="button"
-                        className="btn btn--post btn--fire"
-                        onClick={onValidationReport}
-                        disabled={validating || Boolean(validationBlockedBy)}
-                        title={validationBlockedBy ?? undefined}
-                    >
-                        {validating && <span className="btn__spinner" />}
-                        Prevalidate
-                    </button>
-                    <p className="field__hint" style={{ marginBottom: 0 }}>
-                        {validationBlockedBy ? (
-                            <span style={{ color: "var(--warn)" }}>{validationBlockedBy}</span>
-                        ) : (
-                            <>
-                                Asks the DIBK validation service what this submission is missing, which it knows and the app's own{" "}
-                                <code>minCount</code> does not. It leaves your machine, and no token goes with it.
-                            </>
-                        )}
-                        <br />
-                        <span className="method method--post">POST</span> {validationUrl}
-                    </p>
-                </div>
-            )}
-
-            {/*
-             * The answer, under the button that asked for it. Only the part about documents: a rule
-             * about what is inside the form names no payload element, so it is counted and left to
-             * the run log, where the whole report is.
-             */}
-            {requirements && (
-                <div className={`notice notice--${outstanding.length > 0 ? "warn" : "ok"}`} style={{ marginTop: 12 }}>
-                    {prevalidation?.stale && (
-                        <p style={{ margin: "0 0 6px" }}>
-                            <strong>The payload has changed since it was prevalidated.</strong> The service reads the form to decide which documents
-                            its rules ask for, so run it again to be sure.
-                        </p>
-                    )}
-
-                    {outstanding.length === 0 ? (
-                        <>The validation service asks for no document this {requirements.soknadtype} submission does not have.</>
-                    ) : (
-                        <div className="row" style={{ gap: 10, alignItems: "flex-start" }}>
-                            <div style={{ flex: 1 }}>
-                                The validation service wants {outstanding.length === 1 ? "one more document" : `${outstanding.length} more documents`}{" "}
-                                in this {requirements.soknadtype} submission:
-                                <ul>
-                                    {outstanding.map((requirement) => (
-                                        <li key={requirement.dataTypes.join("|")}>
-                                            {/* Alternatives, where the rule takes any one of them. */}
-                                            <strong>{requirement.dataTypes.join(" or ")}</strong>
-                                            {requirement.checklistReference && <span className="badge">{requirement.checklistReference}</span>}
-                                            <span className="notice__why">
-                                                {requirement.message}
-                                                {!requirement.known && " This app declares no data type by that name, so it cannot be added here."}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            {documentsToAdd(requirements.required).length > 0 && (
-                                <button type="button" className="btn btn--ghost" onClick={addMissing}>
-                                    Add {documentsToAdd(requirements.required).length === 1 ? "it" : "them"}
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Named only, since a recommendation you decide against should be one line. */}
-                    {advised.length > 0 && <p style={{ margin: "6px 0 0" }}>It also recommends {list(advised)}.</p>}
-
-                    {other > 0 && (
-                        <p style={{ margin: "6px 0 0" }}>
-                            And {other === 1 ? "one thing" : `${other} things`} about the form's own content rather than what is attached to it. The
-                            whole report is in the run log.
-                        </p>
-                    )}
-                </div>
-            )}
-
-            <div style={{ marginTop: 18 }}>
-                <span className="legend">After upload</span>
-
-                <p className="field__hint" style={{ marginBottom: 10 }}>
-                    The instance is read back and validated automatically after every post.
-                </p>
-
-                <label className="check">
-                    <input type="checkbox" checked={advanceProcess} onChange={(event) => onAdvanceProcessChange(event.target.checked)} />
-                    <span className="check__body">
-                        <span className="check__title">Sign and submit once it is posted</span>
-                        {/*
-                         * Which task the instance lands in is the app's business, so this says
-                         * what the step is rather than naming an action it cannot know yet.
-                         */}
-                        <span className="check__note">
-                            PUT /process/next straight after the upload, the same step as pressing send in the app. The app validates first, so it
-                            fails while validation does not pass, and the data stays posted either way.
-                        </span>
-                    </span>
-                </label>
-            </div>
-
-            <div style={{ marginTop: 18 }}>
-                <span className="legend">Post</span>
-
-                {blockers.length > 0 && (
-                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                        Needs {blockers.join(", ")}.
-                    </div>
-                )}
-
-                {/*
-                 * The one thing the prevalidation notice above cannot say, because there is no
-                 * report for it to be part of. The rest of what the service said is on screen a
-                 * few lines up.
-                 */}
-                {validationUrl && !prevalidation && (
-                    <div className="notice" style={{ marginBottom: 12 }}>
-                        Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you, read before the
-                        submit rather than after.
-                    </div>
-                )}
-
-                {/* Both are asked for from this panel, and only one at a time. */}
-                {(post.error ?? prevalidationError) ? (
-                    <div style={{ marginBottom: 12 }}>
-                        <ErrorNotice error={post.error ?? prevalidationError} />
-                    </div>
-                ) : null}
-
-                <button
-                    type="button"
-                    className="btn btn--primary btn--fire"
-                    onClick={() => post.mutate({ dataElements, advanceProcess })}
-                    disabled={post.isPending || blockers.length > 0}
-                >
-                    {post.isPending && <span className="btn__spinner" />}
-                    {post.isPending ? "Posting…" : instanceGuid ? `Add data to ${instanceGuid.slice(0, 8)}` : `Post a new instance to ${org}/${app}`}
-                </button>
-            </div>
         </Panel>
     );
 }

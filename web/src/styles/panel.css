@@ -53,6 +53,16 @@
     border-color: var(--panel-payload-border);
 }
 
+.panel--prevalidation {
+    background: var(--panel-prevalidation);
+    border-color: var(--panel-prevalidation-border);
+}
+
+.panel--post {
+    background: var(--panel-post);
+    border-color: var(--panel-post-border);
+}
+
 .panel--element {
     background: var(--panel-element);
     border-color: var(--panel-element-border);

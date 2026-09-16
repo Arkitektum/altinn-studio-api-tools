@@ -1,7 +1,7 @@
 /**
  * The chain the whole tool hangs off, as the rail down the left draws it.
  *
- * Seven steps: who you are, where you are pointed, what you are about to send, and what came back.
+ * Eight steps: who you are, where you are pointed, what you are about to send, and what came back.
  * Each says what it holds and whether you can act on it yet.
  *
  * The order is the page's order, because every row scrolls to a panel and a rail that disagreed
@@ -41,6 +41,12 @@ export interface PrevalidationSummary {
     outstanding: number;
 }
 
+/** What the send has actually put there, which is the only thing that says a post landed. */
+export interface PostSummary {
+    /** Data elements the selected instance holds. Zero for a new instance, which has none yet. */
+    stored: number;
+}
+
 export interface ChainInputs {
     /** The active token's label, which is the person it was minted for. */
     user: string | null;
@@ -56,6 +62,7 @@ export interface ChainInputs {
     dataElement: string | null;
     payload: PayloadSummary;
     prevalidation: PrevalidationSummary | null;
+    post: PostSummary;
 }
 
 /** "2 elements", and what is wrong with them when something is. */
@@ -72,6 +79,12 @@ function describePrevalidation(prevalidation: PrevalidationSummary): string {
         return `${prevalidation.outstanding} document${prevalidation.outstanding === 1 ? "" : "s"} missing`;
     }
     return "nothing missing";
+}
+
+/** What is on the instance, which is what a post leaves behind. */
+function describePost(post: PostSummary): string {
+    if (post.stored === 0) return "nothing stored";
+    return `${post.stored} stored`;
 }
 
 export function requestChain(inputs: ChainInputs): ChainStep[] {
@@ -107,12 +120,27 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
                   {
                       label: "Prevalidation",
                       value: describePrevalidation(inputs.prevalidation),
-                      anchor: "panel-payload",
+                      anchor: "panel-prevalidation",
                       reachable: hasApp && inputs.payload.ready,
                       done: inputs.prevalidation.run && !inputs.prevalidation.stale && inputs.prevalidation.outstanding === 0
                   }
               ]
             : []),
+        /*
+         * The send, which needs somewhere to send to as well as something to send: a post is made
+         * for a party, so this waits on one where the payload only waits on an application.
+         *
+         * Done is what is stored rather than whether a post was made. An instance you picked from
+         * the list was posted to by someone, and one you posted to yourself is the same instance
+         * from here on. What matters either way is whether there is anything on it.
+         */
+        {
+            label: "Post",
+            value: describePost(inputs.post),
+            anchor: "panel-post",
+            reachable: hasParty && inputs.payload.ready,
+            done: inputs.post.stored > 0
+        },
         // A new instance has no data elements yet, so this waits on a real one rather than on the
         // row that stands for making one.
         {
