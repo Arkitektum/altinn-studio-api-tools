@@ -41,13 +41,14 @@
 .element__chevron {
     width: 12px;
     flex: 0 0 auto;
+    /* A literal, and the only one: this sizes a triangle rather than any text. */
     font-size: 10px;
     line-height: 1;
     color: var(--text-muted);
 }
 
 .element__summary {
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-faint);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -65,7 +66,7 @@
 }
 
 .element__ord {
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
 }
 
@@ -96,7 +97,7 @@
 
 .code {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--size-label);
     min-height: 180px;
 }
 
@@ -105,7 +106,7 @@
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-faint);
 }
 
@@ -119,7 +120,7 @@
     border-radius: 4px;
     background: var(--bg-inset);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
 }
 

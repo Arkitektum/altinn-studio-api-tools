@@ -10,13 +10,13 @@
 }
 
 .field > label {
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
 }
 
 .legend {
     display: block;
-    font-size: 12px;
+    font-size: var(--size-label);
     font-weight: 600;
     color: var(--text);
     margin-bottom: 8px;
@@ -31,7 +31,7 @@
     align-items: center;
     gap: 10px;
     margin-top: 6px;
-    font-size: 11.5px;
+    font-size: var(--size-label);
     color: var(--text-faint);
 }
 
@@ -50,7 +50,7 @@
 
 .field__hint {
     margin: 2px 0 0;
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-faint);
     /* Hints often contain URLs, which must not push past the panel. */
     overflow-wrap: anywhere;
@@ -76,7 +76,7 @@ select,
 textarea {
     width: 100%;
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--size-note);
     color: var(--text);
     background: var(--bg);
     border: 1px solid var(--border-strong);
@@ -88,7 +88,7 @@ textarea {
 input[type="text"],
 textarea {
     font-family: var(--font-mono);
-    font-size: 12.5px;
+    font-size: var(--size-note);
 }
 
 input::placeholder,
@@ -107,7 +107,7 @@ textarea:focus {
 input[type="file"] {
     width: 100%;
     font-family: inherit;
-    font-size: 12.5px;
+    font-size: var(--size-note);
     color: var(--text-muted);
 }
 
@@ -115,7 +115,7 @@ input[type="file"]::file-selector-button {
     margin-right: 10px;
     padding: 5px 10px;
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text);
     background: var(--bg-subtle);
     border: 1px solid var(--border-strong);
@@ -181,11 +181,11 @@ textarea {
 }
 
 .check__title {
-    font-size: 13px;
+    font-size: var(--size-note);
 }
 
 .check__note {
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-faint);
 }
 
@@ -202,7 +202,7 @@ textarea {
     background: var(--bg);
     color: var(--text);
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--size-note);
     cursor: pointer;
     white-space: nowrap;
 }

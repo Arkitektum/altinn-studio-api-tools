@@ -30,7 +30,7 @@
 
 .modal__head h2 {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--size-note);
     font-weight: 600;
 }
 
@@ -96,7 +96,7 @@
 .detail__url {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
     word-break: break-all;
 }
@@ -159,7 +159,7 @@
 }
 
 .editor__bar label {
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
 }
 
@@ -197,7 +197,7 @@
     border: 1px solid transparent;
     border-radius: 4px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--size-label);
     line-height: 1.5;
     white-space: pre-wrap;
     overflow-wrap: break-word;
@@ -262,7 +262,7 @@
 
 .crash p {
     margin: 12px 0 0;
-    font-size: 12.5px;
+    font-size: var(--size-note);
     line-height: 1.5;
     color: var(--text-muted);
 }

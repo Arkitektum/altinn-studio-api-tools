@@ -19,7 +19,7 @@
 }
 
 .token__label {
-    font-size: 13px;
+    font-size: var(--size-note);
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -31,7 +31,7 @@
     grid-template-columns: auto minmax(0, 1fr);
     gap: 2px 12px;
     margin: 0;
-    font-size: 12px;
+    font-size: var(--size-label);
 }
 
 .claims dt {
@@ -42,7 +42,7 @@
 .claims dd {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: var(--size-label);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -64,7 +64,7 @@
     background: var(--bg);
     color: var(--text-muted);
     font-family: inherit;
-    font-size: 12.5px;
+    font-size: var(--size-note);
     cursor: pointer;
     text-align: left;
 }

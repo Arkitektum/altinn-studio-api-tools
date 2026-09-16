@@ -22,7 +22,7 @@
 }
 
 .masthead__mark {
-    font-size: 14px;
+    font-size: var(--size-body);
     font-weight: 600;
 }
 
@@ -38,7 +38,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
@@ -139,13 +139,13 @@
 }
 
 .rail__label {
-    font-size: 12px;
+    font-size: var(--size-label);
     color: var(--text-muted);
     line-height: 1.5;
 }
 
 .rail__value {
-    font-size: 13px;
+    font-size: var(--size-note);
     color: var(--text);
     line-height: 1.4;
     overflow: hidden;
