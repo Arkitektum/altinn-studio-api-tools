@@ -45,121 +45,147 @@
     text-overflow: ellipsis;
 }
 
-/* ------------------------------------------------------------------ chain */
+/* ------------------------------------------------------------------- rail */
 
-/* Under the header and above everything, because everything below depends on it. */
-.chain {
-    display: flex;
-    align-items: center;
-    /* One line, always: see --chain-h. A long chain scrolls sideways rather than growing. */
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    height: var(--chain-h);
-    gap: 10px;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-inset);
-    font-size: 12px;
+/*
+ * The chain down the left, which is the tool's own shape: each step needs the one before it.
+ *
+ * A rail rather than the strip it was. A strip could show the order and not the progress, and it
+ * had one line to say a label, a value and a position in. Down the side each row has room for all
+ * three, and the column it costs is the one the test user panel used to hold.
+ */
+.rail {
     position: sticky;
-    top: var(--header-h);
-    z-index: 15;
-}
-
-.chain__link {
+    top: var(--top-h);
+    align-self: start;
+    max-height: calc(100vh - var(--top-h));
+    overflow-y: auto;
+    padding: 18px 0 18px 16px;
     display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    /* Room for the on-screen highlight to sit on without shifting the text. */
-    padding: 3px 6px;
-    margin: 0 -6px;
+    flex-direction: column;
 }
 
-.chain__arrow {
-    color: var(--border-strong);
-}
-
-/* A link you can follow. Plain until hovered, so the strip stays a readout rather than a toolbar. */
-.chain__go {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    min-width: 0;
-    padding: 0;
-    background: none;
-    border: none;
-    font-family: inherit;
-    font-size: inherit;
-    cursor: pointer;
-    text-align: left;
-}
-
-.chain__go:hover .chain__label {
-    color: var(--text);
-}
-
-.chain__go:hover .chain__value {
-    text-decoration: underline;
-}
-
-.chain__label {
-    color: var(--text-faint);
-}
-
-.chain__value {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 22ch;
-}
-
-/* What a link holds, where the label beside it is muted. */
-.chain__value {
-    color: var(--text);
+.rail__step {
+    position: relative;
 }
 
 /*
- * The panel you are looking at.
- *
- * Violet, which is the one hue that means nothing else in this strip. Grey was tried twice and
- * read as a slightly lighter rectangle both times, and the accent means an action rather than a
- * position. Violet is used categorically elsewhere, for subform data types and for attribute names
- * in a code block, and as with those two the meanings never share a surface.
+ * The line joining one step to the next, drawn from the glyph rather than behind the whole row, so
+ * it reads as one thread through them. It stops at the last step, which has nothing to join to.
  */
-.chain__link--here {
-    background: var(--violet-border);
-    box-shadow: inset 0 -2px 0 var(--violet);
-    border-radius: 3px;
+.rail__step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 26px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--border);
 }
 
-.chain__link--here .chain__label {
+/* Done, so the thread up to it is drawn in the colour of what has been done. */
+.rail__step--done:not(:last-child)::before {
+    background: var(--ok-border);
+}
+
+.rail__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    width: 100%;
+    padding: 7px 10px 7px 7px;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.rail__row--go {
+    cursor: pointer;
+}
+
+.rail__row--go:hover {
+    background: var(--bg-subtle);
+}
+
+/* The glyph sits on its own colour, which is the whole of what the state says. */
+.rail__mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 20px;
+    flex: none;
+}
+
+.rail__mark--done {
+    color: var(--ok);
+}
+
+.rail__mark--next {
+    color: var(--accent);
+}
+
+.rail__mark--waiting {
+    color: var(--border-strong);
+}
+
+.rail__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.rail__label {
+    font-size: 12px;
     color: var(--text-muted);
+    line-height: 1.5;
 }
 
-.chain__link--here .chain__value {
+.rail__value {
+    font-size: 13px;
     color: var(--text);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Out of reach: the row is there to show the order, not to be read off. */
+.rail__step--waiting .rail__value {
+    color: var(--text-faint);
+}
+
+/* The one to fill in next, which is the only row that names an action. */
+.rail__step--next .rail__label {
+    color: var(--accent);
+}
+
+/*
+ * The panel you are looking at. A bar down the left edge rather than a fill, since the row already
+ * carries a colour in its glyph and two backgrounds a row apart read as a selection you made.
+ */
+.rail__step--here .rail__row {
+    background: var(--bg-subtle);
+    box-shadow: inset 2px 0 0 var(--violet);
 }
 
 /* ------------------------------------------------------------------ layout */
 
 /*
- * Two columns: what you do, and what came back. The test user used to have a rail of its own on
- * the left, which spent 300px on a panel you touch once at the start of a session and then leave
- * alone. It sits at the top of the working column now, where the chain already says it comes
- * first, and the width it was holding went to the two columns that use it.
- */
-/*
- * A share of the width rather than a fixed slab, with --log as the floor. The extra width on a
- * large screen is worth more to the log, which holds xml and curl commands, than to a column of
- * fields that are full width whatever you give them.
+ * Three columns: where you are, what you do, and what came back.
+ *
+ * The rail is a fixed slab because it holds five labels and no more, and the other two share what
+ * is left. The extra width on a large screen is worth more to the log, which holds xml and curl
+ * commands, than to a column of fields that are full width whatever you give them, so --log is a
+ * floor rather than a share.
  */
 .deck {
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(var(--log), 42%);
+    grid-template-columns: var(--rail) minmax(0, 1fr) minmax(var(--log), 40%);
     align-items: start;
 }
 
@@ -182,10 +208,35 @@
     overflow-y: auto;
 }
 
-/* Below this the two would be squeezed into each other, so the log goes under the work instead. */
+/*
+ * Below this the columns would be squeezed into each other, so they stack. The rail goes back to a
+ * strip across the top, which is what it was: down the side it would be a column of five short rows
+ * beside a column of everything else.
+ */
 @media (max-width: 1240px) {
     .deck {
         grid-template-columns: minmax(0, 1fr);
+    }
+    .rail {
+        position: static;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: visible;
+        flex-direction: row;
+        padding: 10px 16px 0;
+        gap: 4px;
+    }
+    /* The thread between steps runs across rather than down, and only where there is room. */
+    .rail__step:not(:last-child)::before {
+        left: auto;
+        right: -2px;
+        top: 50%;
+        bottom: auto;
+        width: 8px;
+        height: 1px;
+    }
+    .rail__row {
+        padding: 6px 8px;
     }
     .column--log {
         position: static;

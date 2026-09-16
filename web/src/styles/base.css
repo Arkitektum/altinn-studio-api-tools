@@ -12,7 +12,7 @@
      scrollbars) dark, so they match the rest without restyling. */
     color-scheme: dark;
 
-    --bg: #1c1e21;
+    --bg: #16181b;
     --bg-subtle: #24272b;
     --bg-inset: #191b1e;
     --border: #34383d;
@@ -22,10 +22,10 @@
     --text-muted: #a2a9b1;
     --text-faint: #7d848c;
 
-    --accent: #7dabdd;
+    --accent: #74b4f0;
     --accent-text: #10161c;
     --accent-bg: #222f3c;
-    --accent-border: #35506b;
+    --accent-border: #38587a;
 
     --ok: #66c48d;
     --ok-bg: #1d2c24;
@@ -57,7 +57,8 @@
     /*
      * A surface per panel, so a column of them is a column of containers rather than one field.
      * Every one is the same lightness, a step above the page and below anything raised inside it,
-     * and they differ only in hue.
+     * and they differ only in hue. The step is about six points of luminance: at two, which is what
+     * these were, the claim above was true of the hex values and not of anything you could see.
      *
      * All of them are blue to purple. A first pass walked the whole wheel, and the warm half of it
      * did not work: an amber or olive surface reads as dirty against a blue-grey page, and the one
@@ -72,20 +73,20 @@
      * the panel's own rather than a grey drawn around it. A little more saturation than the
      * surface, because a hairline needs it to read as coloured at all.
      */
-    --panel-user: #1b2024;
-    --panel-user-border: #2e3842;
-    --panel-target: #1d1b24;
-    --panel-target-border: #312e42;
-    --panel-instances: #231b24;
-    --panel-instances-border: #3f2e42;
-    --panel-payload: #1b1e24;
-    --panel-payload-border: #2e3442;
-    --panel-element: #1f1b24;
-    --panel-element-border: #362e42;
-    --panel-pdf: #241b24;
-    --panel-pdf-border: #422e41;
-    --panel-process: #1b2224;
-    --panel-process-border: #2e3d42;
+    --panel-user: #1e242a;
+    --panel-user-border: #32404c;
+    --panel-target: #23202c;
+    --panel-target-border: #38344c;
+    --panel-instances: #2a202c;
+    --panel-instances-border: #49344c;
+    --panel-payload: #1e222a;
+    --panel-payload-border: #323b4c;
+    --panel-element: #25202c;
+    --panel-element-border: #3e344c;
+    --panel-pdf: #2b202b;
+    --panel-pdf-border: #4c344b;
+    --panel-process: #1e272a;
+    --panel-process-border: #32464c;
 
     /*
      * Marked text. Neutral and translucent, and it has to be both. Every hue in here already means
@@ -109,12 +110,12 @@
     --log: 640px;
     --header-h: 45px;
     /*
-     * The chain strip's height, kept a constant so the sticky columns can offset by it. That is
-     * why the strip never wraps: a variable height would put the columns back under it.
+     * The rail, wide enough for the longest label and a value beside nothing else. It is a slab
+     * rather than a share because its contents do not grow: five steps, whatever the screen.
      */
-    --chain-h: 32px;
-    /* Everything sticky sits below both, since both are sticky themselves. */
-    --top-h: calc(var(--header-h) + var(--chain-h));
+    --rail: 212px;
+    /* Everything sticky sits below the header, which is the only thing above it. */
+    --top-h: var(--header-h);
 }
 
 * {

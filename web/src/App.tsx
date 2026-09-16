@@ -489,16 +489,16 @@ export function App() {
                 </div>
             </header>
 
-            {/* What the tool is working on, and what the next thing to fill in is. */}
-            <Chain
-                user={activeToken && tokenUsable ? activeToken.label : null}
-                application={org && app ? `${org}/${app}` : null}
-                party={instanceOwnerPartyId || null}
-                instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
-                dataElement={selectedDataType || null}
-            />
-
             <div className="deck">
+                {/* What the tool is working on, how far down it you are, and what is left to fill in. */}
+                <Chain
+                    user={activeToken && tokenUsable ? activeToken.label : null}
+                    application={org && app ? `${org}/${app}` : null}
+                    party={instanceOwnerPartyId || null}
+                    instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
+                    dataElement={selectedDataType || null}
+                />
+
                 <div className="column">
                     {bootError ? <ErrorNotice error={bootError} /> : null}
 

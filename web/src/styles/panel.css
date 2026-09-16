@@ -7,11 +7,8 @@
     border-radius: var(--radius);
     /* Panels that say what they are override this. The rest, the crash screen, keep the page. */
     background: var(--bg);
-    padding: 14px;
-    /*
-     * So a chain link that scrolls here lands below the header and the strip rather than under
-     * them. The same reason the sticky columns offset by --top-h.
-     */
+    padding: 16px 18px 18px;
+    /* So a rail row that scrolls here lands below the header rather than under it. */
     scroll-margin-top: calc(var(--top-h) + 16px);
 }
 
@@ -71,17 +68,29 @@
     border-color: var(--panel-process-border);
 }
 
+/*
+ * The heading is separated by a rule rather than by space alone. A panel holds a form, a list and a
+ * note at once, and without a line the heading read as the first line of whatever came under it.
+ */
 .panel__head {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
 }
 
+/*
+ * Above the body text rather than below it. At 13px against a 14px body this read as a label on
+ * the panel rather than a heading over it, which is the one place the tool was too plain to be
+ * read quickly rather than plain in the way that was wanted.
+ */
 .panel__head h2 {
     margin: 0;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--text);
 }
 
