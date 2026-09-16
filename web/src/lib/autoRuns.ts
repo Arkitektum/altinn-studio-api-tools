@@ -35,9 +35,9 @@ export interface AutoRunInputs {
      */
     elementChangedAt: string | null;
     /**
-     * The xml the comparison would run against, or null when there is none to compare, or when
-     * what is there will not parse. Half-typed xml is not a comparison waiting to happen, and
-     * asking anyway would put a failed compare in the log for every pause in typing.
+     * The xml the comparison would run against, or null when there is none to compare. Whether it
+     * parses is the caller's to ask once the delay below has run, not this one's to wait for: a
+     * parse per keystroke is what the delay exists to avoid paying.
      */
     comparable: string | null;
     /** The key each scope has already been attempted for, so a refusal is not retried forever. */
@@ -52,7 +52,8 @@ const SELECTION_DELAY_MS = 500;
 
 /**
  * The comparison waits longer, because what it depends on is a document being edited rather than
- * a field being filled in, and a pause in typing is not the same as being finished.
+ * a field being filled in, and a pause in typing is not the same as being finished. It is also
+ * what keeps the caller's parse of the whole document to one per pause rather than one per key.
  */
 const EDIT_DELAY_MS = 800;
 

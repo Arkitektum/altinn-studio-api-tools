@@ -14,9 +14,10 @@ interface CompareSectionProps {
      */
     payload: string | null;
     /**
-     * Whether that payload parses as xml. The comparison runs as the payload is edited, and a
-     * half-typed document is not a comparison waiting to happen, so it says it is waiting rather
-     * than asking the server to fail on it.
+     * Whether that payload parsed as xml, as of the last time the comparison looked. The comparison
+     * runs as the payload is edited, and a half-typed document is not a comparison waiting to
+     * happen, so it says it is waiting rather than asking the server to fail on it. Settles with
+     * the typing rather than tracking it, since the parse is what the comparison's delay defers.
      */
     parses: boolean;
     result: CompareResult | null;

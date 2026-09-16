@@ -215,18 +215,24 @@ export function App() {
     );
 
     /**
-     * And the text itself, once it parses. The comparison runs on its own as the payload is
-     * edited, and half-typed xml is not a comparison waiting to happen: without this, every pause
-     * in typing would put a "could not compare" entry in the run log.
+     * And the text itself. Whether it parses is not asked here: that is a scan of the whole
+     * document, this is recomputed on every keystroke, and the 838-neighbour Nabovarsel in
+     * `examples/forms/NV` is a megabyte. It is asked once, in `compareWithStored`, by which time
+     * the 800 ms in `lib/autoRuns.ts` has already waited for the typing to stop.
      */
     const comparable = useMemo(() => {
-        // Only while there is something to compare it against. Parsing the payload on every
-        // keystroke of a document nothing is going to be compared with is work for nobody.
+        // Only while there is something to compare it against.
         if (!dataGuid) return null;
         const text = payloadForSelected?.content ?? "";
-        if (!text.trim()) return null;
-        return isWellFormedXml(text) ? text : null;
+        return text.trim() ? text : null;
     }, [payloadForSelected, dataGuid]);
+
+    /**
+     * Whether it did parse, as of the last time the comparison looked. The panel says "waiting"
+     * from this, which settles with the typing rather than flickering through every half-written
+     * tag, and half way through an edit is exactly what it is reporting.
+     */
+    const [payloadParses, setPayloadParses] = useState(true);
 
     /**
      * What every request is aimed at, one key per scope. Nothing here cancels a request, so a call
@@ -272,6 +278,8 @@ export function App() {
         // A comparison describes one data element, so it is stale the moment another is picked.
         setCompareResult((current) => (current?.dataGuid === next ? current : null));
         setCompareError(null);
+        // Said of the payload element of the previous data type, which is not the one now on screen.
+        setPayloadParses(true);
     }, []);
 
     /** Replaces the held preview, revoking the previous blob url so it is not leaked. */
@@ -836,9 +844,19 @@ export function App() {
      */
     async function compareWithStored() {
         if (!activeTokenId || !dataGuid) return;
-        // What parses, since that is what the server can diff. Nothing to compare is not an error.
+        // Nothing to compare is not an error.
         const left = comparable;
         if (!left) return;
+
+        /*
+         * Parsed here, once, rather than as the payload is typed. What the server can diff is what
+         * parses, and half-typed xml is not a comparison waiting to happen: asking anyway would put
+         * a "could not compare" entry in the run log for every pause in typing. The debounce this
+         * call already waited out is what makes one parse do.
+         */
+        const wellFormed = isWellFormedXml(left);
+        setPayloadParses(wellFormed);
+        if (!wellFormed) return;
 
         const requested = keys.dataElement;
         setComparing(true);
@@ -1375,7 +1393,7 @@ export function App() {
                                                 ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
                                                 : null
                                         }
-                                        parses={comparable !== null}
+                                        parses={payloadParses}
                                         result={compareResult}
                                         busy={comparing}
                                         error={compareError}

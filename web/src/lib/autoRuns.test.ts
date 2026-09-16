@@ -130,8 +130,8 @@ describe("pendingAutoRuns", () => {
         assert.equal(edited.read, null);
     });
 
-    it("does not compare against xml that will not parse, or against nothing at all", () => {
-        // Null is both "no payload element of this type" and "what is there is half typed".
+    it("does not compare against nothing at all", () => {
+        // No payload element of the selected data type, or one with nothing in it yet.
         assert.equal(pendingAutoRuns({ ...ready, comparable: null }).compare, null);
         assert.ok(pendingAutoRuns({ ...ready, comparable: null }).element);
     });
