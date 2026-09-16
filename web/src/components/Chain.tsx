@@ -49,9 +49,10 @@ const SAID: Record<ChainState, string> = {
  * each step needing the one before it, and a strip could show the order but not the progress. Down
  * the side there is room for a label, what it holds and where you are, all at once.
  *
- * The payload and the prevalidation are steps here as much as the selections above them, and they
- * are the two you most often want to know about without scrolling: whether what you have written
- * could be posted as it stands, and what the service last said about it.
+ * Every panel in the column is a step here, not only the ones that hold a selection: what you have
+ * written, what the service made of it, what the send left behind, whether the pdf in hand is still
+ * the right one, and where the instance has got to. Those are the answers you would otherwise
+ * scroll the column to read, and the last of them is the end of the chain.
  *
  * Each row takes you to the panel that sets it. A row still out of reach is not a link: the panel
  * is on screen, but scrolling to one you cannot use yet is a worse answer than none.

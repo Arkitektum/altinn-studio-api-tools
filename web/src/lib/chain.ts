@@ -1,12 +1,14 @@
 /**
  * The chain the whole tool hangs off, as the rail down the left draws it.
  *
- * Eight steps: who you are, where you are pointed, what you are about to send, and what came back.
+ * Ten steps: who you are, where you are pointed, what you are about to send, and what came back.
  * Each says what it holds and whether you can act on it yet.
  *
  * The order is the page's order, because every row scrolls to a panel and a rail that disagreed
  * with the column beside it would be worse than no rail.
  */
+
+import type { PdfStand } from "./pdfCache";
 
 /** done: it is settled. next: you can act on it now. waiting: something before it is missing. */
 export type ChainState = "done" | "next" | "waiting";
@@ -47,6 +49,18 @@ export interface PostSummary {
     stored: number;
 }
 
+/**
+ * Where the instance sits in the app's process, or null before a read has said.
+ *
+ * Null rather than a word for "not read yet", because the step is reachable either way: the panel
+ * is there and it is the read it is waiting on, not you.
+ */
+export interface ProcessStanding {
+    /** The task it is in, or how it ended. The words the process panel uses. */
+    at: string;
+    ended: boolean;
+}
+
 export interface ChainInputs {
     /** The active token's label, which is the person it was minted for. */
     user: string | null;
@@ -63,6 +77,9 @@ export interface ChainInputs {
     payload: PayloadSummary;
     prevalidation: PrevalidationSummary | null;
     post: PostSummary;
+    /** Where the pdf in hand stands against the instance. See lib/pdfCache.ts. */
+    pdf: PdfStand;
+    process: ProcessStanding | null;
 }
 
 /** "2 elements", and what is wrong with them when something is. */
@@ -79,6 +96,12 @@ function describePrevalidation(prevalidation: PrevalidationSummary): string {
         return `${prevalidation.outstanding} document${prevalidation.outstanding === 1 ? "" : "s"} missing`;
     }
     return "nothing missing";
+}
+
+/** Whether there is a pdf, and whether it still describes the instance. */
+function describePdf(stand: PdfStand): string {
+    if (stand === "none") return "not rendered";
+    return stand === "current" ? "rendered" : "out of date";
 }
 
 /** What is on the instance, which is what a post leaves behind. */
@@ -149,6 +172,28 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
             anchor: "panel-data-element",
             reachable: Boolean(inputs.instance),
             done: Boolean(inputs.dataElement)
+        },
+        /*
+         * A render describes an instance, so it needs one. Done means the pdf in hand still
+         * describes it: a stale one is back to next, which is the button offering to render again.
+         */
+        {
+            label: "Pdf",
+            value: describePdf(inputs.pdf),
+            anchor: "panel-pdf",
+            reachable: Boolean(inputs.instance),
+            done: inputs.pdf === "current"
+        },
+        /*
+         * Last, and the only step whose done is the end of the whole chain rather than the start of
+         * the next one: an ended process is a submission that has been signed and sent.
+         */
+        {
+            label: "Process",
+            value: inputs.process?.at ?? null,
+            anchor: "panel-process",
+            reachable: Boolean(inputs.instance),
+            done: inputs.process?.ended ?? false
         }
     ];
 

@@ -13,6 +13,7 @@ import { logFromAdvance, logFromPdf } from "./lib/logResults";
 import { withIdentity } from "./lib/formIdentity";
 import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
+import { processLabel } from "./lib/format";
 import { fingerprintInstance, pdfStand } from "./lib/pdfCache";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage } from "./lib/useLocalStorage";
@@ -559,6 +560,8 @@ export function App() {
                     payload={payloadSummary}
                     prevalidation={prevalidationSummary}
                     post={{ stored: instanceDataElements.length }}
+                    pdf={pdfHeld}
+                    process={instanceProcess ? { at: processLabel(instanceProcess), ended: instanceProcess.ended !== null } : null}
                 />
 
                 <div className="column">

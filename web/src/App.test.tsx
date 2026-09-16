@@ -347,6 +347,8 @@ describe("App", () => {
         await app.wait(700);
         assert.match(elementsListed(app), /GammelType/, "the first instance's data element should be listed");
         assert.equal(waitingPanels(app).includes("Process"), false, "and where it stands should be on screen");
+        // The rail ends on the same answer, which is where the instance has got to.
+        assert.equal(railValue(app, "Process"), "Task_1");
 
         // Reached by its guid rather than by a row, which is the panel's own way to an instance the
         // active list leaves out. The window it lives in has to be opened first.
@@ -551,6 +553,8 @@ describe("App", () => {
         await click(app, findByText(app, "dialog button", "Close"));
         assert.equal(app.container.querySelector("dialog"), null, "the window should have closed");
         assert.equal(pdfButton().textContent, "Show pdf", "and the button should offer the one in hand");
+        // The rail reads the same cache decision the button does, from the one place it is made.
+        assert.equal(railValue(app, "Pdf"), "rendered");
 
         await click(app, pdfButton());
         await app.wait(50);

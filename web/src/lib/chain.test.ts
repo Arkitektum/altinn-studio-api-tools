@@ -11,7 +11,9 @@ const nothing: ChainInputs = {
     dataElement: null,
     payload: { elements: 1, ready: false },
     prevalidation: { run: false, stale: false, outstanding: 0 },
-    post: { stored: 0 }
+    post: { stored: 0 },
+    pdf: "none",
+    process: null
 };
 
 const onApp = { ...nothing, user: "Sophie Salt", application: "dibk/et-v4" };
@@ -20,12 +22,23 @@ const labels = (inputs: ChainInputs) => requestChain(inputs).map((each) => each.
 
 describe("requestChain", () => {
     it("runs in the order the panels do, so a row and the column agree", () => {
-        assert.deepEqual(labels(nothing), ["Test user", "Application", "Party", "Instance", "Payload", "Prevalidation", "Post", "Data element"]);
+        assert.deepEqual(labels(nothing), [
+            "Test user",
+            "Application",
+            "Party",
+            "Instance",
+            "Payload",
+            "Prevalidation",
+            "Post",
+            "Data element",
+            "Pdf",
+            "Process"
+        ]);
     });
 
     it("points at the token on a cold start, and everything else waits on it", () => {
         const states = requestChain(nothing).map((each) => each.state);
-        assert.deepEqual(states, ["next", "waiting", "waiting", "waiting", "waiting", "waiting", "waiting", "waiting"]);
+        assert.deepEqual(states, ["next", ...Array<string>(9).fill("waiting")]);
     });
 
     /*
@@ -103,6 +116,39 @@ describe("requestChain", () => {
         assert.equal(step({ ...posting, post: { stored: 3 } }, "Post")?.state, "done");
     });
 
+    /*
+     * A render describes an instance, so it needs a real one, and a pdf that no longer describes it
+     * is back to something you can act on rather than something settled.
+     */
+    it("says whether there is a pdf and whether it is still the right one", () => {
+        const onInstance = { ...onApp, party: "510001", instance: "99d0632c" };
+        assert.equal(step(onApp, "Pdf")?.state, "waiting", "there is no instance to render");
+        assert.equal(step(onInstance, "Pdf")?.value, "not rendered");
+        assert.equal(step(onInstance, "Pdf")?.state, "next");
+
+        assert.equal(step({ ...onInstance, pdf: "current" }, "Pdf")?.value, "rendered");
+        assert.equal(step({ ...onInstance, pdf: "current" }, "Pdf")?.state, "done");
+        assert.equal(step({ ...onInstance, pdf: "stale" }, "Pdf")?.value, "out of date");
+        assert.equal(step({ ...onInstance, pdf: "stale" }, "Pdf")?.state, "next");
+    });
+
+    /*
+     * The end of the chain. Nothing follows a submission that has been signed and sent, which is the
+     * one step whose done is not the start of the next one.
+     */
+    it("ends on where the instance stands, once a read has said", () => {
+        const onInstance = { ...onApp, party: "510001", instance: "99d0632c" };
+        assert.equal(step(onInstance, "Process")?.value, null, "the instance has not been read yet");
+        assert.equal(step(onInstance, "Process")?.state, "next");
+
+        const inTask = { ...onInstance, process: { at: "Task_1", ended: false } };
+        assert.equal(step(inTask, "Process")?.value, "Task_1");
+        assert.equal(step(inTask, "Process")?.state, "next");
+
+        const done = { ...onInstance, process: { at: "ended", ended: true } };
+        assert.equal(step(done, "Process")?.state, "done");
+    });
+
     /* Three steps in a row that used to be one panel, so each has to lead somewhere of its own. */
     it("carries the panel each row scrolls to", () => {
         assert.deepEqual(
@@ -115,7 +161,9 @@ describe("requestChain", () => {
                 "panel-payload",
                 "panel-prevalidation",
                 "panel-post",
-                "panel-data-element"
+                "panel-data-element",
+                "panel-pdf",
+                "panel-process"
             ]
         );
     });

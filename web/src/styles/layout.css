@@ -190,7 +190,7 @@
 /*
  * Three columns: where you are, what you do, and what came back.
  *
- * The rail is a fixed slab because it holds seven labels and no more, and the other two share what
+ * The rail is a fixed slab because it holds ten labels and no more, and the other two share what
  * is left. The extra width on a large screen is worth more to the log, which holds xml and curl
  * commands, than to a column of fields that are full width whatever you give them, so --log is a
  * floor rather than a share.
