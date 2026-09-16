@@ -7,7 +7,8 @@
     "rules": {
         "react-hooks/exhaustive-deps": "error",
         "eslint/no-unused-vars": "error",
-        "react/set-state-in-effect": "off"
+        "react/set-state-in-effect": "off",
+        "react/preserve-manual-memoization": "off"
     },
     "ignorePatterns": ["**/dist/**", "**/node_modules/**", "temp/**", "examples/**"]
 }

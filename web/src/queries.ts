@@ -98,5 +98,28 @@ export const queryKeys = {
      * comes from here, so it is one key rather than one per panel: they describe the same moment and
      * would otherwise be able to disagree about which instance they are describing.
      */
-    instance: (tokenId: string, org: string, app: string, party: string, guid: string) => ["app", tokenId, org, app, "instance", party, guid] as const
+    instance: (tokenId: string, org: string, app: string, party: string, guid: string) =>
+        ["app", tokenId, org, app, "instance", party, guid] as const,
+
+    /**
+     * One data element, read back and validated.
+     *
+     * `changedAt` is in the key because a post rewrites an element in place: the guid stays where it
+     * was while what is stored under it does not, and without this the tool would go on showing what
+     * it read before the post.
+     */
+    dataElement: (tokenId: string, org: string, app: string, party: string, guid: string, dataGuid: string, changedAt: string | null) =>
+        ["app", tokenId, org, app, "instance", party, guid, "data", dataGuid, changedAt] as const,
+
+    /**
+     * The stored element against the xml as written, which is the payload text itself.
+     *
+     * The text is in the key because it is half of what is being compared, and a length or a
+     * timestamp would miss an edit that swapped one character for another. It is the text as typed,
+     * so the key moves with every keystroke and the entries behind it hold a copy of the document
+     * each: this is the one query with a finite `gcTime`, and the one that keeps its previous answer
+     * on screen while the next key loads.
+     */
+    compare: (tokenId: string, org: string, app: string, party: string, guid: string, dataGuid: string, changedAt: string | null, written: string) =>
+        ["app", tokenId, org, app, "instance", party, guid, "data", dataGuid, changedAt, "compare", written] as const
 };

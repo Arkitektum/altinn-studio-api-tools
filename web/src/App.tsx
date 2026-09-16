@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
 import { isExpired } from "./lib/format";
-import { downloadContent, suggestedFilename } from "./lib/download";
+import { downloadContent } from "./lib/download";
 import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
 import {
@@ -18,14 +18,13 @@ import {
     logFromValidation,
     logFromValidationReport
 } from "./lib/logResults";
-import { pendingAutoRuns } from "./lib/autoRuns";
 import { withIdentity } from "./lib/formIdentity";
+import { heldElement } from "./lib/heldElement";
 import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
-import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
 import { useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
@@ -47,12 +46,10 @@ import { TokenPanel } from "./components/TokenPanel";
 import type {
     AppParty,
     CatalogueApp,
-    CompareResult,
     DataElementInput,
     DataElementSummary,
     ExampleContent,
     ExampleGroup,
-    FetchedDataElement,
     InstanceSummary,
     ListInstancesResult,
     LogEntry,
@@ -87,6 +84,13 @@ const PROBE_DELAY_MS = 400;
 
 /** So is a party id, and so is a guid pasted into "Other instance". */
 const SELECTION_DELAY_MS = 500;
+
+/**
+ * The comparison waits longer, because what it depends on is a document being edited rather than a
+ * field being filled in, and a pause in typing is not the same as being finished. It is also what
+ * keeps the parse of the whole document to one per pause rather than one per key.
+ */
+const EDIT_DELAY_MS = 800;
 
 /**
  * Whether the payload is xml the server could compare, asked of the browser's own parser.
@@ -234,20 +238,9 @@ export function App() {
      */
     const [includeCompleted, setIncludeCompleted] = useState(false);
     /** And which instance has already been read, so it is read once per selection. */
-    /** Which data element has been read back, keyed by what was stored under it at the time. */
-    const [elementAttempted, setElementAttempted] = useState<string | null>(null);
-    /** And which element was compared against which payload text. */
-    const [compareAttempted, setCompareAttempted] = useState<string | null>(null);
 
     /** Which data element the operator picked. Empty means whichever the instance lists first. */
     const [preferredDataGuid, setPreferredDataGuid] = useState("");
-    /** The last comparison of the stored xml against the xml as written. */
-    const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
-    const [comparing, setComparing] = useState(false);
-    const [compareError, setCompareError] = useState<unknown>(null);
-
-    /** The data element last read back, so it can be downloaded or copied rather than reread. */
-    const [fetchedElement, setFetchedElement] = useState<FetchedDataElement | null>(null);
 
     /*
      * One flag per action rather than one for all of them. They run at different times and belong
@@ -256,8 +249,6 @@ export function App() {
      * with. The errors are split for the same reason. A read that failed without being asked for
      * has no business appearing under the buttons in Data element.
      */
-    const [fetchingElement, setFetchingElement] = useState(false);
-    const [fetchError, setFetchError] = useState<unknown>(null);
     const [rendering, setRendering] = useState(false);
     const [pdfError, setPdfError] = useState<unknown>(null);
     const [advancing, setAdvancing] = useState(false);
@@ -380,8 +371,6 @@ export function App() {
     const selectedElement = instanceDataElements.find((element) => element.id === preferredDataGuid) ?? instanceDataElements[0] ?? null;
     const dataGuid = selectedElement?.id ?? "";
 
-    const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
-
     const selectedDataType = selectedElement?.dataType ?? "";
 
     /** Why validating it would say nothing useful, or null when it would. */
@@ -405,8 +394,7 @@ export function App() {
     /**
      * And the text itself. Whether it parses is not asked here: that is a scan of the whole
      * document, this is recomputed on every keystroke, and the 838-neighbour Nabovarsel in
-     * `examples/forms/NV` is a megabyte. It is asked once, in `compareWithStored`, by which time
-     * the 800 ms in `lib/autoRuns.ts` has already waited for the typing to stop.
+     * `examples/forms/NV` is a megabyte. The comparison asks it once, behind the delay below.
      */
     const comparable = useMemo(() => {
         // Only while there is something to compare it against.
@@ -415,46 +403,90 @@ export function App() {
         return text.trim() ? text : null;
     }, [payloadForSelected, dataGuid]);
 
-    /**
-     * Whether it did parse, as of the last time the comparison looked. The panel says "waiting"
-     * from this, which settles with the typing rather than flickering through every half-written
-     * tag, and half way through an edit is exactly what it is reporting.
+    /*
+     * The selected data element, read back and validated.
+     *
+     * `lastChanged` is part of the key, so a post that rewrote the element under the same guid is a
+     * different thing to read rather than the same one read already. Validation is skipped where it
+     * would say nothing, which is what `validateBlockedBy` decides, and the two are one `queryFn`
+     * running in order so the timings in the log stay honest. They stay two log entries, as they
+     * have always been: they are two requests and answer two different questions.
      */
-    const [payloadParses, setPayloadParses] = useState(true);
+    const elementChangedAt = selectedElement?.lastChanged ?? null;
+    const elementParams = { ...instanceParams, dataGuid };
+    const elementKey = queryKeys.dataElement(listParams.tokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid, elementChangedAt);
 
-    /**
-     * What every request is aimed at, one key per scope. Nothing here cancels a request, so a call
-     * can answer after the selection it described has moved. Tagging the request with the key it
-     * was aimed at is what lets a late answer be dropped rather than written over the newer one.
-     */
-    // The fields rather than `selection`, which is built fresh on every render and would make this
-    // memo hold nothing. The six are exactly what `selectionKeys` reads.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-    const keys = useMemo(() => selectionKeys(selection), [activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid]);
-
-    /**
-     * The same selection through a ref, because a callback closes over the render that started it,
-     * and that is the value being tested. Kept in step on every render, and by hand where a flow
-     * moves the selection and reads it back without a render in between.
-     */
-    const aim = useRef(selection);
-    useEffect(() => {
-        aim.current = selection;
+    const elementQuery = useQuery({
+        queryKey: elementKey,
+        queryFn: async () => {
+            const read = await api.getDataElement(elementParams);
+            appendLog(logFromDataElement(read));
+            if (!validateBlockedBy) {
+                try {
+                    const validated = await api.validateDataElement(elementParams);
+                    // The instance read is what lets an issue name its data type instead of a guid.
+                    appendLog(logFromValidation(validated, instanceDataElements));
+                } catch {
+                    /* the read still stands, and its own step is in the log */
+                }
+            }
+            return read;
+        },
+        enabled: probeAimed && targetSettled && partySettled && instanceSettled && Boolean(instanceOwnerPartyId && instanceGuid && dataGuid)
     });
 
-    /** Whether the selection has moved on from what a request was aimed at. */
-    const movedOn = useCallback((requested: string, scope: keyof SelectionKeys) => hasMovedOn(requested, aim.current, scope), []);
+    /** Held so it can be saved as a file rather than read again. */
+    const fetchedElement = useMemo(
+        () => (elementQuery.data ? heldElement(dataGuid, elementQuery.data, selectedElement) : null),
+        [elementQuery.data, dataGuid, selectedElement]
+    );
 
-    /** Picking another data element drops the held one, which is no longer what is selected. */
-    const changeDataGuid = useCallback((next: string) => {
-        setPreferredDataGuid(next);
-        setFetchedElement((current) => (current?.dataGuid === next ? current : null));
-        // A comparison describes one data element, so it is stale the moment another is picked.
-        setCompareResult((current) => (current?.dataGuid === next ? current : null));
-        setCompareError(null);
-        // Said of the payload element of the previous data type, which is not the one now on screen.
-        setPayloadParses(true);
-    }, []);
+    /*
+     * The stored xml against the xml as written.
+     *
+     * Keyed on the settled payload text, so the cache holds one entry per pause in the typing and
+     * not one per keystroke, and `gcTime` is finite here alone: superseded entries hold a copy of
+     * the document, and a long editing session would otherwise keep every version of it.
+     *
+     * Whether the text parses is part of the answer rather than state beside it. The comparison is
+     * the only thing that asks, it asks once per settled document, and the panel's "not well formed
+     * yet" reads what it found.
+     */
+    const comparableSettled = useSettled(comparable, EDIT_DELAY_MS);
+    const compareQuery = useQuery({
+        queryKey: queryKeys.compare(listParams.tokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid, elementChangedAt, comparable ?? ""),
+        queryFn: async () => {
+            const written = comparable ?? "";
+            // Half-typed xml is not a comparison waiting to happen, and asking anyway would put a
+            // "could not compare" entry in the log for every pause in typing.
+            if (!isWellFormedXml(written)) return { wellFormed: false, result: null };
+            const result = await api.compareStored({ ...elementParams, dataType: selectedDataType, left: written });
+            appendLog(logFromCompare(result));
+            return { wellFormed: true, result };
+        },
+        enabled:
+            probeAimed &&
+            targetSettled &&
+            partySettled &&
+            instanceSettled &&
+            comparableSettled &&
+            Boolean(instanceOwnerPartyId && instanceGuid && dataGuid && comparable),
+        /*
+         * The one query that keeps its last answer while the next key loads. Everywhere else an
+         * empty panel is the honest thing while the tool is between answers, but this panel is
+         * watched while the document under it is being typed: the key moves on every keystroke, and
+         * clearing the diff on each one would leave it flickering rather than settling.
+         */
+        placeholderData: (previous) => previous,
+        gcTime: 60_000
+    });
+
+    const compareResult = compareQuery.data?.result ?? null;
+    /** Whether the payload parsed, as of the last time the comparison looked. */
+    const payloadParses = compareQuery.data?.wellFormed ?? true;
+
+    /** Picking another data element is a different key, so nothing here has to be dropped by hand. */
+    const changeDataGuid = useCallback((next: string) => setPreferredDataGuid(next), []);
 
     /** Replaces the held preview, revoking the previous blob url so it is not leaked. */
     const showPdf = useCallback((next: PdfPreview | null) => {
@@ -479,7 +511,6 @@ export function App() {
             const guid = instance?.instanceGuid ?? "";
             if (guid !== instanceGuid) {
                 clearValidations();
-                setFetchedElement(null);
                 clearPdf();
             }
             setInstanceGuid(guid);
@@ -603,51 +634,6 @@ export function App() {
     }, [dataTypes, setDataElements]);
 
     /**
-     * The reads the tool makes without being asked. Which of them are outstanding, and how long
-     * each waits for its field to settle, is decided in `lib/autoRuns.ts` and tested there. What
-     * is left here is the plumbing: a timer per scope, the marker that keeps it to once per
-     * selection, and the call.
-     *
-     * The calls are deliberately out of the dependency lists. They are rebuilt on every render,
-     * and listing one would make its effect fire in a loop. So is everything but the key: the key
-     * is the whole of what a scheduled run is about, and a run pending for the same key after some
-     * other field moved is the same run, not another one. That is what the five disables below are
-     * for, and there is nothing to add to them that `lib/autoRuns.ts` does not already decide.
-     */
-    const { element: nextElement, compare: nextCompare } = pendingAutoRuns({
-        hasToken: tokenUsable,
-        selection,
-        elementChangedAt: selectedElement?.lastChanged ?? null,
-        comparable,
-        attempted: {
-            element: elementAttempted,
-            compare: compareAttempted
-        }
-    });
-
-    /* oxlint-disable react-hooks/exhaustive-deps -- the key is the whole of it, see above */
-
-    useEffect(() => {
-        if (!nextElement) return;
-        const timer = window.setTimeout(() => {
-            setElementAttempted(nextElement.key);
-            void readSelectedElement();
-        }, nextElement.delayMs);
-        return () => window.clearTimeout(timer);
-    }, [nextElement?.key]);
-
-    useEffect(() => {
-        if (!nextCompare) return;
-        const timer = window.setTimeout(() => {
-            setCompareAttempted(nextCompare.key);
-            void compareWithStored();
-        }, nextCompare.delayMs);
-        return () => window.clearTimeout(timer);
-    }, [nextCompare?.key]);
-
-    /* oxlint-enable react-hooks/exhaustive-deps */
-
-    /**
      * Reads the instance back and validates it straight after a post, so the log shows what Altinn
      * actually stored without anyone pressing another button. Sequential rather than parallel so
      * the step timings in the log stay honest.
@@ -721,16 +707,13 @@ export function App() {
                 validate: false,
                 advanceProcess
             });
-            // Chain naturally into "now post more data to that instance". The follow-up below
-            // reads and validates it, so mark it read: the effect would otherwise do it twice.
+            // Chain naturally into "now post more data to that instance".
             if (payload.instanceGuid) {
-                const party = payload.instanceOwnerPartyId ?? instanceOwnerPartyId;
                 setInstanceGuid(payload.instanceGuid);
                 // By hand as well as through the render, because the follow-up reads and validates
                 // the new instance before React has re-rendered, and its validation would otherwise
                 // be checked against the instance this post replaced and thrown away.
                 selectedInstance.current = payload.instanceGuid;
-                aim.current = { ...aim.current, party, instanceGuid: payload.instanceGuid };
             }
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
@@ -754,119 +737,15 @@ export function App() {
     }
 
     /**
-     * Reads the selected data element and validates it, the way selecting an instance reads and
-     * validates that. Both are reads of the thing the panel is already about, so neither is worth
-     * a button, and they run in order rather than together so the timings in the log stay honest.
-     */
-    async function readSelectedElement() {
-        await getDataElement();
-        // Only where it would say something: an ended process has no task to validate against.
-        if (!validateBlockedBy) await validateDataElement();
-    }
-
-    async function getDataElement() {
-        if (!activeTokenId || !dataGuid) return;
-        const requested = keys.dataElement;
-        setFetchingElement(true);
-        setFetchError(null);
-        try {
-            const read = await api.getDataElement({
-                tokenId: activeTokenId,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                dataGuid
-            });
-            appendLog(logFromDataElement(read));
-            // What is held is what is selected, so an answer about another element is not it.
-            if (movedOn(requested, "dataElement")) return;
-
-            // Held so it can be saved as a file. A failed read clears it rather than leaving the
-            // previous element looking like the one you just asked for.
-            const summary = instanceDataElements.find((element) => element.id === dataGuid);
-            setFetchedElement(
-                read.ok && read.content !== null
-                    ? {
-                          dataGuid,
-                          dataType: summary?.dataType ?? "data",
-                          filename: suggestedFilename({
-                              dataType: summary?.dataType ?? "data",
-                              filename: summary?.filename ?? null,
-                              contentType: read.contentType
-                          }),
-                          contentType: read.contentType,
-                          encoding: read.encoding,
-                          content: read.content,
-                          size: read.encoding === "base64" ? Math.ceil((read.content.length * 3) / 4) : new Blob([read.content]).size
-                      }
-                    : null
-            );
-        } catch (error) {
-            if (movedOn(requested, "dataElement")) return;
-            setFetchError(error);
-        } finally {
-            setFetchingElement(false);
-        }
-    }
-
-    /**
-     * Compares the stored xml against what the payload holds for that data type. The payload is
-     * the only source: it is where the file you are working on already is, and a picker offering
-     * the example files as well was never used for anything else.
-     */
-    async function compareWithStored() {
-        if (!activeTokenId || !dataGuid) return;
-        // Nothing to compare is not an error.
-        const left = comparable;
-        if (!left) return;
-
-        /*
-         * Parsed here, once, rather than as the payload is typed. What the server can diff is what
-         * parses, and half-typed xml is not a comparison waiting to happen: asking anyway would put
-         * a "could not compare" entry in the run log for every pause in typing. The debounce this
-         * call already waited out is what makes one parse do.
-         */
-        const wellFormed = isWellFormedXml(left);
-        setPayloadParses(wellFormed);
-        if (!wellFormed) return;
-
-        const requested = keys.dataElement;
-        setComparing(true);
-        setCompareError(null);
-        try {
-            const result = await api.compareStored({
-                tokenId: activeTokenId,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                dataGuid,
-                dataType: selectedDataType,
-                left
-            });
-            appendLog(logFromCompare(result));
-            // A comparison is about one data element, and the panel names the selected one.
-            if (movedOn(requested, "dataElement")) return;
-            setCompareResult(result);
-        } catch (error) {
-            if (movedOn(requested, "dataElement")) return;
-            setCompareError(error);
-        } finally {
-            setComparing(false);
-        }
-    }
-
-    /**
      * Asks for the selected element again, for the Refresh button.
      *
-     * The markers are left where they are: nothing about the selection has changed, so they
-     * already hold the keys for it, and clearing them would only schedule the same two calls
-     * behind their debounce instead of making them now.
+     * A refetch of both rather than an invalidation: nothing about the selection has changed, so
+     * the keys are already the right ones, and the question is not whether the answers have gone
+     * stale but that they are being asked for again.
      */
     function refreshElement() {
-        void readSelectedElement();
-        if (comparable) void compareWithStored();
+        void elementQuery.refetch();
+        if (comparable) void compareQuery.refetch();
     }
 
     /**
@@ -958,14 +837,16 @@ export function App() {
 
     async function renderPdf() {
         if (!activeTokenId) return;
-        const requested = keys.instance;
+        // The instance this was asked for. A render answering after the selection moved must not
+        // open as though it were the instance now on screen.
+        const requested = instanceGuid;
         setRendering(true);
         setPdfError(null);
         try {
             const result = await api.previewPdf({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
             appendLog(logFromPdf(result, result.size));
             // A pdf of the instance you have left must not open as though it were this one.
-            if (movedOn(requested, "instance")) return;
+            if (selectedInstance.current !== requested) return;
             if (!result.ok || !result.content) {
                 // A failed render must not leave the previous pdf on screen looking current.
                 clearPdf();
@@ -978,7 +859,7 @@ export function App() {
                 at: new Date().toLocaleTimeString("nb")
             });
         } catch (error) {
-            if (movedOn(requested, "instance")) return;
+            if (selectedInstance.current !== requested) return;
             setPdfError(error);
         } finally {
             setRendering(false);
@@ -1074,22 +955,6 @@ export function App() {
         }
     }
 
-    /** Validates one data element. The instance's own validation runs with the read. */
-    async function validateDataElement() {
-        if (!activeTokenId || !dataGuid) return;
-        setFetchingElement(true);
-        setFetchError(null);
-        try {
-            const result = await api.validateDataElement({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid });
-            // The instance read is what lets an issue name its data type instead of a guid.
-            appendLog(logFromValidation(result, instanceDataElements));
-        } catch (error) {
-            setFetchError(error);
-        } finally {
-            setFetchingElement(false);
-        }
-    }
-
     const blockers: string[] = [];
     if (!tokenUsable) blockers.push("a valid token");
     if (!org || !app) blockers.push("an application");
@@ -1147,7 +1012,7 @@ export function App() {
     const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
     /** Anything at all in flight, which is what the log reports rather than any one action. */
-    const inFlight = running || instanceQuery.isFetching || fetchingElement || rendering || advancing;
+    const inFlight = running || instanceQuery.isFetching || elementQuery.isFetching || compareQuery.isFetching || rendering || advancing;
 
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
@@ -1361,9 +1226,9 @@ export function App() {
                                 validateBlockedBy={validateBlockedBy}
                                 // Also while the instance is being read, since that read is what
                                 // replaces the list this panel is choosing from.
-                                busy={fetchingElement || instanceQuery.isFetching}
+                                busy={elementQuery.isFetching || instanceQuery.isFetching}
                                 hasToken={tokenUsable}
-                                error={fetchError}
+                                error={elementQuery.error}
                             >
                                 {/* Inside the panel, because it compares what the select above it
                                     is pointing at. Beside it as its own card, that was left to be
@@ -1378,8 +1243,8 @@ export function App() {
                                         }
                                         parses={payloadParses}
                                         result={compareResult}
-                                        busy={comparing}
-                                        error={compareError}
+                                        busy={compareQuery.isFetching}
+                                        error={compareQuery.error}
                                     />
                                 )}
                             </FetchPanel>
