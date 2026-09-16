@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { queryKeys } from "../queries";
@@ -38,10 +38,20 @@ interface TokenPanelProps {
     tokens: PublicToken[];
     activeToken: PublicToken | null;
     onActivate: (id: string) => void;
-    now: number;
 }
 
-export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate, now }: TokenPanelProps) {
+export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate }: TokenPanelProps) {
+    /*
+     * The expiry counts down here, on a tick of its own. It used to tick in App, where every second
+     * re-rendered the whole tool to move one line of text; the question everything else asks, whether
+     * the token is still usable, is answered in session.tsx by a timer that fires when it expires.
+     */
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, []);
+
     const client = useQueryClient();
     const [pickedRaw, setPicked] = useState("");
     /** A user id typed by hand, for a user LocalTest did not offer. */

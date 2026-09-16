@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRunLog } from "../runLog";
-import { useTarget } from "../target";
+import { useTarget } from "../session";
 import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
 import { CopyButton } from "./CopyButton";

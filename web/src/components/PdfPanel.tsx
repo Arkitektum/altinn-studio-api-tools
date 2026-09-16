@@ -1,4 +1,4 @@
-import { useTarget } from "../target";
+import { useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 

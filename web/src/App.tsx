@@ -2,22 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
-import { RunLogContext, useRunLogState } from "./runLog";
-import { TargetProvider } from "./target";
-import { isExpired } from "./lib/format";
+import { useAppRead, useDataElementRead, useInstanceRead } from "./reads";
+import { useRunLog } from "./runLog";
+import { useSession } from "./session";
 import { downloadContent } from "./lib/download";
 import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
-import {
-    logFromAdvance,
-    logFromCompare,
-    logFromDataElement,
-    logFromRead,
-    logFromPdf,
-    logFromRun,
-    logFromValidation,
-    logFromValidationReport
-} from "./lib/logResults";
+import { logFromAdvance, logFromCompare, logFromPdf, logFromRun, logFromValidationReport } from "./lib/logResults";
 import { withIdentity } from "./lib/formIdentity";
 import { heldElement } from "./lib/heldElement";
 import { withAppDefaults } from "./lib/payloadDefaults";
@@ -25,7 +16,7 @@ import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
-import { EDIT_DELAY_MS, PROBE_DELAY_MS, SELECTION_DELAY_MS, useSettled } from "./lib/useDebounced";
+import { EDIT_DELAY_MS, useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
@@ -43,14 +34,9 @@ import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
 import type {
-    AppParty,
-    CatalogueApp,
     DataElementInput,
-    DataElementSummary,
     ExampleContent,
-    ExampleGroup,
     InstanceSummary,
-    PublicToken,
     ReadInstanceResult,
     RunMode,
     RunResult,
@@ -60,13 +46,6 @@ import type {
 } from "./types";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
-
-/** Stood in for a query that has not answered yet, and the same array every time it is. */
-const NO_APPS: CatalogueApp[] = [];
-const NO_GROUPS: ExampleGroup[] = [];
-const NO_TOKENS: PublicToken[] = [];
-const NO_PARTIES: AppParty[] = [];
-const NO_ELEMENTS: DataElementSummary[] = [];
 
 /** What the instance query answers with: the read and the validation that went with it. */
 interface InstanceAnswer {
@@ -89,62 +68,35 @@ export function App() {
     const queryClient = useQueryClient();
 
     /*
-     * What the server has to say for itself, asked once. None of these are keyed on anything the
-     * operator can move, so they are read at startup and not again: the settings come from the
-     * server's environment, and the catalogue and the example files are fixtures on disk.
+     * Who the tool is, where it is pointed, and what the server says. Read rather than held: the
+     * session provider above owns it, so the panels below read the same thing this does instead of
+     * being handed pieces of it. See session.tsx.
      */
-    const configQuery = useQuery({ queryKey: queryKeys.config(), queryFn: api.getConfig });
-    const catalogueQuery = useQuery({ queryKey: queryKeys.catalogue(), queryFn: api.getCatalogue });
-    const examplesQuery = useQuery({ queryKey: queryKeys.examples(), queryFn: api.getExamples });
-    /* Its own, because it is allowed to fail. The status dot stays grey and nothing else cares. */
-    const localtestQuery = useQuery({ queryKey: queryKeys.localtestStatus(), queryFn: api.getLocaltestStatus });
+    const {
+        activeToken,
+        tokenId: activeTokenId,
+        tokenUsable,
+        tokens,
+        setPreferredTokenId,
+        org,
+        app,
+        partyId: instanceOwnerPartyId,
+        instanceGuid,
+        setOrg,
+        setApp,
+        setPartyId: setInstanceOwnerPartyId,
+        setInstanceGuid,
+        appHost,
+        serverConfig,
+        localtest,
+        catalogue,
+        exampleGroups,
+        bootError
+    } = useSession();
 
-    const serverConfig = configQuery.data ?? null;
-    const localtest = localtestQuery.data ?? null;
-    // Through the constants rather than a literal, so a pending query hands the same empty array
-    // every render. A fresh one would make every memo listing it hold nothing, which is a mistake
-    // this file has made before.
-    const catalogue = catalogueQuery.data ?? NO_APPS;
-    const exampleGroups = examplesQuery.data?.groups ?? NO_GROUPS;
-    /* The three that have to answer. LocalTest being down is a state, not a failure to boot. */
-    const bootError = configQuery.error ?? catalogueQuery.error ?? examplesQuery.error ?? null;
+    const runLog = useRunLog();
+    const appendLog = runLog.append;
 
-    /*
-     * The tokens the server is holding. Minting, renewing and deleting one all invalidate this,
-     * from the panel that does them, so the list is never something a caller has to remember to
-     * refresh. A failed listing leaves no tokens, which is what the panel would say anyway.
-     */
-    const tokensQuery = useQuery({ queryKey: queryKeys.tokens(), queryFn: api.listTokens });
-    const tokens = tokensQuery.data ?? NO_TOKENS;
-
-    /** Which token the operator picked. Null means whichever the server lists first. */
-    const [preferredTokenId, setPreferredTokenId] = useState<string | null>(null);
-
-    /**
-     * The token in use: the one picked, or the first the server has.
-     *
-     * Derived rather than stored, which is what lets a preference for a token that has gone fall
-     * back on its own. The server prunes expired tokens and a restart loses all of them, so the
-     * list moving under the selection is the normal case rather than the odd one. This used to be a
-     * repair run after every listing, and a repair only runs where someone remembered to put it.
-     */
-    const activeToken = useMemo(() => tokens.find((token) => token.id === preferredTokenId) ?? tokens[0] ?? null, [tokens, preferredTokenId]);
-    const activeTokenId = activeToken?.id ?? null;
-
-    // Ticks once a second so token expiry counts down live.
-    const [now, setNow] = useState(() => Date.now());
-    useEffect(() => {
-        const timer = window.setInterval(() => setNow(Date.now()), 1000);
-        return () => window.clearInterval(timer);
-    }, []);
-
-    /** Whether there is a token worth aiming anything with. Everything below reads this. */
-    const tokenUsable = Boolean(activeToken) && !isExpired(activeToken?.expiresAt ?? null, now);
-
-    const [org, setOrg] = useLocalStorage("org", "");
-    const [app, setApp] = useLocalStorage("app", "");
-    const [instanceOwnerPartyId, setInstanceOwnerPartyId] = useLocalStorage("partyId", "");
-    const [instanceGuid, setInstanceGuid] = useLocalStorage("instanceGuid", "");
     // The party value this session last filled in from a token claim. See the effect below.
     const [autoFilledParty, setAutoFilledParty] = useLocalStorage<string | null>("partyAutoFilledFrom", null);
     const [dataElements, setDataElements] = useLocalStorage<DataElementInput[]>("dataElements", [EMPTY_ELEMENT]);
@@ -154,45 +106,9 @@ export function App() {
     const [payloadLoadNotice, setPayloadLoadNotice] = useState<string | null>(null);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
 
-    /*
-     * What the app says about itself, and which parties this token may act for.
-     *
-     * Keyed on the token and the target, so pointing somewhere else is not something anyone has to
-     * remember to clear: the key moves, and a key with nothing cached reads as nothing known. It is
-     * also why an answer for the app you have left cannot land under the app you are on, which used
-     * to be a guard at each of three points inside the probe.
-     *
-     * The key takes the target as typed, so it moves with the field and the panel never shows one
-     * app's answer under another's name. What waits for the typing to stop is the request, which is
-     * what `useSettled` gates: "et-v4" is one read and not five. See `lib/useDebounced.ts`.
-     */
-    const targetSettled = useSettled(`${org}/${app}`, PROBE_DELAY_MS);
-    const probeAimed = tokenUsable && Boolean(activeTokenId && org && app);
-    const probeParams = { tokenId: activeTokenId ?? "", org, app };
-
-    const metadataQuery = useQuery({
-        queryKey: queryKeys.appMetadata(probeParams.tokenId, org, app),
-        queryFn: () => api.getAppMetadata(probeParams),
-        enabled: probeAimed && targetSettled
-    });
-
-    /* A bonus: not every token may list them, and a refusal costs the picker its options and nothing else. */
-    const partiesQuery = useQuery<AppParty[]>({
-        queryKey: queryKeys.appParties(probeParams.tokenId, org, app),
-        queryFn: async () => {
-            try {
-                return await api.getAppParties(probeParams);
-            } catch {
-                return NO_PARTIES;
-            }
-        },
-        enabled: probeAimed && targetSettled
-    });
-
-    const metadata = metadataQuery.data ?? null;
-    const parties = partiesQuery.data ?? NO_PARTIES;
-    const probing = metadataQuery.isFetching || partiesQuery.isFetching;
-    const probeError = metadataQuery.error;
+    const appRead = useAppRead();
+    const metadata = appRead.metadata;
+    const parties = appRead.parties;
 
     /**
      * Every run that has happened this session, newest first. Posting used to wipe whatever a
@@ -229,14 +145,6 @@ export function App() {
      */
     const [validationAnswer, setValidationAnswer] = useState<{ report: unknown; request: ValidationReportRequest } | null>(null);
 
-    /*
-     * The record of what has been asked for. Built here and provided to the panels below, rather
-     * than by a provider wrapping this component: the queries declared here record themselves too,
-     * and a component cannot read a context it is the one rendering.
-     */
-    const runLog = useRunLogState(instanceGuid);
-    const appendLog = runLog.append;
-
     /**
      * The instance on screen, for the pdf render to compare against. A callback closes over the
      * render that started it, and what a late answer has to be checked against is the selection
@@ -248,52 +156,10 @@ export function App() {
         shownInstance.current = instanceGuid;
     });
 
-    /*
-     * What the reads below are aimed at. The listing has moved into the panel that shows it, since
-     * nothing outside that panel read it; this is what the instance read and everything under it
-     * still share.
-     */
-    const partySettled = useSettled(instanceOwnerPartyId, SELECTION_DELAY_MS);
-    const listParams = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId };
-
-    /*
-     * The selected instance, read back and validated as one thing.
-     *
-     * Two requests and one answer, which is why the `queryFn` makes both: the log has always shown
-     * them as one entry, and the panels below describe one moment rather than two. Validating an
-     * instance that could not be read would fail the same way, so it is only asked for after a read
-     * that worked, and a validation that fails leaves the read standing with its own step in the log.
-     *
-     * Everything those panels show hangs off this key. An answer for the instance you have left
-     * cannot appear under the one you are on, and selecting another instance does not have to
-     * remember to clear the data elements, the process or the issues: they are this, and this is
-     * keyed on the instance.
-     */
-    const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
-    const instanceParams = { ...listParams, instanceGuid };
-    const instanceKey = queryKeys.instance(listParams.tokenId, org, app, instanceOwnerPartyId, instanceGuid);
-
-    const instanceQuery = useQuery({
-        queryKey: instanceKey,
-        queryFn: async () => {
-            const read = await api.getInstance(instanceParams);
-            let validated: ValidateResult | null = null;
-            if (read.ok) {
-                try {
-                    validated = await api.validateInstance(instanceParams);
-                } catch {
-                    /* the read still stands, and its own step is in the log */
-                }
-            }
-            appendLog(logFromRead(read, validated));
-            return { read, validated };
-        },
-        enabled: probeAimed && targetSettled && partySettled && instanceSettled && Boolean(instanceOwnerPartyId && instanceGuid)
-    });
-
-    const instanceDataElements = instanceQuery.data?.read.dataElements ?? NO_ELEMENTS;
+    const instanceRead = useInstanceRead();
+    const instanceDataElements = instanceRead.dataElements;
     /** Where the instance stands, from the last read or process move. */
-    const instanceProcess = instanceQuery.data?.read.process ?? null;
+    const instanceProcess = instanceRead.process;
 
     /**
      * The data element the Inspect column is about: the one picked, or the first the instance has.
@@ -347,32 +213,12 @@ export function App() {
      * have always been: they are two requests and answer two different questions.
      */
     const elementChangedAt = selectedElement?.lastChanged ?? null;
-    const elementParams = { ...instanceParams, dataGuid };
-    const elementKey = queryKeys.dataElement(listParams.tokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid, elementChangedAt);
-
-    const elementQuery = useQuery({
-        queryKey: elementKey,
-        queryFn: async () => {
-            const read = await api.getDataElement(elementParams);
-            appendLog(logFromDataElement(read));
-            if (!validateBlockedBy) {
-                try {
-                    const validated = await api.validateDataElement(elementParams);
-                    // The instance read is what lets an issue name its data type instead of a guid.
-                    appendLog(logFromValidation(validated, instanceDataElements));
-                } catch {
-                    /* the read still stands, and its own step is in the log */
-                }
-            }
-            return read;
-        },
-        enabled: probeAimed && targetSettled && partySettled && instanceSettled && Boolean(instanceOwnerPartyId && instanceGuid && dataGuid)
-    });
+    const elementQuery = useDataElementRead(dataGuid, elementChangedAt, validateBlockedBy);
 
     /** Held so it can be saved as a file rather than read again. */
     const fetchedElement = useMemo(
-        () => (elementQuery.data ? heldElement(dataGuid, elementQuery.data, selectedElement) : null),
-        [elementQuery.data, dataGuid, selectedElement]
+        () => (elementQuery.read ? heldElement(dataGuid, elementQuery.read, selectedElement) : null),
+        [elementQuery.read, dataGuid, selectedElement]
     );
 
     /*
@@ -388,23 +234,26 @@ export function App() {
      */
     const comparableSettled = useSettled(comparable, EDIT_DELAY_MS);
     const compareQuery = useQuery({
-        queryKey: queryKeys.compare(listParams.tokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid, elementChangedAt, comparable ?? ""),
+        queryKey: queryKeys.compare(activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid, dataGuid, elementChangedAt, comparable ?? ""),
         queryFn: async () => {
             const written = comparable ?? "";
             // Half-typed xml is not a comparison waiting to happen, and asking anyway would put a
             // "could not compare" entry in the log for every pause in typing.
             if (!isWellFormedXml(written)) return { wellFormed: false, result: null };
-            const result = await api.compareStored({ ...elementParams, dataType: selectedDataType, left: written });
+            const result = await api.compareStored({
+                tokenId: activeTokenId ?? "",
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                dataGuid,
+                dataType: selectedDataType,
+                left: written
+            });
             appendLog(logFromCompare(result));
             return { wellFormed: true, result };
         },
-        enabled:
-            probeAimed &&
-            targetSettled &&
-            partySettled &&
-            instanceSettled &&
-            comparableSettled &&
-            Boolean(instanceOwnerPartyId && instanceGuid && dataGuid && comparable),
+        enabled: instanceRead.aimed && comparableSettled && Boolean(instanceGuid && dataGuid && comparable),
         /*
          * The one query that keeps its last answer while the next key loads. Everywhere else an
          * empty panel is the honest thing while the tool is between answers, but this panel is
@@ -670,7 +519,7 @@ export function App() {
      * stale but that they are being asked for again.
      */
     function refreshElement() {
-        void elementQuery.refetch();
+        elementQuery.refetch();
         if (comparable) void compareQuery.refetch();
     }
 
@@ -883,10 +732,6 @@ export function App() {
         };
     }, [validationAnswer, dataTypes, dataElements, instanceDataElements, validationRequest.request]);
 
-    const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
-    /** Where LocalTest answers: what it says of itself, else what the server was configured with. */
-    const localtestUrl = localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101";
-
     /**
      * Where a post goes, which is not a setting: an instance selected in Instances means the data
      * is added to it, and the new instance row means the post creates one. Two controls could
@@ -896,7 +741,7 @@ export function App() {
 
     /** Anything at all in flight, which is what the log reports rather than any one action. */
     const inFlight =
-        run.isPending || instanceQuery.isFetching || elementQuery.isFetching || compareQuery.isFetching || renderPdf.isPending || advance.isPending;
+        run.isPending || instanceRead.fetching || elementQuery.fetching || compareQuery.isFetching || renderPdf.isPending || advance.isPending;
 
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
@@ -917,251 +762,234 @@ export function App() {
          * about. The panels that act on the target take what they act on as props; the ones that
          * only print the url they would call read it from here.
          */
-        <TargetProvider
-            tokenId={activeTokenId}
-            tokenUsable={tokenUsable}
-            appHost={appHost}
-            org={org}
-            app={app}
-            partyId={instanceOwnerPartyId}
-            instanceGuid={instanceGuid}
-            localtestUrl={localtestUrl}
-        >
-            <RunLogContext.Provider value={runLog}>
-                <div className="shell">
-                    <header className="masthead">
-                        <span className="masthead__mark">Altinn API tools</span>
-                        {/*
-                         * Three states, each of them a coloured dot. The dot is the whole message, so each
-                         * one carries the same message in words for anyone the colour does not reach. The
-                         * region is polite: these change on their own, and they are worth hearing about.
-                         */}
-                        <div className="masthead__meta" role="status">
-                            <span className="gauge" title={appHost}>
-                                <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                                {appHost.replace(/^https?:\/\//, "")}
-                                <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
-                            </span>
-                            <span className="gauge" title={localtest?.error ?? localtest?.url}>
-                                <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                                LocalTest
-                                <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
-                            </span>
-                            <span className="gauge">
-                                <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                                {activeToken ? activeToken.label : "No token"}
-                                <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
-                            </span>
-                        </div>
-                    </header>
+        <div className="shell">
+            <header className="masthead">
+                <span className="masthead__mark">Altinn API tools</span>
+                {/*
+                 * Three states, each of them a coloured dot. The dot is the whole message, so each
+                 * one carries the same message in words for anyone the colour does not reach. The
+                 * region is polite: these change on their own, and they are worth hearing about.
+                 */}
+                <div className="masthead__meta" role="status">
+                    <span className="gauge" title={appHost}>
+                        <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                        {appHost.replace(/^https?:\/\//, "")}
+                        <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
+                    </span>
+                    <span className="gauge" title={localtest?.error ?? localtest?.url}>
+                        <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                        LocalTest
+                        <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
+                    </span>
+                    <span className="gauge">
+                        <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                        {activeToken ? activeToken.label : "No token"}
+                        <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
+                    </span>
+                </div>
+            </header>
 
-                    {/* What the tool is working on, and what the next thing to fill in is. */}
-                    <Chain
-                        user={activeToken && tokenUsable ? activeToken.label : null}
-                        application={org && app ? `${org}/${app}` : null}
-                        party={instanceOwnerPartyId || null}
-                        instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
-                        dataElement={selectedDataType || null}
+            {/* What the tool is working on, and what the next thing to fill in is. */}
+            <Chain
+                user={activeToken && tokenUsable ? activeToken.label : null}
+                application={org && app ? `${org}/${app}` : null}
+                party={instanceOwnerPartyId || null}
+                instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
+                dataElement={selectedDataType || null}
+            />
+
+            <div className="deck">
+                <div className="column">
+                    {bootError ? <ErrorNotice error={bootError} /> : null}
+
+                    {/* First, because everything below it needs a token and the chain says so. */}
+                    <TokenPanel
+                        id="panel-test-user"
+                        serverConfig={serverConfig}
+                        localtest={localtest}
+                        tokens={tokens}
+                        activeToken={activeToken}
+                        onActivate={setPreferredTokenId}
                     />
 
-                    <div className="deck">
-                        <div className="column">
-                            {bootError ? <ErrorNotice error={bootError} /> : null}
+                    {/* Nothing here can be read without a token, so the panel waits for one. */}
+                    {sections.target && (
+                        <TargetPanel
+                            id="panel-target"
+                            org={org}
+                            app={app}
+                            onOrgChange={setOrg}
+                            onAppChange={setApp}
+                            instanceOwnerPartyId={instanceOwnerPartyId}
+                            onPartyChange={changeParty}
+                            catalogue={catalogue}
+                            onPickCatalogueApp={(entry) => {
+                                setOrg(entry.org);
+                                setApp(entry.app);
+                                // Point the first element at this app's form data type unless the operator
+                                // has already put something there.
+                                if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
+                                    setDataElements([{ dataType: entry.dataType, content: "" }]);
+                                }
+                            }}
+                            metadata={metadata}
+                            parties={parties}
+                            onProbe={appRead.refetch}
+                            probing={appRead.probing}
+                            probeError={appRead.error}
+                        />
+                    )}
 
-                            {/* First, because everything below it needs a token and the chain says so. */}
-                            <TokenPanel
-                                id="panel-test-user"
-                                serverConfig={serverConfig}
-                                localtest={localtest}
-                                tokens={tokens}
-                                activeToken={activeToken}
-                                onActivate={setPreferredTokenId}
-                                now={now}
-                            />
+                    {/* Right under the destination, since choosing one is how you aim at it. */}
+                    {sections.instances && (
+                        <InstancesPanel
+                            id="panel-instances"
+                            elementCount={dataElements.length}
+                            onSelect={selectInstance}
+                            onSelectTyped={selectTypedInstance}
+                        />
+                    )}
 
-                            {/* Nothing here can be read without a token, so the panel waits for one. */}
-                            {sections.target && (
-                                <TargetPanel
-                                    id="panel-target"
-                                    org={org}
-                                    app={app}
-                                    onOrgChange={setOrg}
-                                    onAppChange={setApp}
-                                    instanceOwnerPartyId={instanceOwnerPartyId}
-                                    onPartyChange={changeParty}
-                                    catalogue={catalogue}
-                                    onPickCatalogueApp={(entry) => {
-                                        setOrg(entry.org);
-                                        setApp(entry.app);
-                                        // Point the first element at this app's form data type unless the operator
-                                        // has already put something there.
-                                        if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
-                                            setDataElements([{ dataType: entry.dataType, content: "" }]);
-                                        }
-                                    }}
-                                    metadata={metadata}
-                                    parties={parties}
-                                    onProbe={() => {
-                                        void metadataQuery.refetch();
-                                        void partiesQuery.refetch();
-                                    }}
-                                    probing={probing}
-                                    probeError={probeError}
-                                />
-                            )}
+                    {/* Nothing below can be aimed anywhere without a token and an app. */}
+                    {sections.requests && (
+                        <>
+                            <span className="group">Post</span>
 
-                            {/* Right under the destination, since choosing one is how you aim at it. */}
-                            {sections.instances && (
-                                <InstancesPanel
-                                    id="panel-instances"
-                                    elementCount={dataElements.length}
-                                    onSelect={selectInstance}
-                                    onSelectTyped={selectTypedInstance}
-                                />
-                            )}
+                            <PayloadPanel
+                                dataElements={dataElements}
+                                onChange={setDataElements}
+                                org={org}
+                                app={app}
+                                dataTypes={dataTypes}
+                                metadata={metadata?.metadata ?? null}
+                                suggestedDataTypes={suggestedDataTypes}
+                                exampleGroups={exampleGroups}
+                                advanceProcess={advanceProcess}
+                                onAdvanceProcessChange={setAdvanceProcess}
+                                savedPayloads={savedPayloads}
+                                onSavePayload={savePayload}
+                                onLoadPayload={(payload) => void loadPayload(payload)}
+                                onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
+                                loadNotice={payloadLoadNotice}
+                                validationUrl={serverConfig?.validationUrl ?? ""}
+                                validationBlockedBy={validationRequest.blockedBy}
+                                onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
+                                validating={validationReport.isPending}
+                                prevalidation={prevalidation}
+                            >
+                                <div style={{ marginTop: 18 }}>
+                                    <span className="legend">Post</span>
 
-                            {/* Nothing below can be aimed anywhere without a token and an app. */}
-                            {sections.requests && (
-                                <>
-                                    <span className="group">Post</span>
-
-                                    <PayloadPanel
-                                        dataElements={dataElements}
-                                        onChange={setDataElements}
-                                        org={org}
-                                        app={app}
-                                        dataTypes={dataTypes}
-                                        metadata={metadata?.metadata ?? null}
-                                        suggestedDataTypes={suggestedDataTypes}
-                                        exampleGroups={exampleGroups}
-                                        advanceProcess={advanceProcess}
-                                        onAdvanceProcessChange={setAdvanceProcess}
-                                        savedPayloads={savedPayloads}
-                                        onSavePayload={savePayload}
-                                        onLoadPayload={(payload) => void loadPayload(payload)}
-                                        onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
-                                        loadNotice={payloadLoadNotice}
-                                        validationUrl={serverConfig?.validationUrl ?? ""}
-                                        validationBlockedBy={validationRequest.blockedBy}
-                                        onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
-                                        validating={validationReport.isPending}
-                                        prevalidation={prevalidation}
-                                    >
-                                        <div style={{ marginTop: 18 }}>
-                                            <span className="legend">Post</span>
-
-                                            {blockers.length > 0 && (
-                                                <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                                    Needs {blockers.join(", ")}.
-                                                </div>
-                                            )}
-
-                                            {/*
-                                             * The one thing the prevalidation notice above cannot say,
-                                             * because there is no report for it to be part of. The rest of
-                                             * what the service said is already on screen a few lines up.
-                                             */}
-                                            {serverConfig?.validationUrl && !prevalidation && (
-                                                <div className="notice" style={{ marginBottom: 12 }}>
-                                                    Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have
-                                                    told you, read before the submit rather than after.
-                                                </div>
-                                            )}
-
-                                            {/* Both are asked for from this panel, and only one at a time. */}
-                                            {(run.error ?? validationReport.error) ? (
-                                                <div style={{ marginBottom: 12 }}>
-                                                    <ErrorNotice error={run.error ?? validationReport.error} />
-                                                </div>
-                                            ) : null}
-
-                                            <button
-                                                type="button"
-                                                className="btn btn--primary btn--fire"
-                                                onClick={() => run.mutate()}
-                                                disabled={run.isPending || blockers.length > 0}
-                                            >
-                                                {run.isPending && <span className="btn__spinner" />}
-                                                {run.isPending
-                                                    ? "Posting…"
-                                                    : instanceGuid
-                                                      ? `Add data to ${instanceGuid.slice(0, 8)}`
-                                                      : `Post a new instance to ${org || "org"}/${app || "app"}`}
-                                            </button>
+                                    {blockers.length > 0 && (
+                                        <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                                            Needs {blockers.join(", ")}.
                                         </div>
-                                    </PayloadPanel>
+                                    )}
 
-                                    <span className="group">Inspect</span>
+                                    {/*
+                                     * The one thing the prevalidation notice above cannot say,
+                                     * because there is no report for it to be part of. The rest of
+                                     * what the service said is already on screen a few lines up.
+                                     */}
+                                    {serverConfig?.validationUrl && !prevalidation && (
+                                        <div className="notice" style={{ marginBottom: 12 }}>
+                                            Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you,
+                                            read before the submit rather than after.
+                                        </div>
+                                    )}
 
-                                    <FetchPanel
-                                        id="panel-data-element"
-                                        dataElements={instanceDataElements}
-                                        dataGuid={dataGuid}
-                                        onDataGuidChange={changeDataGuid}
-                                        fetched={fetchedElement}
-                                        onDownloadDataElement={downloadDataElement}
-                                        onRefresh={refreshElement}
-                                        validateBlockedBy={validateBlockedBy}
-                                        // Also while the instance is being read, since that read is what
-                                        // replaces the list this panel is choosing from.
-                                        busy={elementQuery.isFetching || instanceQuery.isFetching}
-                                        hasToken={tokenUsable}
-                                        error={elementQuery.error}
+                                    {/* Both are asked for from this panel, and only one at a time. */}
+                                    {(run.error ?? validationReport.error) ? (
+                                        <div style={{ marginBottom: 12 }}>
+                                            <ErrorNotice error={run.error ?? validationReport.error} />
+                                        </div>
+                                    ) : null}
+
+                                    <button
+                                        type="button"
+                                        className="btn btn--primary btn--fire"
+                                        onClick={() => run.mutate()}
+                                        disabled={run.isPending || blockers.length > 0}
                                     >
-                                        {/* Inside the panel, because it compares what the select above it
+                                        {run.isPending && <span className="btn__spinner" />}
+                                        {run.isPending
+                                            ? "Posting…"
+                                            : instanceGuid
+                                              ? `Add data to ${instanceGuid.slice(0, 8)}`
+                                              : `Post a new instance to ${org || "org"}/${app || "app"}`}
+                                    </button>
+                                </div>
+                            </PayloadPanel>
+
+                            <span className="group">Inspect</span>
+
+                            <FetchPanel
+                                id="panel-data-element"
+                                dataElements={instanceDataElements}
+                                dataGuid={dataGuid}
+                                onDataGuidChange={changeDataGuid}
+                                fetched={fetchedElement}
+                                onDownloadDataElement={downloadDataElement}
+                                onRefresh={refreshElement}
+                                validateBlockedBy={validateBlockedBy}
+                                // Also while the instance is being read, since that read is what
+                                // replaces the list this panel is choosing from.
+                                busy={elementQuery.fetching || instanceRead.fetching}
+                                hasToken={tokenUsable}
+                                error={elementQuery.error}
+                            >
+                                {/* Inside the panel, because it compares what the select above it
                                     is pointing at. Beside it as its own card, that was left to be
                                     worked out from the order the two happened to be in. */}
-                                        {sections.compare && selectedDataType && (
-                                            <CompareSection
-                                                dataType={selectedDataType}
-                                                payload={
-                                                    payloadForSelected
-                                                        ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
-                                                        : null
-                                                }
-                                                parses={payloadParses}
-                                                result={compareResult}
-                                                busy={compareQuery.isFetching}
-                                                error={compareQuery.error}
-                                            />
-                                        )}
-                                    </FetchPanel>
+                                {sections.compare && selectedDataType && (
+                                    <CompareSection
+                                        dataType={selectedDataType}
+                                        payload={
+                                            payloadForSelected
+                                                ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
+                                                : null
+                                        }
+                                        parses={payloadParses}
+                                        result={compareResult}
+                                        busy={compareQuery.isFetching}
+                                        error={compareQuery.error}
+                                    />
+                                )}
+                            </FetchPanel>
 
-                                    {/* After the data element, since it is a different kind of action. */}
-                                    {sections.requests && instanceGuid && (
-                                        <PdfPanel
-                                            onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
-                                            busy={renderPdf.isPending}
-                                            hasToken={tokenUsable}
-                                            error={renderPdf.error}
-                                        />
-                                    )}
-
-                                    {/* Where the instance stands. Arrives with the first instance read. */}
-                                    {sections.process && instanceProcess && (
-                                        <ProcessPanel
-                                            process={instanceProcess}
-                                            onAdvance={() => advance.mutate()}
-                                            busy={advance.isPending}
-                                            hasToken={tokenUsable}
-                                            error={advance.error}
-                                        />
-                                    )}
-                                </>
+                            {/* After the data element, since it is a different kind of action. */}
+                            {sections.requests && instanceGuid && (
+                                <PdfPanel
+                                    onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
+                                    busy={renderPdf.isPending}
+                                    hasToken={tokenUsable}
+                                    error={renderPdf.error}
+                                />
                             )}
-                        </div>
 
-                        {(sections.validation || sections.log) && (
-                            <div className="column column--log">
-                                {sections.validation && <ValidationPanel />}
-                                {sections.log && <RunLog running={inFlight} />}
-                            </div>
-                        )}
-                    </div>
-
-                    {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
+                            {/* Where the instance stands. Arrives with the first instance read. */}
+                            {sections.process && instanceProcess && (
+                                <ProcessPanel
+                                    process={instanceProcess}
+                                    onAdvance={() => advance.mutate()}
+                                    busy={advance.isPending}
+                                    hasToken={tokenUsable}
+                                    error={advance.error}
+                                />
+                            )}
+                        </>
+                    )}
                 </div>
-            </RunLogContext.Provider>
-        </TargetProvider>
+
+                {(sections.validation || sections.log) && (
+                    <div className="column column--log">
+                        {sections.validation && <ValidationPanel />}
+                        {sections.log && <RunLog running={inFlight} />}
+                    </div>
+                )}
+            </div>
+
+            {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
+        </div>
     );
 }

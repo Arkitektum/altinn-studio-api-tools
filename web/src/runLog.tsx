@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useSession } from "./session";
 import { upsertValidation } from "./lib/validations";
 import type { LogEntry, LogResult, ValidationView } from "./types";
 
@@ -35,9 +36,7 @@ export interface RunLog {
  * of each query, which worked only while all of them were declared in `App`: a panel that owns its
  * own read has no such thread to follow.
  *
- * The value is built by `useRunLogState` and provided by `App`, rather than by a provider component
- * wrapping it. `App`'s own queries record themselves too, and a component cannot read a context it
- * is the one rendering.
+ * Nested inside the session provider, which is where it reads the instance on screen from.
  */
 export const RunLogContext = createContext<RunLog | null>(null);
 
@@ -55,7 +54,12 @@ export function useRunLog(): RunLog {
  * from requests that closed over an earlier render, and what it has to compare against is the
  * selection at the moment the answer arrives rather than at the moment the request went out.
  */
-export function useRunLogState(selectedInstance: string): RunLog {
+export function RunLogProvider({ children }: { children: ReactNode }) {
+    return <RunLogContext.Provider value={useRunLogState()}>{children}</RunLogContext.Provider>;
+}
+
+function useRunLogState(): RunLog {
+    const { instanceGuid: selectedInstance } = useSession();
     const [entries, setEntries] = useState<LogEntry[]>([]);
     const [validations, setValidations] = useState<ValidationView[]>([]);
 

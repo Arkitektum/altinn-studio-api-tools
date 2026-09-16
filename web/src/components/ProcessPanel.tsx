@@ -1,6 +1,6 @@
 import { processLabel } from "../lib/format";
 import { advanceBody, advanceInApp, advanceLabel } from "../lib/processAction";
-import { useTarget } from "../target";
+import { useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";

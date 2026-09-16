@@ -6,7 +6,7 @@ import { useRunLog } from "../runLog";
 import { logFromDelete, logFromInstances } from "../lib/logResults";
 import { SELECTION_DELAY_MS, useSettled } from "../lib/useDebounced";
 import { instanceLabel } from "../lib/format";
-import { useTarget } from "../target";
+import { useTarget } from "../session";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";

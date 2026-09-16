@@ -5,6 +5,8 @@ import { beforeEach, describe, it, type TestContext } from "node:test";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import { makeQueryClient } from "./queries";
+import { RunLogProvider } from "./runLog";
+import { SessionProvider } from "./session";
 import type { DataElementInput, PublicToken } from "./types";
 
 const token: PublicToken = {
@@ -97,7 +99,11 @@ async function mount(t: TestContext, routes: Routes) {
     const client = makeQueryClient();
     const app = await render(
         <QueryClientProvider client={client}>
-            <App />
+            <SessionProvider>
+                <RunLogProvider>
+                    <App />
+                </RunLogProvider>
+            </SessionProvider>
         </QueryClientProvider>
     );
     t.after(async () => {

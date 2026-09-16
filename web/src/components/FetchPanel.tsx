@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { useTarget } from "../target";
+import { useTarget } from "../session";
 import { Dump } from "./Dump";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
