@@ -1,5 +1,18 @@
 import { useEffect, useState } from "react";
 
+/** Org and app are typed a character at a time, and "et-v4" should not be five probes. */
+export const PROBE_DELAY_MS = 400;
+
+/** So is a party id, and so is a guid pasted into "Other instance". */
+export const SELECTION_DELAY_MS = 500;
+
+/**
+ * The comparison waits longer, because what it depends on is a document being edited rather than a
+ * field being filled in, and a pause in typing is not the same as being finished. It is also what
+ * keeps the parse of the whole document to one per pause rather than one per key.
+ */
+export const EDIT_DELAY_MS = 800;
+
 /**
  * A value as it was once it stopped changing for `delayMs`.
  *

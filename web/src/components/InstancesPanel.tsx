@@ -1,35 +1,26 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../api";
+import { queryKeys } from "../queries";
+import { useRunLog } from "../runLog";
+import { logFromDelete, logFromInstances } from "../lib/logResults";
+import { SELECTION_DELAY_MS, useSettled } from "../lib/useDebounced";
 import { instanceLabel } from "../lib/format";
 import { useTarget } from "../target";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { InstanceSummary } from "../types";
+import type { InstanceSummary, ListInstancesResult } from "../types";
 
 interface InstancesPanelProps {
     /** Anchor for the chain strip to scroll to. */
     id: string;
     /** How many data elements the payload holds, for the multipart part count in Will call. */
     elementCount: number;
-    /**
-     * The party's instances. Null means the listing has not answered yet, which reads differently
-     * from a party that genuinely has none.
-     */
-    instances: InstanceSummary[] | null;
     /** Null selects the new instance row, which is what "post creates one" means. */
     onSelect: (instance: InstanceSummary | null) => void;
     /** A guid typed or pasted, for an instance the active list does not hold. */
     onSelectTyped: (value: string) => void;
-    /** Always a hard delete: this is local test data, and a soft one left the row in storage. */
-    onDelete: (instance: InstanceSummary) => void;
-    onRefresh: () => void;
-    /** Whether the listing also asks storage for the ones the app's active list leaves out. */
-    includeCompleted: boolean;
-    onIncludeCompletedChange: (next: boolean) => void;
-    /** False when they were asked for and storage would not answer, so the list is short. */
-    completedListed: boolean | null;
-    busy: boolean;
-    error: unknown;
 }
 
 /**
@@ -40,32 +31,95 @@ interface InstancesPanelProps {
  * choice is what the panel is for. What the choice decides is directly under it: an instance means
  * the data is added to that one, and no instance means the post creates one.
  */
-export function InstancesPanel({
-    id,
-    elementCount,
-    instances,
-    onSelect,
-    onSelectTyped,
-    onDelete,
-    onRefresh,
-    includeCompleted,
-    onIncludeCompletedChange,
-    completedListed,
-    busy,
-    error
-}: InstancesPanelProps) {
+export function InstancesPanel({ id, elementCount, onSelect, onSelectTyped }: InstancesPanelProps) {
+    const { base, party, tokenId, tokenUsable, org, app, partyId, instanceGuid, localtestUrl } = useTarget();
+    const { append } = useRunLog();
+    const queryClient = useQueryClient();
+
     /** Which row has been armed for deletion, by guid. One at a time. */
     const [confirming, setConfirming] = useState<string | null>(null);
     /** Whether the guid field is showing, for an instance the list does not hold. */
     const [typing, setTyping] = useState(false);
     const [picking, setPicking] = useState(false);
+    /**
+     * Whether the listing also asks storage for the ones the app's active list leaves out. A view
+     * of the moment rather than something you chose, so it is not persisted: the cheaper listing is
+     * the right thing to come back to.
+     */
+    const [includeCompleted, setIncludeCompleted] = useState(false);
+
+    /*
+     * The listing, asked for here rather than handed down. Nothing outside this panel reads it, so
+     * nothing outside it had any business fetching it.
+     *
+     * The target settles first: org, app and the party are all typed, and a listing per character
+     * is a listing per character whoever asks for it.
+     */
+    const aimed = `${org}/${app}/${partyId}`;
+    const settled = useSettled(aimed, SELECTION_DELAY_MS);
+    const key = queryKeys.instances(tokenId ?? "", org, app, partyId, includeCompleted);
+
+    const listQuery = useQuery({
+        queryKey: key,
+        queryFn: async () => {
+            const result = await api.listInstances({
+                tokenId: tokenId ?? "",
+                org,
+                app,
+                instanceOwnerPartyId: partyId,
+                includeCompleted: includeCompleted ? "true" : "false"
+            });
+            append(logFromInstances(result));
+            return result;
+        },
+        enabled: tokenUsable && settled && Boolean(tokenId && org && app && partyId)
+    });
+
+    /**
+     * Removes an instance outright. Soft deletion is still on the api, which the docs cover, but not
+     * offered here: everything this tool can reach is local test data, and a soft delete left the
+     * instance in storage where the completed listing would keep finding it.
+     */
+    const remove = useMutation({
+        mutationFn: async (instance: InstanceSummary) => {
+            const result = await api.deleteInstance({
+                tokenId: tokenId ?? "",
+                org,
+                app,
+                instanceOwnerPartyId: instance.instanceOwnerPartyId,
+                instanceGuid: instance.instanceGuid,
+                hard: "true"
+            });
+            append(logFromDelete(result));
+            return result;
+        },
+        onSuccess: (result) => {
+            if (!result.ok) return;
+            // Taken out of the listing rather than asking for it again: a delete that succeeded is
+            // the whole of what changed, and a deleted instance is not one to offer next.
+            queryClient.setQueryData<ListInstancesResult>(key, (current) =>
+                current ? { ...current, instances: current.instances.filter((held) => held.instanceGuid !== result.instanceGuid) } : current
+            );
+            // Only when it was the one selected. Clearing otherwise would point the tool away from
+            // an instance that is still there.
+            if (instanceGuid === result.instanceGuid) onSelect(null);
+        }
+    });
+
+    /**
+     * A failed listing stays null rather than empty, since "none" would be a claim we cannot make
+     * when the request never answered. So does one the app refused, for the same reason.
+     */
+    const instances = listQuery.data?.ok ? listQuery.data.instances : null;
+    /** False when the completed ones were asked for and storage would not answer. */
+    const completedListed = listQuery.data?.completedListed ?? null;
+    const busy = listQuery.isFetching || remove.isPending;
+    const error = listQuery.error ?? remove.error;
 
     // A list that changed under a pending confirmation is not the list it was armed against.
     useEffect(() => {
         setConfirming(null);
     }, [instances]);
-
-    const { base, party, partyId, instanceGuid, localtestUrl } = useTarget();
 
     /**
      * The rows to show. An instance whose process has ended leaves Altinn's active list, so the
@@ -176,7 +230,7 @@ export function InstancesPanel({
                             <a href={`${localtestUrl}/`} target="_blank" rel="noreferrer" className="btn btn--ghost">
                                 Log in
                             </a>
-                            <button type="button" className="btn btn--get" onClick={onRefresh} disabled={busy}>
+                            <button type="button" className="btn btn--get" onClick={() => void listQuery.refetch()} disabled={busy}>
                                 {busy && <span className="btn__spinner" />}
                                 Refresh
                             </button>
@@ -188,7 +242,7 @@ export function InstancesPanel({
                         <input
                             type="checkbox"
                             checked={includeCompleted}
-                            onChange={(event) => onIncludeCompletedChange(event.target.checked)}
+                            onChange={(event) => setIncludeCompleted(event.target.checked)}
                             disabled={busy}
                         />
                         <span className="check__body">
@@ -256,7 +310,7 @@ export function InstancesPanel({
                                             <button
                                                 type="button"
                                                 className="btn btn--delete btn--armed"
-                                                onClick={() => onDelete(instance)}
+                                                onClick={() => remove.mutate(instance)}
                                                 disabled={busy}
                                             >
                                                 Confirm delete

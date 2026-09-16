@@ -85,6 +85,9 @@ export const queryKeys = {
     appMetadata: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "metadata"] as const,
     appParties: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "parties"] as const,
 
+    /** Every listing of this app, for invalidating them all after something changed one. */
+    allInstances: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "instances"] as const,
+
     /**
      * One party's instances. `completed` is in the key rather than a parameter to the same read,
      * because asking storage for the finished ones is a different question with a different answer,

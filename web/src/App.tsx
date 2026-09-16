@@ -12,8 +12,6 @@ import {
     logFromAdvance,
     logFromCompare,
     logFromDataElement,
-    logFromDelete,
-    logFromInstances,
     logFromRead,
     logFromPdf,
     logFromRun,
@@ -27,7 +25,7 @@ import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
-import { useSettled } from "./lib/useDebounced";
+import { EDIT_DELAY_MS, PROBE_DELAY_MS, SELECTION_DELAY_MS, useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
@@ -52,7 +50,6 @@ import type {
     ExampleContent,
     ExampleGroup,
     InstanceSummary,
-    ListInstancesResult,
     PublicToken,
     ReadInstanceResult,
     RunMode,
@@ -76,19 +73,6 @@ interface InstanceAnswer {
     read: ReadInstanceResult;
     validated: ValidateResult | null;
 }
-
-/** Org and app are typed a character at a time, and "et-v4" should not be five probes. */
-const PROBE_DELAY_MS = 400;
-
-/** So is a party id, and so is a guid pasted into "Other instance". */
-const SELECTION_DELAY_MS = 500;
-
-/**
- * The comparison waits longer, because what it depends on is a document being edited rather than a
- * field being filled in, and a pause in typing is not the same as being finished. It is also what
- * keeps the parse of the whole document to one per pause rather than one per key.
- */
-const EDIT_DELAY_MS = 800;
 
 /**
  * Whether the payload is xml the server could compare, asked of the browser's own parser.
@@ -225,12 +209,6 @@ export function App() {
      */
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
 
-    /**
-     * Whether the listing also asks storage for the instances the app's active list leaves out.
-     * A view of the moment rather than something you chose, so it is not persisted: the cheaper
-     * listing is the right thing to come back to.
-     */
-    const [includeCompleted, setIncludeCompleted] = useState(false);
     /** And which instance has already been read, so it is read once per selection. */
 
     /** Which data element the operator picked. Empty means whichever the instance lists first. */
@@ -271,37 +249,12 @@ export function App() {
     });
 
     /*
-     * The party's instances, so a guid can be picked rather than pasted.
-     *
-     * The party settles first, the way the target does: it is typed, and it is also filled in from
-     * the token's claim, both of which would otherwise list a party per character.
-     *
-     * The log entry is written in the `queryFn` rather than from the answer, because the log is a
-     * record of requests made and this is the request. A listing read back out of the cache is not
-     * one, and does not appear.
+     * What the reads below are aimed at. The listing has moved into the panel that shows it, since
+     * nothing outside that panel read it; this is what the instance read and everything under it
+     * still share.
      */
     const partySettled = useSettled(instanceOwnerPartyId, SELECTION_DELAY_MS);
     const listParams = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId };
-
-    const instancesKey = queryKeys.instances(listParams.tokenId, org, app, instanceOwnerPartyId, includeCompleted);
-
-    const listQuery = useQuery({
-        queryKey: instancesKey,
-        queryFn: async () => {
-            const result = await api.listInstances({ ...listParams, includeCompleted: includeCompleted ? "true" : "false" });
-            appendLog(logFromInstances(result));
-            return result;
-        },
-        enabled: probeAimed && targetSettled && partySettled && Boolean(instanceOwnerPartyId)
-    });
-
-    /**
-     * A failed listing stays null rather than empty, since "none" would be a claim we cannot make
-     * when the request never answered. So does one the app refused, for the same reason.
-     */
-    const instanceList = listQuery.data?.ok ? listQuery.data.instances : null;
-    /** False when the completed ones were asked for and storage would not answer. */
-    const completedListed = listQuery.data?.completedListed ?? null;
 
     /*
      * The selected instance, read back and validated as one thing.
@@ -703,19 +656,11 @@ export function App() {
             // Chain naturally into "now post more data to that instance".
             if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
             // The post either made an instance or changed one, so what was listed is out of date.
-            if (payload.ok) refreshInstances();
+            // By key, the listing being the panel's now. Every listing of this app, since a post
+            // can change which party's list an instance turns up in.
+            if (payload.ok) void queryClient.invalidateQueries({ queryKey: queryKeys.allInstances(activeTokenId ?? "", org, app) });
         }
     });
-
-    /**
-     * Lists again on demand, for the Refresh button and after a post.
-     *
-     * A refetch rather than an invalidation, because this is the one listing on screen and the
-     * question is not whether it has gone stale but that it is being asked again.
-     */
-    function refreshInstances() {
-        void listQuery.refetch();
-    }
 
     /**
      * Asks for the selected element again, for the Refresh button.
@@ -846,34 +791,6 @@ export function App() {
      * not offered here: everything this tool can reach is local test data, and a soft delete left
      * the instance in storage where the completed listing would keep finding it.
      */
-    const removeInstance = useMutation({
-        mutationFn: async (instance: InstanceSummary) => {
-            const result = await api.deleteInstance({
-                tokenId: activeTokenId ?? "",
-                org,
-                app,
-                instanceOwnerPartyId: instance.instanceOwnerPartyId,
-                instanceGuid: instance.instanceGuid,
-                hard: "true"
-            });
-            appendLog(logFromDelete(result));
-            return result;
-        },
-        onSuccess: (result) => {
-            if (!result.ok) return;
-
-            // Taken out of the listing rather than asking for it again: a delete that succeeded is
-            // the whole of what changed, and a deleted instance is not one to offer next.
-            queryClient.setQueryData<ListInstancesResult>(instancesKey, (current) =>
-                current ? { ...current, instances: current.instances.filter((held) => held.instanceGuid !== result.instanceGuid) } : current
-            );
-            // Only clear the fields when they pointed at the instance that just went. Clearing the
-            // guid drops the data elements, process and issues along with it, which would be wrong
-            // to do while looking at a different instance.
-            if (instanceGuid === result.instanceGuid) selectInstance(null);
-        }
-    });
-
     const advance = useMutation({
         mutationFn: async () => {
             const params = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid };
@@ -1000,7 +917,16 @@ export function App() {
          * about. The panels that act on the target take what they act on as props; the ones that
          * only print the url they would call read it from here.
          */
-        <TargetProvider appHost={appHost} org={org} app={app} partyId={instanceOwnerPartyId} instanceGuid={instanceGuid} localtestUrl={localtestUrl}>
+        <TargetProvider
+            tokenId={activeTokenId}
+            tokenUsable={tokenUsable}
+            appHost={appHost}
+            org={org}
+            app={app}
+            partyId={instanceOwnerPartyId}
+            instanceGuid={instanceGuid}
+            localtestUrl={localtestUrl}
+        >
             <RunLogContext.Provider value={runLog}>
                 <div className="shell">
                     <header className="masthead">
@@ -1089,20 +1015,8 @@ export function App() {
                                 <InstancesPanel
                                     id="panel-instances"
                                     elementCount={dataElements.length}
-                                    instances={instanceList}
                                     onSelect={selectInstance}
                                     onSelectTyped={selectTypedInstance}
-                                    onDelete={(instance) => removeInstance.mutate(instance)}
-                                    onRefresh={refreshInstances}
-                                    includeCompleted={includeCompleted}
-                                    onIncludeCompletedChange={setIncludeCompleted}
-                                    completedListed={completedListed}
-                                    // Listing only. A read of the selected instance is reported by the
-                                    // panels that show what it returns, and holding this one busy would
-                                    // put a spinner on Refresh for a request it did not make.
-                                    busy={listQuery.isFetching || removeInstance.isPending}
-                                    // The error does belong here: selecting a row is what starts the read.
-                                    error={listQuery.error ?? removeInstance.error ?? instanceQuery.error}
                                 />
                             )}
 

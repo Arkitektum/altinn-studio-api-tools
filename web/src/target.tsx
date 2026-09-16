@@ -13,6 +13,14 @@ import { targetUrls, type TargetUrls } from "./lib/target";
  * placeholder where a field is empty, and a link or a title has to be the real thing or absent.
  */
 export interface Target extends TargetUrls {
+    /**
+     * As whom. Part of the target rather than beside it, because every answer under an app is that
+     * token's: what the app will tell you, and which parties you may act for, both depend on who is
+     * asking. It is in every query key below the app for the same reason.
+     */
+    tokenId: string | null;
+    /** Whether that token exists and has not expired, which is what gates every read. */
+    tokenUsable: boolean;
     org: string;
     app: string;
     /** As set, empty and all, where `party` above is the one with a placeholder in it. */
@@ -25,6 +33,8 @@ export interface Target extends TargetUrls {
 const TargetContext = createContext<Target | null>(null);
 
 export interface TargetProviderProps {
+    tokenId: string | null;
+    tokenUsable: boolean;
     appHost: string;
     org: string;
     app: string;
@@ -34,10 +44,19 @@ export interface TargetProviderProps {
     children: ReactNode;
 }
 
-export function TargetProvider({ appHost, org, app, partyId, instanceGuid, localtestUrl, children }: TargetProviderProps) {
+export function TargetProvider({ tokenId, tokenUsable, appHost, org, app, partyId, instanceGuid, localtestUrl, children }: TargetProviderProps) {
     const value = useMemo(
-        (): Target => ({ ...targetUrls(appHost, org, app, partyId, instanceGuid), org, app, partyId, instanceGuid, localtestUrl }),
-        [appHost, org, app, partyId, instanceGuid, localtestUrl]
+        (): Target => ({
+            ...targetUrls(appHost, org, app, partyId, instanceGuid),
+            tokenId,
+            tokenUsable,
+            org,
+            app,
+            partyId,
+            instanceGuid,
+            localtestUrl
+        }),
+        [tokenId, tokenUsable, appHost, org, app, partyId, instanceGuid, localtestUrl]
     );
     return <TargetContext.Provider value={value}>{children}</TargetContext.Provider>;
 }
