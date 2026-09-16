@@ -13,6 +13,7 @@ import { logFromAdvance, logFromPdf } from "./lib/logResults";
 import { withIdentity } from "./lib/formIdentity";
 import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
+import { fingerprintInstance, pdfStand } from "./lib/pdfCache";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
@@ -96,8 +97,12 @@ export function App() {
     /**
      * The rendered pdf, held as a blob url. Only one at a time: rendering again replaces it, and
      * the old url is revoked so the blob can be collected.
+     *
+     * Kept after the window is closed, which is why the window has a flag of its own. It used to be
+     * thrown away on close, so looking at the same document twice meant rendering it twice.
      */
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
+    const [pdfOpen, setPdfOpen] = useState(false);
 
     /** And which instance has already been read, so it is read once per selection. */
 
@@ -127,6 +132,18 @@ export function App() {
     const instanceDataElements = instanceRead.dataElements;
     /** Where the instance stands, from the last read or process move. */
     const instanceProcess = instanceRead.process;
+
+    /**
+     * The instance as it stands, and where the pdf in hand is against it.
+     *
+     * A render is the most expensive read the tool makes, so it is only asked for again once
+     * something it would render has moved. See lib/pdfCache.ts for what counts as moved.
+     */
+    const pdfFingerprint = useMemo(
+        () => fingerprintInstance({ dataElements: instanceDataElements, process: instanceProcess }),
+        [instanceDataElements, instanceProcess]
+    );
+    const pdfHeld = pdfStand(pdfPreview?.fingerprint ?? null, pdfFingerprint);
 
     /**
      * The data element the Inspect column is about: the one picked, or the first the instance has.
@@ -178,6 +195,8 @@ export function App() {
             if (current) URL.revokeObjectURL(current.url);
             return next;
         });
+        // A fresh render opens; dropping the held one shuts the window it was in.
+        setPdfOpen(next !== null);
     }, []);
 
     const clearPdf = useCallback(() => showPdf(null), [showPdf]);
@@ -378,15 +397,24 @@ export function App() {
      * but a blob url held open in a window. The instance it was asked for is named before the
      * request so a render that lands after the selection moved does not open as though it were the
      * instance now on screen.
+     *
+     * The fingerprint is taken with it for the same reason: what the pdf describes is the instance
+     * as it was when the render was asked for, not as it is when the bytes arrive.
      */
     const renderPdf = useMutation({
-        mutationFn: async (requested: string) => {
-            const result = await api.previewPdf({ tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid: requested });
+        mutationFn: async (asked: { requested: string; fingerprint: string | null }) => {
+            const result = await api.previewPdf({
+                tokenId: activeTokenId ?? "",
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid: asked.requested
+            });
             appendLog(logFromPdf(result, result.size));
-            return { result, requested };
+            return { result, asked };
         },
-        onSuccess: ({ result, requested }) => {
-            if (shownInstance.current !== requested) return;
+        onSuccess: ({ result, asked }) => {
+            if (shownInstance.current !== asked.requested) return;
             if (!result.ok || !result.content) {
                 // A failed render must not leave the previous pdf on screen looking current.
                 clearPdf();
@@ -396,7 +424,8 @@ export function App() {
             showPdf({
                 url: URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })),
                 size: result.size,
-                at: new Date().toLocaleTimeString("nb")
+                at: new Date().toLocaleTimeString("nb"),
+                fingerprint: asked.fingerprint
             });
         }
     });
@@ -601,7 +630,9 @@ export function App() {
                         {/* After the data element, since it is a different kind of action. */}
                         <PdfPanel
                             notReady={waiting.process}
-                            onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
+                            stand={pdfHeld}
+                            onRender={() => renderPdf.mutate({ requested: instanceGuid, fingerprint: pdfFingerprint })}
+                            onShow={() => setPdfOpen(true)}
                             busy={renderPdf.isPending}
                             hasToken={tokenUsable}
                             error={renderPdf.error}
@@ -625,7 +656,8 @@ export function App() {
                 </div>
             </div>
 
-            {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
+            {/* Closing puts the pdf away rather than throwing it out, so Show pdf can open it again. */}
+            {pdfPreview && pdfOpen && <PdfModal preview={pdfPreview} onClose={() => setPdfOpen(false)} />}
         </div>
     );
 }

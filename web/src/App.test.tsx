@@ -509,6 +509,52 @@ describe("App", () => {
     });
 
     /*
+     * A render is the most expensive read the tool makes: the app lays the whole form out and what
+     * comes back is the pdf as base64. Pressing the button twice without having changed anything in
+     * between used to do all of that twice for the same document, because closing the window threw
+     * the pdf away. It is kept now, with a fingerprint of what it was rendered from.
+     */
+    it("shows the pdf it already has rather than rendering it again", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => instanceRead(A, "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation,
+            "GET /api/instances/pdf-preview": {
+                ok: true,
+                steps: [],
+                failedAt: null,
+                contentType: "application/pdf",
+                content: btoa("%PDF-1.4"),
+                size: 8
+            }
+        });
+        await app.wait(700);
+
+        const renders = () => stub.calls.filter((made) => made === "GET /api/instances/pdf-preview").length;
+        const pdfButton = () => find(app, "#panel-pdf button");
+
+        assert.equal(pdfButton().textContent, "Render pdf");
+        await click(app, pdfButton());
+        await app.wait(50);
+        assert.equal(renders(), 1, "the first press should have asked the app");
+        assert.ok(app.container.querySelector("dialog"), "and opened the window");
+
+        // Closing puts the pdf away rather than throwing it out.
+        await click(app, findByText(app, "dialog button", "Close"));
+        assert.equal(app.container.querySelector("dialog"), null, "the window should have closed");
+        assert.equal(pdfButton().textContent, "Show pdf", "and the button should offer the one in hand");
+
+        await click(app, pdfButton());
+        await app.wait(50);
+        assert.equal(renders(), 1, "the pdf in hand should be shown rather than asked for again");
+        assert.ok(app.container.querySelector("dialog"), "and the window should be open on it");
+    });
+
+    /*
      * Nothing cancels a request, so a read can answer after the selection it was aimed at has moved.
      * The key it was aimed at is what lets the late one be dropped rather than written over the
      * newer answer.

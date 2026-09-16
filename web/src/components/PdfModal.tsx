@@ -6,6 +6,8 @@ export interface PdfPreview {
     size: number;
     /** Time it was rendered, so a stale preview is obvious. */
     at: string;
+    /** The instance as it was when this was rendered. See lib/pdfCache.ts. */
+    fingerprint: string | null;
 }
 
 interface PdfModalProps {
