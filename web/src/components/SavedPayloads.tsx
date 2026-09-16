@@ -82,7 +82,6 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
                                         }}
                                         title={`${payload.elements.length} element(s), saved for ${payload.org}/${payload.app}`}
                                     >
-                                        <span className="led led--ok" aria-hidden="true" />
                                         <span>
                                             {armed && confirming?.action === "load" ? `Replace the payload with "${payload.name}"?` : payload.name}
                                             {" · "}

@@ -88,8 +88,6 @@ function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: b
                 <span className="element__chevron" aria-hidden="true">
                     {open ? "▼" : "▶"}
                 </span>
-                {/* The title already says "Failed" when it did, so the dot is decoration here. */}
-                <span className={`led ${result.ok ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                 <span className="run__title">{result.ok ? result.title : "Failed"}</span>
                 <span className="spacer" />
                 <span className="run__meta">

@@ -84,3 +84,21 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/*
+ * Which row the tool is pointed at, said in a word.
+ *
+ * It was a coloured dot, and the dot said nothing the row did not: selection is already carried by
+ * aria-current, which this list styles with an accent border and background. Worse than nothing,
+ * in fact, since an unselected instance was drawn amber and amber means a warning everywhere else
+ * in the tool.
+ */
+.picklist__now {
+    flex: none;
+    margin-left: auto;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--accent-border);
+    color: var(--text);
+    font-size: var(--size-meta);
+}

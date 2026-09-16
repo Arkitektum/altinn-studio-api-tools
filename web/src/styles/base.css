@@ -13,8 +13,26 @@
     color-scheme: dark;
 
     --bg: #16181b;
-    --bg-subtle: #24272b;
-    --bg-inset: #191b1e;
+    /*
+     * A step up and a step down from whatever is behind, rather than two particular greys.
+     *
+     * Opaque, these were grey wherever they landed, which is fine on the page and wrong on a panel:
+     * a grey block inside a coloured surface reads as a foreign patch instead of a raised part of
+     * it. Translucent, each tints what it sits on, so the same variable is right on the page, on
+     * all seven panel hues, and inside a notice.
+     *
+     * The inset also had to move. It was a flat #191b1e, which was below the page until the page
+     * darkened and then sat above it, so a code block read as raised when the whole point of it is
+     * to be sunk.
+     */
+    --bg-subtle: rgb(255 255 255 / 6%);
+    --bg-inset: rgb(0 0 0 / 22%);
+
+    /*
+     * The one place that has to be opaque: the masthead is sticky and the page scrolls under it.
+     * Matched to --bg-subtle over the page, which is where it sits.
+     */
+    --bg-header: #23262a;
     --border: #34383d;
     --border-strong: #4a5057;
 
@@ -27,7 +45,7 @@
     --accent-bg: #222f3c;
     --accent-border: #38587a;
 
-    --ok: #66c48d;
+    --ok: #56d28c;
     --ok-bg: #1d2c24;
     --ok-border: #2f4a3a;
 

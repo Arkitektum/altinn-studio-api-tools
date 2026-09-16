@@ -189,7 +189,6 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
             {/* The one choice this panel is for, and the way back into the list to change it. */}
             <div className="picklist">
                 <button type="button" className="picklist__item" aria-haspopup="dialog" onClick={() => setPicking(true)}>
-                    <span className="led led--ok" aria-hidden="true" />
                     <span>
                         {selected ? instanceLabel(selected) : "New instance"}
                         {selected && !selectedIsListed ? " · not in the active list" : ""}
@@ -267,9 +266,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                             onClick={() => pick(null)}
                             title="Posting creates a new instance for this party"
                         >
-                            {/* Which row is selected is on the button as aria-current, so this is decoration. */}
-                            <span className={`led ${instanceGuid === "" ? "led--ok" : "led--bad"}`} aria-hidden="true" />
                             <span>New instance</span>
+                            {instanceGuid === "" && <span className="picklist__now">current</span>}
                         </button>
 
                         {rows.map(({ instance, absent }) => {
@@ -286,11 +284,11 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                         onClick={() => pick(instance)}
                                         title={instance.id}
                                     >
-                                        <span className={`led ${current ? "led--ok" : "led--warn"}`} aria-hidden="true" />
                                         <span>
                                             {instanceLabel(instance)}
                                             {absent ? " · not in the active list" : ""}
                                         </span>
+                                        {current && <span className="picklist__now">current</span>}
                                         {/* Only storage lists these two, and which it is decides what is
                                             left to do with the instance, so it is a badge and not a word. */}
                                         {instance.state !== "active" && (
@@ -349,7 +347,6 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                             onClick={() => setTyping(!typing)}
                             title="Reach an instance the list does not hold, by its guid"
                         >
-                            <span className="led led--warn" aria-hidden="true" />
                             <span>Other instance…</span>
                         </button>
                     </div>

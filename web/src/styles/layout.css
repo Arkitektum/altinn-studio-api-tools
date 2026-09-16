@@ -15,7 +15,7 @@
     height: var(--header-h);
     padding: 0 16px;
     border-bottom: 1px solid var(--border);
-    background: var(--bg-subtle);
+    background: var(--bg-header);
     position: sticky;
     top: 0;
     z-index: 20;
