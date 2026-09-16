@@ -24,8 +24,8 @@ jobs:
 
             - uses: actions/setup-node@v5
               with:
-                  # The test scripts pass `src/**/*.test.ts` to node --test and let node expand it, which
-                  # needs Node 22 or later. The shell leaves the pattern alone, having nothing to match.
+                  # The test scripts pass `src/**/*.test.ts` and, in web, `.test.tsx` to node --test and let node
+                  # expand them, which needs Node 22 or later. The shell leaves them alone, having nothing to match.
                   node-version: 24
                   cache: npm
 

@@ -68,6 +68,7 @@ web/src
   types.ts            the wire shapes, mirroring the server's
   components/         one file per panel, plus CopyButton and Notice
   lib/                every pure decision, each with a test
+  testDom.ts          a jsdom browser, for the tests that have to render
   styles.css          all the styling
 ```
 
@@ -88,6 +89,8 @@ web/src
 What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a link scrolls to it. Comparing against the strip's edge instead left the two disagreeing by exactly that margin, so clicking a link marked the panel above the one it scrolled to.
 
 **Pure decisions live in `lib/`, and `App.tsx` only wires.** Anything that can be decided from its arguments alone goes into a `lib/` module with a test: which panels show, where a loaded element goes in the payload list, what a step looks like as curl, how a content type maps to a file extension, what each api result looks like as a log entry. `App.tsx` holds state, effects and the calls.
+
+What is left there is still worth asserting, and it is asserted by rendering: `App.test.tsx` runs the whole tool in the jsdom browser `testDom.ts` sets up, against a table of `/api` routes it can hold open at will. The guards are what it is for. A debounced probe answering into a payload that has been typed in since, an instance read arriving after another instance was picked, the state that has to be dropped together with the instance it described: each of those is a rule nothing enforces, and none of them announce themselves when they stop holding.
 
 **State that describes one instance is dropped together.** Changing the instance guid clears the validation issues, the data element list, the process state and the pdf preview in one place, `changeInstanceGuid`, because all of them described the instance you just left. Stale is more misleading than absent.
 

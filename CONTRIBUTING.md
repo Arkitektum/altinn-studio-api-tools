@@ -2,7 +2,7 @@
 
 ## Getting set up
 
-You need Node 22.12 or later. The test scripts hand `src/**/*.test.ts` to `node --test` and let node expand it, which node has only done since 22, and Vite 8 wants 22.12 as well.
+You need Node 22.12 or later. The test scripts hand `src/**/*.test.ts`, and in web `src/**/*.test.tsx` as well, to `node --test` and let node expand them, which node has only done since 22, and Vite 8 wants 22.12 as well.
 
 ```bash
 npm install
@@ -34,6 +34,10 @@ Node's own test runner through `tsx`, no framework. Tests sit next to what they 
 
 Nothing touches the network. Server tests replace `globalThis.fetch` with a stub that asserts the bearer header and answers with whatever the case needs, then restore it in `afterEach`. Web tests cover the `lib/` modules, which are pure by design.
 
+`App.tsx` is covered by `App.test.tsx`, which renders the whole tool in a jsdom browser. That is what `web/src/testDom.ts` is for: it installs the globals, renders with React's own `createRoot` and `act`, and answers `/api` from a table of routes. A route can be a function, which is how a test holds a request open and lets something else happen before it answers. No test library, on the same grounds as the hand-written highlighter and xml diff.
+
+Reach for it only for what a render is the only way to see: an effect firing once per selection, state that has to be dropped together, an answer arriving after the thing it was about has gone. A decision that can be made from its arguments belongs in `lib/`, where it is cheaper to test and cheaper to read.
+
 To run one file:
 
 ```bash
@@ -43,6 +47,7 @@ npx tsx --test server/src/readService.test.ts
 What is worth a test:
 
 - Anything in `web/src/lib/`. That is what the directory is for, and everything in it is already covered.
+- Every guard in `App.tsx` that drops an answer or clears state. Each of them exists because something arrived late or outlived what it described, and none of them show up as a failure when they stop working. Assert against the panel rather than the page: the run log keeps what was asked on purpose, so it is the wrong place to ask whether the tool has moved on.
 - Every branch of a service that talks to Altinn: the happy path, the refusal, and the malformed response. The stub makes all three cheap, and the refusal paths are where the behaviour is subtle, since a failure has to come back as a result with a step log rather than as an exception.
 - Anything you had to reason about twice. If a comment explains why the code is not the obvious thing, a test should hold it there.
 
