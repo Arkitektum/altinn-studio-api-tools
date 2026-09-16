@@ -14,7 +14,7 @@ const selected: Selection = {
     dataGuid: "0f1e2d3c-aaaa-bbbb-cccc-ddddeeeeffff"
 };
 
-const nothingAttempted = { read: null, element: null, compare: null };
+const nothingAttempted = { element: null, compare: null };
 
 const ready: AutoRunInputs = {
     hasToken: true,
@@ -28,7 +28,6 @@ const ready: AutoRunInputs = {
 function keysOf(inputs: AutoRunInputs) {
     const runs = pendingAutoRuns(inputs);
     return {
-        read: runs.read?.key ?? null,
         element: runs.element?.key ?? null,
         compare: runs.compare?.key ?? null
     };
@@ -37,31 +36,20 @@ function keysOf(inputs: AutoRunInputs) {
 describe("pendingAutoRuns", () => {
     it("asks for nothing without a usable token", () => {
         const none = pendingAutoRuns({ ...ready, hasToken: false });
-        assert.deepEqual(none, { read: null, element: null, compare: null });
+        assert.deepEqual(none, { element: null, compare: null });
     });
 
     it("waits for each field the read depends on", () => {
-        const noApp = pendingAutoRuns({ ...ready, selection: { ...selected, app: "" } });
-        assert.equal(noApp.read, null);
-        assert.equal(noApp.element, null);
-
-        const noParty = pendingAutoRuns({ ...ready, selection: { ...selected, party: "" } });
-        assert.equal(noParty.read, null);
-
-        const noInstance = pendingAutoRuns({ ...ready, selection: { ...selected, instanceGuid: "" } });
-        assert.equal(noInstance.read, null);
-        assert.equal(noInstance.element, null);
-
-        const noElement = pendingAutoRuns({ ...ready, selection: { ...selected, dataGuid: "" } });
-        assert.ok(noElement.read);
-        assert.equal(noElement.element, null);
-        assert.equal(noElement.compare, null);
+        for (const missing of [{ app: "" }, { party: "" }, { instanceGuid: "" }, { dataGuid: "" }]) {
+            const runs = pendingAutoRuns({ ...ready, selection: { ...selected, ...missing } });
+            assert.equal(runs.element, null, `element with ${JSON.stringify(missing)}`);
+            assert.equal(runs.compare, null, `compare with ${JSON.stringify(missing)}`);
+        }
     });
 
     it("aims each run at its own scope", () => {
         const keys = selectionKeys(selected);
         const runs = pendingAutoRuns(ready);
-        assert.equal(runs.read?.key, keys.instance);
         // The element's key carries what is stored under it, not only which element it is.
         assert.ok(runs.element);
         assert.ok(runs.element.key.startsWith(keys.dataElement));
@@ -77,27 +65,21 @@ describe("pendingAutoRuns", () => {
     it("asks once per selection, however the answer turned out", () => {
         const attempted = keysOf(ready);
         assert.deepEqual(pendingAutoRuns({ ...ready, attempted }), {
-            read: null,
             element: null,
             compare: null
         });
     });
 
-    it("only reopens the scopes the move touched", () => {
+    it("reopens both when the selection above them moves", () => {
         const attempted = keysOf(ready);
 
-        // Another instance of the same party: the read and everything under it are due again.
-        const elsewhere = { ...selected, instanceGuid: "another" };
-        const afterInstance = pendingAutoRuns({ ...ready, selection: elsewhere, attempted });
-        assert.ok(afterInstance.read);
-        assert.ok(afterInstance.element);
-
-        // Another data element: the instance read stands, the element is read again.
-        const other = { ...selected, dataGuid: "another" };
-        const afterElement = pendingAutoRuns({ ...ready, selection: other, attempted });
-        assert.equal(afterElement.read, null);
-        assert.ok(afterElement.element);
-        assert.ok(afterElement.compare);
+        // Another instance of the same party, and another element of the same instance. Either is a
+        // different element to read and a different stored document to compare against.
+        for (const elsewhere of [{ instanceGuid: "another" }, { dataGuid: "another" }]) {
+            const runs = pendingAutoRuns({ ...ready, selection: { ...selected, ...elsewhere }, attempted });
+            assert.ok(runs.element, JSON.stringify(elsewhere));
+            assert.ok(runs.compare, JSON.stringify(elsewhere));
+        }
     });
 
     it("reads the element again once a post has rewritten it under the same guid", () => {
@@ -113,7 +95,6 @@ describe("pendingAutoRuns", () => {
         const edited = pendingAutoRuns({ ...ready, comparable: "<ettrinn><nytt /></ettrinn>", attempted });
         assert.ok(edited.compare);
         assert.equal(edited.element, null);
-        assert.equal(edited.read, null);
     });
 
     it("does not compare against nothing at all", () => {
@@ -125,7 +106,6 @@ describe("pendingAutoRuns", () => {
     it("asks everything again for another token, since the answers were that token's", () => {
         const attempted = keysOf(ready);
         const runs = pendingAutoRuns({ ...ready, selection: { ...selected, tokenId: "0000" }, attempted });
-        assert.ok(runs.read);
         assert.ok(runs.element);
         assert.ok(runs.compare);
     });

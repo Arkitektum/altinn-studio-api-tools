@@ -12,8 +12,6 @@ export interface AutoRun {
 }
 
 export interface AutoRuns {
-    /** Read the selected instance and validate it. */
-    read: AutoRun | null;
     /** Read the selected data element back, and validate it where that says anything. */
     element: AutoRun | null;
     /** Compare it with what the payload holds for its data type. */
@@ -37,7 +35,7 @@ export interface AutoRunInputs {
      */
     comparable: string | null;
     /** The key each scope has already been attempted for, so a refusal is not retried forever. */
-    attempted: { read: string | null; element: string | null; compare: string | null };
+    attempted: { element: string | null; compare: string | null };
 }
 
 /** So is a party id, and so is a guid pasted into "Other instance". */
@@ -84,7 +82,6 @@ export function pendingAutoRuns(inputs: AutoRunInputs): AutoRuns {
     const onElement = onInstance && Boolean(dataGuid);
 
     return {
-        read: onInstance && inputs.attempted.read !== keys.instance ? { key: keys.instance, delayMs: SELECTION_DELAY_MS } : null,
         element: onElement && inputs.attempted.element !== elementKey ? { key: elementKey, delayMs: SELECTION_DELAY_MS } : null,
         compare:
             onElement && inputs.comparable !== null && inputs.attempted.compare !== compareKey ? { key: compareKey, delayMs: EDIT_DELAY_MS } : null

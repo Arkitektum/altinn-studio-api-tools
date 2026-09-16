@@ -23,3 +23,19 @@ export function useDebounced<T>(value: T, delayMs: number): T {
 
     return settled;
 }
+
+/**
+ * Whether `value` has stopped changing for `delayMs`.
+ *
+ * This rather than the settled value is what a query wants, because the two jobs a debounce is
+ * doing here pull apart. What a request is aimed at should wait for the typing to stop; what is on
+ * screen should not. A query keyed on the settled value does both, and the second one is wrong: it
+ * leaves the instance you have just left showing for as long as the delay, and stale is exactly
+ * what the keys are here to prevent.
+ *
+ * So the key takes the value as it is, which empties the panels the moment the selection moves, and
+ * this gates the request until the value holds still.
+ */
+export function useSettled<T>(value: T, delayMs: number): boolean {
+    return Object.is(useDebounced(value, delayMs), value);
+}

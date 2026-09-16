@@ -314,6 +314,48 @@ describe("App", () => {
     });
 
     /*
+     * An instance read is keyed on the instance, so going back to one already read is an answer
+     * already held. The panels follow the key, which is also what empties them the moment the
+     * selection moves rather than when the next answer happens to arrive.
+     */
+    it("does not read an instance twice when you come back to it", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/instances": (url) =>
+                instanceRead(url.searchParams.get("instanceGuid") ?? "", `Type-${url.searchParams.get("instanceGuid")?.slice(0, 4)}`),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+
+        await app.wait(700);
+        const reads = () => stub.calls.filter((made) => made === "GET /api/instances").length;
+        assert.equal(reads(), 1);
+        assert.match(elementsListed(app), /Type-99d0/);
+
+        // "Other instance" toggles the field rather than opening it, so this only asks for it when
+        // it is not already there.
+        const typed = async (guid: string) => {
+            if (!app.container.querySelector("#typedInstanceGuid")) {
+                await openInstances(app);
+                await click(app, findByText(app, "#panel-instances button", "Other instance"));
+            }
+            await type(app, find<HTMLInputElement>(app, "#typedInstanceGuid"), guid);
+            await app.wait(700);
+        };
+
+        await typed(B);
+        assert.equal(reads(), 2, "another instance is another read");
+        assert.match(elementsListed(app), /Type-1111/);
+
+        await typed(A);
+        assert.equal(reads(), 2, "and the first one is already in hand");
+        assert.match(elementsListed(app), /Type-99d0/, "shown from the cache rather than read again");
+    });
+
+    /*
      * Nothing cancels a request, so a read can answer after the selection it was aimed at has moved.
      * The key it was aimed at is what lets the late one be dropped rather than written over the
      * newer answer.

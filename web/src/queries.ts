@@ -91,5 +91,12 @@ export const queryKeys = {
      * and turning it on should not look like the short list being wrong.
      */
     instances: (tokenId: string, org: string, app: string, party: string, completed: boolean) =>
-        ["app", tokenId, org, app, "instances", party, completed] as const
+        ["app", tokenId, org, app, "instances", party, completed] as const,
+
+    /**
+     * One instance, as read back with its validation. Everything the panels below the instance show
+     * comes from here, so it is one key rather than one per panel: they describe the same moment and
+     * would otherwise be able to disagree about which instance they are describing.
+     */
+    instance: (tokenId: string, org: string, app: string, party: string, guid: string) => ["app", tokenId, org, app, "instance", party, guid] as const
 };

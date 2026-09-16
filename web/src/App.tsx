@@ -26,7 +26,7 @@ import { buildValidationRequest, sameSubmission } from "./lib/validationRequest"
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
-import { useDebounced } from "./lib/useDebounced";
+import { useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
@@ -57,7 +57,6 @@ import type {
     ListInstancesResult,
     LogEntry,
     LogResult,
-    ProcessSummary,
     PublicToken,
     ReadInstanceResult,
     RunMode,
@@ -75,6 +74,13 @@ const NO_APPS: CatalogueApp[] = [];
 const NO_GROUPS: ExampleGroup[] = [];
 const NO_TOKENS: PublicToken[] = [];
 const NO_PARTIES: AppParty[] = [];
+const NO_ELEMENTS: DataElementSummary[] = [];
+
+/** What the instance query answers with: the read and the validation that went with it. */
+interface InstanceAnswer {
+    read: ReadInstanceResult;
+    validated: ValidateResult | null;
+}
 
 /** Org and app are typed a character at a time, and "et-v4" should not be five probes. */
 const PROBE_DELAY_MS = 400;
@@ -170,23 +176,23 @@ export function App() {
      * also why an answer for the app you have left cannot land under the app you are on, which used
      * to be a guard at each of three points inside the probe.
      *
-     * The key takes the settled org and app rather than the typed ones, so "et-v4" is one request
-     * and not five. See `lib/useDebounced.ts`.
+     * The key takes the target as typed, so it moves with the field and the panel never shows one
+     * app's answer under another's name. What waits for the typing to stop is the request, which is
+     * what `useSettled` gates: "et-v4" is one read and not five. See `lib/useDebounced.ts`.
      */
-    const settledOrg = useDebounced(org, PROBE_DELAY_MS);
-    const settledApp = useDebounced(app, PROBE_DELAY_MS);
-    const probeAimed = tokenUsable && Boolean(activeTokenId && settledOrg && settledApp);
-    const probeParams = { tokenId: activeTokenId ?? "", org: settledOrg, app: settledApp };
+    const targetSettled = useSettled(`${org}/${app}`, PROBE_DELAY_MS);
+    const probeAimed = tokenUsable && Boolean(activeTokenId && org && app);
+    const probeParams = { tokenId: activeTokenId ?? "", org, app };
 
     const metadataQuery = useQuery({
-        queryKey: queryKeys.appMetadata(probeParams.tokenId, settledOrg, settledApp),
+        queryKey: queryKeys.appMetadata(probeParams.tokenId, org, app),
         queryFn: () => api.getAppMetadata(probeParams),
-        enabled: probeAimed
+        enabled: probeAimed && targetSettled
     });
 
     /* A bonus: not every token may list them, and a refusal costs the picker its options and nothing else. */
     const partiesQuery = useQuery<AppParty[]>({
-        queryKey: queryKeys.appParties(probeParams.tokenId, settledOrg, settledApp),
+        queryKey: queryKeys.appParties(probeParams.tokenId, org, app),
         queryFn: async () => {
             try {
                 return await api.getAppParties(probeParams);
@@ -194,7 +200,7 @@ export function App() {
                 return NO_PARTIES;
             }
         },
-        enabled: probeAimed
+        enabled: probeAimed && targetSettled
     });
 
     const metadata = metadataQuery.data ?? null;
@@ -228,17 +234,13 @@ export function App() {
      */
     const [includeCompleted, setIncludeCompleted] = useState(false);
     /** And which instance has already been read, so it is read once per selection. */
-    const [readAttempted, setReadAttempted] = useState<string | null>(null);
     /** Which data element has been read back, keyed by what was stored under it at the time. */
     const [elementAttempted, setElementAttempted] = useState<string | null>(null);
     /** And which element was compared against which payload text. */
     const [compareAttempted, setCompareAttempted] = useState<string | null>(null);
 
-    /** Where the instance stands, from the last instance read or process move. */
-    const [instanceProcess, setInstanceProcess] = useState<ProcessSummary | null>(null);
-
-    const [instanceDataElements, setInstanceDataElements] = useState<DataElementSummary[]>([]);
-    const [dataGuid, setDataGuid] = useState("");
+    /** Which data element the operator picked. Empty means whichever the instance lists first. */
+    const [preferredDataGuid, setPreferredDataGuid] = useState("");
     /** The last comparison of the stored xml against the xml as written. */
     const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
     const [comparing, setComparing] = useState(false);
@@ -254,8 +256,6 @@ export function App() {
      * with. The errors are split for the same reason. A read that failed without being asked for
      * has no business appearing under the buttons in Data element.
      */
-    const [reading, setReading] = useState(false);
-    const [readError, setReadError] = useState<unknown>(null);
     const [fetchingElement, setFetchingElement] = useState(false);
     const [fetchError, setFetchError] = useState<unknown>(null);
     const [rendering, setRendering] = useState(false);
@@ -271,10 +271,117 @@ export function App() {
      */
     const [validationAnswer, setValidationAnswer] = useState<{ report: unknown; request: ValidationReportRequest } | null>(null);
 
+    /**
+     * The instance selected right now, through a ref. `appendLog` is called from requests that
+     * closed over an earlier render, and the guid it has to compare against is the one on screen at
+     * the moment the answer arrives.
+     */
+    const selectedInstance = useRef(instanceGuid);
+    useEffect(() => {
+        selectedInstance.current = instanceGuid;
+    });
+
+    const HISTORY_LIMIT = 25;
+    const appendLog = useCallback((result: LogResult) => {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const at = new Date().toLocaleTimeString("nb");
+        setLogs((current) => [{ id, at, result }, ...current].slice(0, HISTORY_LIMIT));
+
+        const validation = result.validation;
+        if (!validation) return;
+        // A validation view belongs to exactly one instance, so folding in one that answered
+        // after another instance was selected would replace the issues on screen with the ones
+        // you just left. The request itself keeps its place in the log either way.
+        if (validation.instanceGuid !== selectedInstance.current) return;
+        setValidations((current) => upsertValidation(current, validation, at, id));
+    }, []);
+
+    const clearValidations = useCallback(() => setValidations([]), []);
+
+    /*
+     * The party's instances, so a guid can be picked rather than pasted.
+     *
+     * The party settles first, the way the target does: it is typed, and it is also filled in from
+     * the token's claim, both of which would otherwise list a party per character.
+     *
+     * The log entry is written in the `queryFn` rather than from the answer, because the log is a
+     * record of requests made and this is the request. A listing read back out of the cache is not
+     * one, and does not appear.
+     */
+    const partySettled = useSettled(instanceOwnerPartyId, SELECTION_DELAY_MS);
+    const listParams = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId };
+
+    const instancesKey = queryKeys.instances(listParams.tokenId, org, app, instanceOwnerPartyId, includeCompleted);
+
+    const listQuery = useQuery({
+        queryKey: instancesKey,
+        queryFn: async () => {
+            const result = await api.listInstances({ ...listParams, includeCompleted: includeCompleted ? "true" : "false" });
+            appendLog(logFromInstances(result));
+            return result;
+        },
+        enabled: probeAimed && targetSettled && partySettled && Boolean(instanceOwnerPartyId)
+    });
+
+    /**
+     * A failed listing stays null rather than empty, since "none" would be a claim we cannot make
+     * when the request never answered. So does one the app refused, for the same reason.
+     */
+    const instanceList = listQuery.data?.ok ? listQuery.data.instances : null;
+    /** False when the completed ones were asked for and storage would not answer. */
+    const completedListed = listQuery.data?.completedListed ?? null;
+
+    /*
+     * The selected instance, read back and validated as one thing.
+     *
+     * Two requests and one answer, which is why the `queryFn` makes both: the log has always shown
+     * them as one entry, and the panels below describe one moment rather than two. Validating an
+     * instance that could not be read would fail the same way, so it is only asked for after a read
+     * that worked, and a validation that fails leaves the read standing with its own step in the log.
+     *
+     * Everything those panels show hangs off this key. An answer for the instance you have left
+     * cannot appear under the one you are on, and selecting another instance does not have to
+     * remember to clear the data elements, the process or the issues: they are this, and this is
+     * keyed on the instance.
+     */
+    const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
+    const instanceParams = { ...listParams, instanceGuid };
+    const instanceKey = queryKeys.instance(listParams.tokenId, org, app, instanceOwnerPartyId, instanceGuid);
+
+    const instanceQuery = useQuery({
+        queryKey: instanceKey,
+        queryFn: async () => {
+            const read = await api.getInstance(instanceParams);
+            let validated: ValidateResult | null = null;
+            if (read.ok) {
+                try {
+                    validated = await api.validateInstance(instanceParams);
+                } catch {
+                    /* the read still stands, and its own step is in the log */
+                }
+            }
+            appendLog(logFromRead(read, validated));
+            return { read, validated };
+        },
+        enabled: probeAimed && targetSettled && partySettled && instanceSettled && Boolean(instanceOwnerPartyId && instanceGuid)
+    });
+
+    const instanceDataElements = instanceQuery.data?.read.dataElements ?? NO_ELEMENTS;
+    /** Where the instance stands, from the last read or process move. */
+    const instanceProcess = instanceQuery.data?.read.process ?? null;
+
+    /**
+     * The data element the Inspect column is about: the one picked, or the first the instance has.
+     *
+     * Derived the way the token in use is, and it replaces the same repair in two places. Reading an
+     * instance used to preselect the first element, and advancing the process used to check whether
+     * the selected one had survived the move and fall back if it had not. Both are this.
+     */
+    const selectedElement = instanceDataElements.find((element) => element.id === preferredDataGuid) ?? instanceDataElements[0] ?? null;
+    const dataGuid = selectedElement?.id ?? "";
+
     const selection = { tokenId: activeTokenId, org, app, party: instanceOwnerPartyId, instanceGuid, dataGuid };
 
-    /** The data element the whole Inspect column is about, from the last instance read. */
-    const selectedElement = instanceDataElements.find((element) => element.id === dataGuid) ?? null;
     const selectedDataType = selectedElement?.dataType ?? "";
 
     /** Why validating it would say nothing useful, or null when it would. */
@@ -338,59 +445,9 @@ export function App() {
     /** Whether the selection has moved on from what a request was aimed at. */
     const movedOn = useCallback((requested: string, scope: keyof SelectionKeys) => hasMovedOn(requested, aim.current, scope), []);
 
-    const HISTORY_LIMIT = 25;
-    const appendLog = useCallback((result: LogResult) => {
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const at = new Date().toLocaleTimeString("nb");
-        setLogs((current) => [{ id, at, result }, ...current].slice(0, HISTORY_LIMIT));
-
-        const validation = result.validation;
-        if (!validation) return;
-        // A validation view belongs to exactly one instance, so folding in one that answered
-        // after another instance was selected would replace the issues on screen with the ones
-        // you just left. The request itself keeps its place in the log either way.
-        if (validation.instanceGuid !== aim.current.instanceGuid) return;
-        setValidations((current) => upsertValidation(current, validation, at, id));
-    }, []);
-
-    const clearValidations = useCallback(() => setValidations([]), []);
-
-    /*
-     * The party's instances, so a guid can be picked rather than pasted.
-     *
-     * The party settles first, the way the target does: it is typed, and it is also filled in from
-     * the token's claim, both of which would otherwise list a party per character.
-     *
-     * The log entry is written in the `queryFn` rather than from the answer, because the log is a
-     * record of requests made and this is the request. A listing read back out of the cache is not
-     * one, and does not appear.
-     */
-    const settledParty = useDebounced(instanceOwnerPartyId, SELECTION_DELAY_MS);
-    const listParams = { tokenId: activeTokenId ?? "", org: settledOrg, app: settledApp, instanceOwnerPartyId: settledParty };
-
-    const instancesKey = queryKeys.instances(listParams.tokenId, settledOrg, settledApp, settledParty, includeCompleted);
-
-    const listQuery = useQuery({
-        queryKey: instancesKey,
-        queryFn: async () => {
-            const result = await api.listInstances({ ...listParams, includeCompleted: includeCompleted ? "true" : "false" });
-            appendLog(logFromInstances(result));
-            return result;
-        },
-        enabled: probeAimed && Boolean(settledParty)
-    });
-
-    /**
-     * A failed listing stays null rather than empty, since "none" would be a claim we cannot make
-     * when the request never answered. So does one the app refused, for the same reason.
-     */
-    const instanceList = listQuery.data?.ok ? listQuery.data.instances : null;
-    /** False when the completed ones were asked for and storage would not answer. */
-    const completedListed = listQuery.data?.completedListed ?? null;
-
     /** Picking another data element drops the held one, which is no longer what is selected. */
     const changeDataGuid = useCallback((next: string) => {
-        setDataGuid(next);
+        setPreferredDataGuid(next);
         setFetchedElement((current) => (current?.dataGuid === next ? current : null));
         // A comparison describes one data element, so it is stale the moment another is picked.
         setCompareResult((current) => (current?.dataGuid === next ? current : null));
@@ -410,19 +467,19 @@ export function App() {
     const clearPdf = useCallback(() => showPdf(null), [showPdf]);
 
     /**
-     * Points the tool at an instance, or at none. Everything that described the previous one goes
-     * with it: the validation issues, the data element list, the process state and the pdf. Stale
-     * results are more misleading than absent ones.
+     * Points the tool at an instance, or at none.
+     *
+     * The data element list, the process and which element is selected used to be cleared here, and
+     * are not any more: they are the instance query and a preference read against it, both keyed on
+     * the guid this is setting. What is left is the state that is nobody's answer, the issues and
+     * the pdf, which nothing would drop on its own.
      */
     const selectInstance = useCallback(
         (instance: InstanceSummary | null) => {
             const guid = instance?.instanceGuid ?? "";
             if (guid !== instanceGuid) {
                 clearValidations();
-                setInstanceDataElements([]);
-                setDataGuid("");
                 setFetchedElement(null);
-                setInstanceProcess(null);
                 clearPdf();
             }
             setInstanceGuid(guid);
@@ -557,33 +614,18 @@ export function App() {
      * other field moved is the same run, not another one. That is what the five disables below are
      * for, and there is nothing to add to them that `lib/autoRuns.ts` does not already decide.
      */
-    const {
-        read: nextRead,
-        element: nextElement,
-        compare: nextCompare
-    } = pendingAutoRuns({
+    const { element: nextElement, compare: nextCompare } = pendingAutoRuns({
         hasToken: tokenUsable,
         selection,
         elementChangedAt: selectedElement?.lastChanged ?? null,
         comparable,
         attempted: {
-            read: readAttempted,
             element: elementAttempted,
             compare: compareAttempted
         }
     });
 
     /* oxlint-disable react-hooks/exhaustive-deps -- the key is the whole of it, see above */
-
-    // A post marks its own instance as read, since it already reads and validates it.
-    useEffect(() => {
-        if (!nextRead) return;
-        const timer = window.setTimeout(() => {
-            setReadAttempted(nextRead.key);
-            void readSelected(instanceOwnerPartyId, instanceGuid);
-        }, nextRead.delayMs);
-        return () => window.clearTimeout(timer);
-    }, [nextRead?.key]);
 
     useEffect(() => {
         if (!nextElement) return;
@@ -639,13 +681,18 @@ export function App() {
             /* same */
         }
 
-        // The post pointed the tool at this instance, so it is the selected one unless another was
-        // picked while the follow-up was in flight.
-        const requested = selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: guid }).instance;
-        if (instance?.ok && !movedOn(requested, "instance")) {
-            setInstanceDataElements(instance.dataElements);
-            changeDataGuid(instance.dataElements[0]?.id ?? "");
-            setInstanceProcess(instance.process);
+        /*
+         * What was read goes into the cache under the instance it was read for, rather than into
+         * the state of whichever instance is selected by the time it lands. That is what makes a
+         * late answer harmless here: it goes where it belongs either way, and the panels show it
+         * when and only when that is the instance they are about. It also saves the read the
+         * instance query would otherwise make as soon as the selection catches up.
+         */
+        if (instance) {
+            queryClient.setQueryData(queryKeys.instance(activeTokenId, org, app, party, guid), {
+                read: instance,
+                validated: validation
+            });
         }
         return { instance, validation };
     }
@@ -680,10 +727,10 @@ export function App() {
                 const party = payload.instanceOwnerPartyId ?? instanceOwnerPartyId;
                 setInstanceGuid(payload.instanceGuid);
                 // By hand as well as through the render, because the follow-up reads and validates
-                // the new instance before React has re-rendered. Left to the effect, those answers
-                // would be checked against the instance this post replaced and thrown away.
+                // the new instance before React has re-rendered, and its validation would otherwise
+                // be checked against the instance this post replaced and thrown away.
+                selectedInstance.current = payload.instanceGuid;
                 aim.current = { ...aim.current, party, instanceGuid: payload.instanceGuid };
-                setReadAttempted(selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: payload.instanceGuid }).instance);
             }
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
@@ -704,50 +751,6 @@ export function App() {
      */
     function refreshInstances() {
         void listQuery.refetch();
-    }
-
-    /**
-     * Reads the selected instance and validates it, as one log entry. Both are reads, so this
-     * runs on its own whenever the selection changes rather than waiting for a button.
-     */
-    async function readSelected(party: string, guid: string) {
-        if (!activeTokenId || !org || !app || !party || !guid) return;
-        // Aimed at the instance this was called for rather than the one selected now, since a post
-        // reads back the instance it just made.
-        const requested = selectionKeys({ tokenId: activeTokenId, org, app, party, instanceGuid: guid }).instance;
-        setReading(true);
-        setReadError(null);
-        const params = { tokenId: activeTokenId, org, app, instanceOwnerPartyId: party, instanceGuid: guid };
-        try {
-            const read = await api.getInstance(params);
-            // Another instance can be selected while this is in flight. Its data elements would
-            // then be listed under the new instance's guid, and reading one would ask the new
-            // instance for an element that belongs to the old.
-            const stale = movedOn(requested, "instance");
-            if (!stale) {
-                setInstanceDataElements(read.dataElements);
-                setInstanceProcess(read.process);
-                // Preselect one so reading a data element is a single click.
-                if (read.dataElements.length > 0) changeDataGuid(read.dataElements[0]?.id ?? "");
-            }
-
-            // Validating an instance that could not be read would just fail the same way, and one
-            // the tool has already left is not worth the request.
-            let validated: ValidateResult | null = null;
-            if (read.ok && !stale) {
-                try {
-                    validated = await api.validateInstance(params);
-                } catch {
-                    /* the read still stands, and its own step is in the log */
-                }
-            }
-            appendLog(logFromRead(read, validated));
-        } catch (error) {
-            if (movedOn(requested, "instance")) return;
-            setReadError(error);
-        } finally {
-            setReading(false);
-        }
     }
 
     /**
@@ -1017,7 +1020,9 @@ export function App() {
 
     async function advance() {
         if (!activeTokenId) return;
-        const requested = keys.instance;
+        // The instance being moved, named before the move so the answer lands on it rather than on
+        // whichever is selected when it comes back.
+        const advancedKey = queryKeys.instance(activeTokenId, org, app, instanceOwnerPartyId, instanceGuid);
         setAdvancing(true);
         setProcessError(null);
         try {
@@ -1045,25 +1050,24 @@ export function App() {
             // The task the instance was in when the move was asked for, which is what names it:
             // the result carries the task it landed in.
             appendLog(logFromAdvance(result, read, instanceProcess?.taskType ?? null));
-            // Both of the below describe the instance that was advanced, not whichever is selected
-            // by the time the move came back.
-            if (movedOn(requested, "instance")) return;
 
-            if (read?.ok) {
-                setInstanceDataElements(read.dataElements);
-                // Keep the element that is selected where it survived the move, since the panels
-                // below are about it, and fall back to the first of whatever is there now.
-                if (!read.dataElements.some((element) => element.id === dataGuid)) {
-                    changeDataGuid(read.dataElements[0]?.id ?? "");
-                }
-            }
-            // The read is the later answer, so it wins. Without one, the advance's own response
-            // still carries the process it landed in, and a refused move leaves the task the
-            // instance is still in on screen rather than blanking it.
-            const moved = read?.ok ? read.process : result.ok ? result.process : null;
-            if (moved) setInstanceProcess(moved);
+            /*
+             * Into the cache under the instance that was advanced, which is what it describes
+             * whatever is selected by the time the move comes back. Nothing here has to preserve
+             * which data element was selected either: that is a preference read against the list,
+             * so one that survived the move stays and one that did not falls back to the first.
+             *
+             * The read is the later answer, so it wins. Without one, the advance's own response
+             * still carries the process it landed in, and a refused move leaves the task the
+             * instance is still in on screen rather than blanking it.
+             */
+            queryClient.setQueryData<InstanceAnswer>(advancedKey, (current) => {
+                if (read?.ok) return { read, validated: current?.validated ?? null };
+                const moved = result.ok ? result.process : null;
+                if (!moved || !current) return current;
+                return { ...current, read: { ...current.read, process: moved } };
+            });
         } catch (error) {
-            if (movedOn(requested, "instance")) return;
             setProcessError(error);
         } finally {
             setAdvancing(false);
@@ -1143,7 +1147,7 @@ export function App() {
     const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
     /** Anything at all in flight, which is what the log reports rather than any one action. */
-    const inFlight = running || reading || fetchingElement || rendering || advancing;
+    const inFlight = running || instanceQuery.isFetching || fetchingElement || rendering || advancing;
 
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
@@ -1265,7 +1269,7 @@ export function App() {
                             // put a spinner on Refresh for a request it did not make.
                             busy={listQuery.isFetching || removeInstance.isPending}
                             // The error does belong here: selecting a row is what starts the read.
-                            error={listQuery.error ?? removeInstance.error ?? readError}
+                            error={listQuery.error ?? removeInstance.error ?? instanceQuery.error}
                         />
                     )}
 
@@ -1357,7 +1361,7 @@ export function App() {
                                 validateBlockedBy={validateBlockedBy}
                                 // Also while the instance is being read, since that read is what
                                 // replaces the list this panel is choosing from.
-                                busy={fetchingElement || reading}
+                                busy={fetchingElement || instanceQuery.isFetching}
                                 hasToken={tokenUsable}
                                 error={fetchError}
                             >
