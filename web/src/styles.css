@@ -291,24 +291,18 @@ body {
     max-width: 22ch;
 }
 
-.chain__link--done .chain__value {
+/* What a link holds, where the label beside it is muted. */
+.chain__value {
     color: var(--text);
-}
-
-/* The one thing to do next, and where to do it. */
-.chain__link--next .chain__label,
-.chain__link--next .chain__value {
-    color: var(--accent);
 }
 
 /*
  * The panel you are looking at.
  *
  * Violet, which is the one hue that means nothing else in this strip. Grey was tried twice and
- * read as a slightly lighter rectangle both times, and the accent was out of the question: it
- * already means "the next thing to do", which a position is not. Violet is used categorically
- * elsewhere, for subform data types and for attribute names in a code block, and as with those
- * two the meanings never share a surface.
+ * read as a slightly lighter rectangle both times, and the accent means an action rather than a
+ * position. Violet is used categorically elsewhere, for subform data types and for attribute names
+ * in a code block, and as with those two the meanings never share a surface.
  */
 .chain__link--here {
     background: var(--violet-border);
@@ -322,12 +316,6 @@ body {
 
 .chain__link--here .chain__value {
     color: var(--text);
-}
-
-/* Not reachable yet, so it is there to explain the order rather than to be read. */
-.chain__link--waiting .chain__label,
-.chain__link--waiting .chain__value {
-    color: var(--border-strong);
 }
 
 /* ------------------------------------------------------------------ layout */

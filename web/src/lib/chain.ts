@@ -1,30 +1,21 @@
 /**
- * The chain the whole tool hangs off: a user, an application, a party, an instance, a data
- * element. Each link needs the ones before it, which is why panels come and go, and that was
- * only ever implicit before: a panel you have not earned yet is simply absent, which says
- * nothing about what would earn it.
+ * The chain the whole tool hangs off: a user, an application, a party, an instance, a data element.
  *
- * So this says it outright, and names the link to fill in next.
+ * A readout and a way to get about, which is all it is now. It used to say which link to fill in
+ * next and where, because a panel you had not earned yet was simply absent and an absent panel says
+ * nothing about what would bring it back. Every panel is on screen from the start and says what it
+ * is waiting for, so that job is done where it belongs and saying it twice would be worse than not
+ * saying it at all. See `lib/readiness.ts`.
+ *
+ * What is left is worth more than before rather than less: with nothing hidden the column is longer,
+ * and a line that says what is selected and takes you to the panel that sets it is a way down it.
  */
-
-/** done: it has a value. next: nothing yet, and everything before it is done. waiting: blocked. */
-export type ChainState = "done" | "next" | "waiting";
-
 export interface ChainStep {
     label: string;
     /** What it holds, or null when it holds nothing yet. */
     value: string | null;
-    state: ChainState;
-    /** What sets it, so the strip can say where to go. */
-    where: string;
-    /** The id of that panel, so the strip can take you there. */
+    /** The id of the panel that sets it, so the strip can take you there. */
     anchor: string;
-    /**
-     * Whether it is worth marking as the panel on screen. Every link is, now that they all sit in
-     * one scrolling column. While the test user had a sticky rail of its own it was always on
-     * screen, and marking it would have said nothing.
-     */
-    spy: boolean;
 }
 
 export interface ChainInputs {
@@ -43,29 +34,13 @@ export interface ChainInputs {
 }
 
 export function requestChain(inputs: ChainInputs): ChainStep[] {
-    /*
-     * Walked in order, because a link is only settled when everything before it is. A value
-     * restored from a previous session, a party say, is still shown once it is there, but it
-     * reads as blocked until the links it depends on are filled in: without a token nothing
-     * downstream of it can be used, and the panels are absent to match.
-     */
-    const links: { label: string; value: string | null; where: string; anchor: string; spy: boolean; needsRealInstance?: boolean }[] = [
-        { label: "Test user", value: inputs.user, where: "Test user", anchor: "panel-test-user", spy: true },
-        { label: "Application", value: inputs.application, where: "Target", anchor: "panel-target", spy: true },
-        { label: "Party", value: inputs.party, where: "Target", anchor: "panel-target", spy: true },
+    return [
+        { label: "Test user", value: inputs.user, anchor: "panel-test-user" },
+        { label: "Application", value: inputs.application, anchor: "panel-target" },
+        { label: "Party", value: inputs.party, anchor: "panel-target" },
         // Once there is a party the instance list is showing and something in it is always
-        // selected, so this link is settled either way: a guid, or the new instance row.
-        { label: "Instance", value: inputs.instance ?? "new", where: "Instances", anchor: "panel-instances", spy: true },
-        // A new instance has no data elements yet, so this waits rather than inviting a click.
-        { label: "Data element", value: inputs.dataElement, where: "Data element", anchor: "panel-data-element", spy: true, needsRealInstance: true }
+        // selected, so this holds a value either way: a guid, or the new instance row.
+        { label: "Instance", value: inputs.instance ?? "new", anchor: "panel-instances" },
+        { label: "Data element", value: inputs.dataElement, anchor: "panel-data-element" }
     ];
-
-    let blocked = false;
-    return links.map((link) => {
-        const unreachable = blocked || (link.needsRealInstance === true && !inputs.instance);
-        if (unreachable) return { ...link, state: "waiting" as const };
-        if (link.value) return { ...link, state: "done" as const };
-        blocked = true;
-        return { ...link, state: "next" as const };
-    });
 }
