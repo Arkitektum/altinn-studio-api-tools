@@ -72,6 +72,7 @@ const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
 /** Stood in for a query that has not answered yet, and the same array every time it is. */
 const NO_APPS: CatalogueApp[] = [];
 const NO_GROUPS: ExampleGroup[] = [];
+const NO_TOKENS: PublicToken[] = [];
 
 /**
  * Whether the payload is xml the server could compare, asked of the browser's own parser.
@@ -106,8 +107,27 @@ export function App() {
     /* The three that have to answer. LocalTest being down is a state, not a failure to boot. */
     const bootError = configQuery.error ?? catalogueQuery.error ?? examplesQuery.error ?? null;
 
-    const [tokens, setTokens] = useState<PublicToken[]>([]);
-    const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
+    /*
+     * The tokens the server is holding. Minting, renewing and deleting one all invalidate this,
+     * from the panel that does them, so the list is never something a caller has to remember to
+     * refresh. A failed listing leaves no tokens, which is what the panel would say anyway.
+     */
+    const tokensQuery = useQuery({ queryKey: queryKeys.tokens(), queryFn: api.listTokens });
+    const tokens = tokensQuery.data ?? NO_TOKENS;
+
+    /** Which token the operator picked. Null means whichever the server lists first. */
+    const [preferredTokenId, setPreferredTokenId] = useState<string | null>(null);
+
+    /**
+     * The token in use: the one picked, or the first the server has.
+     *
+     * Derived rather than stored, which is what lets a preference for a token that has gone fall
+     * back on its own. The server prunes expired tokens and a restart loses all of them, so the
+     * list moving under the selection is the normal case rather than the odd one. This used to be a
+     * repair run after every listing, and a repair only runs where someone remembered to put it.
+     */
+    const activeToken = useMemo(() => tokens.find((token) => token.id === preferredTokenId) ?? tokens[0] ?? null, [tokens, preferredTokenId]);
+    const activeTokenId = activeToken?.id ?? null;
 
     const [org, setOrg] = useLocalStorage("org", "");
     const [app, setApp] = useLocalStorage("app", "");
@@ -377,23 +397,6 @@ export function App() {
         const timer = window.setInterval(() => setNow(Date.now()), 1000);
         return () => window.clearInterval(timer);
     }, []);
-
-    const refreshTokens = useCallback(async () => {
-        try {
-            const list = await api.listTokens();
-            setTokens(list);
-            // Keep the selection valid across server restarts and expiry pruning.
-            setActiveTokenId((current) => (current && list.some((token) => token.id === current) ? current : (list[0]?.id ?? null)));
-        } catch {
-            /* the panel says there is no token, which is what a failed listing leaves you with */
-        }
-    }, []);
-
-    useEffect(() => {
-        void refreshTokens();
-    }, [refreshTokens]);
-
-    const activeToken = useMemo(() => tokens.find((token) => token.id === activeTokenId) ?? null, [tokens, activeTokenId]);
 
     const tokenUsable = Boolean(activeToken) && !isExpired(activeToken?.expiresAt ?? null, now);
     /*
@@ -1256,8 +1259,7 @@ export function App() {
                         localtest={localtest}
                         tokens={tokens}
                         activeToken={activeToken}
-                        onActivate={setActiveTokenId}
-                        onTokensChanged={() => void refreshTokens()}
+                        onActivate={setPreferredTokenId}
                         now={now}
                     />
 

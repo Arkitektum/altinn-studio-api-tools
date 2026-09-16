@@ -35,7 +35,15 @@ export function makeQueryClient(): QueryClient {
                 gcTime: Infinity
             },
             mutations: {
-                retry: false
+                retry: false,
+                /*
+                 * Dropped as soon as nothing is looking at it. A mutation here is a post, and what
+                 * came back from one is folded into the run log the moment it lands, so the cache's
+                 * copy is never read again. The default of five minutes would hold every run result
+                 * for that long, and a run result carries the request body: posting a file means
+                 * megabytes of base64 kept for nothing.
+                 */
+                gcTime: 0
             }
         }
     });

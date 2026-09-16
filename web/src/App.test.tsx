@@ -105,6 +105,13 @@ async function mount(t: TestContext, routes: Routes) {
         client.clear();
         stub.restore();
     });
+    /*
+     * Settled before it is handed over, so a test asserts against a tool that has booted rather
+     * than one still asking. The first render only starts the queries; how many of them have
+     * answered by the time it returns is a race, and one test passing on it is not a reason for
+     * the next to.
+     */
+    await app.wait(20);
     return { app, stub };
 }
 
@@ -146,6 +153,37 @@ describe("App", () => {
         for (const call of ["GET /api/config", "GET /api/catalogue", "GET /api/examples", "GET /api/localtest/status"]) {
             assert.equal(stub.calls.filter((made) => made === call).length, 1, `${call} should have been asked exactly once`);
         }
+    });
+
+    /*
+     * Deleting the token in use covers the whole of step 2 in one path: the mutation runs, it
+     * invalidates the list rather than the panel telling App to refresh, and the token in use falls
+     * back because it is derived from the list rather than stored beside it. The labels are ones
+     * LocalTest's fallback pair does not use, since those are in the picker and would match anyway.
+     */
+    it("falls back to the token still there when the one in use is deleted", async (t) => {
+        const alfa: PublicToken = { ...token, id: "t1", label: "Alfa Testperson" };
+        const beta: PublicToken = { ...token, id: "t2", label: "Beta Testperson" };
+        let deleted: string | null = null;
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/tokens": () => [alfa, beta].filter((held) => held.id !== deleted),
+            "DELETE /api/tokens/t1": () => {
+                deleted = "t1";
+                return null;
+            }
+        });
+
+        assert.match(app.container.textContent ?? "", /Alfa Testperson/, "the first token should be the one in use");
+
+        await click(app, find(app, "button[aria-label='Delete token Alfa Testperson']"));
+        // The invalidation refetches, which is another round trip after the delete answered.
+        await app.wait(50);
+
+        assert.equal(stub.calls.filter((made) => made === "GET /api/tokens").length, 2, "deleting should have asked for the list again");
+        assert.doesNotMatch(app.container.textContent ?? "", /Alfa Testperson/, "the deleted token should be gone");
+        assert.match(app.container.textContent ?? "", /Beta Testperson/, "and the tool should be using the one still there");
     });
 
     /*

@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
+import { queryKeys } from "../queries";
 import { describeExpiry, isExpired, summariseClaims } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
@@ -36,83 +38,67 @@ interface TokenPanelProps {
     tokens: PublicToken[];
     activeToken: PublicToken | null;
     onActivate: (id: string) => void;
-    onTokensChanged: () => void;
     now: number;
 }
 
-export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate, onTokensChanged, now }: TokenPanelProps) {
-    const [busy, setBusy] = useState(false);
-    const [error, setError] = useState<unknown>(null);
-    const [renewing, setRenewing] = useState(false);
-    const [available, setAvailable] = useState<LocaltestUsers | null>(null);
-    const [picked, setPicked] = useState("");
+export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate, now }: TokenPanelProps) {
+    const client = useQueryClient();
+    const [pickedRaw, setPicked] = useState("");
     /** A user id typed by hand, for a user LocalTest did not offer. */
     const [typedId, setTypedId] = useState("");
 
-    // Asked for once. A LocalTest that starts later is covered by the reload the operator does
-    // anyway to get the status dot green.
-    useEffect(() => {
-        void (async () => {
+    /*
+     * Asked for once. A LocalTest that starts later is covered by the reload the operator does
+     * anyway to get the status dot green. A refusal is an answer here rather than an error: the
+     * fallback pair is offered, and any id can still be typed.
+     */
+    const usersQuery = useQuery<LocaltestUsers>({
+        queryKey: queryKeys.localtestUsers(),
+        queryFn: async () => {
             try {
-                setAvailable(await api.getLocaltestUsers());
+                return await api.getLocaltestUsers();
             } catch {
-                /* the fallback pair is offered, and any id can still be typed */
-                setAvailable({ source: "none", users: [] });
+                return { source: "none", users: [] };
             }
-        })();
-    }, []);
+        }
+    });
+    const available = usersQuery.data ?? null;
 
     const offered = available && available.users.length > 0 ? available.users : FALLBACK_USERS;
+
+    /*
+     * The first offered user until one is chosen, and back to it when the real list replaces the
+     * fallback pair without holding what was picked. Derived rather than repaired by an effect: a
+     * selection that is not among the options renders as no selection at all, and deriving it means
+     * there is no moment where that is what the select is showing.
+     */
+    const picked = pickedRaw === OTHER || offered.some((user) => user.userId === pickedRaw) ? pickedRaw : (offered[0]?.userId ?? "");
     const typing = picked === OTHER;
     const userId = typing ? typedId.trim() : picked;
 
-    /**
-     * Land on the first offered user, and keep the selection valid when the real list replaces
-     * the fallback pair. A selection that is not among the options renders as no selection at all.
-     */
-    useEffect(() => {
-        setPicked((current) => (current === OTHER || offered.some((user) => user.userId === current) ? current : (offered[0]?.userId ?? "")));
-    }, [offered]);
+    /** Minting, renewing and deleting all change the list App is showing, so all three invalidate it. */
+    const invalidateTokens = () => client.invalidateQueries({ queryKey: queryKeys.tokens() });
 
-    async function submit(event: React.FormEvent) {
-        event.preventDefault();
-        setBusy(true);
-        setError(null);
-        try {
-            const token = await api.createTestUserToken({
-                userId,
-                // Names the token after the person, rather than "Test user 1001".
-                label: offered.find((user) => user.userId === userId)?.label
-            });
+    const create = useMutation({
+        mutationFn: (input: { userId: string; label?: string }) => api.createTestUserToken(input),
+        onSuccess: async (token) => {
             onActivate(token.id);
-            onTokensChanged();
-        } catch (caught) {
-            setError(caught);
-        } finally {
-            setBusy(false);
+            await invalidateTokens();
         }
-    }
+    });
 
-    async function remove(tokenId: string) {
-        try {
-            await api.deleteToken(tokenId);
-            onTokensChanged();
-        } catch (caught) {
-            setError(caught);
-        }
-    }
+    const remove = useMutation({
+        mutationFn: (tokenId: string) => api.deleteToken(tokenId),
+        onSuccess: invalidateTokens
+    });
 
     /**
      * Fetches another token for the same user and activates it, so an expiry mid-session costs a
      * click rather than a trip back through the picker.
      */
-    async function renew(token: PublicToken) {
-        if (!token.userId) return;
-        setRenewing(true);
-        setError(null);
-        try {
-            const fresh = await api.createTestUserToken({ userId: token.userId, label: token.label });
-            onActivate(fresh.id);
+    const renew = useMutation({
+        mutationFn: async (token: PublicToken) => {
+            const fresh = await api.createTestUserToken({ userId: token.userId ?? "", label: token.label });
             try {
                 // The old one is spent, and keeping it would fill the list with dead tokens for
                 // the same person. It may already be gone: the server prunes expired tokens.
@@ -120,13 +106,18 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             } catch {
                 /* already pruned, which is the same outcome */
             }
-            onTokensChanged();
-        } catch (caught) {
-            setError(caught);
-        } finally {
-            setRenewing(false);
+            return fresh;
+        },
+        onSuccess: async (fresh) => {
+            onActivate(fresh.id);
+            await invalidateTokens();
         }
-    }
+    });
+
+    /* Whichever of the three last went wrong. Only one of them can be in flight at a time. */
+    const error = create.error ?? renew.error ?? remove.error;
+    const busy = create.isPending;
+    const renewing = renew.isPending;
 
     const expired = activeToken ? isExpired(activeToken.expiresAt, now) : false;
 
@@ -147,7 +138,13 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                 </div>
             )}
 
-            <form onSubmit={submit}>
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    // Named after the person rather than "Test user 1001".
+                    create.mutate({ userId, label: offered.find((user) => user.userId === userId)?.label });
+                }}
+            >
                 <div className="field" style={{ marginBottom: 12 }}>
                     <label htmlFor="userId">Test user</label>
                     <select id="userId" value={picked} onChange={(event) => setPicked(event.target.value)}>
@@ -240,7 +237,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 type="button"
                                 // Accented once it has expired, since renewing is then the thing to press.
                                 className={`btn ${expired ? "btn--primary" : "btn--post"}`}
-                                onClick={() => void renew(activeToken)}
+                                onClick={() => renew.mutate(activeToken)}
                                 disabled={renewing || busy}
                             >
                                 {renewing && <span className="btn__spinner" />}
@@ -278,7 +275,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 <button
                                     type="button"
                                     className="btn btn--delete"
-                                    onClick={() => remove(token.id)}
+                                    onClick={() => remove.mutate(token.id)}
                                     aria-label={`Delete token ${token.label}`}
                                 >
                                     ×
