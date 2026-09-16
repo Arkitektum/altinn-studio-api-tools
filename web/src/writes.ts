@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
 import { useAppRead, useInstanceRead } from "./reads";
@@ -114,6 +114,12 @@ export function usePostRun() {
     });
 }
 
+/** The report and the submission it described, which is the pair staleness is told from. */
+export interface ValidationAnswer {
+    report: unknown;
+    request: ValidationReportRequest;
+}
+
 export interface PrevalidationState {
     /** What the service last said, counted against the payload as it stands. Null until asked. */
     prevalidation: Prevalidation | null;
@@ -151,8 +157,23 @@ export function usePrevalidation(elements: DataElementInput[]): PrevalidationSta
         [elements, dataTypes, metadata, parties, partyId, activeToken]
     );
 
-    /** The last report, kept with the submission it was about, so staleness can be told. */
-    const [answer, setAnswer] = useState<{ report: unknown; request: ValidationReportRequest } | null>(null);
+    /*
+     * The last report, kept with the submission it was about so staleness can be told, and held in
+     * the cache so every caller sees the same one. The query never fetches: the mutation below
+     * writes it, and this is how a component subscribes to that.
+     */
+    const queryClient = useQueryClient();
+    const { data: answer } = useQuery<ValidationAnswer | null>({
+        queryKey: queryKeys.validationReport(),
+        /*
+         * There is nothing to fetch, so this hands back what is already there. A query without a
+         * `queryFn` at all warns on every render even when it is disabled, and a fetch that returns
+         * whatever it was holding cannot lose the report if one is ever asked for anyway.
+         */
+        queryFn: () => queryClient.getQueryData<ValidationAnswer | null>(queryKeys.validationReport()) ?? null,
+        enabled: false,
+        initialData: null
+    });
 
     const mutation = useMutation({
         mutationFn: async (sent: ValidationReportRequest) => {
@@ -163,7 +184,7 @@ export function usePrevalidation(elements: DataElementInput[]): PrevalidationSta
         onSuccess: ({ result, sent }) => {
             // A refusal leaves the previous report alone: the log says what happened, and dropping
             // what the service last said would lose the list you were working through.
-            if (result.ok) setAnswer({ report: result.report, request: sent });
+            if (result.ok) queryClient.setQueryData<ValidationAnswer>(queryKeys.validationReport(), { report: result.report, request: sent });
         }
     });
 

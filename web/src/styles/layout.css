@@ -144,13 +144,26 @@
     line-height: 1.5;
 }
 
+/*
+ * Two lines, then an ellipsis.
+ *
+ * It was one line and never wrapped, which was right while every value was a name: a guid or an app
+ * id has no good place to break, so it is cut and the panel is where you read the whole of it. The
+ * payload and the prevalidation say a sentence instead, and cutting "2 documents missing" after
+ * "2 docu" would leave a row that says nothing. So prose gets a second line and a name still gets
+ * cut, without the rail having to know which it is holding.
+ */
 .rail__value {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     font-size: var(--size-note);
     color: var(--text);
     line-height: 1.4;
+    /* A name long enough to fill both lines on its own is broken rather than left to overflow. */
+    overflow-wrap: anywhere;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 /* Out of reach: the row is there to show the order, not to be read off. */
@@ -177,7 +190,7 @@
 /*
  * Three columns: where you are, what you do, and what came back.
  *
- * The rail is a fixed slab because it holds five labels and no more, and the other two share what
+ * The rail is a fixed slab because it holds seven labels and no more, and the other two share what
  * is left. The extra width on a large screen is worth more to the log, which holds xml and curl
  * commands, than to a column of fields that are full width whatever you give them, so --log is a
  * floor rather than a share.
@@ -210,7 +223,7 @@
 
 /*
  * Below this the columns would be squeezed into each other, so they stack. The rail goes back to a
- * strip across the top, which is what it was: down the side it would be a column of five short rows
+ * strip across the top, which is what it was: down the side it would be a column of short rows
  * beside a column of everything else.
  */
 @media (max-width: 1240px) {

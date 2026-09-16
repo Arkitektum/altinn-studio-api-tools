@@ -131,6 +131,7 @@ export function PayloadPanel({
 
     return (
         <Panel
+            id="panel-payload"
             notReady={notReady}
             tone="payload"
             title="Payload"

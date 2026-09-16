@@ -142,9 +142,12 @@
     --header-h: 45px;
     /*
      * The rail, wide enough for the longest label and a value beside nothing else. It is a slab
-     * rather than a share because its contents do not grow: five steps, whatever the screen.
+     * rather than a share because its contents do not grow: seven steps, whatever the screen.
+     *
+     * Widened once the payload and the prevalidation joined it, since those two say a sentence
+     * rather than a name: "2 elements, incomplete" is the longest line the rail has to hold.
      */
-    --rail: 212px;
+    --rail: 228px;
     /* Everything sticky sits below the header, which is the only thing above it. */
     --top-h: var(--header-h);
 }

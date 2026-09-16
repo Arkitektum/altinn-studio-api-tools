@@ -26,14 +26,17 @@ const token: PublicToken = {
 const A = "99d0632c-5917-448c-8ab6-a5d3b681376b";
 const B = "11112222-3333-4444-5555-666677778888";
 
+/** No validation service, which is how most tests want it: the prevalidation is then switched off. */
+const config = {
+    appHost: "http://local.altinn.cloud:8000",
+    localtestUrl: "http://localhost:5101",
+    validationUrl: "",
+    exampleDataDir: "/examples"
+};
+
 /** What every test has to have answered before the tool shows anything at all. */
 const boot: Routes = {
-    "GET /api/config": {
-        appHost: "http://local.altinn.cloud:8000",
-        localtestUrl: "http://localhost:5101",
-        validationUrl: "",
-        exampleDataDir: "/examples"
-    },
+    "GET /api/config": config,
     "GET /api/catalogue": [],
     "GET /api/examples": { dir: "/examples", groups: [] },
     "GET /api/localtest/status": { reachable: true, status: 200, url: "http://localhost:5101" },
@@ -145,6 +148,12 @@ function waitingPanels(app: Rendered): string[] {
 
 function elementsListed(app: Rendered): string {
     return app.container.querySelector("#dataGuid")?.textContent ?? "";
+}
+
+/** What the rail says one step is holding. A string, for the same reason `waitingPanels` is. */
+function railValue(app: Rendered, label: string): string {
+    const step = [...app.container.querySelectorAll(".rail__step")].find((row) => row.querySelector(".rail__label")?.textContent === label);
+    return step?.querySelector(".rail__value")?.textContent ?? "";
 }
 
 describe("App", () => {
@@ -454,6 +463,49 @@ describe("App", () => {
             stub.calls.filter((made) => made === "GET /api/instances/active").length > listings,
             "and the listing should have been asked again, being out of date"
         );
+    });
+
+    /*
+     * The rail says what the payload holds and what the service made of it, and the payload panel
+     * lists the documents from the same report. That is why the report is in the cache: it was the
+     * hook's own state, and a second caller got its own empty copy, so the rail would have gone on
+     * saying "not run" however many times the button had been pressed. Only a test with both on
+     * screen can see that, which is why this one is here rather than beside `requestChain`.
+     */
+    it("says on the rail what the prevalidation answered", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/config": { ...config, validationUrl: "http://localhost:6000/validate" },
+            "POST /api/validation-report": {
+                ok: true,
+                steps: [],
+                failedAt: null,
+                report: {
+                    soknadtype: "ET",
+                    messages: [
+                        {
+                            rule: "Situasjonsplan",
+                            reference: "Ettrinn.Vedlegg.Situasjonsplan",
+                            message: "Situasjonsplan mangler",
+                            messagetype: "ERROR"
+                        }
+                    ]
+                }
+            }
+        });
+        await app.wait(700);
+
+        assert.equal(railValue(app, "Payload"), "1 element", "the payload has a type and something in it");
+        assert.equal(railValue(app, "Prevalidation"), "not run");
+
+        await click(app, findByText(app, "#panel-payload button", "Prevalidate"));
+        await app.wait(50);
+
+        assert.equal(railValue(app, "Prevalidation"), "1 document missing");
+        // And the panel read the same report, rather than each holding one of its own.
+        assert.match(app.container.textContent ?? "", /Situasjonsplan/);
     });
 
     /*

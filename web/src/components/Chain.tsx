@@ -43,11 +43,15 @@ const SAID: Record<ChainState, string> = {
 };
 
 /**
- * The chain down the left: a user, an application, a party, an instance, a data element.
+ * The chain down the left: who you are, where you are pointed, what you are about to send.
  *
  * A rail rather than the strip it was, because the tool is a wizard in the one way that matters,
  * each step needing the one before it, and a strip could show the order but not the progress. Down
  * the side there is room for a label, what it holds and where you are, all at once.
+ *
+ * The payload and the prevalidation are steps here as much as the selections above them, and they
+ * are the two you most often want to know about without scrolling: whether what you have written
+ * could be posted as it stands, and what the service last said about it.
  *
  * Each row takes you to the panel that sets it. A row still out of reach is not a link: the panel
  * is on screen, but scrolling to one you cannot use yet is a worse answer than none.

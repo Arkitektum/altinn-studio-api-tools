@@ -75,6 +75,19 @@ export const queryKeys = {
     tokens: () => ["tokens"] as const,
 
     /**
+     * What the validation service last said, and the submission it said it about.
+     *
+     * In the cache rather than in the hook's own state, because two things read it now: the payload
+     * panel lists the documents it asks for, and the rail says whether it has been run at all. A
+     * `useState` gives each caller its own empty copy, so the rail would say "not prevalidated"
+     * however many times you had pressed the button.
+     *
+     * Not keyed on the submission. It is one answer at a time, and which submission it was about is
+     * the thing the answer is compared against rather than part of its name.
+     */
+    validationReport: () => ["validation-report"] as const,
+
+    /**
      * Everything read about one app, as one token. The scope rather than a read, so invalidating it
      * covers the two below without naming them.
      *

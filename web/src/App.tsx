@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
 import { useAppRead, useInstanceRead } from "./reads";
+import { usePrevalidation } from "./writes";
+import { outstandingOf } from "./lib/validationReport";
 import { useRunLog } from "./runLog";
 import { useSession } from "./session";
 import { splitPastedInstanceId } from "./lib/instanceId";
@@ -445,6 +447,17 @@ export function App() {
     });
 
     // Panels you cannot use yet are left out rather than shown dead.
+    /*
+     * What the rail says about the payload and the prevalidation, which the payload panel also
+     * shows in full. Reading it twice costs nothing: the report lives in the cache and the request
+     * it is compared against is a memo of the payload.
+     */
+    const prevalidation = usePrevalidation(dataElements);
+    const payloadSummary = {
+        elements: dataElements.length,
+        ready: dataElements.length > 0 && dataElements.every((element) => element.dataType && element.content.trim())
+    };
+
     // Every panel is on screen from the start, and one you cannot use yet says what it is waiting
     // for. See lib/readiness.ts.
     const waiting = readiness({
@@ -497,6 +510,16 @@ export function App() {
                     party={instanceOwnerPartyId || null}
                     instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
                     dataElement={selectedDataType || null}
+                    payload={payloadSummary}
+                    prevalidation={
+                        prevalidation.url
+                            ? {
+                                  run: prevalidation.prevalidation !== null,
+                                  stale: prevalidation.prevalidation?.stale ?? false,
+                                  outstanding: prevalidation.prevalidation ? outstandingOf(prevalidation.prevalidation.requirements).length : 0
+                              }
+                            : null
+                    }
                 />
 
                 <div className="column">

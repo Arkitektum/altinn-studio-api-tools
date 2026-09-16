@@ -3,56 +3,87 @@ import { describe, it } from "node:test";
 import { requestChain } from "./chain";
 import type { ChainInputs } from "./chain";
 
-const nothing: ChainInputs = { user: null, application: null, party: null, instance: null, dataElement: null };
+const nothing: ChainInputs = {
+    user: null,
+    application: null,
+    party: null,
+    instance: null,
+    dataElement: null,
+    payload: { elements: 1, ready: false },
+    prevalidation: { run: false, stale: false, outstanding: 0 }
+};
 
-const states = (inputs: ChainInputs) => requestChain(inputs).map((step) => step.state);
-const values = (inputs: ChainInputs) => requestChain(inputs).map((step) => step.value);
+const onApp = { ...nothing, user: "Sophie Salt", application: "dibk/et-v4" };
+const step = (inputs: ChainInputs, label: string) => requestChain(inputs).find((each) => each.label === label);
+const labels = (inputs: ChainInputs) => requestChain(inputs).map((each) => each.label);
 
 describe("requestChain", () => {
-    it("points at the token on a cold start, and everything after it is out of reach", () => {
-        assert.deepEqual(states(nothing), ["next", "waiting", "waiting", "waiting", "waiting"]);
+    it("runs in the order the panels do, so a row and the column agree", () => {
+        assert.deepEqual(labels(nothing), ["Test user", "Application", "Party", "Instance", "Payload", "Prevalidation", "Data element"]);
     });
 
-    it("moves the next step along as each one is filled in", () => {
-        assert.deepEqual(states({ ...nothing, user: "Sophie Salt" }), ["done", "next", "waiting", "waiting", "waiting"]);
-        assert.deepEqual(states({ ...nothing, user: "Sophie Salt", application: "dibk/et-v4" }), ["done", "done", "next", "waiting", "waiting"]);
+    it("points at the token on a cold start, and everything else waits on it", () => {
+        const states = requestChain(nothing).map((each) => each.state);
+        assert.deepEqual(states, ["next", "waiting", "waiting", "waiting", "waiting", "waiting", "waiting"]);
+    });
+
+    /*
+     * The steps are not one line. A payload can be written before a party is chosen, so more than
+     * one is open at once and the rail says so rather than picking one to call next.
+     */
+    it("opens the payload as soon as there is an application, party or no party", () => {
+        assert.equal(step(onApp, "Party")?.state, "next");
+        assert.equal(step(onApp, "Payload")?.state, "next");
+    });
+
+    it("counts the payload, and says when it could not be posted as it stands", () => {
+        assert.equal(step(onApp, "Payload")?.value, "1 element, incomplete");
+        assert.equal(step({ ...onApp, payload: { elements: 2, ready: true } }, "Payload")?.value, "2 elements");
+    });
+
+    it("waits to prevalidate until there is something that could be sent", () => {
+        assert.equal(step(onApp, "Prevalidation")?.state, "waiting");
+        assert.equal(step({ ...onApp, payload: { elements: 1, ready: true } }, "Prevalidation")?.state, "next");
+    });
+
+    it("says what the service last answered", () => {
+        const ready = { ...onApp, payload: { elements: 1, ready: true } };
+        assert.equal(step(ready, "Prevalidation")?.value, "not run");
+        assert.equal(step({ ...ready, prevalidation: { run: true, stale: false, outstanding: 2 } }, "Prevalidation")?.value, "2 documents missing");
+        assert.equal(step({ ...ready, prevalidation: { run: true, stale: true, outstanding: 0 } }, "Prevalidation")?.value, "payload has changed");
+
+        const clean = { ...ready, prevalidation: { run: true, stale: false, outstanding: 0 } };
+        assert.equal(step(clean, "Prevalidation")?.value, "nothing missing");
+        assert.equal(step(clean, "Prevalidation")?.state, "done");
+    });
+
+    /* Switched off is not a step you failed to do, so it is left out rather than shown as waiting. */
+    it("leaves the prevalidation out when the service is switched off", () => {
+        assert.equal(labels({ ...onApp, prevalidation: null }).includes("Prevalidation"), false);
     });
 
     /*
      * The new instance row is a choice rather than a gap: posting with it selected creates one, so
-     * there is always something selected once the list is showing.
+     * the step is settled once there is a party to list for.
      */
     it("settles the instance step once there is a party", () => {
-        const withParty = { ...nothing, user: "Sophie Salt", application: "dibk/et-v4", party: "510001" };
-        assert.deepEqual(states(withParty), ["done", "done", "done", "done", "waiting"]);
-        assert.equal(values(withParty)[3], "new");
+        const withParty = { ...onApp, party: "510001" };
+        assert.equal(step(withParty, "Instance")?.state, "done");
+        assert.equal(step(withParty, "Instance")?.value, "new");
+        // And the data element still waits, since a new instance has nothing on it to read.
+        assert.equal(step(withParty, "Data element")?.state, "waiting");
     });
 
-    it("invites a data element only once a real instance is selected", () => {
-        const onInstance = { user: "Sophie Salt", application: "dibk/et-v4", party: "510001", instance: "99d0632c", dataElement: null };
-        assert.deepEqual(states(onInstance), ["done", "done", "done", "done", "next"]);
-        assert.deepEqual(states({ ...onInstance, dataElement: "ET" }), ["done", "done", "done", "done", "done"]);
+    it("opens the data element only once a real instance is selected", () => {
+        const onInstance = { ...onApp, party: "510001", instance: "99d0632c" };
+        assert.equal(step(onInstance, "Data element")?.state, "next");
+        assert.equal(step({ ...onInstance, dataElement: "ET" }, "Data element")?.state, "done");
     });
 
-    it("shows what each step holds, in the order the tool works in", () => {
-        const complete = { user: "Sophie Salt", application: "dibk/et-v4", party: "510001", instance: "99d0632c", dataElement: "ET" };
-        assert.deepEqual(values(complete), ["Sophie Salt", "dibk/et-v4", "510001", "99d0632c", "ET"]);
-    });
-
-    /*
-     * A party from a previous session with no token yet. The value is there and worth showing, and
-     * it is still out of reach: a party you have no token to act as is not somewhere you can go.
-     */
-    it("shows a restored value while still calling it out of reach", () => {
-        const restored = { ...nothing, party: "510001" };
-        assert.equal(values(restored)[2], "510001");
-        assert.equal(states(restored)[2], "waiting");
-    });
-
-    it("carries the panel id, so the rail can take you there", () => {
+    it("carries the panel each row scrolls to", () => {
         assert.deepEqual(
-            requestChain(nothing).map((step) => step.anchor),
-            ["panel-test-user", "panel-target", "panel-target", "panel-instances", "panel-data-element"]
+            requestChain(nothing).map((each) => each.anchor),
+            ["panel-test-user", "panel-target", "panel-target", "panel-instances", "panel-payload", "panel-payload", "panel-data-element"]
         );
     });
 });

@@ -1,16 +1,14 @@
 /**
- * The chain the whole tool hangs off: a user, an application, a party, an instance, a data element.
+ * The chain the whole tool hangs off, as the rail down the left draws it.
  *
- * Each link needs the ones before it. That is the tool's actual shape, and the rail down the left
- * is it drawn out: what is filled in, what you are on, and what is still out of reach.
+ * Seven steps: who you are, where you are pointed, what you are about to send, and what came back.
+ * Each says what it holds and whether you can act on it yet.
  *
- * The state came out once and is back. It went when every panel started saying what it was waiting
- * for, because the strip was then explaining an absence that no longer happened. It returns for a
- * different job: a rail is a progress readout, and progress is exactly the thing the panels cannot
- * show, each of them knowing only about itself.
+ * The order is the page's order, because every row scrolls to a panel and a rail that disagreed
+ * with the column beside it would be worse than no rail.
  */
 
-/** done: it holds a value. next: nothing yet, and everything before it is done. waiting: blocked. */
+/** done: it is settled. next: you can act on it now. waiting: something before it is missing. */
 export type ChainState = "done" | "next" | "waiting";
 
 export interface ChainStep {
@@ -20,6 +18,27 @@ export interface ChainStep {
     state: ChainState;
     /** The id of the panel that sets it, so the rail can take you there. */
     anchor: string;
+}
+
+/** The payload as it stands, which is the one step that is a list rather than a value. */
+export interface PayloadSummary {
+    elements: number;
+    /** Every element has a data type and something in it, so the post is not held up by this. */
+    ready: boolean;
+}
+
+/**
+ * What the validation service last said, or null when it is switched off.
+ *
+ * Off is not a step you failed to do, so the rail leaves it out entirely rather than showing it as
+ * permanently waiting.
+ */
+export interface PrevalidationSummary {
+    run: boolean;
+    /** The payload has been edited since, so the answer describes something else now. */
+    stale: boolean;
+    /** Documents the service asks for that the submission does not have. */
+    outstanding: number;
 }
 
 export interface ChainInputs {
@@ -35,30 +54,80 @@ export interface ChainInputs {
     instance: string | null;
     /** The data type of the selected data element. */
     dataElement: string | null;
+    payload: PayloadSummary;
+    prevalidation: PrevalidationSummary | null;
+}
+
+/** "2 elements", and what is wrong with them when something is. */
+function describePayload(payload: PayloadSummary): string | null {
+    if (payload.elements === 0) return null;
+    const count = `${payload.elements} element${payload.elements === 1 ? "" : "s"}`;
+    return payload.ready ? count : `${count}, incomplete`;
+}
+
+function describePrevalidation(prevalidation: PrevalidationSummary): string {
+    if (!prevalidation.run) return "not run";
+    if (prevalidation.stale) return "payload has changed";
+    if (prevalidation.outstanding > 0) {
+        return `${prevalidation.outstanding} document${prevalidation.outstanding === 1 ? "" : "s"} missing`;
+    }
+    return "nothing missing";
 }
 
 export function requestChain(inputs: ChainInputs): ChainStep[] {
-    const links: { label: string; value: string | null; anchor: string; needsRealInstance?: boolean }[] = [
-        { label: "Test user", value: inputs.user, anchor: "panel-test-user" },
-        { label: "Application", value: inputs.application, anchor: "panel-target" },
-        { label: "Party", value: inputs.party, anchor: "panel-target" },
-        // Once there is a party the instance list is showing and something in it is always
-        // selected, so this holds a value either way: a guid, or the new instance row.
-        { label: "Instance", value: inputs.instance ?? "new", anchor: "panel-instances" },
-        // A new instance has no data elements yet, so this waits rather than inviting a click.
-        { label: "Data element", value: inputs.dataElement, anchor: "panel-data-element", needsRealInstance: true }
-    ];
+    const hasUser = Boolean(inputs.user);
+    const hasApp = hasUser && Boolean(inputs.application);
+    const hasParty = hasApp && Boolean(inputs.party);
 
     /*
-     * Walked in order, because a link is only reachable when everything before it is filled in. A
-     * value restored from a previous session is still shown, and still reads as out of reach until
-     * the links it depends on are there: a party with no token is a party you cannot act as.
+     * Reachability is stated per step rather than walked down the list, because the steps are not a
+     * single line: a payload can be written before a party is chosen, and reading a data element
+     * needs an instance that posting one does not. A walk made Payload wait on Instance, which is
+     * not true of the tool.
+     *
+     * More than one step can be open at once, and that is the honest answer: after an application
+     * is set you can pick a party or start writing the payload, and the rail says both.
      */
-    let blocked = false;
-    return links.map((link) => {
-        if (blocked || (link.needsRealInstance === true && !inputs.instance)) return { ...link, state: "waiting" as const };
-        if (link.value) return { ...link, state: "done" as const };
-        blocked = true;
-        return { ...link, state: "next" as const };
-    });
+    const steps: { label: string; value: string | null; anchor: string; reachable: boolean; done: boolean }[] = [
+        { label: "Test user", value: inputs.user, anchor: "panel-test-user", reachable: true, done: hasUser },
+        { label: "Application", value: inputs.application, anchor: "panel-target", reachable: hasUser, done: hasApp },
+        { label: "Party", value: inputs.party, anchor: "panel-target", reachable: hasApp, done: hasParty },
+        // Once there is a party something is always selected, a guid or the new instance row, so
+        // this is settled either way rather than waiting to be filled in.
+        { label: "Instance", value: inputs.instance ?? "new", anchor: "panel-instances", reachable: hasParty, done: hasParty },
+        {
+            label: "Payload",
+            value: describePayload(inputs.payload),
+            anchor: "panel-payload",
+            reachable: hasApp,
+            done: hasApp && inputs.payload.ready
+        },
+        ...(inputs.prevalidation
+            ? [
+                  {
+                      label: "Prevalidation",
+                      value: describePrevalidation(inputs.prevalidation),
+                      anchor: "panel-payload",
+                      reachable: hasApp && inputs.payload.ready,
+                      done: inputs.prevalidation.run && !inputs.prevalidation.stale && inputs.prevalidation.outstanding === 0
+                  }
+              ]
+            : []),
+        // A new instance has no data elements yet, so this waits on a real one rather than on the
+        // row that stands for making one.
+        {
+            label: "Data element",
+            value: inputs.dataElement,
+            anchor: "panel-data-element",
+            reachable: Boolean(inputs.instance),
+            done: Boolean(inputs.dataElement)
+        }
+    ];
+
+    return steps.map(({ label, value, anchor, reachable, done }) => ({
+        label,
+        value,
+        anchor,
+        state: !reachable ? ("waiting" as const) : done ? ("done" as const) : ("next" as const)
+    }));
 }
