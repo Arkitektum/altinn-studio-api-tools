@@ -55,7 +55,31 @@ export interface ValidationRequestInputs {
  * small to matter.
  */
 export function sameSubmission(sent: ValidationReportRequest | null, current: ValidationReportRequest | null): boolean {
-    return JSON.stringify(sent) === JSON.stringify(current);
+    if (sent === current) return true;
+    if (!sent || !current) return false;
+
+    /*
+     * The documents first, on their own. They are almost all of a submission by size, and the two
+     * sides usually hold the very same string: what a report was asked about is the payload element
+     * it was read from, which has not been touched since. This runs on every keystroke while a
+     * report is on screen, and comparing them here is what keeps a megabyte of form out of the
+     * stringify below.
+     */
+    if (sent.formData !== current.formData) return false;
+    if (sent.subForms.length !== current.subForms.length) return false;
+    if (sent.subForms.some((subForm, index) => subForm.subFormData !== current.subForms[index]?.subFormData)) return false;
+
+    /*
+     * Then everything else as it always was, with the documents taken out rather than the fields of
+     * interest picked out: a field added to the request is still compared without anyone having to
+     * remember this function exists.
+     */
+    return JSON.stringify(withoutDocuments(sent)) === JSON.stringify(withoutDocuments(current));
+}
+
+/** The request with the text of every document blanked, those having been compared already. */
+function withoutDocuments(request: ValidationReportRequest): ValidationReportRequest {
+    return { ...request, formData: "", subForms: request.subForms.map((subForm) => ({ ...subForm, subFormData: "" })) };
 }
 
 export interface BuiltValidationRequest {

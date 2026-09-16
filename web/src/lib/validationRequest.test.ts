@@ -128,7 +128,39 @@ describe("sameSubmission", () => {
         assert.equal(sameSubmission(request, buildValidationRequest({ ...inputs, elements: added }).request), false);
     });
 
+    it("is another one after a character in a subform", () => {
+        const edited = elements.map((element) =>
+            element.dataType === "GjennomfoeringsplanDataV7" ? { ...element, content: `${element.content} ` } : element
+        );
+        assert.equal(sameSubmission(request, buildValidationRequest({ ...inputs, elements: edited }).request), false);
+    });
+
+    it("is another one after a subform is added", () => {
+        const added = [...elements, { dataType: "GjennomfoeringsplanDataV7", content: "<gjennomfoeringsplan><to /></gjennomfoeringsplan>" }];
+        assert.equal(sameSubmission(request, buildValidationRequest({ ...inputs, elements: added }).request), false);
+    });
+
+    /*
+     * The documents are compared apart from the rest, so the two halves are worth a test each: a
+     * change outside them has to count as much as a character inside one.
+     */
+    it("is another one when only the submitter moved, the documents being untouched", () => {
+        const asAnother = buildValidationRequest({ ...inputs, partyId: "510002" }).request;
+        assert.equal(asAnother?.formData, request?.formData, "the form is meant to be the same string here");
+        assert.equal(sameSubmission(request, asAnother), false);
+    });
+
+    it("is another one when only an attachment's name moved", () => {
+        const renamed = elements.map((element) => (element.dataType === "vedlegg" ? { ...element, filename: "annet.pdf" } : element));
+        assert.equal(sameSubmission(request, buildValidationRequest({ ...inputs, elements: renamed }).request), false);
+    });
+
     it("is not the same as nothing", () => {
         assert.equal(sameSubmission(request, null), false);
+    });
+
+    it("is the same as itself, for the report that has not been asked again", () => {
+        assert.equal(sameSubmission(request, request), true);
+        assert.equal(sameSubmission(null, null), true);
     });
 });
