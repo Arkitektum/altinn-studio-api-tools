@@ -19,6 +19,7 @@ For anything beyond the UI rendering you also need Altinn Studio localtest runni
 | --------------------------------- | ------------------------------------------------------------- |
 | `npm run dev`                     | Both servers with prefixed output                             |
 | `npm test`                        | Server and web tests, stubbed Altinn, no network              |
+| `npm run lint`                    | oxlint, mainly the hook rules                                 |
 | `npm run typecheck`               | Both workspaces                                               |
 | `npm run format`                  | Apply Prettier                                                |
 | `npm run format:check`            | Fail if anything is unformatted                               |
@@ -26,7 +27,15 @@ For anything beyond the UI rendering you also need Altinn Studio localtest runni
 | `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
 | `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
 
-CI runs `format:check`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `npm test` and `npm run format` before pushing and you will not be surprised.
+CI runs `format:check`, `lint`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `npm test` and `npm run format` before pushing and you will not be surprised.
+
+## Linting
+
+oxlint, configured in `.oxlintrc.json`. One binary, no config to speak of, and it runs in under a second, which is why it is here rather than ESLint and its plugins.
+
+It is here for one rule. `react-hooks/exhaustive-deps` is what keeps the dependency lists in `App.tsx` honest, and several of them leave things out on purpose: the five auto-run effects take only their key, since the key is the whole of what a scheduled run is about, and the `keys` memo takes the fields of the selection rather than the object, which is rebuilt every render. Those are marked with `oxlint-disable` and a reason. A list that leaves something out and says nothing about it is now a build failure rather than a judgement call someone has to make again.
+
+`react/set-state-in-effect` is off. It fires on seven effects here, and each of them is dropping state that described something you have moved away from, which is what the comment above it says. Turning it on would mean seven more disables saying the same thing seven times.
 
 ## Tests
 

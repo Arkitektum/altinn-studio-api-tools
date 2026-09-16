@@ -35,6 +35,11 @@ jobs:
             # formatting, and appCatalogue.ts is generated, which is the file that tends to drift.
             - run: npm run format:check
 
+            # Next cheapest, and the only step that reads what the code means rather than how it is
+            # written. Its job here is the hook dependency lists: every one that leaves something out
+            # does so on purpose, and this is what keeps the purpose stated rather than assumed.
+            - run: npm run lint
+
             - run: npm run typecheck
 
             - run: npm test

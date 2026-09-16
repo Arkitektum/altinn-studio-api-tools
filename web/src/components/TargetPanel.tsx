@@ -7,7 +7,6 @@ import type { AppMetadataResponse, AppParty, CatalogueApp } from "../types";
 interface TargetPanelProps {
     /** Anchor for the chain strip to scroll to. */
     id: string;
-    appHost: string;
     org: string;
     app: string;
     onOrgChange: (next: string) => void;
@@ -28,7 +27,6 @@ const OTHER = "other";
 
 export function TargetPanel({
     id,
-    appHost,
     org,
     app,
     onOrgChange,

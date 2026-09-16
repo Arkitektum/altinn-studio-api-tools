@@ -239,6 +239,9 @@ export function App() {
      * can answer after the selection it described has moved. Tagging the request with the key it
      * was aimed at is what lets a late answer be dropped rather than written over the newer one.
      */
+    // The fields rather than `selection`, which is built fresh on every render and would make this
+    // memo hold nothing. The six are exactly what `selectionKeys` reads.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     const keys = useMemo(() => selectionKeys(selection), [activeTokenId, org, app, instanceOwnerPartyId, instanceGuid, dataGuid]);
 
     /**
@@ -473,7 +476,10 @@ export function App() {
      * selection, and the call.
      *
      * The calls are deliberately out of the dependency lists. They are rebuilt on every render,
-     * and listing one would make its effect fire in a loop.
+     * and listing one would make its effect fire in a loop. So is everything but the key: the key
+     * is the whole of what a scheduled run is about, and a run pending for the same key after some
+     * other field moved is the same run, not another one. That is what the five disables below are
+     * for, and there is nothing to add to them that `lib/autoRuns.ts` does not already decide.
      */
     const {
         probe: nextProbe,
@@ -494,6 +500,8 @@ export function App() {
             compare: compareAttempted
         }
     });
+
+    /* oxlint-disable react-hooks/exhaustive-deps -- the key is the whole of it, see above */
 
     useEffect(() => {
         if (!nextProbe) return;
@@ -540,6 +548,8 @@ export function App() {
         }, nextCompare.delayMs);
         return () => window.clearTimeout(timer);
     }, [nextCompare?.key]);
+
+    /* oxlint-enable react-hooks/exhaustive-deps */
 
     async function probe() {
         if (!activeTokenId) return;
@@ -1251,7 +1261,6 @@ export function App() {
                     {sections.target && (
                         <TargetPanel
                             id="panel-target"
-                            appHost={appHost}
                             org={org}
                             app={app}
                             onOrgChange={setOrg}

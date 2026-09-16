@@ -172,7 +172,7 @@ describe("App", () => {
     it("drops what described the instance you have left", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
 
-        const { app, stub } = await mount(t, {
+        const { app } = await mount(t, {
             ...boot,
             "GET /api/instances": (url) => instanceRead(url.searchParams.get("instanceGuid") ?? "", "GammelType"),
             "GET /api/instances/validate": emptyValidation,

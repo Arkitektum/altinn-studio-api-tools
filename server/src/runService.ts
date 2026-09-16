@@ -1,4 +1,4 @@
-import { altinnFetch, describeFailure } from "./altinnClient.js";
+import { altinnFetch } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
 import { buildMultipart, type MultipartPart } from "./multipart.js";
 import { appBaseUrl, instanceUiUrl } from "./urls.js";
