@@ -112,6 +112,12 @@ export interface DataElementInput {
      */
     identityIn?: string;
     /**
+     * UI-only: which identity that was, so an element already holding it is not scanned again.
+     * `example` pins the content, so the pair is settled until one of the two moves. Not sent to
+     * the server.
+     */
+    identityKey?: string;
+    /**
      * UI-only: this element came out of a saved payload. The example picker leaves it alone,
      * since an element restored empty is a gap the payload meant to leave, not one to fill.
      * Cleared by changing the data type, which is when the picker's offer is worth having again.

@@ -159,6 +159,7 @@ export function PayloadPanel({
             exampleName: undefined,
             example: undefined,
             identityIn: undefined,
+            identityKey: undefined,
             // A new data type is a new offer, so the picker may fill this one in again.
             restored: undefined
         });
@@ -435,7 +436,12 @@ export function PayloadPanel({
                                             exampleName: file.name,
                                             // What it is, not only what it is called, so a payload
                                             // saved with it can point at the file rather than copy it.
-                                            example: { kind: option.kind, group: option.group, name: option.name }
+                                            example: { kind: option.kind, group: option.group, name: option.name },
+                                            // Another file, so whatever the last one had written into
+                                            // it says nothing about this one. Leaving the key behind
+                                            // would have the new example counted as already done.
+                                            identityIn: undefined,
+                                            identityKey: undefined
                                         })
                                     }
                                 />
@@ -494,7 +500,13 @@ export function PayloadPanel({
                                             // the editor goes, and so do the reference a saved
                                             // payload would have kept and the identity the tool
                                             // stops writing in once the text is yours.
-                                            update(index, { content, exampleName: undefined, example: undefined, identityIn: undefined })
+                                            update(index, {
+                                                content,
+                                                exampleName: undefined,
+                                                example: undefined,
+                                                identityIn: undefined,
+                                                identityKey: undefined
+                                            })
                                         }
                                         placeholder={'<ettrinn xmlns="…">\n  …\n</ettrinn>'}
                                         contentType={element.contentType}

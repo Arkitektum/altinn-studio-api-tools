@@ -1,5 +1,5 @@
 import type { DataElementInput } from "../types";
-import type { Identity } from "./identity";
+import { identityKey, type Identity } from "./identity";
 
 /**
  * Writing the test user's identity into the form, so the submission is from whoever the token is.
@@ -313,14 +313,24 @@ export function injectIdentity(xml: string, identity: Identity, dataType: string
  */
 export function withIdentity(elements: DataElementInput[], identity: Identity | null): DataElementInput[] {
     if (!identity) return elements;
+    const key = identityKey(identity);
 
     const next = elements.map((element) => {
         // Base64 is a file, not a form, and an empty element has nothing to write into yet.
         if (!element.example || element.encoding === "base64" || !element.content) return element;
 
+        /*
+         * Already this identity's, and `example` means the text has not moved since it was written,
+         * so there is nothing the scan below could find. It runs on every payload change, and it is
+         * six passes over the whole document: without this, a keystroke in one element rescans every
+         * other element still holding an example, which the 838-neighbour Nabovarsel makes felt.
+         */
+        if (element.identityKey === key) return element;
+
         const { xml, party } = injectIdentity(element.content, identity, element.dataType);
-        if (!party || (xml === element.content && element.identityIn === party)) return element;
-        return { ...element, content: xml, identityIn: party };
+        // Marked whatever came of it, a form with no party element to write into included. That one
+        // has been looked at now, and looking again would find the same nothing.
+        return { ...element, content: xml, identityIn: party ?? undefined, identityKey: key };
     });
 
     return next.some((element, index) => element !== elements[index]) ? next : elements;

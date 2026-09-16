@@ -228,6 +228,30 @@ describe("withIdentity", () => {
 
     it("says nothing about an element whose form names none of the parties", () => {
         const other = [{ dataType: "GjennomfoeringsplanDataV7", content: "<gjennomfoeringsplan />", example }];
-        assert.equal(withIdentity(other, person), other);
+        const [element] = withIdentity(other, person);
+        assert.equal(element?.content, "<gjennomfoeringsplan />");
+        assert.equal(element?.identityIn, undefined);
+    });
+
+    it("settles on a form with no party in it too, having looked once and found nothing", () => {
+        const other = [{ dataType: "GjennomfoeringsplanDataV7", content: "<gjennomfoeringsplan />", example }];
+        const once = withIdentity(other, person);
+        assert.equal(withIdentity(once, person), once);
+    });
+
+    /*
+     * The two below are what says the element was skipped rather than scanned to the same answer.
+     * The content of each is a form the identity is not in, so anything that looked would rewrite it.
+     */
+    it("leaves an element already marked with this identity unread", () => {
+        const marked = [{ ...loaded, identityKey: "person:01899699552:Sophie Salt & Sons" }];
+        assert.equal(withIdentity(marked, person), marked);
+        assert.equal(marked[0]?.content, form);
+    });
+
+    it("knows the identity by its values, since a fresh object is a new one every render", () => {
+        const again: Identity = { kind: "person", number: "01899699552", name: "Sophie Salt & Sons" };
+        const once = withIdentity([loaded], person);
+        assert.equal(withIdentity(once, again), once);
     });
 });

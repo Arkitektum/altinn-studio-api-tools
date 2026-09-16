@@ -16,6 +16,15 @@ export interface Identity {
 }
 
 /**
+ * The identity as one string, for a caller that has to know whether it is the one it already acted
+ * on. `identityFor` builds a fresh object whenever the parties or the token move, so the objects
+ * cannot be compared; what was written into a form is the three values, so they are what says it.
+ */
+export function identityKey(identity: Identity): string {
+    return `${identity.kind}:${identity.number}:${identity.name}`;
+}
+
+/**
  * The party being acted for, read off the app's own party list.
  *
  * An organisation number makes it an organisation, since a party that has one is one. Failing
