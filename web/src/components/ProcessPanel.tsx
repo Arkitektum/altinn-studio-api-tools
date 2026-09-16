@@ -1,15 +1,11 @@
 import { processLabel } from "../lib/format";
 import { advanceBody, advanceInApp, advanceLabel } from "../lib/processAction";
+import { useTarget } from "../target";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
 
 interface ProcessPanelProps {
-    appHost: string;
-    org: string;
-    app: string;
-    instanceOwnerPartyId: string;
-    instanceGuid: string;
     process: ProcessSummary;
     onAdvance: () => void;
     busy: boolean;
@@ -24,22 +20,11 @@ function describeMoment(value: string | null): string {
     return Number.isNaN(parsed) ? value : new Date(parsed).toLocaleString("nb");
 }
 
-export function ProcessPanel({
-    appHost,
-    org,
-    app,
-    instanceOwnerPartyId,
-    instanceGuid,
-    process,
-    onAdvance,
-    busy,
-    hasToken,
-    error
-}: ProcessPanelProps) {
+export function ProcessPanel({ process, onAdvance, busy, hasToken, error }: ProcessPanelProps) {
+    const { instance, org, app, partyId, instanceGuid } = useTarget();
     const ended = process.ended !== null;
     const inApp = advanceInApp(process.taskType);
-    const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
-    const canAdvance = hasToken && !ended && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
+    const canAdvance = hasToken && !ended && Boolean(org && app && partyId && instanceGuid);
 
     return (
         <Panel
@@ -103,8 +88,7 @@ export function ProcessPanel({
                         Moves the instance out of {process.currentTask ? <strong>{process.currentTask}</strong> : "the current task"}, and the app
                         validates first, so it fails while validation does not pass.
                         <br />
-                        <span className="method method--put">PUT</span> {base}/instances/{instanceOwnerPartyId || "{partyId}"}/
-                        {instanceGuid || "{instanceGuid}"}/process/next
+                        <span className="method method--put">PUT</span> {instance}/process/next
                         <br />
                         {advanceBody(process.taskType)}
                     </p>

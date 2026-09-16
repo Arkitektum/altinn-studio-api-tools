@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useTarget } from "../target";
 import { Dump } from "./Dump";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
@@ -8,11 +9,6 @@ import type { DataElementSummary, FetchedDataElement } from "../types";
 interface FetchPanelProps {
     /** Anchor for the chain strip to scroll to. */
     id: string;
-    appHost: string;
-    org: string;
-    app: string;
-    instanceOwnerPartyId: string;
-    instanceGuid: string;
     /** Data elements from the last successful instance read, for the data guid select. */
     dataElements: DataElementSummary[];
     dataGuid: string;
@@ -51,11 +47,6 @@ function describeElement(element: DataElementSummary): string {
 
 export function FetchPanel({
     id,
-    appHost,
-    org,
-    app,
-    instanceOwnerPartyId,
-    instanceGuid,
     dataElements,
     dataGuid,
     onDataGuidChange,
@@ -71,11 +62,8 @@ export function FetchPanel({
     /** Whether the content that came back is open in a window of its own. */
     const [showing, setShowing] = useState(false);
 
-    const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
-    const party = instanceOwnerPartyId || "{partyId}";
-    const guid = instanceGuid || "{instanceGuid}";
-
-    const canGetInstance = hasToken && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
+    const { instance, org, app, partyId, instanceGuid } = useTarget();
+    const canGetInstance = hasToken && Boolean(org && app && partyId && instanceGuid);
     const selected = dataElements.find((element) => element.id === dataGuid);
 
     return (
@@ -86,7 +74,7 @@ export function FetchPanel({
             aside={
                 instanceGuid ? (
                     <span className="row" style={{ gap: 6 }}>
-                        <span className="badge" title={`${instanceOwnerPartyId}/${instanceGuid}`}>
+                        <span className="badge" title={`${partyId}/${instanceGuid}`}>
                             {instanceGuid.slice(0, 8)}
                         </span>
                         {/* Nothing here waits for a press, so the only button left is the one
@@ -124,14 +112,14 @@ export function FetchPanel({
                         <p className="field__hint" style={{ marginTop: 8 }}>
                             Read and validated on its own when you pick one, the way selecting an instance reads that:
                             <br />
-                            <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}
+                            <span className="method method--get">GET</span> {instance}/data/{dataGuid}
                             <br />
                             {/* The second line is not a call to make while the first is, so it says so. */}
                             {validateBlockedBy ? (
                                 <span style={{ color: "var(--warn)" }}>{validateBlockedBy}</span>
                             ) : (
                                 <>
-                                    <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/data/{dataGuid}/validate
+                                    <span className="method method--get">GET</span> {instance}/data/{dataGuid}/validate
                                 </>
                             )}
                         </p>

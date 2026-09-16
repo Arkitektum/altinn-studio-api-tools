@@ -356,6 +356,30 @@ describe("App", () => {
     });
 
     /*
+     * Four panels print the url they would call, and all four read the target from one context
+     * rather than taking five props each to build the same string. This is what says the context is
+     * actually reaching them, which a type error could not: a panel outside the provider throws.
+     */
+    it("prints the url each panel would call, from the target it is pointed at", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => instanceRead(A, "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        const shown = app.container.textContent ?? "";
+        const instance = `http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/${A}`;
+        assert.ok(shown.includes(`${instance}/pdf/preview`), "the pdf panel's url");
+        assert.ok(shown.includes(`${instance}/process/next`), "the process panel's url");
+        assert.ok(shown.includes(`${instance}/data/${A}-data`), "the data element panel's url");
+    });
+
+    /*
      * Posting points the tool at the instance it made, lists the party again because the listing is
      * now out of date, and puts what its follow-up read into the cache under that instance. The last
      * of those is why the instance is not read a second time when the selection catches up.

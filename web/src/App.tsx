@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
+import { TargetProvider } from "./target";
 import { isExpired } from "./lib/format";
 import { downloadContent } from "./lib/download";
 import { splitPastedInstanceId } from "./lib/instanceId";
@@ -976,6 +977,8 @@ export function App() {
     }, [validationAnswer, dataTypes, dataElements, instanceDataElements, validationRequest.request]);
 
     const appHost = serverConfig?.appHost ?? "http://local.altinn.cloud:8000";
+    /** Where LocalTest answers: what it says of itself, else what the server was configured with. */
+    const localtestUrl = localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101";
 
     /**
      * Where a post goes, which is not a setting: an instance selected in Instances means the data
@@ -1002,278 +1005,257 @@ export function App() {
     });
 
     return (
-        <div className="shell">
-            <header className="masthead">
-                <span className="masthead__mark">Altinn API tools</span>
-                {/*
-                 * Three states, each of them a coloured dot. The dot is the whole message, so each
-                 * one carries the same message in words for anyone the colour does not reach. The
-                 * region is polite: these change on their own, and they are worth hearing about.
-                 */}
-                <div className="masthead__meta" role="status">
-                    <span className="gauge" title={appHost}>
-                        <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                        {appHost.replace(/^https?:\/\//, "")}
-                        <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
-                    </span>
-                    <span className="gauge" title={localtest?.error ?? localtest?.url}>
-                        <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                        LocalTest
-                        <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
-                    </span>
-                    <span className="gauge">
-                        <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                        {activeToken ? activeToken.label : "No token"}
-                        <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
-                    </span>
-                </div>
-            </header>
+        /*
+         * Everything is inside it, because where the tool is pointed is what the whole page is
+         * about. The panels that act on the target take what they act on as props; the ones that
+         * only print the url they would call read it from here.
+         */
+        <TargetProvider appHost={appHost} org={org} app={app} partyId={instanceOwnerPartyId} instanceGuid={instanceGuid} localtestUrl={localtestUrl}>
+            <div className="shell">
+                <header className="masthead">
+                    <span className="masthead__mark">Altinn API tools</span>
+                    {/*
+                     * Three states, each of them a coloured dot. The dot is the whole message, so each
+                     * one carries the same message in words for anyone the colour does not reach. The
+                     * region is polite: these change on their own, and they are worth hearing about.
+                     */}
+                    <div className="masthead__meta" role="status">
+                        <span className="gauge" title={appHost}>
+                            <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                            {appHost.replace(/^https?:\/\//, "")}
+                            <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
+                        </span>
+                        <span className="gauge" title={localtest?.error ?? localtest?.url}>
+                            <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                            LocalTest
+                            <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
+                        </span>
+                        <span className="gauge">
+                            <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                            {activeToken ? activeToken.label : "No token"}
+                            <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
+                        </span>
+                    </div>
+                </header>
 
-            {/* What the tool is working on, and what the next thing to fill in is. */}
-            <Chain
-                user={activeToken && tokenUsable ? activeToken.label : null}
-                application={org && app ? `${org}/${app}` : null}
-                party={instanceOwnerPartyId || null}
-                instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
-                dataElement={selectedDataType || null}
-            />
+                {/* What the tool is working on, and what the next thing to fill in is. */}
+                <Chain
+                    user={activeToken && tokenUsable ? activeToken.label : null}
+                    application={org && app ? `${org}/${app}` : null}
+                    party={instanceOwnerPartyId || null}
+                    instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
+                    dataElement={selectedDataType || null}
+                />
 
-            <div className="deck">
-                <div className="column">
-                    {bootError ? <ErrorNotice error={bootError} /> : null}
+                <div className="deck">
+                    <div className="column">
+                        {bootError ? <ErrorNotice error={bootError} /> : null}
 
-                    {/* First, because everything below it needs a token and the chain says so. */}
-                    <TokenPanel
-                        id="panel-test-user"
-                        serverConfig={serverConfig}
-                        localtest={localtest}
-                        tokens={tokens}
-                        activeToken={activeToken}
-                        onActivate={setPreferredTokenId}
-                        now={now}
-                    />
-
-                    {/* Nothing here can be read without a token, so the panel waits for one. */}
-                    {sections.target && (
-                        <TargetPanel
-                            id="panel-target"
-                            org={org}
-                            app={app}
-                            onOrgChange={setOrg}
-                            onAppChange={setApp}
-                            instanceOwnerPartyId={instanceOwnerPartyId}
-                            onPartyChange={changeParty}
-                            catalogue={catalogue}
-                            onPickCatalogueApp={(entry) => {
-                                setOrg(entry.org);
-                                setApp(entry.app);
-                                // Point the first element at this app's form data type unless the operator
-                                // has already put something there.
-                                if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
-                                    setDataElements([{ dataType: entry.dataType, content: "" }]);
-                                }
-                            }}
-                            metadata={metadata}
-                            parties={parties}
-                            onProbe={() => {
-                                void metadataQuery.refetch();
-                                void partiesQuery.refetch();
-                            }}
-                            probing={probing}
-                            probeError={probeError}
+                        {/* First, because everything below it needs a token and the chain says so. */}
+                        <TokenPanel
+                            id="panel-test-user"
+                            serverConfig={serverConfig}
+                            localtest={localtest}
+                            tokens={tokens}
+                            activeToken={activeToken}
+                            onActivate={setPreferredTokenId}
+                            now={now}
                         />
-                    )}
 
-                    {/* Right under the destination, since choosing one is how you aim at it. */}
-                    {sections.instances && (
-                        <InstancesPanel
-                            id="panel-instances"
-                            appHost={appHost}
-                            org={org}
-                            app={app}
-                            instanceOwnerPartyId={instanceOwnerPartyId}
-                            localtestUrl={localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101"}
-                            elementCount={dataElements.length}
-                            instances={instanceList}
-                            instanceGuid={instanceGuid}
-                            onSelect={selectInstance}
-                            onSelectTyped={selectTypedInstance}
-                            onDelete={(instance) => removeInstance.mutate(instance)}
-                            onRefresh={refreshInstances}
-                            includeCompleted={includeCompleted}
-                            onIncludeCompletedChange={setIncludeCompleted}
-                            completedListed={completedListed}
-                            // Listing only. A read of the selected instance is reported by the
-                            // panels that show what it returns, and holding this one busy would
-                            // put a spinner on Refresh for a request it did not make.
-                            busy={listQuery.isFetching || removeInstance.isPending}
-                            // The error does belong here: selecting a row is what starts the read.
-                            error={listQuery.error ?? removeInstance.error ?? instanceQuery.error}
-                        />
-                    )}
-
-                    {/* Nothing below can be aimed anywhere without a token and an app. */}
-                    {sections.requests && (
-                        <>
-                            <span className="group">Post</span>
-
-                            <PayloadPanel
-                                dataElements={dataElements}
-                                onChange={setDataElements}
+                        {/* Nothing here can be read without a token, so the panel waits for one. */}
+                        {sections.target && (
+                            <TargetPanel
+                                id="panel-target"
                                 org={org}
                                 app={app}
-                                dataTypes={dataTypes}
-                                metadata={metadata?.metadata ?? null}
-                                suggestedDataTypes={suggestedDataTypes}
-                                exampleGroups={exampleGroups}
-                                advanceProcess={advanceProcess}
-                                onAdvanceProcessChange={setAdvanceProcess}
-                                savedPayloads={savedPayloads}
-                                onSavePayload={savePayload}
-                                onLoadPayload={(payload) => void loadPayload(payload)}
-                                onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
-                                loadNotice={payloadLoadNotice}
-                                validationUrl={serverConfig?.validationUrl ?? ""}
-                                validationBlockedBy={validationRequest.blockedBy}
-                                onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
-                                validating={validationReport.isPending}
-                                prevalidation={prevalidation}
-                            >
-                                <div style={{ marginTop: 18 }}>
-                                    <span className="legend">Post</span>
-
-                                    {blockers.length > 0 && (
-                                        <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                            Needs {blockers.join(", ")}.
-                                        </div>
-                                    )}
-
-                                    {/*
-                                     * The one thing the prevalidation notice above cannot say,
-                                     * because there is no report for it to be part of. The rest of
-                                     * what the service said is already on screen a few lines up.
-                                     */}
-                                    {serverConfig?.validationUrl && !prevalidation && (
-                                        <div className="notice" style={{ marginBottom: 12 }}>
-                                            Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you,
-                                            read before the submit rather than after.
-                                        </div>
-                                    )}
-
-                                    {/* Both are asked for from this panel, and only one at a time. */}
-                                    {(run.error ?? validationReport.error) ? (
-                                        <div style={{ marginBottom: 12 }}>
-                                            <ErrorNotice error={run.error ?? validationReport.error} />
-                                        </div>
-                                    ) : null}
-
-                                    <button
-                                        type="button"
-                                        className="btn btn--primary btn--fire"
-                                        onClick={() => run.mutate()}
-                                        disabled={run.isPending || blockers.length > 0}
-                                    >
-                                        {run.isPending && <span className="btn__spinner" />}
-                                        {run.isPending
-                                            ? "Posting…"
-                                            : instanceGuid
-                                              ? `Add data to ${instanceGuid.slice(0, 8)}`
-                                              : `Post a new instance to ${org || "org"}/${app || "app"}`}
-                                    </button>
-                                </div>
-                            </PayloadPanel>
-
-                            <span className="group">Inspect</span>
-
-                            <FetchPanel
-                                id="panel-data-element"
-                                appHost={appHost}
-                                org={org}
-                                app={app}
+                                onOrgChange={setOrg}
+                                onAppChange={setApp}
                                 instanceOwnerPartyId={instanceOwnerPartyId}
-                                instanceGuid={instanceGuid}
-                                dataElements={instanceDataElements}
-                                dataGuid={dataGuid}
-                                onDataGuidChange={changeDataGuid}
-                                fetched={fetchedElement}
-                                onDownloadDataElement={downloadDataElement}
-                                onRefresh={refreshElement}
-                                validateBlockedBy={validateBlockedBy}
-                                // Also while the instance is being read, since that read is what
-                                // replaces the list this panel is choosing from.
-                                busy={elementQuery.isFetching || instanceQuery.isFetching}
-                                hasToken={tokenUsable}
-                                error={elementQuery.error}
-                            >
-                                {/* Inside the panel, because it compares what the select above it
-                                    is pointing at. Beside it as its own card, that was left to be
-                                    worked out from the order the two happened to be in. */}
-                                {sections.compare && selectedDataType && (
-                                    <CompareSection
-                                        dataType={selectedDataType}
-                                        payload={
-                                            payloadForSelected
-                                                ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
-                                                : null
-                                        }
-                                        parses={payloadParses}
-                                        result={compareResult}
-                                        busy={compareQuery.isFetching}
-                                        error={compareQuery.error}
-                                    />
-                                )}
-                            </FetchPanel>
-
-                            {/* After the data element, since it is a different kind of action. */}
-                            {sections.requests && instanceGuid && (
-                                <PdfPanel
-                                    appHost={appHost}
-                                    org={org}
-                                    app={app}
-                                    instanceOwnerPartyId={instanceOwnerPartyId}
-                                    instanceGuid={instanceGuid}
-                                    onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
-                                    busy={renderPdf.isPending}
-                                    hasToken={tokenUsable}
-                                    error={renderPdf.error}
-                                />
-                            )}
-
-                            {/* Where the instance stands. Arrives with the first instance read. */}
-                            {sections.process && instanceProcess && (
-                                <ProcessPanel
-                                    appHost={appHost}
-                                    org={org}
-                                    app={app}
-                                    instanceOwnerPartyId={instanceOwnerPartyId}
-                                    instanceGuid={instanceGuid}
-                                    process={instanceProcess}
-                                    onAdvance={() => advance.mutate()}
-                                    busy={advance.isPending}
-                                    hasToken={tokenUsable}
-                                    error={advance.error}
-                                />
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {(sections.validation || sections.log) && (
-                    <div className="column column--log">
-                        {sections.validation && <ValidationPanel validations={validations} onClear={clearValidations} />}
-                        {sections.log && (
-                            <RunLog
-                                entries={logs}
-                                running={inFlight}
-                                onClear={() => setLogs([])}
-                                localtestUrl={localtest?.url ?? serverConfig?.localtestUrl ?? "http://localhost:5101"}
+                                onPartyChange={changeParty}
+                                catalogue={catalogue}
+                                onPickCatalogueApp={(entry) => {
+                                    setOrg(entry.org);
+                                    setApp(entry.app);
+                                    // Point the first element at this app's form data type unless the operator
+                                    // has already put something there.
+                                    if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
+                                        setDataElements([{ dataType: entry.dataType, content: "" }]);
+                                    }
+                                }}
+                                metadata={metadata}
+                                parties={parties}
+                                onProbe={() => {
+                                    void metadataQuery.refetch();
+                                    void partiesQuery.refetch();
+                                }}
+                                probing={probing}
+                                probeError={probeError}
                             />
                         )}
-                    </div>
-                )}
-            </div>
 
-            {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
-        </div>
+                        {/* Right under the destination, since choosing one is how you aim at it. */}
+                        {sections.instances && (
+                            <InstancesPanel
+                                id="panel-instances"
+                                elementCount={dataElements.length}
+                                instances={instanceList}
+                                onSelect={selectInstance}
+                                onSelectTyped={selectTypedInstance}
+                                onDelete={(instance) => removeInstance.mutate(instance)}
+                                onRefresh={refreshInstances}
+                                includeCompleted={includeCompleted}
+                                onIncludeCompletedChange={setIncludeCompleted}
+                                completedListed={completedListed}
+                                // Listing only. A read of the selected instance is reported by the
+                                // panels that show what it returns, and holding this one busy would
+                                // put a spinner on Refresh for a request it did not make.
+                                busy={listQuery.isFetching || removeInstance.isPending}
+                                // The error does belong here: selecting a row is what starts the read.
+                                error={listQuery.error ?? removeInstance.error ?? instanceQuery.error}
+                            />
+                        )}
+
+                        {/* Nothing below can be aimed anywhere without a token and an app. */}
+                        {sections.requests && (
+                            <>
+                                <span className="group">Post</span>
+
+                                <PayloadPanel
+                                    dataElements={dataElements}
+                                    onChange={setDataElements}
+                                    org={org}
+                                    app={app}
+                                    dataTypes={dataTypes}
+                                    metadata={metadata?.metadata ?? null}
+                                    suggestedDataTypes={suggestedDataTypes}
+                                    exampleGroups={exampleGroups}
+                                    advanceProcess={advanceProcess}
+                                    onAdvanceProcessChange={setAdvanceProcess}
+                                    savedPayloads={savedPayloads}
+                                    onSavePayload={savePayload}
+                                    onLoadPayload={(payload) => void loadPayload(payload)}
+                                    onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
+                                    loadNotice={payloadLoadNotice}
+                                    validationUrl={serverConfig?.validationUrl ?? ""}
+                                    validationBlockedBy={validationRequest.blockedBy}
+                                    onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
+                                    validating={validationReport.isPending}
+                                    prevalidation={prevalidation}
+                                >
+                                    <div style={{ marginTop: 18 }}>
+                                        <span className="legend">Post</span>
+
+                                        {blockers.length > 0 && (
+                                            <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                                                Needs {blockers.join(", ")}.
+                                            </div>
+                                        )}
+
+                                        {/*
+                                         * The one thing the prevalidation notice above cannot say,
+                                         * because there is no report for it to be part of. The rest of
+                                         * what the service said is already on screen a few lines up.
+                                         */}
+                                        {serverConfig?.validationUrl && !prevalidation && (
+                                            <div className="notice" style={{ marginBottom: 12 }}>
+                                                Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told
+                                                you, read before the submit rather than after.
+                                            </div>
+                                        )}
+
+                                        {/* Both are asked for from this panel, and only one at a time. */}
+                                        {(run.error ?? validationReport.error) ? (
+                                            <div style={{ marginBottom: 12 }}>
+                                                <ErrorNotice error={run.error ?? validationReport.error} />
+                                            </div>
+                                        ) : null}
+
+                                        <button
+                                            type="button"
+                                            className="btn btn--primary btn--fire"
+                                            onClick={() => run.mutate()}
+                                            disabled={run.isPending || blockers.length > 0}
+                                        >
+                                            {run.isPending && <span className="btn__spinner" />}
+                                            {run.isPending
+                                                ? "Posting…"
+                                                : instanceGuid
+                                                  ? `Add data to ${instanceGuid.slice(0, 8)}`
+                                                  : `Post a new instance to ${org || "org"}/${app || "app"}`}
+                                        </button>
+                                    </div>
+                                </PayloadPanel>
+
+                                <span className="group">Inspect</span>
+
+                                <FetchPanel
+                                    id="panel-data-element"
+                                    dataElements={instanceDataElements}
+                                    dataGuid={dataGuid}
+                                    onDataGuidChange={changeDataGuid}
+                                    fetched={fetchedElement}
+                                    onDownloadDataElement={downloadDataElement}
+                                    onRefresh={refreshElement}
+                                    validateBlockedBy={validateBlockedBy}
+                                    // Also while the instance is being read, since that read is what
+                                    // replaces the list this panel is choosing from.
+                                    busy={elementQuery.isFetching || instanceQuery.isFetching}
+                                    hasToken={tokenUsable}
+                                    error={elementQuery.error}
+                                >
+                                    {/* Inside the panel, because it compares what the select above it
+                                    is pointing at. Beside it as its own card, that was left to be
+                                    worked out from the order the two happened to be in. */}
+                                    {sections.compare && selectedDataType && (
+                                        <CompareSection
+                                            dataType={selectedDataType}
+                                            payload={
+                                                payloadForSelected
+                                                    ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
+                                                    : null
+                                            }
+                                            parses={payloadParses}
+                                            result={compareResult}
+                                            busy={compareQuery.isFetching}
+                                            error={compareQuery.error}
+                                        />
+                                    )}
+                                </FetchPanel>
+
+                                {/* After the data element, since it is a different kind of action. */}
+                                {sections.requests && instanceGuid && (
+                                    <PdfPanel
+                                        onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
+                                        busy={renderPdf.isPending}
+                                        hasToken={tokenUsable}
+                                        error={renderPdf.error}
+                                    />
+                                )}
+
+                                {/* Where the instance stands. Arrives with the first instance read. */}
+                                {sections.process && instanceProcess && (
+                                    <ProcessPanel
+                                        process={instanceProcess}
+                                        onAdvance={() => advance.mutate()}
+                                        busy={advance.isPending}
+                                        hasToken={tokenUsable}
+                                        error={advance.error}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    {(sections.validation || sections.log) && (
+                        <div className="column column--log">
+                            {sections.validation && <ValidationPanel validations={validations} onClear={clearValidations} />}
+                            {sections.log && <RunLog entries={logs} running={inFlight} onClear={() => setLogs([])} localtestUrl={localtestUrl} />}
+                        </div>
+                    )}
+                </div>
+
+                {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
+            </div>
+        </TargetProvider>
     );
 }

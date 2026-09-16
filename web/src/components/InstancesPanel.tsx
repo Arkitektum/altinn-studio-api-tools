@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { instanceLabel } from "../lib/format";
+import { useTarget } from "../target";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
@@ -8,12 +9,6 @@ import type { InstanceSummary } from "../types";
 interface InstancesPanelProps {
     /** Anchor for the chain strip to scroll to. */
     id: string;
-    appHost: string;
-    org: string;
-    app: string;
-    instanceOwnerPartyId: string;
-    /** For the login link, since opening an instance in the app is a session of its own. */
-    localtestUrl: string;
     /** How many data elements the payload holds, for the multipart part count in Will call. */
     elementCount: number;
     /**
@@ -21,8 +16,6 @@ interface InstancesPanelProps {
      * from a party that genuinely has none.
      */
     instances: InstanceSummary[] | null;
-    /** The instance the rest of the tool is pointed at, so the row can say which one that is. */
-    instanceGuid: string;
     /** Null selects the new instance row, which is what "post creates one" means. */
     onSelect: (instance: InstanceSummary | null) => void;
     /** A guid typed or pasted, for an instance the active list does not hold. */
@@ -49,14 +42,8 @@ interface InstancesPanelProps {
  */
 export function InstancesPanel({
     id,
-    appHost,
-    org,
-    app,
-    instanceOwnerPartyId,
-    localtestUrl,
     elementCount,
     instances,
-    instanceGuid,
     onSelect,
     onSelectTyped,
     onDelete,
@@ -78,8 +65,7 @@ export function InstancesPanel({
         setConfirming(null);
     }, [instances]);
 
-    const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
-    const party = instanceOwnerPartyId || "{partyId}";
+    const { base, party, partyId, instanceGuid, localtestUrl } = useTarget();
 
     /**
      * The rows to show. An instance whose process has ended leaves Altinn's active list, so the
@@ -95,8 +81,8 @@ export function InstancesPanel({
             : [
                   {
                       instance: {
-                          id: `${instanceOwnerPartyId}/${instanceGuid}`,
-                          instanceOwnerPartyId,
+                          id: `${partyId}/${instanceGuid}`,
+                          instanceOwnerPartyId: partyId,
                           instanceGuid,
                           lastChanged: null,
                           lastChangedBy: null,

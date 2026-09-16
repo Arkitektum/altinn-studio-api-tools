@@ -1,12 +1,8 @@
+import { useTarget } from "../target";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 
 interface PdfPanelProps {
-    appHost: string;
-    org: string;
-    app: string;
-    instanceOwnerPartyId: string;
-    instanceGuid: string;
     onPreviewPdf: () => void;
     busy: boolean;
     hasToken: boolean;
@@ -25,11 +21,9 @@ interface PdfPanelProps {
  * every selection would be wasteful, and it opens in a window over the tool rather than filling
  * a panel.
  */
-export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid, onPreviewPdf, busy, hasToken, error }: PdfPanelProps) {
-    const base = `${appHost}/${org || "{org}"}/${app || "{app}"}`;
-    const party = instanceOwnerPartyId || "{partyId}";
-    const guid = instanceGuid || "{instanceGuid}";
-    const ready = hasToken && Boolean(org && app && instanceOwnerPartyId && instanceGuid);
+export function PdfPanel({ onPreviewPdf, busy, hasToken, error }: PdfPanelProps) {
+    const { instance, org, app, partyId, instanceGuid } = useTarget();
+    const ready = hasToken && Boolean(org && app && partyId && instanceGuid);
 
     return (
         <Panel title="Pdf" tone="pdf">
@@ -44,7 +38,7 @@ export function PdfPanel({ appHost, org, app, instanceOwnerPartyId, instanceGuid
             </button>
 
             <p className="field__hint" style={{ marginTop: 8 }}>
-                <span className="method method--get">GET</span> {base}/instances/{party}/{guid}/pdf/preview
+                <span className="method method--get">GET</span> {instance}/pdf/preview
             </p>
 
             {error ? (
