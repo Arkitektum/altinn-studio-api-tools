@@ -1,0 +1,90 @@
+/* The card every part of the tool is drawn on, including the one that is waiting. */
+
+/* ------------------------------------------------------------------ panel */
+
+.panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    /* Panels that say what they are override this. The rest, the crash screen, keep the page. */
+    background: var(--bg);
+    padding: 14px;
+    /*
+     * So a chain link that scrolls here lands below the header and the strip rather than under
+     * them. The same reason the sticky columns offset by --top-h.
+     */
+    scroll-margin-top: calc(var(--top-h) + 16px);
+}
+
+/*
+ * A panel that cannot be used yet. It keeps its place and its heading, so the order the tool works
+ * in is visible from the first screen, and it is quiet enough not to compete with the one panel you
+ * can actually act on. Its own surface colour is dropped: a tone says what a panel is for, and a
+ * panel that is waiting is not for anything yet.
+ */
+.panel--waiting {
+    background: var(--bg);
+    border-style: dashed;
+}
+
+.panel--waiting .panel__head h2 {
+    color: var(--text-muted);
+}
+
+.panel__waiting {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.panel--user {
+    background: var(--panel-user);
+    border-color: var(--panel-user-border);
+}
+
+.panel--target {
+    background: var(--panel-target);
+    border-color: var(--panel-target-border);
+}
+
+.panel--instances {
+    background: var(--panel-instances);
+    border-color: var(--panel-instances-border);
+}
+
+.panel--payload {
+    background: var(--panel-payload);
+    border-color: var(--panel-payload-border);
+}
+
+.panel--element {
+    background: var(--panel-element);
+    border-color: var(--panel-element-border);
+}
+
+.panel--pdf {
+    background: var(--panel-pdf);
+    border-color: var(--panel-pdf-border);
+}
+
+.panel--process {
+    background: var(--panel-process);
+    border-color: var(--panel-process-border);
+}
+
+.panel__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.panel__head h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.panel__head > :last-child:not(h2) {
+    margin-left: auto;
+}

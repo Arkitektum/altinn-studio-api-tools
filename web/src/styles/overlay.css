@@ -1,0 +1,300 @@
+/* Over the tool rather than in it: windows, the crash screen, and saved payloads. */
+
+/* ------------------------------------------------------------------ modal */
+
+/* A native dialog, so Escape, the top layer and focus are the browser's job, not ours. */
+.modal {
+    width: min(1100px, 92vw);
+    height: 88vh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+}
+
+.modal::backdrop {
+    background: rgb(10 12 14 / 70%);
+}
+
+.modal__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subtle);
+}
+
+.modal__head h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* A pdf fills the window as an iframe. */
+.modal__frame {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    background: var(--bg-inset);
+}
+
+.modal__frame iframe {
+    flex: 1;
+    width: 100%;
+    border: 0;
+}
+
+/* A stack of things to read: a url, then the bodies, scrolling as one. */
+.modal__stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    padding: 10px 12px 12px;
+    overflow-y: auto;
+}
+
+/*
+ * The label is a line above its body rather than a row of its own with space around it. What is
+ * above the first body is the window's padding, the url and this, and nothing else.
+ */
+.modal__stack .dump__label {
+    margin-top: 0;
+}
+
+/* An editor in a window fills what is left of it, and scrolls inside itself. */
+.modal__stack .editor,
+.modal__stack .editor__frame {
+    flex: 1;
+    min-height: 0;
+}
+
+/*
+ * Each body takes a share of what the window has left and scrolls inside itself, rather than the
+ * window scrolling as one. Two things follow from that, both of them the point: the url stays at
+ * the top where it was put, and the copy stays in the body's corner while the body moves under it.
+ */
+.modal__stack .dump__body {
+    flex: 1;
+    /* Enough to be worth scrolling in, and it will not be squeezed below this. */
+    min-height: 140px;
+}
+
+.modal__stack .dump {
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    /* The gutter is there whether or not it scrolls, so the copy sits in the same place either way. */
+    scrollbar-gutter: stable;
+}
+
+.detail__url {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    word-break: break-all;
+}
+
+/* Code fills it too, but scrolls inside itself rather than being handed to a plugin. */
+.modal__code {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    padding: 12px;
+}
+
+.modal__code > * {
+    flex: 1;
+    min-width: 0;
+}
+
+/*
+ * Syntax colour.
+ *
+ * A different axis from the method and status colours, and it is only ever seen inside a code
+ * block, where nothing else is coloured. So the same palette serves both without either meaning
+ * being read for the other: blue is GET on a button and an element name in a document, and the
+ * two never share a surface.
+ *
+ * Element text and whitespace get no colour at all. They are the bulk of any document, and
+ * colouring them would leave nothing for the syntax to stand out against.
+ */
+.tok--tag {
+    color: var(--accent);
+}
+
+.tok--attr {
+    color: var(--violet);
+}
+
+.tok--string {
+    color: var(--ok);
+}
+
+.tok--number {
+    color: var(--warn);
+}
+
+.tok--keyword {
+    color: var(--violet);
+}
+
+.tok--meta,
+.tok--punct {
+    color: var(--text-faint);
+}
+
+/* The label's line, so the maximize button costs no height of its own. */
+.editor__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.editor__bar label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/*
+ * A textarea with a coloured copy of its own text behind it.
+ *
+ * The typography of both layers is declared once, together, because the two must agree to the
+ * pixel: same font, size, line height, padding, border box and wrapping. Anything that only one
+ * of them gets is a bug where the caret sits beside the character it is on.
+ */
+/* Holds the full size button in the content's corner, the way a body holds its copy. */
+.editor__frame {
+    position: relative;
+}
+
+.editor__grow {
+    position: absolute;
+    top: 5px;
+    /* Clear of the textarea's own scrollbar, the same allowance the copy on a body makes. */
+    right: 18px;
+    /* Over the textarea, which covers the whole surface and would swallow the click. */
+    z-index: 2;
+    background: var(--bg);
+    border-radius: 4px;
+}
+
+.editor {
+    position: relative;
+}
+
+.editor__paint,
+.editor__input {
+    margin: 0;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: normal;
+    tab-size: 4;
+    /*
+     * Both layers keep room for a scrollbar whether or not one is showing. Without it, the
+     * textarea growing a scrollbar would narrow its own text and not the painted copy behind,
+     * and the two would wrap in different places. A no-op where scrollbars overlay, as on macOS.
+     */
+    scrollbar-gutter: stable;
+}
+
+.editor__paint {
+    position: absolute;
+    inset: 0;
+    /* Scrolled in step with the textarea over it, which is why it hides its own bars. */
+    overflow: hidden;
+    color: var(--text);
+    background: var(--bg);
+    pointer-events: none;
+}
+
+.editor__input {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    border-color: var(--border-strong);
+    background: transparent;
+    /* The layer behind shows the text. This one shows the caret and the selection. */
+    color: transparent;
+    caret-color: var(--text);
+}
+
+.editor--tall,
+.editor--tall .editor__input {
+    height: 100%;
+    min-height: 0;
+    resize: none;
+}
+
+/* Set apart by a rule, for an action that is not the same kind as the ones above it. */
+.apart {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+/* ------------------------------------------------------------------ crash */
+
+/*
+ * What is left when a render throws. Not a column of the deck, since there is no deck: one panel,
+ * held near the top where a reader starts rather than centred in a window of unknown height.
+ */
+.crash {
+    max-width: 620px;
+    margin: 48px auto;
+    padding: 0 16px;
+}
+
+.crash p {
+    margin: 12px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.crash__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+/* ------------------------------------------------------------------ saved payloads */
+
+/*
+ * A window holding a form or a short list, as tall as it needs rather than as tall as a document.
+ *
+ * `fit-content` rather than `auto`, which is what the browser gives a dialog for good reason: the
+ * top layer places it with `inset: 0`, and an absolutely positioned box with `height: auto` and
+ * both edges pinned fills the space between them. It stretched to the full 80vh with three rows
+ * in it.
+ */
+.modal--form {
+    width: min(620px, 92vw);
+    height: fit-content;
+    max-height: 80vh;
+}
+
+.modal__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+}

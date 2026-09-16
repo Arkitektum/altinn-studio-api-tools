@@ -1,0 +1,141 @@
+/* The payload: one element, its bar, its editor, and the example picker. */
+
+/* ------------------------------------------------------------------ data elements */
+
+.element {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.element__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subtle);
+    border-radius: 4px 4px 0 0;
+}
+
+/* The bar doubles as the collapse toggle. */
+.element__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Exclude the empty state, so hovering does not grey out its warning. */
+.element__toggle:hover .element__summary:not(.element__summary--empty) {
+    color: var(--text-muted);
+}
+
+.element__chevron {
+    width: 12px;
+    flex: 0 0 auto;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--text-muted);
+}
+
+.element__summary {
+    font-size: 12px;
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* An element with nothing in it blocks the post, so say so rather than whispering it. */
+.element__summary--empty {
+    color: var(--warn);
+}
+
+/* The example a collapsed element was filled from, so loaded and hand-typed differ at a glance. */
+.element__source {
+    color: var(--accent);
+}
+
+.element__ord {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.element__body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* An explicit display beats the user agent's [hidden] rule, so restate it for the collapsed
+   body. Hiding rather than unmounting keeps the example picker's state intact. */
+.element__body[hidden] {
+    display: none;
+}
+
+.element__type {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 10px;
+}
+
+@media (max-width: 760px) {
+    .element__type {
+        grid-template-columns: 1fr;
+    }
+}
+
+.code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    min-height: 180px;
+}
+
+.element__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+/* A binary attachment has nothing worth showing in a textarea. */
+.binary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-inset);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ example picker */
+
+.example__row {
+    display: flex;
+    gap: 6px;
+}
+
+.example__row select {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Nothing loaded yet, so this select is the action that unblocks the post. */
+.example__row--empty select {
+    border-color: var(--accent-border);
+}

@@ -1,0 +1,334 @@
+/* Fields and buttons. The colour a button carries is what kind of request it sends. */
+
+/* ------------------------------------------------------------------ forms */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.field > label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.legend {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+/*
+ * A heading over a run of panels, with a rule taking the rest of the line. Quiet on purpose: it
+ * groups what is already there rather than adding a thing to look at.
+ */
+.group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+}
+
+.group::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Set apart by a rule rather than by colour, so it is separate without shouting. */
+.danger {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.field__hint {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--text-faint);
+    /* Hints often contain URLs, which must not push past the panel. */
+    overflow-wrap: anywhere;
+}
+
+.grid {
+    display: grid;
+    gap: 10px;
+}
+
+.grid--2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 620px) {
+    .grid--2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+input[type="text"],
+select,
+textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 6px 8px;
+    outline: none;
+}
+
+input[type="text"],
+textarea {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-faint);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+/* A file input is left as the browser's own control, only recoloured so it is not a light slab. */
+input[type="file"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    padding: 5px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+    border-color: var(--accent);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background: var(--bg-subtle);
+    color: var(--text-faint);
+    cursor: not-allowed;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    /* Keeps long option text off the arrow. */
+    padding-right: 30px;
+}
+
+/* Specificity: select:disabled sets the background shorthand, which would drop the arrow. */
+select:disabled {
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+textarea {
+    resize: vertical;
+    line-height: 1.5;
+    tab-size: 2;
+}
+
+.check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    padding: 5px 0;
+}
+
+.check input {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    margin: 3px 0 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.check__body {
+    display: flex;
+    flex-direction: column;
+}
+
+.check__title {
+    font-size: 13px;
+}
+
+.check__note {
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+    background: var(--bg-subtle);
+}
+
+.btn:disabled {
+    color: var(--text-faint);
+    background: var(--bg-subtle);
+    cursor: not-allowed;
+}
+
+.btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 500;
+}
+
+.btn--primary:hover:not(:disabled) {
+    /* Brighten on hover, because the accent is light-on-dark and darkening reads as disabled. */
+    background: color-mix(in srgb, var(--accent) 85%, #fff);
+    border-color: color-mix(in srgb, var(--accent) 85%, #fff);
+}
+
+.btn--primary:disabled {
+    background: var(--bg-subtle);
+    border-color: var(--border-strong);
+    color: var(--text-faint);
+}
+
+.btn--fire {
+    width: 100%;
+    padding: 9px;
+}
+
+.btn--ghost {
+    border-color: var(--border);
+}
+
+/*
+ * A button that sends a request wears the colour of the method it sends, the same four the run
+ * log and the will-call previews use: GET blue, POST green, PUT amber, DELETE red. So the ones
+ * that talk to Altinn are told apart from the ones that only rearrange what is already here,
+ * and by the colour of what they are about to do rather than by a decoration.
+ *
+ * Height is not part of it. Every button is the same height, whatever it does.
+ */
+.btn--get {
+    color: var(--accent);
+    border-color: var(--accent-border);
+}
+
+.btn--get:hover:not(:disabled) {
+    background: var(--accent-bg);
+}
+
+.btn--post {
+    color: var(--ok);
+    border-color: var(--ok-border);
+}
+
+.btn--post:hover:not(:disabled) {
+    background: var(--ok-bg);
+}
+
+.btn--put {
+    color: var(--warn);
+    border-color: var(--warn-border);
+}
+
+.btn--put:hover:not(:disabled) {
+    background: var(--warn-bg);
+}
+
+.btn--delete {
+    color: var(--bad);
+    border-color: var(--bad-border);
+}
+
+.btn--delete:hover:not(:disabled) {
+    background: var(--bad-bg);
+}
+
+/* Disabled says so before it says which method: a colour you cannot act on is a lie. */
+.btn--get:disabled,
+.btn--post:disabled,
+.btn--put:disabled,
+.btn--delete:disabled {
+    color: var(--text-faint);
+    border-color: var(--border-strong);
+}
+
+/* A confirmation that is one click from doing something destructive, so it says so without hover. */
+.btn--armed,
+.btn--armed:hover:not(:disabled) {
+    color: var(--bad);
+    border-color: var(--bad-border);
+    background: var(--bad-bg);
+    font-weight: 500;
+}
+
+.btn__spinner {
+    width: 11px;
+    height: 11px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.spacer {
+    flex: 1;
+}

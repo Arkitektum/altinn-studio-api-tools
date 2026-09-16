@@ -1,0 +1,178 @@
+/* The page itself: the palette, the reset, and the three things every part of the tool uses. */
+
+/* ============================================================================
+   Altinn API tools
+
+   Plain by intent: system fonts, one accent colour, hairline borders, no
+   decoration. Dark only.
+   ========================================================================== */
+
+:root {
+    /* Tells the browser to render native controls (selects, checkboxes,
+     scrollbars) dark, so they match the rest without restyling. */
+    color-scheme: dark;
+
+    --bg: #1c1e21;
+    --bg-subtle: #24272b;
+    --bg-inset: #191b1e;
+    --border: #34383d;
+    --border-strong: #4a5057;
+
+    --text: #e4e6e9;
+    --text-muted: #a2a9b1;
+    --text-faint: #7d848c;
+
+    --accent: #7dabdd;
+    --accent-text: #10161c;
+    --accent-bg: #222f3c;
+    --accent-border: #35506b;
+
+    --ok: #66c48d;
+    --ok-bg: #1d2c24;
+    --ok-border: #2f4a3a;
+
+    --bad: #ef8b83;
+    --bad-bg: #2f2020;
+    --bad-border: #573331;
+
+    --warn: #ddb264;
+    --warn-bg: #2b2519;
+    --warn-border: #4d422a;
+
+    /*
+     * Categorical, not semantic: the three kinds of payload element, which sit in one list and so
+     * have to be told apart at a glance. Blue, violet and pink, spread as far as the four hues
+     * that mean a verdict leave room for: 66 degrees between the closest pair, and the pink is
+     * further from the red than it looks, since these three never share a surface with it. The
+     * blue is --accent.
+     */
+    --violet: #b49ae2;
+    --violet-bg: #2a2437;
+    --violet-border: #453a5c;
+
+    --pink: #ea90bd;
+    --pink-bg: #39232e;
+    --pink-border: #5f3a4d;
+
+    /*
+     * A surface per panel, so a column of them is a column of containers rather than one field.
+     * Every one is the same lightness, a step above the page and below anything raised inside it,
+     * and they differ only in hue.
+     *
+     * All of them are blue to purple. A first pass walked the whole wheel, and the warm half of it
+     * did not work: an amber or olive surface reads as dirty against a blue-grey page, and the one
+     * near the red reads as a warning. That leaves about a hundred degrees, which the seven panels
+     * sit in on a 13-degree grid, taken in an order that puts 40 degrees or more between any two
+     * panels that are next to each other.
+     *
+     * Seven and not nine: Validation and the run log are in the sidebar, where a column of their
+     * own already says they are not part of the one you work down.
+     *
+     * The border of each takes the same hue at the lightness of the plain one, so the outline is
+     * the panel's own rather than a grey drawn around it. A little more saturation than the
+     * surface, because a hairline needs it to read as coloured at all.
+     */
+    --panel-user: #1b2024;
+    --panel-user-border: #2e3842;
+    --panel-target: #1d1b24;
+    --panel-target-border: #312e42;
+    --panel-instances: #231b24;
+    --panel-instances-border: #3f2e42;
+    --panel-payload: #1b1e24;
+    --panel-payload-border: #2e3442;
+    --panel-element: #1f1b24;
+    --panel-element-border: #362e42;
+    --panel-pdf: #241b24;
+    --panel-pdf-border: #422e41;
+    --panel-process: #1b2224;
+    --panel-process-border: #2e3d42;
+
+    /*
+     * Marked text. Neutral and translucent, and it has to be both. Every hue in here already means
+     * something in a code block, and the editor paints its colours on a layer behind a transparent
+     * textarea, so an opaque selection is drawn over the very text it is marking.
+     */
+    --selection: rgba(228, 230, 233, 0.24);
+
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Chromium ignores padding-right when placing the native select arrow, so the arrow is
+       drawn here instead and can be positioned properly. */
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a2a9b1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+    --radius: 5px;
+    /*
+     * Wider than it was twice over: the log carries validation descriptions, and it is where a
+     * request body, a response and a curl command are read, all of which wrap badly when narrow.
+     */
+    --log: 640px;
+    --header-h: 45px;
+    /*
+     * The chain strip's height, kept a constant so the sticky columns can offset by it. That is
+     * why the strip never wraps: a variable height would put the columns back under it.
+     */
+    --chain-h: 32px;
+    /* Everything sticky sits below both, since both are sticky themselves. */
+    --top-h: calc(var(--header-h) + var(--chain-h));
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The keyboard's own highlight. Buttons carry their own background, so the browser's default ring
+ * lands on a dark surface with little to separate it. Only on keyboard focus, since a ring around
+ * every clicked button would be noise.
+ */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/*
+ * One selection colour for the whole tool, the editor included.
+ *
+ * The editor is why it is translucent. Its colours are painted on a layer behind a transparent
+ * textarea, and the selection belongs to the textarea, so it is drawn in front of them: anything
+ * opaque hides the text it is marking. A wash tints instead, and the colours read through it.
+ *
+ * And why it is neutral. Every hue in the palette already means something inside a code block, and
+ * an accent-coloured selection over accent-coloured element names left the two indistinguishable.
+ */
+::selection {
+    background: var(--selection);
+}
+
+/*
+ * Read aloud, never drawn. For the few places where the state is a coloured dot: colour is not
+ * available to everyone, and a title attribute is not read reliably.
+ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}

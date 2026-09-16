@@ -63,13 +63,20 @@ server/src
   urls.ts             app url building
   config.ts           env with defaults
 web/src
-  App.tsx             state and wiring only
+  main.tsx            the providers, in the order they depend on each other
+  App.tsx             the layout, and the state that is nobody's answer
+  session.tsx         who you are, where you are pointed, what the server says
+  runLog.tsx          the record of every request made
+  queries.ts          the cache's settings and every query key
+  reads.ts            the reads with more than one consumer, as hooks
+  writes.ts           posting the payload and prevalidating it, as hooks
   api.ts              typed calls to /api, one function per endpoint
   types.ts            the wire shapes, mirroring the server's
   components/         one file per panel, plus CopyButton and Notice
   lib/                every pure decision, each with a test
   testDom.ts          a jsdom browser, for the tests that have to render
-  styles.css          all the styling
+  styles.css          the imports, in the order the cascade needs
+  styles/             one file per thing styled
 ```
 
 ## Where state lives

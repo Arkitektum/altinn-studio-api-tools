@@ -1,0 +1,86 @@
+/* The test user panel: the claims list and the stored tokens. */
+
+/* ------------------------------------------------------------------ token */
+
+.token {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-subtle);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.token__top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.token__label {
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.claims {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px 12px;
+    margin: 0;
+    font-size: 12px;
+}
+
+.claims dt {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.claims dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.picklist {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.picklist__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.picklist__item:hover {
+    background: var(--bg-subtle);
+}
+
+.picklist__item[aria-current="true"] {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+    color: var(--text);
+}
+
+.picklist__item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
