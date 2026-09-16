@@ -93,7 +93,8 @@
 /* ------------------------------------------------------------------ notices */
 
 .notice {
-    padding: 8px 10px;
+    position: relative;
+    padding: 9px 10px 9px 32px;
     border: 1px solid var(--border);
     border-left-width: 3px;
     border-radius: 4px;
@@ -103,7 +104,31 @@
     word-break: break-word;
 }
 
+/*
+ * A glyph per severity, so which one it is does not rest on colour alone. The left border already
+ * carries the colour, and a border is exactly what someone who cannot see the difference between
+ * amber and red gets nothing from.
+ *
+ * Drawn as a mask rather than an image, so it takes `currentColor` and the severity rules below
+ * set the colour once for the text, the border and this. Absolutely positioned because a notice
+ * can hold several children and making it a flex or grid container would rearrange them.
+ */
+.notice::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    width: 14px;
+    height: 14px;
+    background-color: currentColor;
+    /* Prefixed too: nothing autoprefixes here, and an unsupported mask is a filled square. */
+    -webkit-mask: var(--notice-glyph) center / 14px 14px no-repeat;
+    mask: var(--notice-glyph) center / 14px 14px no-repeat;
+    --notice-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Cpath d='M8 7.3v4' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='4.9' r='1'/%3E%3C/svg%3E");
+}
+
 .notice--bad {
+    --notice-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Cpath d='M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
     border-color: var(--bad-border);
     border-left-color: var(--bad);
     background: var(--bad-bg);
@@ -116,6 +141,7 @@
  * read as plain grey notices.
  */
 .notice--ok {
+    --notice-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Cpath d='M5.1 8.3l2.2 2.2 3.6-4.3' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     border-color: var(--ok-border);
     border-left-color: var(--ok);
     background: var(--ok-bg);
@@ -123,6 +149,7 @@
 }
 
 .notice--warn {
+    --notice-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.2 15 14H1z' fill='none' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M8 6.6v3.3' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.9' r='1'/%3E%3C/svg%3E");
     border-color: var(--warn-border);
     border-left-color: var(--warn);
     background: var(--warn-bg);
