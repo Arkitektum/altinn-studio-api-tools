@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { useRunLog } from "../runLog";
 import { useTarget } from "../session";
 import { toCurl } from "../lib/curl";
@@ -9,13 +10,15 @@ import { Modal } from "./Modal";
 import { Panel } from "./Panel";
 import type { LogEntry, LogResult, RunStep } from "../types";
 
-interface RunLogProps {
-    /** Whether anything is in flight, which is what the log reports rather than any one action. */
-    running: boolean;
-}
-
-export function RunLog({ running }: RunLogProps) {
+export function RunLog() {
     const { entries, clearEntries } = useRunLog();
+    /*
+     * Whether anything at all is in flight, asked of the cache rather than counted by a caller.
+     * App used to add up one flag per action and pass the total down, which meant a read moving into
+     * a panel silently dropped out of the count. These two see every query and every mutation there
+     * is, wherever it was declared.
+     */
+    const running = useIsFetching() + useIsMutating() > 0;
     const { localtestUrl } = useTarget();
     // One run open at a time, following whatever ran last. Older runs stay one line each.
     const [openId, setOpenId] = useState<string | null>(null);

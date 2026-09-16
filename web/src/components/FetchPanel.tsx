@@ -1,38 +1,29 @@
-import { useState, type ReactNode } from "react";
-import { useTarget } from "../session";
+import { useMemo, useState } from "react";
+import { useAppRead, useCompare, useDataElementRead, useInstanceRead } from "../reads";
+import { useSession } from "../session";
+import { downloadContent } from "../lib/download";
+import { validationBlockedBy } from "../lib/elementValidation";
+import { heldElement } from "../lib/heldElement";
+import { CompareSection } from "./CompareSection";
 import { Dump } from "./Dump";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { DataElementSummary, FetchedDataElement } from "../types";
+import type { DataElementSummary } from "../types";
 
 interface FetchPanelProps {
     /** Anchor for the chain strip to scroll to. */
     id: string;
-    /** Data elements from the last successful instance read, for the data guid select. */
-    dataElements: DataElementSummary[];
     dataGuid: string;
     onDataGuidChange: (next: string) => void;
-    /** The data element last read back, for the download and copy buttons. */
-    fetched: FetchedDataElement | null;
-    /** Saves what came back as a file. Offered in the window, where the content is. */
-    onDownloadDataElement: () => void;
-    /** Reads and compares again for the selection as it stands, since neither waits for a press. */
-    onRefresh: () => void;
     /**
-     * Why validating the selected element would say nothing useful, or null when it would. The
-     * validation is skipped with the reason in place of its url, rather than sent at a task the
-     * instance has already left.
+     * The xml as written, which is the other half of the comparison: whatever the payload holds for
+     * the data type selected here. Passed in because it belongs to the payload panel, which is
+     * where it is edited, and null when there is none to compare against.
      */
-    validateBlockedBy: string | null;
-    busy: boolean;
-    hasToken: boolean;
-    error: unknown;
-    /**
-     * The comparison, which acts on the element selected here. It is a section of this panel
-     * rather than a panel of its own, so that what it compares is not left to be inferred.
-     */
-    children?: ReactNode;
+    written: string | null;
+    /** How much of it there is and where it came from, for the line above the diff. */
+    writtenLabel: string | null;
 }
 
 function describeElement(element: DataElementSummary): string {
@@ -45,26 +36,45 @@ function describeElement(element: DataElementSummary): string {
     return bits.join(" · ");
 }
 
-export function FetchPanel({
-    id,
-    dataElements,
-    dataGuid,
-    onDataGuidChange,
-    fetched,
-    onDownloadDataElement,
-    onRefresh,
-    validateBlockedBy,
-    busy,
-    hasToken,
-    error,
-    children
-}: FetchPanelProps) {
+export function FetchPanel({ id, dataGuid, onDataGuidChange, written, writtenLabel }: FetchPanelProps) {
     /** Whether the content that came back is open in a window of its own. */
     const [showing, setShowing] = useState(false);
 
-    const { instance, org, app, partyId, instanceGuid } = useTarget();
-    const canGetInstance = hasToken && Boolean(org && app && partyId && instanceGuid);
+    const { instance, tokenUsable, org, app, partyId, instanceGuid } = useSession();
+    const { metadata } = useAppRead();
+    const { dataElements, process, fetching: readingInstance } = useInstanceRead();
+
+    const canGetInstance = tokenUsable && Boolean(org && app && partyId && instanceGuid);
     const selected = dataElements.find((element) => element.id === dataGuid);
+
+    /**
+     * Why validating the selected element would say nothing useful, or null when it would. The
+     * validation is skipped with the reason in place of its url, rather than sent at a task the
+     * instance has already left.
+     */
+    const validateBlockedBy = validationBlockedBy(
+        process,
+        metadata?.metadata.dataTypes?.find((type) => type.id === selected?.dataType)
+    );
+
+    const element = useDataElementRead(dataGuid, selected?.lastChanged ?? null, validateBlockedBy);
+    const comparison = useCompare(dataGuid, selected?.lastChanged ?? null, selected?.dataType ?? "", written);
+
+    /** Held so it can be saved as a file rather than read again. */
+    const fetched = useMemo(() => (element.read ? heldElement(dataGuid, element.read, selected ?? null) : null), [element.read, dataGuid, selected]);
+
+    const busy = element.fetching || readingInstance;
+    const error = element.error;
+
+    /**
+     * Reads and compares again for the selection as it stands, since neither waits for a press.
+     * A refetch rather than an invalidation: the keys are already the right ones, and the question
+     * is not whether the answers have gone stale but that they are being asked for again.
+     */
+    function refresh() {
+        element.refetch();
+        if (written) comparison.refetch();
+    }
 
     return (
         <Panel
@@ -79,7 +89,7 @@ export function FetchPanel({
                         </span>
                         {/* Nothing here waits for a press, so the only button left is the one
                             that asks again: for an element the app has changed underneath us. */}
-                        <button type="button" className="btn btn--get" onClick={onRefresh} disabled={busy || !canGetInstance || !dataGuid}>
+                        <button type="button" className="btn btn--get" onClick={refresh} disabled={busy || !canGetInstance || !dataGuid}>
                             {busy && <span className="btn__spinner" />}
                             Refresh
                         </button>
@@ -145,7 +155,13 @@ export function FetchPanel({
                                 <Modal
                                     title={fetched.filename}
                                     aside={
-                                        <button type="button" className="btn btn--ghost" onClick={onDownloadDataElement}>
+                                        <button
+                                            type="button"
+                                            className="btn btn--ghost"
+                                            onClick={() =>
+                                                fetched && downloadContent(fetched.filename, fetched.content, fetched.encoding, fetched.contentType)
+                                            }
+                                        >
                                             Download
                                         </button>
                                     }
@@ -182,7 +198,19 @@ export function FetchPanel({
                 </div>
             ) : null}
 
-            {children}
+            {/* Inside the panel, because it compares what the select above it is pointing at.
+                Beside it as its own card, that was left to be worked out from the order the two
+                happened to be in. */}
+            {selected && (
+                <CompareSection
+                    dataType={selected.dataType}
+                    payload={writtenLabel}
+                    parses={comparison.wellFormed}
+                    result={comparison.result}
+                    busy={comparison.fetching}
+                    error={comparison.error}
+                />
+            )}
         </Panel>
     );
 }

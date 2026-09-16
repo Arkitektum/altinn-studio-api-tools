@@ -4,6 +4,7 @@ import { api } from "./api";
 import { queryKeys } from "./queries";
 import { isExpired } from "./lib/format";
 import { targetUrls, type TargetUrls } from "./lib/target";
+import { PROBE_DELAY_MS, SELECTION_DELAY_MS, useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import type { CatalogueApp, ExampleGroup, LocaltestStatus, PublicToken, ServerConfig } from "./types";
 
@@ -42,6 +43,17 @@ export interface Session extends TargetUrls {
     setApp: Dispatch<SetStateAction<string>>;
     setPartyId: Dispatch<SetStateAction<string>>;
     setInstanceGuid: Dispatch<SetStateAction<string>>;
+
+    /**
+     * Whether each field has stopped changing, so a read aimed at it can go.
+     *
+     * Here rather than in each reader. It is one fact about the session, and a hook of its own per
+     * caller gets it wrong: a panel mounting part way through a word starts its own timer with the
+     * value it finds, treats a half-typed name as settled, and reads an app that does not exist.
+     */
+    targetSettled: boolean;
+    partySettled: boolean;
+    instanceSettled: boolean;
 
     /** Where the local Altinn apps are served, which the masthead names. */
     appHost: string;
@@ -113,6 +125,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const [partyId, setPartyId] = useLocalStorage("partyId", "");
     const [instanceGuid, setInstanceGuid] = useLocalStorage("instanceGuid", "");
 
+    const targetSettled = useSettled(`${org}/${app}`, PROBE_DELAY_MS);
+    const partySettled = useSettled(partyId, SELECTION_DELAY_MS);
+    const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
+
     const appHost = configQuery.data?.appHost ?? "http://local.altinn.cloud:8000";
     const localtestUrl = localtestQuery.data?.url ?? configQuery.data?.localtestUrl ?? "http://localhost:5101";
 
@@ -132,6 +148,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             setApp,
             setPartyId,
             setInstanceGuid,
+            targetSettled,
+            partySettled,
+            instanceSettled,
             appHost,
             serverConfig: configQuery.data ?? null,
             localtest: localtestQuery.data ?? null,
@@ -153,6 +172,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             setApp,
             setPartyId,
             setInstanceGuid,
+            targetSettled,
+            partySettled,
+            instanceSettled,
             localtestUrl,
             configQuery.data,
             configQuery.error,

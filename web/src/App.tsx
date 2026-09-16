@@ -1,28 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
-import { useAppRead, useDataElementRead, useInstanceRead } from "./reads";
+import { useAppRead, useInstanceRead } from "./reads";
 import { useRunLog } from "./runLog";
 import { useSession } from "./session";
-import { downloadContent } from "./lib/download";
 import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
-import { logFromAdvance, logFromCompare, logFromPdf, logFromRun, logFromValidationReport } from "./lib/logResults";
+import { logFromAdvance, logFromPdf, logFromRun, logFromValidationReport } from "./lib/logResults";
 import { withIdentity } from "./lib/formIdentity";
-import { heldElement } from "./lib/heldElement";
 import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
-import { EDIT_DELAY_MS, useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
-import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
-import { CompareSection } from "./components/CompareSection";
 import { FetchPanel } from "./components/FetchPanel";
 import { PdfPanel } from "./components/PdfPanel";
 import { InstancesPanel } from "./components/InstancesPanel";
@@ -51,17 +46,6 @@ const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
 interface InstanceAnswer {
     read: ReadInstanceResult;
     validated: ValidateResult | null;
-}
-
-/**
- * Whether the payload is xml the server could compare, asked of the browser's own parser.
- *
- * Not in `lib/`, for once, because it is the one decision here that cannot be made without a
- * browser: `DOMParser` is what does the work, and node's test runner has none to lend it.
- */
-function isWellFormedXml(text: string): boolean {
-    const parsed = new DOMParser().parseFromString(text, "application/xml");
-    return parsed.getElementsByTagName("parsererror").length === 0;
 }
 
 export function App() {
@@ -173,12 +157,6 @@ export function App() {
 
     const selectedDataType = selectedElement?.dataType ?? "";
 
-    /** Why validating it would say nothing useful, or null when it would. */
-    const validateBlockedBy = validationBlockedBy(
-        instanceProcess,
-        metadata?.metadata.dataTypes?.find((type) => type.id === selectedDataType)
-    );
-
     /**
      * The payload element the comparison reads, which is the one of the same data type holding
      * text. Base64 is left out: a comparison is about xml.
@@ -203,70 +181,10 @@ export function App() {
         return text.trim() ? text : null;
     }, [payloadForSelected, dataGuid]);
 
-    /*
-     * The selected data element, read back and validated.
-     *
-     * `lastChanged` is part of the key, so a post that rewrote the element under the same guid is a
-     * different thing to read rather than the same one read already. Validation is skipped where it
-     * would say nothing, which is what `validateBlockedBy` decides, and the two are one `queryFn`
-     * running in order so the timings in the log stay honest. They stay two log entries, as they
-     * have always been: they are two requests and answer two different questions.
-     */
-    const elementChangedAt = selectedElement?.lastChanged ?? null;
-    const elementQuery = useDataElementRead(dataGuid, elementChangedAt, validateBlockedBy);
-
-    /** Held so it can be saved as a file rather than read again. */
-    const fetchedElement = useMemo(
-        () => (elementQuery.read ? heldElement(dataGuid, elementQuery.read, selectedElement) : null),
-        [elementQuery.read, dataGuid, selectedElement]
-    );
-
-    /*
-     * The stored xml against the xml as written.
-     *
-     * Keyed on the settled payload text, so the cache holds one entry per pause in the typing and
-     * not one per keystroke, and `gcTime` is finite here alone: superseded entries hold a copy of
-     * the document, and a long editing session would otherwise keep every version of it.
-     *
-     * Whether the text parses is part of the answer rather than state beside it. The comparison is
-     * the only thing that asks, it asks once per settled document, and the panel's "not well formed
-     * yet" reads what it found.
-     */
-    const comparableSettled = useSettled(comparable, EDIT_DELAY_MS);
-    const compareQuery = useQuery({
-        queryKey: queryKeys.compare(activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid, dataGuid, elementChangedAt, comparable ?? ""),
-        queryFn: async () => {
-            const written = comparable ?? "";
-            // Half-typed xml is not a comparison waiting to happen, and asking anyway would put a
-            // "could not compare" entry in the log for every pause in typing.
-            if (!isWellFormedXml(written)) return { wellFormed: false, result: null };
-            const result = await api.compareStored({
-                tokenId: activeTokenId ?? "",
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                dataGuid,
-                dataType: selectedDataType,
-                left: written
-            });
-            appendLog(logFromCompare(result));
-            return { wellFormed: true, result };
-        },
-        enabled: instanceRead.aimed && comparableSettled && Boolean(instanceGuid && dataGuid && comparable),
-        /*
-         * The one query that keeps its last answer while the next key loads. Everywhere else an
-         * empty panel is the honest thing while the tool is between answers, but this panel is
-         * watched while the document under it is being typed: the key moves on every keystroke, and
-         * clearing the diff on each one would leave it flickering rather than settling.
-         */
-        placeholderData: (previous) => previous,
-        gcTime: 60_000
-    });
-
-    const compareResult = compareQuery.data?.result ?? null;
-    /** Whether the payload parsed, as of the last time the comparison looked. */
-    const payloadParses = compareQuery.data?.wellFormed ?? true;
+    /** How much the payload holds for the selected type and where it came from, for the diff. */
+    const writtenLabel = payloadForSelected
+        ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
+        : null;
 
     /** Picking another data element is a different key, so nothing here has to be dropped by hand. */
     const changeDataGuid = useCallback((next: string) => setPreferredDataGuid(next), []);
@@ -512,18 +430,6 @@ export function App() {
     });
 
     /**
-     * Asks for the selected element again, for the Refresh button.
-     *
-     * A refetch of both rather than an invalidation: nothing about the selection has changed, so
-     * the keys are already the right ones, and the question is not whether the answers have gone
-     * stale but that they are being asked for again.
-     */
-    function refreshElement() {
-        elementQuery.refetch();
-        if (comparable) void compareQuery.refetch();
-    }
-
-    /**
      * Keeps the payload as it stands, under a name.
      *
      * localStorage can refuse, and a payload holding a file picked off disk is the way to make it:
@@ -598,12 +504,6 @@ export function App() {
             if (result.ok) setValidationAnswer({ report: result.report, request });
         }
     });
-
-    /** Saves the held data element as a file, under the name Altinn stored or the data type. */
-    function downloadDataElement() {
-        if (!fetchedElement) return;
-        downloadContent(fetchedElement.filename, fetchedElement.content, fetchedElement.encoding, fetchedElement.contentType);
-    }
 
     /**
      * Renders the instance as the pdf Altinn would produce.
@@ -739,10 +639,6 @@ export function App() {
      */
     const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
-    /** Anything at all in flight, which is what the log reports rather than any one action. */
-    const inFlight =
-        run.isPending || instanceRead.fetching || elementQuery.fetching || compareQuery.isFetching || renderPdf.isPending || advance.isPending;
-
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
         hasToken: tokenUsable,
@@ -753,7 +649,7 @@ export function App() {
         hasProcess: instanceProcess !== null,
         party: instanceOwnerPartyId,
         dataSelected: Boolean(dataGuid),
-        busy: inFlight
+        busy: false
     });
 
     return (
@@ -925,37 +821,11 @@ export function App() {
 
                             <FetchPanel
                                 id="panel-data-element"
-                                dataElements={instanceDataElements}
                                 dataGuid={dataGuid}
                                 onDataGuidChange={changeDataGuid}
-                                fetched={fetchedElement}
-                                onDownloadDataElement={downloadDataElement}
-                                onRefresh={refreshElement}
-                                validateBlockedBy={validateBlockedBy}
-                                // Also while the instance is being read, since that read is what
-                                // replaces the list this panel is choosing from.
-                                busy={elementQuery.fetching || instanceRead.fetching}
-                                hasToken={tokenUsable}
-                                error={elementQuery.error}
-                            >
-                                {/* Inside the panel, because it compares what the select above it
-                                    is pointing at. Beside it as its own card, that was left to be
-                                    worked out from the order the two happened to be in. */}
-                                {sections.compare && selectedDataType && (
-                                    <CompareSection
-                                        dataType={selectedDataType}
-                                        payload={
-                                            payloadForSelected
-                                                ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
-                                                : null
-                                        }
-                                        parses={payloadParses}
-                                        result={compareResult}
-                                        busy={compareQuery.isFetching}
-                                        error={compareQuery.error}
-                                    />
-                                )}
-                            </FetchPanel>
+                                written={comparable}
+                                writtenLabel={writtenLabel}
+                            />
 
                             {/* After the data element, since it is a different kind of action. */}
                             {sections.requests && instanceGuid && (
@@ -984,7 +854,7 @@ export function App() {
                 {(sections.validation || sections.log) && (
                     <div className="column column--log">
                         {sections.validation && <ValidationPanel />}
-                        {sections.log && <RunLog running={inFlight} />}
+                        {sections.log && <RunLog />}
                     </div>
                 )}
             </div>

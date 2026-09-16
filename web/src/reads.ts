@@ -3,9 +3,9 @@ import { api } from "./api";
 import { queryKeys } from "./queries";
 import { useRunLog } from "./runLog";
 import { useSession } from "./session";
-import { logFromDataElement, logFromRead, logFromValidation } from "./lib/logResults";
-import { PROBE_DELAY_MS, SELECTION_DELAY_MS, useSettled } from "./lib/useDebounced";
-import type { AppParty, DataElementSummary, ReadDataElementResult, ReadInstanceResult, ValidateResult } from "./types";
+import { logFromCompare, logFromDataElement, logFromRead, logFromValidation } from "./lib/logResults";
+import { EDIT_DELAY_MS, useSettled } from "./lib/useDebounced";
+import type { AppParty, CompareResult, DataElementSummary, ReadDataElementResult, ReadInstanceResult, ValidateResult } from "./types";
 
 /**
  * The reads several parts of the tool need, as hooks anything can call.
@@ -43,8 +43,7 @@ export interface AppRead {
  * "et-v4" is one read and not five.
  */
 export function useAppRead(): AppRead {
-    const { tokenId, tokenUsable, org, app } = useSession();
-    const settled = useSettled(`${org}/${app}`, PROBE_DELAY_MS);
+    const { tokenId, tokenUsable, org, app, targetSettled: settled } = useSession();
     const aimed = tokenUsable && Boolean(tokenId && org && app);
     const params = { tokenId: tokenId ?? "", org, app };
 
@@ -98,12 +97,8 @@ export interface InstanceRead {
  * a validation that fails leaves the read standing with its own step in the log.
  */
 export function useInstanceRead(): InstanceRead {
-    const { tokenId, tokenUsable, org, app, partyId, instanceGuid } = useSession();
+    const { tokenId, tokenUsable, org, app, partyId, instanceGuid, targetSettled, partySettled, instanceSettled } = useSession();
     const { append } = useRunLog();
-
-    const targetSettled = useSettled(`${org}/${app}`, PROBE_DELAY_MS);
-    const partySettled = useSettled(partyId, SELECTION_DELAY_MS);
-    const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
     const settled = targetSettled && partySettled && instanceSettled;
     const aimed = tokenUsable && Boolean(tokenId && org && app && partyId);
 
@@ -182,6 +177,78 @@ export function useDataElementRead(dataGuid: string, changedAt: string | null, b
 
     return {
         read: query.data ?? null,
+        fetching: query.isFetching,
+        error: query.error,
+        refetch: () => void query.refetch()
+    };
+}
+
+/**
+ * Whether the payload is xml the server could compare, asked of the browser's own parser.
+ *
+ * Here rather than in `lib/`, because `DOMParser` is what does the work and node's test runner has
+ * none to lend it. The comparison is the only thing that asks.
+ */
+function isWellFormedXml(text: string): boolean {
+    const parsed = new DOMParser().parseFromString(text, "application/xml");
+    return parsed.getElementsByTagName("parsererror").length === 0;
+}
+
+export interface Comparison {
+    result: CompareResult | null;
+    /** Whether the payload parsed, as of the last time this looked. */
+    wellFormed: boolean;
+    fetching: boolean;
+    error: unknown;
+    refetch: () => void;
+}
+
+/**
+ * The stored xml against the xml as written, which is `written`.
+ *
+ * Keyed on the text itself, because that is half of what is being compared and a length or a
+ * timestamp would miss an edit that swapped one character for another. The key moves with every
+ * keystroke, so this is the one read with a finite `gcTime`, superseded keys each holding a copy of
+ * the document, and the one that keeps its last answer while the next key loads: the panel is
+ * watched while the document under it is typed, and clearing the diff on each character would leave
+ * it flickering rather than settling.
+ *
+ * Whether the text parses is part of the answer rather than state beside it. Half-typed xml is not a
+ * comparison waiting to happen, and asking anyway would put a failed compare in the log for every
+ * pause in typing.
+ */
+export function useCompare(dataGuid: string, changedAt: string | null, dataType: string, written: string | null): Comparison {
+    const { tokenId, org, app, partyId, instanceGuid } = useSession();
+    const { append } = useRunLog();
+    const { aimed } = useInstanceRead();
+    const settled = useSettled(written, EDIT_DELAY_MS);
+
+    const query = useQuery({
+        queryKey: queryKeys.compare(tokenId ?? "", org, app, partyId, instanceGuid, dataGuid, changedAt, written ?? ""),
+        queryFn: async () => {
+            const left = written ?? "";
+            if (!isWellFormedXml(left)) return { wellFormed: false, result: null };
+            const result = await api.compareStored({
+                tokenId: tokenId ?? "",
+                org,
+                app,
+                instanceOwnerPartyId: partyId,
+                instanceGuid,
+                dataGuid,
+                dataType,
+                left
+            });
+            append(logFromCompare(result));
+            return { wellFormed: true, result };
+        },
+        enabled: aimed && settled && Boolean(instanceGuid && dataGuid && written),
+        placeholderData: (previous) => previous,
+        gcTime: 60_000
+    });
+
+    return {
+        result: query.data?.result ?? null,
+        wellFormed: query.data?.wellFormed ?? true,
         fetching: query.isFetching,
         error: query.error,
         refetch: () => void query.refetch()
