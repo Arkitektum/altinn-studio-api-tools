@@ -551,24 +551,32 @@ export function App() {
             setParties(partyList);
             const types = meta.metadata.dataTypes ?? [];
 
-            // Preselect the app's form data type if no type has been chosen yet.
             const formType = types.find((type) => type.appLogic);
-            let next = dataElements;
-            if (formType && next.length === 1 && !next[0]?.dataType) {
-                next = [{ ...EMPTY_ELEMENT, dataType: formType.id }];
-            }
+            /*
+             * Through an updater rather than the payload this call closed over, because the answer
+             * arrives a debounce and a round trip after the probe was scheduled. That array is the
+             * one from the render that scheduled it, and an example loaded or a character typed in
+             * between would be written back out of the payload. The same reason loading an example
+             * takes one, which lib/useLocalStorage.ts explains.
+             */
+            setDataElements((current) => {
+                // Preselect the app's form data type if no type has been chosen yet.
+                let next = current;
+                if (formType && next.length === 1 && !next[0]?.dataType) {
+                    next = [{ ...EMPTY_ELEMENT, dataType: formType.id }];
+                }
 
-            // The app has now declared its content types, so fill in any element still without one.
-            // This also covers types chosen from the catalogue before the app was probed.
-            next = next.map((element) => {
-                if (!element.dataType || element.contentType) return element;
-                const contentType = preferredContentType(types.find((type) => type.id === element.dataType)?.allowedContentTypes ?? []);
-                return contentType ? { ...element, contentType } : element;
+                // The app has now declared its content types, so fill in any element still without
+                // one. This also covers types chosen from the catalogue before the app was probed.
+                next = next.map((element) => {
+                    if (!element.dataType || element.contentType) return element;
+                    const contentType = preferredContentType(types.find((type) => type.id === element.dataType)?.allowedContentTypes ?? []);
+                    return contentType ? { ...element, contentType } : element;
+                });
+
+                // Unchanged comes back as it was, so a probe that had nothing to add is not a write.
+                return next.some((element, index) => element !== current[index]) ? next : current;
             });
-
-            if (next.some((element, index) => element !== dataElements[index])) {
-                setDataElements(next);
-            }
         } catch (error) {
             if (movedOn(requested, "target")) return;
             setProbeError(error);
