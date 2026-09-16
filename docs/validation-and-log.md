@@ -5,7 +5,7 @@ nav_order: 11
 
 # Validation and the run log
 
-The right column. Both arrive with their first content and stay put afterwards, so an expired token does not hide what you already read.
+The right column. Both are there from the first render, each saying what it will hold until it holds it, and they stay put afterwards, so an expired token does not hide what you already read.
 
 ## Validation
 

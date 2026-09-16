@@ -16,7 +16,11 @@ There is no destination setting. What a post does follows from what is selected 
 
 The two used to be separate controls, a destination switch and a list, which could disagree: "existing instance" with nothing selected was a state you could be in, and the post button had to explain itself. One selection cannot contradict itself, so the switch is gone and the list carries a **New instance** row at the top instead.
 
-The post button says which of the two it will do, and the **Will call** line in Instances, under the selection that decides it, shows the URL. It is the last thing in the Payload panel rather than a panel of its own, under **Post**, because what it sends is the payload you were just looking at. Above it, **Before you post** holds [Prevalidate](payload.md#prevalidate), and a payload that has not been through it says so there.
+The post button says which of the two it will do, and the **Will call** line in Instances, under the selection that decides it, shows the URL.
+
+**Post** is a panel of its own, the last of the three under the **Post** heading: [Payload](payload.md) is what to send, [Prevalidation](payload.md#prevalidate) is what the service makes of it, and this is the send. The three were one panel until recently, set apart by legends inside it, which meant the rail had two rows pointing at the same place and nothing said where one step ended and the next began.
+
+A payload that has not been prevalidated says so above the button, and so does one that has changed since it was, because this is the button the prevalidation would have saved you pressing.
 
 After a post the new instance becomes the selected one, so it is what the Data element, Process and validation panels now point at, and another post would add data to it. Pick **New instance** again to make a second one.
 

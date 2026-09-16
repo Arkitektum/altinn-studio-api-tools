@@ -43,6 +43,6 @@ This site is the `docs/` folder of the repository, rendered by GitHub Pages. To 
 
 The theme is [just-the-docs](https://just-the-docs.com) pulled in as a remote theme, so there is nothing to build and no workflow to maintain. `permalink: pretty` gives the pages directory URLs, so a page is `/getting-started/` rather than `/getting-started.html`.
 
-The colours are not the theme's. `docs/_sass/color_schemes/altinn.scss` holds the palette copied from the `:root` block at the top of `web/src/styles.css`, so the docs and the app look like one thing, and `docs/_sass/custom/custom.scss` handles what a palette cannot: system fonts, hairline tables, a quieter sidebar, and the few places the theme's purple accent reaches past its own variables.
+The colours are not the theme's. `docs/_sass/color_schemes/altinn.scss` holds the palette copied from the `:root` block at the top of `web/src/styles/base.css`, so the docs and the app look like one thing, and `docs/_sass/custom/custom.scss` handles what a palette cannot: system fonts, hairline tables, a quieter sidebar, and the few places the theme's purple accent reaches past its own variables.
 
 Two fallbacks worth knowing if a build ever fails. Setting `color_scheme: dark` drops back to the theme's own dark scheme, keeping `custom.scss`. Replacing `remote_theme:` with `theme: jekyll-theme-primer` drops back to a theme GitHub Pages ships itself. The pages are plain markdown either way, and readable in the repository without a site at all.

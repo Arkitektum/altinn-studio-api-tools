@@ -83,23 +83,40 @@ web/src
 
 - **Tokens: server memory.** A `Map` in `tokenStore.ts`, pruned when expired. Never written to disk, never sent to the browser.
 - **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid, the payload elements, the payloads saved by name and the two markers that go with them, under the `altinn-api-tools:` prefix by `useLocalStorage`. [SECURITY.md](SECURITY.md) lists all eight. Not the destination, which is derived from whether an instance is selected rather than stored. A refresh does not lose your work.
-- **Everything read back: React state.** The run log, validation results, the instance listing, the process state, the fetched data element, the pdf blob and the last prevalidation report. Reloading drops them, which is correct: they describe a moment.
+- **Everything read back: the query cache.** The instance listing, the instance and its validation, the fetched data element, the comparison with the stored xml and the last prevalidation report are answers in a TanStack Query cache, keyed on what they are about. Reloading drops them, which is correct: they describe a moment.
+- **What is nobody's answer: React state.** The run log, the validation results gathered across several reads, and the pdf blob. None of them is the answer to one request: the log is a history, the results are one per target, and the blob is a rendered document rather than a response.
+
+### Why a query cache
+
+The hand-written version of this was the tool's main source of bugs. A read answers after the selection it was aimed at has moved, and the answer has to be dropped rather than written over the newer one. That was `selectionKeys.ts`, an `aim` ref, a `movedOn` check and five `*Attempted` markers, and it is now a key: an answer whose key has moved on is not the answer anyone is looking at.
+
+The library's defaults are inverted in `queries.ts`, because they are written for an application showing a user their own data and none of that holds here. Nothing is retried, since a refusal is the answer and asking twice puts the same refusal in the log twice. Nothing refetches on its own, since a request nobody asked for appearing in the log would make the log a worse record of what you did. Nothing goes stale, since the key already names everything the answer depends on.
+
+The run log entry is written inside the `queryFn` rather than in an effect on the answer. The `queryFn` is the request: it runs once per fetch and not at all when an answer comes from the cache, which is exactly the distinction the log draws.
+
+Two rules go with keying on a value you are typing. The key is the **settled** value, debounced, so the intermediate app names you type through are never asked about at all; and the flags that say which values have settled live in the session rather than in each component, because a panel mounting mid-typing would otherwise treat a half-typed name as settled and ask about it.
 
 ## Conventions the UI follows
 
-**Panels appear when they become usable.** `lib/sections.ts` decides, from whether there is a token, an app, and any results. A panel you cannot act on is left out rather than shown dead. Results stand on their own, so an expired token does not hide what you already read.
+**Every panel is on screen, and one you cannot use yet says what it is waiting for.** `lib/readiness.ts` decides the reason, written as the thing that is missing rather than as an instruction: "Needs an application." sits under the heading of the panel that is waiting, and the panel above it is where you get one.
 
-**The dependencies are stated, not left to be inferred.** `lib/chain.ts` turns the current state into the chain the tool hangs off, user to application to party to instance to data element, marking each link done, next or waiting. The strip under the header renders it. Hiding a panel is good behaviour and a poor explanation, so the chain is the explanation: it names the next thing to fill in and the panel to do it in.
+They used to be left out until they became usable, which read as a cleaner first screen and cost more than it saved. The order the tool wants things done in was invisible, so a strip above the panels had to name it, and a panel appearing as you typed moved everything under it. `Panel` renders the reason in place of the controls rather than beside them, so a panel that is waiting cannot be half operated.
 
-`lib/scrollSpy.ts` decides which link to mark as the one on screen, and `lib/useScrollSpy.ts` feeds it positions read from the DOM on each scroll. Reading them fresh rather than subscribing with an observer is what keeps it right while panels come and go: a panel that has just appeared or gone needs no subscription kept in step with it.
+**The dependencies are stated, not left to be inferred.** `lib/chain.ts` turns the current state into the chain the tool hangs off and marks each step done, next or waiting. Ten steps, one per panel in the column you work down: test user, application, party, instance, payload, prevalidation, post, data element, pdf, process. The rail down the left renders it, and each row says what its step holds as well as where it stands.
 
-What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a link scrolls to it. Comparing against the strip's edge instead left the two disagreeing by exactly that margin, so clicking a link marked the panel above the one it scrolled to.
+Reachability is stated per step rather than walked down the list, because the steps are not a single line. A payload can be written before a party is chosen, and reading a data element needs an instance that posting one does not. More than one step can be open at once, and the rail says both rather than picking one to call next.
+
+`lib/scrollSpy.ts` decides which step to mark as the one on screen, and `lib/useScrollSpy.ts` feeds it positions read from the DOM on each scroll. Reading them fresh rather than subscribing with an observer is what keeps it right while panels change size underneath it.
+
+What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a row scrolls to it. Comparing against the rail's edge instead left the two disagreeing by exactly that margin, so clicking a row marked the panel above the one it scrolled to.
+
+The work column carries a screen's worth of room below the last panel, and that is load-bearing rather than spacing. Without it the panels in the final screenful all bottom out at the same instant: there is no scroll position where Pdf has reached the line and Process has not, so the rail went straight from Data element to Process and Pdf could never be marked at all.
 
 **Pure decisions live in `lib/`, and `App.tsx` only wires.** Anything that can be decided from its arguments alone goes into a `lib/` module with a test: which panels show, where a loaded element goes in the payload list, what a step looks like as curl, how a content type maps to a file extension, what each api result looks like as a log entry. `App.tsx` holds state, effects and the calls.
 
 What is left there is still worth asserting, and it is asserted by rendering: `App.test.tsx` runs the whole tool in the jsdom browser `testDom.ts` sets up, against a table of `/api` routes it can hold open at will. The guards are what it is for. A debounced probe answering into a payload that has been typed in since, an instance read arriving after another instance was picked, the state that has to be dropped together with the instance it described: each of those is a rule nothing enforces, and none of them announce themselves when they stop holding.
 
-**State that describes one instance is dropped together.** Changing the instance guid clears the validation issues, the data element list, the process state and the pdf preview in one place, `changeInstanceGuid`, because all of them described the instance you just left. Stale is more misleading than absent.
+**State that describes one instance is dropped together.** The data element list, the process and the comparison are all read under one key, the instance's, so pointing the tool somewhere else drops them by moving the key rather than by clearing five things in the right order. What is left to clear by hand is the state that is nobody's answer: the validation results and the pdf. Stale is more misleading than absent.
 
 **Colour encodes rather than decorates.** HTTP methods, status classes, payload element groups, severities. Everything else is grey. All colours are CSS variables in one `:root` block.
 
@@ -117,9 +134,13 @@ It is an edit in the text rather than a parse and a serialize. A round trip woul
 
 Only an element still holding an unedited example is written into, and it is written again whenever the identity changes rather than only at load: the app is read for its parties while the first example is already loading. Writing the same identity into a form it is already in changes nothing, so the effect settles after one pass.
 
-**What a submission requires is asked, not counted.** The payload panel names the documents a submission is missing, and it gets them from the DIBK validation service rather than from `applicationmetadata`, because the `minCount` an app declares is not what the validation insists on. `lib/validationReport.ts` reads the report for the rules about documents, which are the ones with `Vedlegg` in their reference, and matches the names they use against the data types the app declares. Everything else in the report is about what is inside the form, so it is counted and left to the run log, where the whole report is.
+**What a submission requires is asked, not counted.** The prevalidation panel names the documents a submission is missing, and it gets them from the DIBK validation service rather than from `applicationmetadata`, because the `minCount` an app declares is not what the validation insists on. `lib/validationReport.ts` reads the report for the rules about documents, which are the ones with `Vedlegg` in their reference, and matches the names they use against the data types the app declares. Everything else in the report is about what is inside the form, so it is counted and left to the run log, where the whole report is.
 
 The report is a fixed answer about the payload as it was sent, and the list is counted against the payload as it stands, so the two can drift apart. Rather than clearing the report on the first keystroke, which would throw away the list you are working through, the panel keeps it and says it is stale.
+
+**The rendered pdf is kept, and only rendered again when it would differ.** A render is the most expensive read the tool makes: the app lays the whole form out and what comes back is the pdf as base64. It is held with a fingerprint of the instance it came from, the data elements and where the process stands, which between them are everything a render reads. `lib/pdfCache.ts` compares that against the instance now and answers `none`, `current` or `stale`, and both the button and the rail read the same answer.
+
+Closing the window puts the pdf away rather than throwing it out, which is what used to make a second render necessary to look at the same document twice. The buttons say which case they are in rather than quietly skipping a request: a tool whose point is the run log should not have an action that sometimes logs nothing without explaining itself. Not being able to tell counts as stale, because showing someone a pdf of something they have since changed is the worse mistake.
 
 **A `maxCount: 1` form data type is replaced, not added.** Altinn creates that element itself when the instance is created, so a second POST fails on max count. `runService` notices the existing element and sends `PUT …/data/{id}` instead. The log says "Replace" rather than "Add".
 

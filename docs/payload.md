@@ -84,13 +84,15 @@ Changing the data type clears the content and content type, since both belonged 
 
 ## After upload
 
-One checkbox, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
+One checkbox in the [Post](posting.md) panel, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
 
 ## Prevalidate
 
-**Prevalidate**, under **Before you post** at the end of the panel, sends the payload to the DIBK validation service and puts what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
+A panel of its own, between Payload and [Post](posting.md), sending the payload to the DIBK validation service and putting what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
 
-It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, which is why the button is the width of the post button below it and sits directly above it.
+It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, which is why it sits directly above the panel that does the submitting.
+
+It is a step rather than a section because it is a thing you do between two other things you do, and the rail says so: `not run` until you press it, then what the service answered. The panel is not rendered at all when no service is configured, and the rail leaves the step out on the same condition, because switched off is not a step you failed to do.
 
 It exists because `applicationmetadata` is not a reliable answer to what a submission needs. The `minCount` an app declares does not match what the validation insists on, and the service does know, so the question goes where the answer is.
 

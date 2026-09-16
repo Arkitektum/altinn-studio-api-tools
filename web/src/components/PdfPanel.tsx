@@ -47,14 +47,24 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
             </p>
 
             <div className="row">
-                <button type="button" className="btn btn--get" onClick={current ? onShow : onRender} disabled={busy || !ready}>
+                {/*
+                 * Grey when it shows the pdf in hand, blue when it asks for one. A method colour
+                 * means the button talks to Altinn, and opening a render already held does not:
+                 * it belongs with Show content and Full size rather than with Refresh.
+                 */}
+                <button
+                    type="button"
+                    className={`btn ${current ? "btn--ghost" : "btn--get"}`}
+                    onClick={current ? onShow : onRender}
+                    disabled={busy || !ready}
+                >
                     {busy && <span className="btn__spinner" />}
                     {current ? "Show pdf" : "Render pdf"}
                 </button>
 
                 {/* The other half of the choice, offered only where it is a different thing to do. */}
                 {current && (
-                    <button type="button" className="btn btn--ghost" onClick={onRender} disabled={busy || !ready}>
+                    <button type="button" className="btn btn--get" onClick={onRender} disabled={busy || !ready}>
                         Render again
                     </button>
                 )}

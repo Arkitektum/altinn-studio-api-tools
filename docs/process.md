@@ -7,7 +7,9 @@ nav_order: 10
 
 Where the instance stands, and the button that moves it on. The panel shows the current task and its Altinn task type, when the process started, and when it ended together with the end event once it has. The badge in the header repeats the same thing in one line, so a folded glance is enough.
 
-The state comes out of the instance read rather than from a request of its own, so the panel appears as soon as an instance is selected or a post has created one, and it says nothing until then. Selecting another instance clears it, since it described the one you just left.
+The state comes out of the instance read rather than from a request of its own, so the panel fills in as soon as an instance is selected or a post has created one. Until then it is on screen saying what it is waiting for, an instance or the read of one. Selecting another instance clears it, since it described the one you just left.
+
+It is the last step in the rail, and the only one whose done is the end of the chain rather than the start of the next: an ended process is a submission that has been signed and sent. The row says the task the instance is in, or how it ended.
 
 ## Advancing
 

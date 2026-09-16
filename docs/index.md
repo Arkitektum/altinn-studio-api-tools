@@ -12,7 +12,7 @@ Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only t
 ## Where to start
 
 - [Getting started](getting-started.md) if you just want it running.
-- [The interface](interface.md) for how the two columns fit together and what the colours mean.
+- [The interface](interface.md) for how the three columns fit together, what the rail on the left is for, and what the colours mean.
 - [API](api.md) if you want to script a data load instead of clicking.
 
 ## The panels
@@ -22,6 +22,7 @@ Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only t
 | [Test user](test-user.md)                                                 | Getting a token from LocalTest, or pasting one                              |
 | [Target](target.md)                                                       | Which application and which party                                           |
 | [Payload](payload.md)                                                     | The data elements to post, from an example, a file, or by hand              |
+| [Prevalidation](payload.md#prevalidate)                                   | What a refused submit would have said, asked before you send it             |
 | [Posting](posting.md)                                                     | What a post calls, and max count behaviour                                  |
 | [Instances and data elements](reading-data-back.md)                       | Listing, opening, reading, validating, downloading and deleting an instance |
 | [Compare with stored](reading-data-back.md#comparing-with-the-stored-xml) | What the model dropped, added or rewrote                                    |

@@ -22,7 +22,9 @@ No configuration is needed if your localtest uses the default ports. Otherwise c
 
 ## Using it
 
-The interface has two columns: what you do on the left, from the test user down through the target app, the payload and the fetch controls, and what came back on the right, the validation results and the run log. Panels appear as they become usable rather than sitting there dead, so a cold start shows one panel and one thing to do: get a token.
+The interface has three columns: a rail down the left showing the chain the tool hangs off, the panels you work down in the middle, and what came back on the right, the validation results and the run log.
+
+The tool is a wizard in the one way that matters, each step needing the one before it, so the rail names every step and says where each stands: what it holds, whether it is settled, and whether you can act on it yet. Clicking a row scrolls to the panel that sets it. Every panel is on screen from the first render, and one you cannot use yet says what it is waiting for rather than being left out, so the order is visible before you have done anything.
 
 The quickest path to a full submission, where the user id is the only thing you type:
 
@@ -30,7 +32,7 @@ The quickest path to a full submission, where the user id is the only thing you 
 2. Pick `dibk/et-v4` from **Application**, which fills in the org, the app and the main data type.
 3. Nothing to press: the app is read for you, so the data type and party pickers come from the app itself.
 4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
-5. **New instance** is already selected in Instances, so press **Post**.
+5. **New instance** is already selected in Instances, so press **Post** in the Post panel.
 
 The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, render the pdf, or delete the instance.
 
@@ -43,6 +45,7 @@ For an app the catalogue does not list, pick **Other application** and type the 
 | [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                                                 | Tokens from LocalTest's own user list, any user id by hand, and renew in place       |
 | [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                                       | 25 applications to pick from or one you type, read for its data types and parties    |
 | [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                                                     | One card per data element, from a shipped example, a file off disk, or by hand       |
+| [Prevalidation](https://arkitektum.github.io/altinn-studio-api-tools/payload/#prevalidate)                                   | What a refused submit would have said, asked before you send it                      |
 | [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                                                     | A new instance or an existing one, read back and validated after every post          |
 | [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, load into the payload, delete |
 | [Compare with stored](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/#comparing-with-the-stored-xml) | What the model dropped, added or rewrote when it stored your xml                     |

@@ -5,9 +5,9 @@ nav_order: 9
 
 # Reading data back
 
-**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels below: **Data element**, which holds **Compare with stored** for the element picked in it, and then **Pdf**.
+**Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels under the **Inspect** heading: **Data element**, which holds **Compare with stored** for the element picked in it, then **Pdf** and **Process**.
 
-None of those have fields of their own. They work on whatever is selected in Instances, and each names in its header what that is.
+None of those have fields of their own. They work on whatever is selected in Instances, and each names in its header what that is. Until one is selected they are on screen saying they need an instance, rather than being left out.
 
 Every request appears in the run log alongside posts, with method, URL, status, timing, and body.
 
@@ -51,7 +51,7 @@ Besides logging the whole response, the read fills the data element select so yo
 
 `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size, and the first is preselected after reading an instance.
 
-There is no button for it either. Picking an element is asking to see it, so the read, the validation and the comparison all run on their own, the way selecting an instance reads and validates that. They are held to the same two rules as the other unprompted reads, in `lib/autoRuns.ts`: debounced, and asked once per key.
+There is no button for it either. Picking an element is asking to see it, so the read, the validation and the comparison all run on their own, the way selecting an instance reads and validates that. What holds them to one request each is the query cache: a read is keyed on what it is about, so an answer already held is not asked for again, and an answer whose key has moved on is dropped rather than written over the newer one. A value you are still typing is debounced and the key is the settled one, so the half-finished app names you type through are never asked about at all.
 
 The key is the element and what is stored under it, its `lastChanged`, so a post that rewrites an element in place is read again even though the guid never moved. **Refresh** in the panel header asks again on demand, for an element something outside the tool has changed.
 
@@ -142,6 +142,24 @@ It has a panel of its own, last, because it is a different kind of action: every
 The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: it is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
 
 One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and selecting another instance clears it along with that instance's validation results.
+
+### It is only rendered again when it would differ
+
+A render is the most expensive read this tool makes, at both ends: the app lays the whole form out, and what comes back is megabytes of base64. So the pdf is kept with a fingerprint of the instance it came from, and closing the window puts it away rather than throwing it out, which is what used to make a second render necessary to look at the same document twice.
+
+The fingerprint is the data elements, by id, last change and size, and where the process stands. That is everything a render reads: the form and its attachments are the elements, and the task decides which layout the app uses. The ids are sorted, because the order storage lists them in is not a change to the instance.
+
+What the buttons offer is the whole of that, said out loud:
+
+| What is held            | Buttons                               | What the line under them says             |
+| ----------------------- | ------------------------------------- | ----------------------------------------- |
+| Nothing yet             | **Render pdf**                        | just the url                              |
+| A current render        | **Show pdf**, **Render again**        | nothing has changed since it was rendered |
+| One that is out of date | **Render pdf**, **Show the last one** | the instance has changed since            |
+
+It says which case it is in rather than quietly not making a request, because a tool whose whole point is the run log should not have an action that sometimes logs nothing without explaining itself. **Show pdf** is grey rather than GET blue for the same reason: it does not talk to Altinn.
+
+An instance that cannot be fingerprinted counts as out of date rather than current, since not knowing whether a document is stale is the same as knowing it might be. The rail's **Pdf** step reads the same answer, so the row and the button cannot disagree.
 
 ## Deleting an instance
 

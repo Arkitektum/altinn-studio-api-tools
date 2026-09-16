@@ -95,7 +95,9 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 **An endpoint.** Add a zod schema next to the others in `routes.ts`, do the work in `runService` or `readService` through `StepRecorder`, return the `{ ok, steps, failedAt, … }` shape, and add the matching function to `web/src/api.ts` and its type to `web/src/types.ts`. Then decide what the run log entry looks like, in `web/src/lib/logResults.ts`.
 
-**A panel.** One file in `web/src/components/`, and a flag in `lib/sections.ts` if it should stay hidden until it has something to show.
+**A panel.** One file in `web/src/components/`, rendering `Panel` so it gets its heading, its surface and one place deciding how waiting looks. Give it a reason in `lib/readiness.ts` if it cannot be used until something else is filled in, an `id` if a rail row should scroll to it, and a step in `lib/chain.ts` if it is a step rather than a readout. A panel is never hidden: it keeps its place and says what it is waiting for, because the order the tool works in should be visible from the first screen.
+
+**A surface colour for it.** A hue in the `--panel-*` block in `styles/base.css` and a rule in `styles/panel.css`. The panels sit on a 13-degree grid across the hundred degrees that work as a surface here, ordered so no two that are next to each other are closer than 35 degrees. Adding one usually means moving another.
 
 ## Reporting something broken
 
