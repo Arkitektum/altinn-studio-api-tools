@@ -222,8 +222,6 @@ export function App() {
      * be on screen together. Kept apart from the run history: a fetch should not blank the issues.
      */
     const [validations, setValidations] = useState<ValidationView[]>([]);
-    const [running, setRunning] = useState(false);
-    const [runError, setRunError] = useState<unknown>(null);
 
     /**
      * The rendered pdf, held as a blob url. Only one at a time: rendering again replaces it, and
@@ -249,11 +247,6 @@ export function App() {
      * with. The errors are split for the same reason. A read that failed without being asked for
      * has no business appearing under the buttons in Data element.
      */
-    const [rendering, setRendering] = useState(false);
-    const [pdfError, setPdfError] = useState<unknown>(null);
-    const [advancing, setAdvancing] = useState(false);
-    const [processError, setProcessError] = useState<unknown>(null);
-    const [validating, setValidating] = useState(false);
     /**
      * The last validation report, kept with the submission it was about. The payload panel reads it
      * for which documents are required, and the pair is what tells it whether the payload has moved
@@ -683,13 +676,10 @@ export function App() {
         return { instance, validation };
     }
 
-    async function run() {
-        if (!activeTokenId) return;
-        setRunning(true);
-        setRunError(null);
-        try {
+    const run = useMutation({
+        mutationFn: async () => {
             const payload = await api.postRun({
-                tokenId: activeTokenId,
+                tokenId: activeTokenId ?? "",
                 org,
                 app,
                 instanceOwnerPartyId,
@@ -707,24 +697,24 @@ export function App() {
                 validate: false,
                 advanceProcess
             });
-            // Chain naturally into "now post more data to that instance".
-            if (payload.instanceGuid) {
-                setInstanceGuid(payload.instanceGuid);
-                // By hand as well as through the render, because the follow-up reads and validates
-                // the new instance before React has re-rendered, and its validation would otherwise
-                // be checked against the instance this post replaced and thrown away.
-                selectedInstance.current = payload.instanceGuid;
-            }
+
+            /*
+             * The instance goes in before the follow-up runs, not after. The follow-up reads and
+             * validates the new instance before React has re-rendered, and its validation would
+             * otherwise be checked against the instance this post replaced and thrown away.
+             */
+            if (payload.instanceGuid) selectedInstance.current = payload.instanceGuid;
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
+            return payload;
+        },
+        onSuccess: (payload) => {
+            // Chain naturally into "now post more data to that instance".
+            if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
             // The post either made an instance or changed one, so what was listed is out of date.
             if (payload.ok) refreshInstances();
-        } catch (error) {
-            setRunError(error);
-        } finally {
-            setRunning(false);
         }
-    }
+    });
 
     /**
      * Lists again on demand, for the Refresh button and after a post.
@@ -810,24 +800,19 @@ export function App() {
      * whole report goes to the run log as well, since the payload panel reads only the part of it
      * about documents and the rest is about the form.
      */
-    async function validationReport() {
-        const { request } = validationRequest;
-        if (!request) return;
-
-        setValidating(true);
-        try {
+    const validationReport = useMutation({
+        mutationFn: async (request: ValidationReportRequest) => {
             const result = await api.validationReport(request);
             appendLog(logFromValidationReport(result, request));
+            return { result, request };
+        },
+        onSuccess: ({ result, request }) => {
             // Kept with the submission it was about, so the panel can say when that has moved on.
             // A refusal leaves the previous report alone: the log says what happened, and dropping
             // what the service last said would lose the list you were working through.
             if (result.ok) setValidationAnswer({ report: result.report, request });
-        } catch (error) {
-            setRunError(error);
-        } finally {
-            setValidating(false);
         }
-    }
+    });
 
     /** Saves the held data element as a file, under the name Altinn stored or the data type. */
     function downloadDataElement() {
@@ -835,17 +820,21 @@ export function App() {
         downloadContent(fetchedElement.filename, fetchedElement.content, fetchedElement.encoding, fetchedElement.contentType);
     }
 
-    async function renderPdf() {
-        if (!activeTokenId) return;
-        // The instance this was asked for. A render answering after the selection moved must not
-        // open as though it were the instance now on screen.
-        const requested = instanceGuid;
-        setRendering(true);
-        setPdfError(null);
-        try {
-            const result = await api.previewPdf({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
+    /**
+     * Renders the instance as the pdf Altinn would produce.
+     *
+     * The one read still guarded by hand, because what it produces is not an answer in the cache
+     * but a blob url held open in a window. The instance it was asked for is named before the
+     * request so a render that lands after the selection moved does not open as though it were the
+     * instance now on screen.
+     */
+    const renderPdf = useMutation({
+        mutationFn: async (requested: string) => {
+            const result = await api.previewPdf({ tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid: requested });
             appendLog(logFromPdf(result, result.size));
-            // A pdf of the instance you have left must not open as though it were this one.
+            return { result, requested };
+        },
+        onSuccess: ({ result, requested }) => {
             if (selectedInstance.current !== requested) return;
             if (!result.ok || !result.content) {
                 // A failed render must not leave the previous pdf on screen looking current.
@@ -858,13 +847,8 @@ export function App() {
                 size: result.size,
                 at: new Date().toLocaleTimeString("nb")
             });
-        } catch (error) {
-            if (selectedInstance.current !== requested) return;
-            setPdfError(error);
-        } finally {
-            setRendering(false);
         }
-    }
+    });
 
     /**
      * Removes an instance outright. Soft deletion is still on the api, which the docs cover, but
@@ -899,23 +883,14 @@ export function App() {
         }
     });
 
-    async function advance() {
-        if (!activeTokenId) return;
-        // The instance being moved, named before the move so the answer lands on it rather than on
-        // whichever is selected when it comes back.
-        const advancedKey = queryKeys.instance(activeTokenId, org, app, instanceOwnerPartyId, instanceGuid);
-        setAdvancing(true);
-        setProcessError(null);
-        try {
-            const result = await api.advanceProcess({
-                tokenId: activeTokenId,
-                org,
-                app,
-                instanceOwnerPartyId,
-                instanceGuid,
-                // Already read, so naming the action costs no extra request.
-                taskType: instanceProcess?.taskType ?? null
-            });
+    const advance = useMutation({
+        mutationFn: async () => {
+            const params = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid };
+            // The task the instance is in, which is what names the action. Already read, so this
+            // costs no extra request.
+            const from = instanceProcess?.taskType ?? null;
+            const result = await api.advanceProcess({ ...params, taskType: from });
+
             // Read the instance afterwards, because advancing can change more than the task: the
             // app may add data elements on the way out of one, a generated pdf among them, and the
             // panels below are showing the list from before the move. A failed read must not turn
@@ -923,37 +898,35 @@ export function App() {
             let read: ReadInstanceResult | null = null;
             if (result.ok) {
                 try {
-                    read = await api.getInstance({ tokenId: activeTokenId, org, app, instanceOwnerPartyId, instanceGuid });
+                    read = await api.getInstance(params);
                 } catch {
                     /* the advance still stands */
                 }
             }
-            // The task the instance was in when the move was asked for, which is what names it:
-            // the result carries the task it landed in.
-            appendLog(logFromAdvance(result, read, instanceProcess?.taskType ?? null));
+            appendLog(logFromAdvance(result, read, from));
 
+            // Named before the move, so the answer lands on the instance that was advanced rather
+            // than on whichever is selected when it comes back.
+            return { result, read, key: queryKeys.instance(params.tokenId, org, app, instanceOwnerPartyId, instanceGuid) };
+        },
+        onSuccess: ({ result, read, key }) => {
             /*
-             * Into the cache under the instance that was advanced, which is what it describes
-             * whatever is selected by the time the move comes back. Nothing here has to preserve
-             * which data element was selected either: that is a preference read against the list,
-             * so one that survived the move stays and one that did not falls back to the first.
+             * Nothing here has to preserve which data element was selected: that is a preference
+             * read against the list, so one that survived the move stays and one that did not falls
+             * back to the first.
              *
              * The read is the later answer, so it wins. Without one, the advance's own response
              * still carries the process it landed in, and a refused move leaves the task the
              * instance is still in on screen rather than blanking it.
              */
-            queryClient.setQueryData<InstanceAnswer>(advancedKey, (current) => {
+            queryClient.setQueryData<InstanceAnswer>(key, (current) => {
                 if (read?.ok) return { read, validated: current?.validated ?? null };
                 const moved = result.ok ? result.process : null;
                 if (!moved || !current) return current;
                 return { ...current, read: { ...current.read, process: moved } };
             });
-        } catch (error) {
-            setProcessError(error);
-        } finally {
-            setAdvancing(false);
         }
-    }
+    });
 
     const blockers: string[] = [];
     if (!tokenUsable) blockers.push("a valid token");
@@ -1012,7 +985,8 @@ export function App() {
     const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
     /** Anything at all in flight, which is what the log reports rather than any one action. */
-    const inFlight = running || instanceQuery.isFetching || elementQuery.isFetching || compareQuery.isFetching || rendering || advancing;
+    const inFlight =
+        run.isPending || instanceQuery.isFetching || elementQuery.isFetching || compareQuery.isFetching || renderPdf.isPending || advance.isPending;
 
     // Panels you cannot use yet are left out rather than shown dead.
     const sections = visibleSections({
@@ -1161,8 +1135,8 @@ export function App() {
                                 loadNotice={payloadLoadNotice}
                                 validationUrl={serverConfig?.validationUrl ?? ""}
                                 validationBlockedBy={validationRequest.blockedBy}
-                                onValidationReport={() => void validationReport()}
-                                validating={validating}
+                                onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
+                                validating={validationReport.isPending}
                                 prevalidation={prevalidation}
                             >
                                 <div style={{ marginTop: 18 }}>
@@ -1186,20 +1160,21 @@ export function App() {
                                         </div>
                                     )}
 
-                                    {runError ? (
+                                    {/* Both are asked for from this panel, and only one at a time. */}
+                                    {(run.error ?? validationReport.error) ? (
                                         <div style={{ marginBottom: 12 }}>
-                                            <ErrorNotice error={runError} />
+                                            <ErrorNotice error={run.error ?? validationReport.error} />
                                         </div>
                                     ) : null}
 
                                     <button
                                         type="button"
                                         className="btn btn--primary btn--fire"
-                                        onClick={() => void run()}
-                                        disabled={running || blockers.length > 0}
+                                        onClick={() => run.mutate()}
+                                        disabled={run.isPending || blockers.length > 0}
                                     >
-                                        {running && <span className="btn__spinner" />}
-                                        {running
+                                        {run.isPending && <span className="btn__spinner" />}
+                                        {run.isPending
                                             ? "Posting…"
                                             : instanceGuid
                                               ? `Add data to ${instanceGuid.slice(0, 8)}`
@@ -1257,10 +1232,10 @@ export function App() {
                                     app={app}
                                     instanceOwnerPartyId={instanceOwnerPartyId}
                                     instanceGuid={instanceGuid}
-                                    onPreviewPdf={() => void renderPdf()}
-                                    busy={rendering}
+                                    onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
+                                    busy={renderPdf.isPending}
                                     hasToken={tokenUsable}
-                                    error={pdfError}
+                                    error={renderPdf.error}
                                 />
                             )}
 
@@ -1273,10 +1248,10 @@ export function App() {
                                     instanceOwnerPartyId={instanceOwnerPartyId}
                                     instanceGuid={instanceGuid}
                                     process={instanceProcess}
-                                    onAdvance={() => void advance()}
-                                    busy={advancing}
+                                    onAdvance={() => advance.mutate()}
+                                    busy={advance.isPending}
                                     hasToken={tokenUsable}
-                                    error={processError}
+                                    error={advance.error}
                                 />
                             )}
                         </>

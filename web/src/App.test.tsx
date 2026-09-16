@@ -356,6 +356,48 @@ describe("App", () => {
     });
 
     /*
+     * Posting points the tool at the instance it made, lists the party again because the listing is
+     * now out of date, and puts what its follow-up read into the cache under that instance. The last
+     * of those is why the instance is not read a second time when the selection catches up.
+     */
+    it("points at the instance it posted, without reading it twice", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "POST /api/runs": {
+                ok: true,
+                mode: "multipart",
+                steps: [],
+                instanceOwnerPartyId: "510001",
+                instanceGuid: B,
+                instanceUrl: `http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/${B}`,
+                instance: {},
+                failedAt: null
+            },
+            "GET /api/instances": (url) => instanceRead(url.searchParams.get("instanceGuid") ?? "", "TypeFraPost"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+
+        await app.wait(700);
+        const listings = stub.calls.filter((made) => made === "GET /api/instances/active").length;
+
+        await click(app, find(app, "button.btn--fire"));
+        // Past the selection delay, so the instance query has had its chance to ask as well.
+        await app.wait(900);
+
+        assert.ok(stub.calls.includes("POST /api/runs"), "the post should have gone out");
+        assert.equal(stub.calls.filter((made) => made === "GET /api/instances").length, 1, "the follow-up read, and only that");
+        assert.match(elementsListed(app), /TypeFraPost/, "the tool should be pointed at what it posted");
+        assert.ok(
+            stub.calls.filter((made) => made === "GET /api/instances/active").length > listings,
+            "and the listing should have been asked again, being out of date"
+        );
+    });
+
+    /*
      * Nothing cancels a request, so a read can answer after the selection it was aimed at has moved.
      * The key it was aimed at is what lets the late one be dropped rather than written over the
      * newer answer.
