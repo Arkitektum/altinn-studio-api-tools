@@ -389,7 +389,12 @@ export function App() {
     const activeToken = useMemo(() => tokens.find((token) => token.id === activeTokenId) ?? null, [tokens, activeTokenId]);
 
     const tokenUsable = Boolean(activeToken) && !isExpired(activeToken?.expiresAt ?? null, now);
-    const dataTypes = metadata?.metadata.dataTypes ?? [];
+    /*
+     * Held rather than spelled out again each render, because the fallback is a fresh empty array
+     * every time and several memos below list this in their dependencies. One of them would never
+     * hit while the app is unprobed, which is exactly when it is cheapest to be wrong about.
+     */
+    const dataTypes = useMemo(() => metadata?.metadata.dataTypes ?? [], [metadata]);
 
     /**
      * Who the payload is from: the party being acted for, or the token's own claim before the app
@@ -1127,15 +1132,24 @@ export function App() {
     /**
      * The payload as the validation service would be told it, which is both what the button sends
      * and what says whether the report on screen still describes the payload in front of you.
+     *
+     * Held, because it is rebuilt from the payload and the payload is the largest thing here. A
+     * rebuilt one is also a new object, which was enough to keep `prevalidation` below from ever
+     * reusing its answer: between them they cost about 2 ms of every render, and this component
+     * re-renders once a second for the token countdown alone.
      */
-    const validationRequest = buildValidationRequest({
-        elements: dataElements,
-        dataTypes,
-        metadata: metadata?.metadata ?? null,
-        parties,
-        partyId: instanceOwnerPartyId,
-        token: activeToken ?? null
-    });
+    const validationRequest = useMemo(
+        () =>
+            buildValidationRequest({
+                elements: dataElements,
+                dataTypes,
+                metadata: metadata?.metadata ?? null,
+                parties,
+                partyId: instanceOwnerPartyId,
+                token: activeToken ?? null
+            }),
+        [dataElements, dataTypes, metadata, parties, instanceOwnerPartyId, activeToken]
+    );
 
     /**
      * What the validation service last said about this payload, counted against the payload as it
