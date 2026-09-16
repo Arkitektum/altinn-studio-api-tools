@@ -754,12 +754,7 @@ export function App() {
                             <PayloadPanel
                                 dataElements={dataElements}
                                 onChange={setDataElements}
-                                org={org}
-                                app={app}
-                                dataTypes={dataTypes}
-                                metadata={metadata?.metadata ?? null}
                                 suggestedDataTypes={suggestedDataTypes}
-                                exampleGroups={exampleGroups}
                                 advanceProcess={advanceProcess}
                                 onAdvanceProcessChange={setAdvanceProcess}
                                 savedPayloads={savedPayloads}
