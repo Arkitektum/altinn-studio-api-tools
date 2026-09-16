@@ -64,5 +64,16 @@ export const queryKeys = {
     examples: () => ["examples"] as const,
     localtestStatus: () => ["localtest", "status"] as const,
     localtestUsers: () => ["localtest", "users"] as const,
-    tokens: () => ["tokens"] as const
+    tokens: () => ["tokens"] as const,
+
+    /**
+     * Everything read about one app, as one token. The scope rather than a read, so invalidating it
+     * covers the two below without naming them.
+     *
+     * The token is in the key because the answers are that token's: what an app will tell you, and
+     * which parties you may act for, both depend on who is asking. Switching user has to ask again.
+     */
+    app: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app] as const,
+    appMetadata: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "metadata"] as const,
+    appParties: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "parties"] as const
 };

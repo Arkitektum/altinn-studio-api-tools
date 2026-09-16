@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
-import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
 import { splitPastedInstanceId } from "./lib/instanceId";
@@ -21,11 +20,13 @@ import {
 } from "./lib/logResults";
 import { pendingAutoRuns } from "./lib/autoRuns";
 import { withIdentity } from "./lib/formIdentity";
+import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { hasMovedOn, selectionKeys, type SelectionKeys } from "./lib/selectionKeys";
+import { useDebounced } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
@@ -44,7 +45,6 @@ import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
 import type {
-    AppMetadataResponse,
     AppParty,
     CatalogueApp,
     CompareResult,
@@ -73,6 +73,10 @@ const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
 const NO_APPS: CatalogueApp[] = [];
 const NO_GROUPS: ExampleGroup[] = [];
 const NO_TOKENS: PublicToken[] = [];
+const NO_PARTIES: AppParty[] = [];
+
+/** Org and app are typed a character at a time, and "et-v4" should not be five probes. */
+const PROBE_DELAY_MS = 400;
 
 /**
  * Whether the payload is xml the server could compare, asked of the browser's own parser.
@@ -129,6 +133,16 @@ export function App() {
     const activeToken = useMemo(() => tokens.find((token) => token.id === preferredTokenId) ?? tokens[0] ?? null, [tokens, preferredTokenId]);
     const activeTokenId = activeToken?.id ?? null;
 
+    // Ticks once a second so token expiry counts down live.
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    /** Whether there is a token worth aiming anything with. Everything below reads this. */
+    const tokenUsable = Boolean(activeToken) && !isExpired(activeToken?.expiresAt ?? null, now);
+
     const [org, setOrg] = useLocalStorage("org", "");
     const [app, setApp] = useLocalStorage("app", "");
     const [instanceOwnerPartyId, setInstanceOwnerPartyId] = useLocalStorage("partyId", "");
@@ -142,10 +156,45 @@ export function App() {
     const [payloadLoadNotice, setPayloadLoadNotice] = useState<string | null>(null);
     const [advanceProcess, setAdvanceProcess] = useLocalStorage("advanceProcess", false);
 
-    const [metadata, setMetadata] = useState<AppMetadataResponse | null>(null);
-    const [parties, setParties] = useState<AppParty[]>([]);
-    const [probing, setProbing] = useState(false);
-    const [probeError, setProbeError] = useState<unknown>(null);
+    /*
+     * What the app says about itself, and which parties this token may act for.
+     *
+     * Keyed on the token and the target, so pointing somewhere else is not something anyone has to
+     * remember to clear: the key moves, and a key with nothing cached reads as nothing known. It is
+     * also why an answer for the app you have left cannot land under the app you are on, which used
+     * to be a guard at each of three points inside the probe.
+     *
+     * The key takes the settled org and app rather than the typed ones, so "et-v4" is one request
+     * and not five. See `lib/useDebounced.ts`.
+     */
+    const settledOrg = useDebounced(org, PROBE_DELAY_MS);
+    const settledApp = useDebounced(app, PROBE_DELAY_MS);
+    const probeAimed = tokenUsable && Boolean(activeTokenId && settledOrg && settledApp);
+    const probeParams = { tokenId: activeTokenId ?? "", org: settledOrg, app: settledApp };
+
+    const metadataQuery = useQuery({
+        queryKey: queryKeys.appMetadata(probeParams.tokenId, settledOrg, settledApp),
+        queryFn: () => api.getAppMetadata(probeParams),
+        enabled: probeAimed
+    });
+
+    /* A bonus: not every token may list them, and a refusal costs the picker its options and nothing else. */
+    const partiesQuery = useQuery<AppParty[]>({
+        queryKey: queryKeys.appParties(probeParams.tokenId, settledOrg, settledApp),
+        queryFn: async () => {
+            try {
+                return await api.getAppParties(probeParams);
+            } catch {
+                return NO_PARTIES;
+            }
+        },
+        enabled: probeAimed
+    });
+
+    const metadata = metadataQuery.data ?? null;
+    const parties = partiesQuery.data ?? NO_PARTIES;
+    const probing = metadataQuery.isFetching || partiesQuery.isFetching;
+    const probeError = metadataQuery.error;
 
     /**
      * Every run that has happened this session, newest first. Posting used to wipe whatever a
@@ -181,8 +230,6 @@ export function App() {
     const [includeCompleted, setIncludeCompleted] = useState(false);
     /** False when the completed ones were asked for and storage would not answer. */
     const [completedListed, setCompletedListed] = useState<boolean | null>(null);
-    /** Which token and app have already been probed, so a refusal is not retried forever. */
-    const [probeAttempted, setProbeAttempted] = useState<string | null>(null);
     /** Which token, app and party the listing has already been attempted for. */
     const [listAttempted, setListAttempted] = useState<string | null>(null);
     /** And which instance has already been read, so it is read once per selection. */
@@ -391,14 +438,6 @@ export function App() {
         [instanceOwnerPartyId, setInstanceOwnerPartyId, selectInstance]
     );
 
-    // Ticks once a second so token expiry counts down live.
-    const [now, setNow] = useState(() => Date.now());
-    useEffect(() => {
-        const timer = window.setInterval(() => setNow(Date.now()), 1000);
-        return () => window.clearInterval(timer);
-    }, []);
-
-    const tokenUsable = Boolean(activeToken) && !isExpired(activeToken?.expiresAt ?? null, now);
     /*
      * Held rather than spelled out again each render, because the fallback is a fresh empty array
      * every time and several memos below list this in their dependencies. One of them would never
@@ -464,12 +503,19 @@ export function App() {
         setDataElements((current) => withIdentity(current, identity));
     }, [identity, dataElements, setDataElements]);
 
-    // A probe result belongs to one org and app, so drop it when the target moves.
+    /**
+     * And what the app declares, filled into the payload: its form data type where nothing has been
+     * chosen, and a content type on any element without one.
+     *
+     * On the answer rather than on the way out of the request that fetched it. There is no longer a
+     * call holding a payload from an earlier render to write back over this one, which is exactly
+     * what this got wrong before. `withAppDefaults` returns the list it was given when there is
+     * nothing to add, so running again on every answer costs nothing and settles after one pass.
+     */
     useEffect(() => {
-        setMetadata(null);
-        setParties([]);
-        setProbeError(null);
-    }, [org, app]);
+        if (dataTypes.length === 0) return;
+        setDataElements((current) => withAppDefaults(current, dataTypes));
+    }, [dataTypes, setDataElements]);
 
     // An instance listing belongs to one app and one party, so drop it when either moves.
     useEffect(() => {
@@ -489,7 +535,6 @@ export function App() {
      * for, and there is nothing to add to them that `lib/autoRuns.ts` does not already decide.
      */
     const {
-        probe: nextProbe,
         list: nextList,
         read: nextRead,
         element: nextElement,
@@ -500,7 +545,6 @@ export function App() {
         elementChangedAt: selectedElement?.lastChanged ?? null,
         comparable,
         attempted: {
-            probe: probeAttempted,
             list: listAttempted,
             read: readAttempted,
             element: elementAttempted,
@@ -509,15 +553,6 @@ export function App() {
     });
 
     /* oxlint-disable react-hooks/exhaustive-deps -- the key is the whole of it, see above */
-
-    useEffect(() => {
-        if (!nextProbe) return;
-        const timer = window.setTimeout(() => {
-            setProbeAttempted(nextProbe.key);
-            void probe();
-        }, nextProbe.delayMs);
-        return () => window.clearTimeout(timer);
-    }, [nextProbe?.key]);
 
     useEffect(() => {
         if (!nextList) return;
@@ -557,65 +592,6 @@ export function App() {
     }, [nextCompare?.key]);
 
     /* oxlint-enable react-hooks/exhaustive-deps */
-
-    async function probe() {
-        if (!activeTokenId) return;
-        // Two probes are in flight whenever the target moves during one, and the older can answer
-        // last. Metadata for the app you have left would then sit under the app you are on.
-        const requested = keys.target;
-        setProbing(true);
-        setProbeError(null);
-        const params = { tokenId: activeTokenId, org, app };
-        try {
-            const meta = await api.getAppMetadata(params);
-            if (movedOn(requested, "target")) return;
-            setMetadata(meta);
-            // Parties are a bonus: not every token is allowed to list them.
-            let partyList: AppParty[] = [];
-            try {
-                partyList = await api.getAppParties(params);
-            } catch {
-                /* none, which is what the picker falls back to */
-            }
-            if (movedOn(requested, "target")) return;
-            setParties(partyList);
-            const types = meta.metadata.dataTypes ?? [];
-
-            const formType = types.find((type) => type.appLogic);
-            /*
-             * Through an updater rather than the payload this call closed over, because the answer
-             * arrives a debounce and a round trip after the probe was scheduled. That array is the
-             * one from the render that scheduled it, and an example loaded or a character typed in
-             * between would be written back out of the payload. The same reason loading an example
-             * takes one, which lib/useLocalStorage.ts explains.
-             */
-            setDataElements((current) => {
-                // Preselect the app's form data type if no type has been chosen yet.
-                let next = current;
-                if (formType && next.length === 1 && !next[0]?.dataType) {
-                    next = [{ ...EMPTY_ELEMENT, dataType: formType.id }];
-                }
-
-                // The app has now declared its content types, so fill in any element still without
-                // one. This also covers types chosen from the catalogue before the app was probed.
-                next = next.map((element) => {
-                    if (!element.dataType || element.contentType) return element;
-                    const contentType = preferredContentType(types.find((type) => type.id === element.dataType)?.allowedContentTypes ?? []);
-                    return contentType ? { ...element, contentType } : element;
-                });
-
-                // Unchanged comes back as it was, so a probe that had nothing to add is not a write.
-                return next.some((element, index) => element !== current[index]) ? next : current;
-            });
-        } catch (error) {
-            if (movedOn(requested, "target")) return;
-            setProbeError(error);
-        } finally {
-            // Unguarded: a newer probe sets this again on its way out, and a stuck spinner is
-            // worse than one that stops a moment early.
-            setProbing(false);
-        }
-    }
 
     /**
      * Reads the instance back and validates it straight after a post, so the log shows what Altinn
@@ -1285,7 +1261,10 @@ export function App() {
                             }}
                             metadata={metadata}
                             parties={parties}
-                            onProbe={() => void probe()}
+                            onProbe={() => {
+                                void metadataQuery.refetch();
+                                void partiesQuery.refetch();
+                            }}
                             probing={probing}
                             probeError={probeError}
                         />

@@ -172,18 +172,31 @@ export function stubFetch(routes: Routes): Stub {
     };
 }
 
+/**
+ * The `value` setter one of jsdom's element classes defines.
+ *
+ * Wanted rather than a plain assignment because React keeps the last value it wrote on the node
+ * itself and drops an event that does not change it. Assigning `element.value` writes over that
+ * record, and the event is then indistinguishable from one for a value already seen.
+ */
+function valueSetter(className: string): ((value: string) => void) | undefined {
+    const constructor = win[className] as { prototype: object } | undefined;
+    return constructor && Object.getOwnPropertyDescriptor(constructor.prototype, "value")?.set;
+}
+
 /** The value of a field, set the way the browser sets it, so React hears about the change. */
 export async function type(rendered: Rendered, element: HTMLTextAreaElement | HTMLInputElement, value: string): Promise<void> {
-    /*
-     * Past the element's own value setter, because React keeps the last value it wrote on the node
-     * and drops an event that does not change it. Assigning `element.value` directly writes over
-     * that record, and the event is then indistinguishable from one for a value already seen.
-     */
-    const prototype = element.tagName === "TEXTAREA" ? win.HTMLTextAreaElement : win.HTMLInputElement;
-    const setter = Object.getOwnPropertyDescriptor((prototype as { prototype: object }).prototype, "value")?.set;
-    setter?.call(element, value);
+    valueSetter(element.tagName === "TEXTAREA" ? "HTMLTextAreaElement" : "HTMLInputElement")?.call(element, value);
     await rendered.act(() => {
         element.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+}
+
+/** A select moved to one of its values, which React hears as a change rather than an input. */
+export async function choose(rendered: Rendered, element: HTMLSelectElement, value: string): Promise<void> {
+    valueSetter("HTMLSelectElement")?.call(element, value);
+    await rendered.act(() => {
+        element.dispatchEvent(new Event("change", { bubbles: true }));
     });
 }
 

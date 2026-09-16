@@ -1,5 +1,5 @@
 // First, because it is what puts a browser in front of everything below. See testDom.ts.
-import { click, find, findByText, render, stubFetch, type, type Rendered, type Routes } from "./testDom";
+import { choose, click, find, findByText, render, stubFetch, type, type Rendered, type Routes } from "./testDom";
 import assert from "node:assert/strict";
 import { beforeEach, describe, it, type TestContext } from "node:test";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -187,6 +187,31 @@ describe("App", () => {
     });
 
     /*
+     * The app name is typed a character at a time, and every intermediate value is an app that does
+     * not exist. The query is keyed on the settled name rather than the typed one, so the cache is
+     * never told about those at all and there is nothing to cancel or log afterwards.
+     */
+    it("asks the app once its name stops being typed, not once per character", async (t) => {
+        const { app, stub } = await mount(t, boot);
+
+        // Started from nothing rather than a restored target: a name already there when the tool
+        // loads is settled from the first render, which is right, and would ask before any typing.
+        await choose(app, find<HTMLSelectElement>(app, "#application"), "other");
+        await type(app, find<HTMLInputElement>(app, "input[aria-label='Org']"), "dibk");
+
+        for (const value of ["e", "et", "et-", "et-v", "et-v4"]) {
+            await type(app, find<HTMLInputElement>(app, "input[aria-label='App']"), value);
+            // Under the delay, so the name never settles part way through.
+            await app.wait(60);
+        }
+        await app.wait(600);
+
+        const asked = stub.calls.filter((made) => made === "GET /api/app/metadata");
+        assert.equal(asked.length, 1, "the app should have been read once, for the name that settled");
+        assert.equal(stub.url(stub.calls.indexOf("GET /api/app/metadata")).searchParams.get("app"), "et-v4");
+    });
+
+    /*
      * The probe is scheduled on a debounce and answers after a round trip, so the payload it closed
      * over is two moments old by the time it writes the app's content types into it. It used to
      * write that payload back out, taking whatever had been typed meanwhile with it.
@@ -219,6 +244,9 @@ describe("App", () => {
             });
             await held;
         });
+        // The cache tells its observers on a scheduled flush, so the answer lands a task after the
+        // promise it came from, not in the same turn.
+        await app.wait(20);
 
         assert.equal(find<HTMLTextAreaElement>(app, "#content-0").value, "typed while the probe was out");
         assert.equal(storedElements()[0]?.content, "typed while the probe was out");
