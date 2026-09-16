@@ -1,13 +1,8 @@
 import { useEffect, useState } from "react";
+import { useRunLog } from "../runLog";
 import { groupBySeverity } from "../lib/issueGroups";
 import { Panel } from "./Panel";
-import type { LogIssue, ValidationView } from "../types";
-
-interface ValidationPanelProps {
-    /** Latest result per target, instance first. Empty before anything has validated. */
-    validations: ValidationView[];
-    onClear: () => void;
-}
+import type { LogIssue } from "../types";
 
 /** Errors read as bad, warnings as warn, anything else as neutral information. */
 function severityTone(severity: number): "bad" | "warn" | "info" {
@@ -30,7 +25,8 @@ function summarise(issues: LogIssue[]): { text: string; tone: "ok" | "warn" | "b
     return { text: parts.join(", "), tone: errors > 0 ? "bad" : warnings > 0 ? "warn" : "ok" };
 }
 
-export function ValidationPanel({ validations, onClear }: ValidationPanelProps) {
+export function ValidationPanel() {
+    const { validations, clearValidations } = useRunLog();
     // Every result starts folded. Expanded issue lists run long enough to push the run log off
     // screen, so the counts in the headers are the default view and you open what you want.
     const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({});
@@ -50,7 +46,7 @@ export function ValidationPanel({ validations, onClear }: ValidationPanelProps) 
                 validations.length > 0 ? (
                     <span className="row" style={{ gap: 6 }}>
                         {/* Named apart from the run log's Clear history, which does something else. */}
-                        <button type="button" className="btn btn--ghost" onClick={onClear}>
+                        <button type="button" className="btn btn--ghost" onClick={clearValidations}>
                             Clear results
                         </button>
                         <span className="badge">

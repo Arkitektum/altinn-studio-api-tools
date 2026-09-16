@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useRunLog } from "../runLog";
+import { useTarget } from "../target";
 import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
 import { CopyButton } from "./CopyButton";
@@ -8,15 +10,13 @@ import { Panel } from "./Panel";
 import type { LogEntry, LogResult, RunStep } from "../types";
 
 interface RunLogProps {
-    /** Newest first. */
-    entries: LogEntry[];
+    /** Whether anything is in flight, which is what the log reports rather than any one action. */
     running: boolean;
-    onClear: () => void;
-    /** For the login link, since opening the app is a session of its own. */
-    localtestUrl: string;
 }
 
-export function RunLog({ entries, running, onClear, localtestUrl }: RunLogProps) {
+export function RunLog({ running }: RunLogProps) {
+    const { entries, clearEntries } = useRunLog();
+    const { localtestUrl } = useTarget();
     // One run open at a time, following whatever ran last. Older runs stay one line each.
     const [openId, setOpenId] = useState<string | null>(null);
     const newestId = entries[0]?.id ?? null;
@@ -41,7 +41,7 @@ export function RunLog({ entries, running, onClear, localtestUrl }: RunLogProps)
                     {entries.length > 0 && (
                         <>
                             {/* Named apart from the payload element's Clear, which does something else. */}
-                            <button type="button" className="btn btn--ghost" onClick={onClear}>
+                            <button type="button" className="btn btn--ghost" onClick={clearEntries}>
                                 Clear history
                             </button>
                             <span className="badge">

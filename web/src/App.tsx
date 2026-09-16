@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
+import { RunLogContext, useRunLogState } from "./runLog";
 import { TargetProvider } from "./target";
 import { isExpired } from "./lib/format";
 import { downloadContent } from "./lib/download";
@@ -30,7 +31,6 @@ import { useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { validationBlockedBy } from "./lib/elementValidation";
 import { visibleSections } from "./lib/sections";
-import { upsertValidation } from "./lib/validations";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
 import { CompareSection } from "./components/CompareSection";
@@ -53,16 +53,13 @@ import type {
     ExampleGroup,
     InstanceSummary,
     ListInstancesResult,
-    LogEntry,
-    LogResult,
     PublicToken,
     ReadInstanceResult,
     RunMode,
     RunResult,
     SavedPayload,
     ValidateResult,
-    ValidationReportRequest,
-    ValidationView
+    ValidationReportRequest
 } from "./types";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
@@ -217,12 +214,10 @@ export function App() {
      * Every run that has happened this session, newest first. Posting used to wipe whatever a
      * fetch had left behind, and vice versa, so they are kept instead.
      */
-    const [logs, setLogs] = useState<LogEntry[]>([]);
     /**
      * The latest validation per target, so an instance result and several data element results can
      * be on screen together. Kept apart from the run history: a fetch should not blank the issues.
      */
-    const [validations, setValidations] = useState<ValidationView[]>([]);
 
     /**
      * The rendered pdf, held as a blob url. Only one at a time: rendering again replaces it, and
@@ -256,32 +251,24 @@ export function App() {
      */
     const [validationAnswer, setValidationAnswer] = useState<{ report: unknown; request: ValidationReportRequest } | null>(null);
 
-    /**
-     * The instance selected right now, through a ref. `appendLog` is called from requests that
-     * closed over an earlier render, and the guid it has to compare against is the one on screen at
-     * the moment the answer arrives.
+    /*
+     * The record of what has been asked for. Built here and provided to the panels below, rather
+     * than by a provider wrapping this component: the queries declared here record themselves too,
+     * and a component cannot read a context it is the one rendering.
      */
-    const selectedInstance = useRef(instanceGuid);
+    const runLog = useRunLogState(instanceGuid);
+    const appendLog = runLog.append;
+
+    /**
+     * The instance on screen, for the pdf render to compare against. A callback closes over the
+     * render that started it, and what a late answer has to be checked against is the selection
+     * now. Set by hand as well, where a flow moves the selection and reads it back without a
+     * render in between.
+     */
+    const shownInstance = useRef(instanceGuid);
     useEffect(() => {
-        selectedInstance.current = instanceGuid;
+        shownInstance.current = instanceGuid;
     });
-
-    const HISTORY_LIMIT = 25;
-    const appendLog = useCallback((result: LogResult) => {
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const at = new Date().toLocaleTimeString("nb");
-        setLogs((current) => [{ id, at, result }, ...current].slice(0, HISTORY_LIMIT));
-
-        const validation = result.validation;
-        if (!validation) return;
-        // A validation view belongs to exactly one instance, so folding in one that answered
-        // after another instance was selected would replace the issues on screen with the ones
-        // you just left. The request itself keeps its place in the log either way.
-        if (validation.instanceGuid !== selectedInstance.current) return;
-        setValidations((current) => upsertValidation(current, validation, at, id));
-    }, []);
-
-    const clearValidations = useCallback(() => setValidations([]), []);
 
     /*
      * The party's instances, so a guid can be picked rather than pasted.
@@ -504,14 +491,14 @@ export function App() {
         (instance: InstanceSummary | null) => {
             const guid = instance?.instanceGuid ?? "";
             if (guid !== instanceGuid) {
-                clearValidations();
+                runLog.clearValidations();
                 clearPdf();
             }
             setInstanceGuid(guid);
             // The party follows the instance, since a listing is per party and a row knows its own.
             if (instance) setInstanceOwnerPartyId(instance.instanceOwnerPartyId);
         },
-        [instanceGuid, clearValidations, clearPdf, setInstanceGuid, setInstanceOwnerPartyId]
+        [instanceGuid, runLog, clearPdf, setInstanceGuid, setInstanceOwnerPartyId]
     );
 
     /**
@@ -704,7 +691,10 @@ export function App() {
              * validates the new instance before React has re-rendered, and its validation would
              * otherwise be checked against the instance this post replaced and thrown away.
              */
-            if (payload.instanceGuid) selectedInstance.current = payload.instanceGuid;
+            if (payload.instanceGuid) {
+                runLog.markSelected(payload.instanceGuid);
+                shownInstance.current = payload.instanceGuid;
+            }
 
             appendLog(logFromRun(payload, await followUpAfterPost(payload)));
             return payload;
@@ -836,7 +826,7 @@ export function App() {
             return { result, requested };
         },
         onSuccess: ({ result, requested }) => {
-            if (selectedInstance.current !== requested) return;
+            if (shownInstance.current !== requested) return;
             if (!result.ok || !result.content) {
                 // A failed render must not leave the previous pdf on screen looking current.
                 clearPdf();
@@ -996,8 +986,8 @@ export function App() {
         hasToken: tokenUsable,
         org,
         app,
-        validationCount: validations.length,
-        runCount: logs.length,
+        validationCount: runLog.validations.length,
+        runCount: runLog.entries.length,
         hasProcess: instanceProcess !== null,
         party: instanceOwnerPartyId,
         dataSelected: Boolean(dataGuid),
@@ -1011,251 +1001,253 @@ export function App() {
          * only print the url they would call read it from here.
          */
         <TargetProvider appHost={appHost} org={org} app={app} partyId={instanceOwnerPartyId} instanceGuid={instanceGuid} localtestUrl={localtestUrl}>
-            <div className="shell">
-                <header className="masthead">
-                    <span className="masthead__mark">Altinn API tools</span>
-                    {/*
-                     * Three states, each of them a coloured dot. The dot is the whole message, so each
-                     * one carries the same message in words for anyone the colour does not reach. The
-                     * region is polite: these change on their own, and they are worth hearing about.
-                     */}
-                    <div className="masthead__meta" role="status">
-                        <span className="gauge" title={appHost}>
-                            <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                            {appHost.replace(/^https?:\/\//, "")}
-                            <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
-                        </span>
-                        <span className="gauge" title={localtest?.error ?? localtest?.url}>
-                            <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                            LocalTest
-                            <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
-                        </span>
-                        <span className="gauge">
-                            <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
-                            {activeToken ? activeToken.label : "No token"}
-                            <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
-                        </span>
-                    </div>
-                </header>
+            <RunLogContext.Provider value={runLog}>
+                <div className="shell">
+                    <header className="masthead">
+                        <span className="masthead__mark">Altinn API tools</span>
+                        {/*
+                         * Three states, each of them a coloured dot. The dot is the whole message, so each
+                         * one carries the same message in words for anyone the colour does not reach. The
+                         * region is polite: these change on their own, and they are worth hearing about.
+                         */}
+                        <div className="masthead__meta" role="status">
+                            <span className="gauge" title={appHost}>
+                                <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                                {appHost.replace(/^https?:\/\//, "")}
+                                <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
+                            </span>
+                            <span className="gauge" title={localtest?.error ?? localtest?.url}>
+                                <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                                LocalTest
+                                <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
+                            </span>
+                            <span className="gauge">
+                                <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                                {activeToken ? activeToken.label : "No token"}
+                                <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
+                            </span>
+                        </div>
+                    </header>
 
-                {/* What the tool is working on, and what the next thing to fill in is. */}
-                <Chain
-                    user={activeToken && tokenUsable ? activeToken.label : null}
-                    application={org && app ? `${org}/${app}` : null}
-                    party={instanceOwnerPartyId || null}
-                    instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
-                    dataElement={selectedDataType || null}
-                />
+                    {/* What the tool is working on, and what the next thing to fill in is. */}
+                    <Chain
+                        user={activeToken && tokenUsable ? activeToken.label : null}
+                        application={org && app ? `${org}/${app}` : null}
+                        party={instanceOwnerPartyId || null}
+                        instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
+                        dataElement={selectedDataType || null}
+                    />
 
-                <div className="deck">
-                    <div className="column">
-                        {bootError ? <ErrorNotice error={bootError} /> : null}
+                    <div className="deck">
+                        <div className="column">
+                            {bootError ? <ErrorNotice error={bootError} /> : null}
 
-                        {/* First, because everything below it needs a token and the chain says so. */}
-                        <TokenPanel
-                            id="panel-test-user"
-                            serverConfig={serverConfig}
-                            localtest={localtest}
-                            tokens={tokens}
-                            activeToken={activeToken}
-                            onActivate={setPreferredTokenId}
-                            now={now}
-                        />
-
-                        {/* Nothing here can be read without a token, so the panel waits for one. */}
-                        {sections.target && (
-                            <TargetPanel
-                                id="panel-target"
-                                org={org}
-                                app={app}
-                                onOrgChange={setOrg}
-                                onAppChange={setApp}
-                                instanceOwnerPartyId={instanceOwnerPartyId}
-                                onPartyChange={changeParty}
-                                catalogue={catalogue}
-                                onPickCatalogueApp={(entry) => {
-                                    setOrg(entry.org);
-                                    setApp(entry.app);
-                                    // Point the first element at this app's form data type unless the operator
-                                    // has already put something there.
-                                    if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
-                                        setDataElements([{ dataType: entry.dataType, content: "" }]);
-                                    }
-                                }}
-                                metadata={metadata}
-                                parties={parties}
-                                onProbe={() => {
-                                    void metadataQuery.refetch();
-                                    void partiesQuery.refetch();
-                                }}
-                                probing={probing}
-                                probeError={probeError}
+                            {/* First, because everything below it needs a token and the chain says so. */}
+                            <TokenPanel
+                                id="panel-test-user"
+                                serverConfig={serverConfig}
+                                localtest={localtest}
+                                tokens={tokens}
+                                activeToken={activeToken}
+                                onActivate={setPreferredTokenId}
+                                now={now}
                             />
-                        )}
 
-                        {/* Right under the destination, since choosing one is how you aim at it. */}
-                        {sections.instances && (
-                            <InstancesPanel
-                                id="panel-instances"
-                                elementCount={dataElements.length}
-                                instances={instanceList}
-                                onSelect={selectInstance}
-                                onSelectTyped={selectTypedInstance}
-                                onDelete={(instance) => removeInstance.mutate(instance)}
-                                onRefresh={refreshInstances}
-                                includeCompleted={includeCompleted}
-                                onIncludeCompletedChange={setIncludeCompleted}
-                                completedListed={completedListed}
-                                // Listing only. A read of the selected instance is reported by the
-                                // panels that show what it returns, and holding this one busy would
-                                // put a spinner on Refresh for a request it did not make.
-                                busy={listQuery.isFetching || removeInstance.isPending}
-                                // The error does belong here: selecting a row is what starts the read.
-                                error={listQuery.error ?? removeInstance.error ?? instanceQuery.error}
-                            />
-                        )}
-
-                        {/* Nothing below can be aimed anywhere without a token and an app. */}
-                        {sections.requests && (
-                            <>
-                                <span className="group">Post</span>
-
-                                <PayloadPanel
-                                    dataElements={dataElements}
-                                    onChange={setDataElements}
+                            {/* Nothing here can be read without a token, so the panel waits for one. */}
+                            {sections.target && (
+                                <TargetPanel
+                                    id="panel-target"
                                     org={org}
                                     app={app}
-                                    dataTypes={dataTypes}
-                                    metadata={metadata?.metadata ?? null}
-                                    suggestedDataTypes={suggestedDataTypes}
-                                    exampleGroups={exampleGroups}
-                                    advanceProcess={advanceProcess}
-                                    onAdvanceProcessChange={setAdvanceProcess}
-                                    savedPayloads={savedPayloads}
-                                    onSavePayload={savePayload}
-                                    onLoadPayload={(payload) => void loadPayload(payload)}
-                                    onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
-                                    loadNotice={payloadLoadNotice}
-                                    validationUrl={serverConfig?.validationUrl ?? ""}
-                                    validationBlockedBy={validationRequest.blockedBy}
-                                    onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
-                                    validating={validationReport.isPending}
-                                    prevalidation={prevalidation}
-                                >
-                                    <div style={{ marginTop: 18 }}>
-                                        <span className="legend">Post</span>
+                                    onOrgChange={setOrg}
+                                    onAppChange={setApp}
+                                    instanceOwnerPartyId={instanceOwnerPartyId}
+                                    onPartyChange={changeParty}
+                                    catalogue={catalogue}
+                                    onPickCatalogueApp={(entry) => {
+                                        setOrg(entry.org);
+                                        setApp(entry.app);
+                                        // Point the first element at this app's form data type unless the operator
+                                        // has already put something there.
+                                        if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
+                                            setDataElements([{ dataType: entry.dataType, content: "" }]);
+                                        }
+                                    }}
+                                    metadata={metadata}
+                                    parties={parties}
+                                    onProbe={() => {
+                                        void metadataQuery.refetch();
+                                        void partiesQuery.refetch();
+                                    }}
+                                    probing={probing}
+                                    probeError={probeError}
+                                />
+                            )}
 
-                                        {blockers.length > 0 && (
-                                            <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                                Needs {blockers.join(", ")}.
-                                            </div>
-                                        )}
+                            {/* Right under the destination, since choosing one is how you aim at it. */}
+                            {sections.instances && (
+                                <InstancesPanel
+                                    id="panel-instances"
+                                    elementCount={dataElements.length}
+                                    instances={instanceList}
+                                    onSelect={selectInstance}
+                                    onSelectTyped={selectTypedInstance}
+                                    onDelete={(instance) => removeInstance.mutate(instance)}
+                                    onRefresh={refreshInstances}
+                                    includeCompleted={includeCompleted}
+                                    onIncludeCompletedChange={setIncludeCompleted}
+                                    completedListed={completedListed}
+                                    // Listing only. A read of the selected instance is reported by the
+                                    // panels that show what it returns, and holding this one busy would
+                                    // put a spinner on Refresh for a request it did not make.
+                                    busy={listQuery.isFetching || removeInstance.isPending}
+                                    // The error does belong here: selecting a row is what starts the read.
+                                    error={listQuery.error ?? removeInstance.error ?? instanceQuery.error}
+                                />
+                            )}
 
-                                        {/*
-                                         * The one thing the prevalidation notice above cannot say,
-                                         * because there is no report for it to be part of. The rest of
-                                         * what the service said is already on screen a few lines up.
-                                         */}
-                                        {serverConfig?.validationUrl && !prevalidation && (
-                                            <div className="notice" style={{ marginBottom: 12 }}>
-                                                Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told
-                                                you, read before the submit rather than after.
-                                            </div>
-                                        )}
+                            {/* Nothing below can be aimed anywhere without a token and an app. */}
+                            {sections.requests && (
+                                <>
+                                    <span className="group">Post</span>
 
-                                        {/* Both are asked for from this panel, and only one at a time. */}
-                                        {(run.error ?? validationReport.error) ? (
-                                            <div style={{ marginBottom: 12 }}>
-                                                <ErrorNotice error={run.error ?? validationReport.error} />
-                                            </div>
-                                        ) : null}
+                                    <PayloadPanel
+                                        dataElements={dataElements}
+                                        onChange={setDataElements}
+                                        org={org}
+                                        app={app}
+                                        dataTypes={dataTypes}
+                                        metadata={metadata?.metadata ?? null}
+                                        suggestedDataTypes={suggestedDataTypes}
+                                        exampleGroups={exampleGroups}
+                                        advanceProcess={advanceProcess}
+                                        onAdvanceProcessChange={setAdvanceProcess}
+                                        savedPayloads={savedPayloads}
+                                        onSavePayload={savePayload}
+                                        onLoadPayload={(payload) => void loadPayload(payload)}
+                                        onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
+                                        loadNotice={payloadLoadNotice}
+                                        validationUrl={serverConfig?.validationUrl ?? ""}
+                                        validationBlockedBy={validationRequest.blockedBy}
+                                        onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
+                                        validating={validationReport.isPending}
+                                        prevalidation={prevalidation}
+                                    >
+                                        <div style={{ marginTop: 18 }}>
+                                            <span className="legend">Post</span>
 
-                                        <button
-                                            type="button"
-                                            className="btn btn--primary btn--fire"
-                                            onClick={() => run.mutate()}
-                                            disabled={run.isPending || blockers.length > 0}
-                                        >
-                                            {run.isPending && <span className="btn__spinner" />}
-                                            {run.isPending
-                                                ? "Posting…"
-                                                : instanceGuid
-                                                  ? `Add data to ${instanceGuid.slice(0, 8)}`
-                                                  : `Post a new instance to ${org || "org"}/${app || "app"}`}
-                                        </button>
-                                    </div>
-                                </PayloadPanel>
+                                            {blockers.length > 0 && (
+                                                <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                                                    Needs {blockers.join(", ")}.
+                                                </div>
+                                            )}
 
-                                <span className="group">Inspect</span>
+                                            {/*
+                                             * The one thing the prevalidation notice above cannot say,
+                                             * because there is no report for it to be part of. The rest of
+                                             * what the service said is already on screen a few lines up.
+                                             */}
+                                            {serverConfig?.validationUrl && !prevalidation && (
+                                                <div className="notice" style={{ marginBottom: 12 }}>
+                                                    Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have
+                                                    told you, read before the submit rather than after.
+                                                </div>
+                                            )}
 
-                                <FetchPanel
-                                    id="panel-data-element"
-                                    dataElements={instanceDataElements}
-                                    dataGuid={dataGuid}
-                                    onDataGuidChange={changeDataGuid}
-                                    fetched={fetchedElement}
-                                    onDownloadDataElement={downloadDataElement}
-                                    onRefresh={refreshElement}
-                                    validateBlockedBy={validateBlockedBy}
-                                    // Also while the instance is being read, since that read is what
-                                    // replaces the list this panel is choosing from.
-                                    busy={elementQuery.isFetching || instanceQuery.isFetching}
-                                    hasToken={tokenUsable}
-                                    error={elementQuery.error}
-                                >
-                                    {/* Inside the panel, because it compares what the select above it
+                                            {/* Both are asked for from this panel, and only one at a time. */}
+                                            {(run.error ?? validationReport.error) ? (
+                                                <div style={{ marginBottom: 12 }}>
+                                                    <ErrorNotice error={run.error ?? validationReport.error} />
+                                                </div>
+                                            ) : null}
+
+                                            <button
+                                                type="button"
+                                                className="btn btn--primary btn--fire"
+                                                onClick={() => run.mutate()}
+                                                disabled={run.isPending || blockers.length > 0}
+                                            >
+                                                {run.isPending && <span className="btn__spinner" />}
+                                                {run.isPending
+                                                    ? "Posting…"
+                                                    : instanceGuid
+                                                      ? `Add data to ${instanceGuid.slice(0, 8)}`
+                                                      : `Post a new instance to ${org || "org"}/${app || "app"}`}
+                                            </button>
+                                        </div>
+                                    </PayloadPanel>
+
+                                    <span className="group">Inspect</span>
+
+                                    <FetchPanel
+                                        id="panel-data-element"
+                                        dataElements={instanceDataElements}
+                                        dataGuid={dataGuid}
+                                        onDataGuidChange={changeDataGuid}
+                                        fetched={fetchedElement}
+                                        onDownloadDataElement={downloadDataElement}
+                                        onRefresh={refreshElement}
+                                        validateBlockedBy={validateBlockedBy}
+                                        // Also while the instance is being read, since that read is what
+                                        // replaces the list this panel is choosing from.
+                                        busy={elementQuery.isFetching || instanceQuery.isFetching}
+                                        hasToken={tokenUsable}
+                                        error={elementQuery.error}
+                                    >
+                                        {/* Inside the panel, because it compares what the select above it
                                     is pointing at. Beside it as its own card, that was left to be
                                     worked out from the order the two happened to be in. */}
-                                    {sections.compare && selectedDataType && (
-                                        <CompareSection
-                                            dataType={selectedDataType}
-                                            payload={
-                                                payloadForSelected
-                                                    ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
-                                                    : null
-                                            }
-                                            parses={payloadParses}
-                                            result={compareResult}
-                                            busy={compareQuery.isFetching}
-                                            error={compareQuery.error}
+                                        {sections.compare && selectedDataType && (
+                                            <CompareSection
+                                                dataType={selectedDataType}
+                                                payload={
+                                                    payloadForSelected
+                                                        ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
+                                                        : null
+                                                }
+                                                parses={payloadParses}
+                                                result={compareResult}
+                                                busy={compareQuery.isFetching}
+                                                error={compareQuery.error}
+                                            />
+                                        )}
+                                    </FetchPanel>
+
+                                    {/* After the data element, since it is a different kind of action. */}
+                                    {sections.requests && instanceGuid && (
+                                        <PdfPanel
+                                            onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
+                                            busy={renderPdf.isPending}
+                                            hasToken={tokenUsable}
+                                            error={renderPdf.error}
                                         />
                                     )}
-                                </FetchPanel>
 
-                                {/* After the data element, since it is a different kind of action. */}
-                                {sections.requests && instanceGuid && (
-                                    <PdfPanel
-                                        onPreviewPdf={() => renderPdf.mutate(instanceGuid)}
-                                        busy={renderPdf.isPending}
-                                        hasToken={tokenUsable}
-                                        error={renderPdf.error}
-                                    />
-                                )}
+                                    {/* Where the instance stands. Arrives with the first instance read. */}
+                                    {sections.process && instanceProcess && (
+                                        <ProcessPanel
+                                            process={instanceProcess}
+                                            onAdvance={() => advance.mutate()}
+                                            busy={advance.isPending}
+                                            hasToken={tokenUsable}
+                                            error={advance.error}
+                                        />
+                                    )}
+                                </>
+                            )}
+                        </div>
 
-                                {/* Where the instance stands. Arrives with the first instance read. */}
-                                {sections.process && instanceProcess && (
-                                    <ProcessPanel
-                                        process={instanceProcess}
-                                        onAdvance={() => advance.mutate()}
-                                        busy={advance.isPending}
-                                        hasToken={tokenUsable}
-                                        error={advance.error}
-                                    />
-                                )}
-                            </>
+                        {(sections.validation || sections.log) && (
+                            <div className="column column--log">
+                                {sections.validation && <ValidationPanel />}
+                                {sections.log && <RunLog running={inFlight} />}
+                            </div>
                         )}
                     </div>
 
-                    {(sections.validation || sections.log) && (
-                        <div className="column column--log">
-                            {sections.validation && <ValidationPanel validations={validations} onClear={clearValidations} />}
-                            {sections.log && <RunLog entries={logs} running={inFlight} onClear={() => setLogs([])} localtestUrl={localtestUrl} />}
-                        </div>
-                    )}
+                    {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
                 </div>
-
-                {pdfPreview && <PdfModal preview={pdfPreview} onClose={clearPdf} />}
-            </div>
+            </RunLogContext.Provider>
         </TargetProvider>
     );
 }
