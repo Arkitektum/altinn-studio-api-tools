@@ -7,12 +7,10 @@ import { useRunLog } from "./runLog";
 import { useSession } from "./session";
 import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
-import { logFromAdvance, logFromPdf, logFromRun, logFromValidationReport } from "./lib/logResults";
+import { logFromAdvance, logFromPdf } from "./lib/logResults";
 import { withIdentity } from "./lib/formIdentity";
 import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
-import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
-import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
@@ -28,17 +26,7 @@ import { PdfModal, type PdfPreview } from "./components/PdfModal";
 import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
-import type {
-    DataElementInput,
-    ExampleContent,
-    InstanceSummary,
-    ReadInstanceResult,
-    RunMode,
-    RunResult,
-    SavedPayload,
-    ValidateResult,
-    ValidationReportRequest
-} from "./types";
+import type { DataElementInput, ExampleContent, InstanceSummary, ReadInstanceResult, SavedPayload, ValidateResult } from "./types";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
 
@@ -121,13 +109,6 @@ export function App() {
      * with. The errors are split for the same reason. A read that failed without being asked for
      * has no business appearing under the buttons in Data element.
      */
-    /**
-     * The last validation report, kept with the submission it was about. The payload panel reads it
-     * for which documents are required, and the pair is what tells it whether the payload has moved
-     * on since. React state rather than storage: it describes a moment, like everything else read
-     * back.
-     */
-    const [validationAnswer, setValidationAnswer] = useState<{ report: unknown; request: ValidationReportRequest } | null>(null);
 
     /**
      * The instance on screen, for the pdf render to compare against. A callback closes over the
@@ -335,101 +316,6 @@ export function App() {
     }, [dataTypes, setDataElements]);
 
     /**
-     * Reads the instance back and validates it straight after a post, so the log shows what Altinn
-     * actually stored without anyone pressing another button. Sequential rather than parallel so
-     * the step timings in the log stay honest.
-     */
-    async function followUpAfterPost(payload: RunResult) {
-        const party = payload.instanceOwnerPartyId;
-        const guid = payload.instanceGuid;
-        if (!activeTokenId || !payload.ok || !party || !guid) {
-            return { instance: null, validation: null };
-        }
-        const params = {
-            tokenId: activeTokenId,
-            org,
-            app,
-            instanceOwnerPartyId: party,
-            instanceGuid: guid
-        };
-
-        // A failure here must not mask a successful post, so each one degrades to null and the
-        // failing step still shows up in the log.
-        let instance: ReadInstanceResult | null = null;
-        let validation: ValidateResult | null = null;
-        try {
-            instance = await api.getInstance(params);
-        } catch {
-            /* leave it null, the post itself still succeeded */
-        }
-        try {
-            validation = await api.validateInstance(params);
-        } catch {
-            /* same */
-        }
-
-        /*
-         * What was read goes into the cache under the instance it was read for, rather than into
-         * the state of whichever instance is selected by the time it lands. That is what makes a
-         * late answer harmless here: it goes where it belongs either way, and the panels show it
-         * when and only when that is the instance they are about. It also saves the read the
-         * instance query would otherwise make as soon as the selection catches up.
-         */
-        if (instance) {
-            queryClient.setQueryData(queryKeys.instance(activeTokenId, org, app, party, guid), {
-                read: instance,
-                validated: validation
-            });
-        }
-        return { instance, validation };
-    }
-
-    const run = useMutation({
-        mutationFn: async () => {
-            const payload = await api.postRun({
-                tokenId: activeTokenId ?? "",
-                org,
-                app,
-                instanceOwnerPartyId,
-                mode,
-                ...(mode === "existing" ? { instanceGuid } : {}),
-                // Only the wire fields. exampleName and collapsed are UI state.
-                dataElements: dataElements.map((element) => ({
-                    dataType: element.dataType,
-                    content: element.content,
-                    ...(element.encoding ? { encoding: element.encoding } : {}),
-                    ...(element.contentType ? { contentType: element.contentType } : {}),
-                    ...(element.filename ? { filename: element.filename } : {})
-                })),
-                // Validation runs as a follow-up request instead of a step inside the run.
-                validate: false,
-                advanceProcess
-            });
-
-            /*
-             * The instance goes in before the follow-up runs, not after. The follow-up reads and
-             * validates the new instance before React has re-rendered, and its validation would
-             * otherwise be checked against the instance this post replaced and thrown away.
-             */
-            if (payload.instanceGuid) {
-                runLog.markSelected(payload.instanceGuid);
-                shownInstance.current = payload.instanceGuid;
-            }
-
-            appendLog(logFromRun(payload, await followUpAfterPost(payload)));
-            return payload;
-        },
-        onSuccess: (payload) => {
-            // Chain naturally into "now post more data to that instance".
-            if (payload.instanceGuid) setInstanceGuid(payload.instanceGuid);
-            // The post either made an instance or changed one, so what was listed is out of date.
-            // By key, the listing being the panel's now. Every listing of this app, since a post
-            // can change which party's list an instance turns up in.
-            if (payload.ok) void queryClient.invalidateQueries({ queryKey: queryKeys.allInstances(activeTokenId ?? "", org, app) });
-        }
-    });
-
-    /**
      * Keeps the payload as it stands, under a name.
      *
      * localStorage can refuse, and a payload holding a file picked off disk is the way to make it:
@@ -484,28 +370,6 @@ export function App() {
     }
 
     /**
-     * Asks the DIBK validation service what it makes of the payload.
-     *
-     * It answers which documents a submission of this form needs, which `applicationmetadata`
-     * cannot: a `minCount` is what the app declares and not what the validation insists on. The
-     * whole report goes to the run log as well, since the payload panel reads only the part of it
-     * about documents and the rest is about the form.
-     */
-    const validationReport = useMutation({
-        mutationFn: async (request: ValidationReportRequest) => {
-            const result = await api.validationReport(request);
-            appendLog(logFromValidationReport(result, request));
-            return { result, request };
-        },
-        onSuccess: ({ result, request }) => {
-            // Kept with the submission it was about, so the panel can say when that has moved on.
-            // A refusal leaves the previous report alone: the log says what happened, and dropping
-            // what the service last said would lose the list you were working through.
-            if (result.ok) setValidationAnswer({ report: result.report, request });
-        }
-    });
-
-    /**
      * Renders the instance as the pdf Altinn would produce.
      *
      * The one read still guarded by hand, because what it produces is not an answer in the cache
@@ -535,11 +399,6 @@ export function App() {
         }
     });
 
-    /**
-     * Removes an instance outright. Soft deletion is still on the api, which the docs cover, but
-     * not offered here: everything this tool can reach is local test data, and a soft delete left
-     * the instance in storage where the completed listing would keep finding it.
-     */
     const advance = useMutation({
         mutationFn: async () => {
             const params = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid };
@@ -584,60 +443,6 @@ export function App() {
             });
         }
     });
-
-    const blockers: string[] = [];
-    if (!tokenUsable) blockers.push("a valid token");
-    if (!org || !app) blockers.push("an application");
-    if (!instanceOwnerPartyId) blockers.push("an instance owner party id");
-    if (dataElements.some((element) => !element.dataType)) blockers.push("a data type on every element");
-    if (dataElements.some((element) => !element.content.trim())) blockers.push("content on every element");
-
-    /**
-     * The payload as the validation service would be told it, which is both what the button sends
-     * and what says whether the report on screen still describes the payload in front of you.
-     *
-     * Held, because it is rebuilt from the payload and the payload is the largest thing here. A
-     * rebuilt one is also a new object, which was enough to keep `prevalidation` below from ever
-     * reusing its answer: between them they cost about 2 ms of every render, and this component
-     * re-renders once a second for the token countdown alone.
-     */
-    const validationRequest = useMemo(
-        () =>
-            buildValidationRequest({
-                elements: dataElements,
-                dataTypes,
-                metadata: metadata?.metadata ?? null,
-                parties,
-                partyId: instanceOwnerPartyId,
-                token: activeToken ?? null
-            }),
-        [dataElements, dataTypes, metadata, parties, instanceOwnerPartyId, activeToken]
-    );
-
-    /**
-     * What the validation service last said about this payload, counted against the payload as it
-     * stands. Here rather than in the panel because two places read it: the panel lists what is
-     * missing, and the post button says whether this has been through the service at all.
-     */
-    const prevalidation = useMemo((): Prevalidation | null => {
-        const report = parseValidationReport(validationAnswer?.report ?? null);
-        if (!report) return null;
-        return {
-            requirements: requirementsFrom(report, {
-                dataTypes,
-                payload: dataElements.map((element) => element.dataType).filter(Boolean),
-                onInstance: instanceDataElements.map((element) => element.dataType)
-            }),
-            stale: !sameSubmission(validationAnswer?.request ?? null, validationRequest.request)
-        };
-    }, [validationAnswer, dataTypes, dataElements, instanceDataElements, validationRequest.request]);
-
-    /**
-     * Where a post goes, which is not a setting: an instance selected in Instances means the data
-     * is added to it, and the new instance row means the post creates one. Two controls could
-     * disagree, and this one cannot.
-     */
-    const mode: RunMode = instanceGuid ? "existing" : "multipart";
 
     // Panels you cannot use yet are left out rather than shown dead.
     // Every panel is on screen from the start, and one you cannot use yet says what it is waiting
@@ -757,55 +562,7 @@ export function App() {
                             onLoadPayload={(payload) => void loadPayload(payload)}
                             onDeletePayload={(id) => setSavedPayloads(removePayload(savedPayloads, id))}
                             loadNotice={payloadLoadNotice}
-                            validationUrl={serverConfig?.validationUrl ?? ""}
-                            validationBlockedBy={validationRequest.blockedBy}
-                            onValidationReport={() => validationRequest.request && validationReport.mutate(validationRequest.request)}
-                            validating={validationReport.isPending}
-                            prevalidation={prevalidation}
-                        >
-                            <div style={{ marginTop: 18 }}>
-                                <span className="legend">Post</span>
-
-                                {blockers.length > 0 && (
-                                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                                        Needs {blockers.join(", ")}.
-                                    </div>
-                                )}
-
-                                {/*
-                                 * The one thing the prevalidation notice above cannot say,
-                                 * because there is no report for it to be part of. The rest of
-                                 * what the service said is already on screen a few lines up.
-                                 */}
-                                {serverConfig?.validationUrl && !prevalidation && (
-                                    <div className="notice" style={{ marginBottom: 12 }}>
-                                        Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you, read
-                                        before the submit rather than after.
-                                    </div>
-                                )}
-
-                                {/* Both are asked for from this panel, and only one at a time. */}
-                                {(run.error ?? validationReport.error) ? (
-                                    <div style={{ marginBottom: 12 }}>
-                                        <ErrorNotice error={run.error ?? validationReport.error} />
-                                    </div>
-                                ) : null}
-
-                                <button
-                                    type="button"
-                                    className="btn btn--primary btn--fire"
-                                    onClick={() => run.mutate()}
-                                    disabled={run.isPending || blockers.length > 0}
-                                >
-                                    {run.isPending && <span className="btn__spinner" />}
-                                    {run.isPending
-                                        ? "Posting…"
-                                        : instanceGuid
-                                          ? `Add data to ${instanceGuid.slice(0, 8)}`
-                                          : `Post a new instance to ${org || "org"}/${app || "app"}`}
-                                </button>
-                            </div>
-                        </PayloadPanel>
+                        />
 
                         <span className="group">Inspect</span>
 

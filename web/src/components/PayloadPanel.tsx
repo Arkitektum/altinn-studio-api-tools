@@ -1,5 +1,8 @@
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useAppRead } from "../reads";
+import { usePostRun, usePrevalidation } from "../writes";
+import { postBlockers } from "../lib/postBlockers";
+import { ErrorNotice } from "./Notice";
 import { useSession } from "../session";
 import { preferredContentType } from "../lib/contentType";
 import { groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
@@ -9,7 +12,6 @@ import { SavedPayloads } from "./SavedPayloads";
 import { documentsToAdd, outstandingOf } from "../lib/validationReport";
 import { loadingOverwrites } from "../lib/savedPayloads";
 import type { DataElementInput, SavedPayload } from "../types";
-import type { Prevalidation } from "../lib/validationReport";
 
 interface PayloadPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -28,19 +30,6 @@ interface PayloadPanelProps {
     onDeletePayload: (id: string) => void;
     /** What a load had to say for itself, an example that has gone missing being the one case. */
     loadNotice: string | null;
-    /** Where the validation service lives, for the line under its button. Empty when switched off. */
-    validationUrl: string;
-    /** Why the payload cannot be sent to it yet, or null when it can. */
-    validationBlockedBy: string | null;
-    onValidationReport: () => void;
-    validating: boolean;
-    /** What the service last said about this payload. Null until it has been asked. */
-    prevalidation: Prevalidation | null;
-    /**
-     * The post itself, which acts on everything above it. A section of this panel rather than one
-     * of its own, so that what is about to be sent is the thing you were just looking at.
-     */
-    children?: ReactNode;
 }
 
 /** Names in a sentence: "a", "a and b", "a, b and c". */
@@ -59,21 +48,32 @@ export function PayloadPanel({
     onSavePayload,
     onLoadPayload,
     onDeletePayload,
-    loadNotice,
-    validationUrl,
-    validationBlockedBy,
-    onValidationReport,
-    validating,
-    prevalidation,
-    children
+    loadNotice
 }: PayloadPanelProps) {
     /* The target, so a saved payload written for another app can say which, and what the app
        declares, which is authoritative but only there once it has been read. */
-    const { org, app } = useSession();
+    const { org, app, tokenUsable, partyId, instanceGuid } = useSession();
     const { metadata: appMetadata } = useAppRead();
     const metadata = appMetadata?.metadata ?? null;
     const dataTypes = metadata?.dataTypes ?? [];
 
+    /*
+     * Both of the things that act on the payload, which is what this panel is. The prevalidation
+     * asks what a submission of it would be missing, and the post sends it; each belongs with the
+     * payload rather than with whoever happens to render the panel. See writes.ts.
+     */
+    const {
+        prevalidation,
+        blockedBy: validationBlockedBy,
+        url: validationUrl,
+        asking: validating,
+        error: prevalidationError,
+        ask: onValidationReport
+    } = usePrevalidation(dataElements);
+    const post = usePostRun();
+
+    /** What the post is still missing, all of it at once. See lib/postBlockers.ts. */
+    const blockers = postBlockers({ hasToken: tokenUsable, org, app, party: partyId, elements: dataElements });
     function update(index: number, patch: Partial<DataElementInput>) {
         onChange((current) => current.map((element, i) => (i === index ? { ...element, ...patch } : element)));
     }
@@ -293,7 +293,44 @@ export function PayloadPanel({
                 </label>
             </div>
 
-            {children}
+            <div style={{ marginTop: 18 }}>
+                <span className="legend">Post</span>
+
+                {blockers.length > 0 && (
+                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                        Needs {blockers.join(", ")}.
+                    </div>
+                )}
+
+                {/*
+                 * The one thing the prevalidation notice above cannot say, because there is no
+                 * report for it to be part of. The rest of what the service said is on screen a
+                 * few lines up.
+                 */}
+                {validationUrl && !prevalidation && (
+                    <div className="notice" style={{ marginBottom: 12 }}>
+                        Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you, read before the
+                        submit rather than after.
+                    </div>
+                )}
+
+                {/* Both are asked for from this panel, and only one at a time. */}
+                {(post.error ?? prevalidationError) ? (
+                    <div style={{ marginBottom: 12 }}>
+                        <ErrorNotice error={post.error ?? prevalidationError} />
+                    </div>
+                ) : null}
+
+                <button
+                    type="button"
+                    className="btn btn--primary btn--fire"
+                    onClick={() => post.mutate({ dataElements, advanceProcess })}
+                    disabled={post.isPending || blockers.length > 0}
+                >
+                    {post.isPending && <span className="btn__spinner" />}
+                    {post.isPending ? "Posting…" : instanceGuid ? `Add data to ${instanceGuid.slice(0, 8)}` : `Post a new instance to ${org}/${app}`}
+                </button>
+            </div>
         </Panel>
     );
 }
