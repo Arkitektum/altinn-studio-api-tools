@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
+import { queryKeys } from "./queries";
 import { preferredContentType } from "./lib/contentType";
 import { isExpired } from "./lib/format";
 import { downloadContent, suggestedFilename } from "./lib/download";
@@ -52,7 +54,6 @@ import type {
     ExampleGroup,
     FetchedDataElement,
     InstanceSummary,
-    LocaltestStatus,
     LogEntry,
     LogResult,
     ProcessSummary,
@@ -61,13 +62,16 @@ import type {
     RunMode,
     RunResult,
     SavedPayload,
-    ServerConfig,
     ValidateResult,
     ValidationReportRequest,
     ValidationView
 } from "./types";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
+
+/** Stood in for a query that has not answered yet, and the same array every time it is. */
+const NO_APPS: CatalogueApp[] = [];
+const NO_GROUPS: ExampleGroup[] = [];
 
 /**
  * Whether the payload is xml the server could compare, asked of the browser's own parser.
@@ -81,11 +85,26 @@ function isWellFormedXml(text: string): boolean {
 }
 
 export function App() {
-    const [serverConfig, setServerConfig] = useState<ServerConfig | null>(null);
-    const [localtest, setLocaltest] = useState<LocaltestStatus | null>(null);
-    const [catalogue, setCatalogue] = useState<CatalogueApp[]>([]);
-    const [exampleGroups, setExampleGroups] = useState<ExampleGroup[]>([]);
-    const [bootError, setBootError] = useState<unknown>(null);
+    /*
+     * What the server has to say for itself, asked once. None of these are keyed on anything the
+     * operator can move, so they are read at startup and not again: the settings come from the
+     * server's environment, and the catalogue and the example files are fixtures on disk.
+     */
+    const configQuery = useQuery({ queryKey: queryKeys.config(), queryFn: api.getConfig });
+    const catalogueQuery = useQuery({ queryKey: queryKeys.catalogue(), queryFn: api.getCatalogue });
+    const examplesQuery = useQuery({ queryKey: queryKeys.examples(), queryFn: api.getExamples });
+    /* Its own, because it is allowed to fail. The status dot stays grey and nothing else cares. */
+    const localtestQuery = useQuery({ queryKey: queryKeys.localtestStatus(), queryFn: api.getLocaltestStatus });
+
+    const serverConfig = configQuery.data ?? null;
+    const localtest = localtestQuery.data ?? null;
+    // Through the constants rather than a literal, so a pending query hands the same empty array
+    // every render. A fresh one would make every memo listing it hold nothing, which is a mistake
+    // this file has made before.
+    const catalogue = catalogueQuery.data ?? NO_APPS;
+    const exampleGroups = examplesQuery.data?.groups ?? NO_GROUPS;
+    /* The three that have to answer. LocalTest being down is a state, not a failure to boot. */
+    const bootError = configQuery.error ?? catalogueQuery.error ?? examplesQuery.error ?? null;
 
     const [tokens, setTokens] = useState<PublicToken[]>([]);
     const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
@@ -365,27 +384,12 @@ export function App() {
             setTokens(list);
             // Keep the selection valid across server restarts and expiry pruning.
             setActiveTokenId((current) => (current && list.some((token) => token.id === current) ? current : (list[0]?.id ?? null)));
-        } catch (error) {
-            setBootError(error);
+        } catch {
+            /* the panel says there is no token, which is what a failed listing leaves you with */
         }
     }, []);
 
     useEffect(() => {
-        void (async () => {
-            try {
-                const [config, cat, examples] = await Promise.all([api.getConfig(), api.getCatalogue(), api.getExamples()]);
-                setServerConfig(config);
-                setCatalogue(cat);
-                setExampleGroups(examples.groups);
-            } catch (error) {
-                setBootError(error);
-            }
-            try {
-                setLocaltest(await api.getLocaltestStatus());
-            } catch {
-                /* the status dot stays grey */
-            }
-        })();
         void refreshTokens();
     }, [refreshTokens]);
 

@@ -2,7 +2,9 @@
 import { click, find, findByText, render, stubFetch, type, type Rendered, type Routes } from "./testDom";
 import assert from "node:assert/strict";
 import { beforeEach, describe, it, type TestContext } from "node:test";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
+import { makeQueryClient } from "./queries";
 import type { DataElementInput, PublicToken } from "./types";
 
 const token: PublicToken = {
@@ -91,9 +93,16 @@ beforeEach(() => {
  */
 async function mount(t: TestContext, routes: Routes) {
     const stub = stubFetch(routes);
-    const app = await render(<App />);
+    // Its own client, so the answers one test gave are not the answers the next one starts with.
+    const client = makeQueryClient();
+    const app = await render(
+        <QueryClientProvider client={client}>
+            <App />
+        </QueryClientProvider>
+    );
     t.after(async () => {
         await app.unmount();
+        client.clear();
         stub.restore();
     });
     return { app, stub };
@@ -121,6 +130,22 @@ describe("App", () => {
 
         assert.match(app.container.textContent ?? "", /Sophie Salt/);
         assert.ok(stub.calls.includes("GET /api/tokens"));
+    });
+
+    /*
+     * What the server has to say for itself does not change while the tool is open, and a request
+     * nobody asked for would turn up in the run log as one they did. The query defaults say so, in
+     * `queries.ts`; this is what holds them there.
+     */
+    it("asks the server about itself once, and not again", async (t) => {
+        const { app, stub } = await mount(t, boot);
+
+        // Past a second, so the token countdown has re-rendered everything at least once.
+        await app.wait(1200);
+
+        for (const call of ["GET /api/config", "GET /api/catalogue", "GET /api/examples", "GET /api/localtest/status"]) {
+            assert.equal(stub.calls.filter((made) => made === call).length, 1, `${call} should have been asked exactly once`);
+        }
     });
 
     /*
