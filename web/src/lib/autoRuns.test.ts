@@ -14,7 +14,7 @@ const selected: Selection = {
     dataGuid: "0f1e2d3c-aaaa-bbbb-cccc-ddddeeeeffff"
 };
 
-const nothingAttempted = { list: null, read: null, element: null, compare: null };
+const nothingAttempted = { read: null, element: null, compare: null };
 
 const ready: AutoRunInputs = {
     hasToken: true,
@@ -28,7 +28,6 @@ const ready: AutoRunInputs = {
 function keysOf(inputs: AutoRunInputs) {
     const runs = pendingAutoRuns(inputs);
     return {
-        list: runs.list?.key ?? null,
         read: runs.read?.key ?? null,
         element: runs.element?.key ?? null,
         compare: runs.compare?.key ?? null
@@ -38,21 +37,18 @@ function keysOf(inputs: AutoRunInputs) {
 describe("pendingAutoRuns", () => {
     it("asks for nothing without a usable token", () => {
         const none = pendingAutoRuns({ ...ready, hasToken: false });
-        assert.deepEqual(none, { list: null, read: null, element: null, compare: null });
+        assert.deepEqual(none, { read: null, element: null, compare: null });
     });
 
     it("waits for each field the read depends on", () => {
         const noApp = pendingAutoRuns({ ...ready, selection: { ...selected, app: "" } });
-        assert.equal(noApp.list, null);
         assert.equal(noApp.read, null);
         assert.equal(noApp.element, null);
 
         const noParty = pendingAutoRuns({ ...ready, selection: { ...selected, party: "" } });
-        assert.equal(noParty.list, null);
         assert.equal(noParty.read, null);
 
         const noInstance = pendingAutoRuns({ ...ready, selection: { ...selected, instanceGuid: "" } });
-        assert.ok(noInstance.list);
         assert.equal(noInstance.read, null);
         assert.equal(noInstance.element, null);
 
@@ -65,7 +61,6 @@ describe("pendingAutoRuns", () => {
     it("aims each run at its own scope", () => {
         const keys = selectionKeys(selected);
         const runs = pendingAutoRuns(ready);
-        assert.equal(runs.list?.key, keys.party);
         assert.equal(runs.read?.key, keys.instance);
         // The element's key carries what is stored under it, not only which element it is.
         assert.ok(runs.element);
@@ -82,7 +77,6 @@ describe("pendingAutoRuns", () => {
     it("asks once per selection, however the answer turned out", () => {
         const attempted = keysOf(ready);
         assert.deepEqual(pendingAutoRuns({ ...ready, attempted }), {
-            list: null,
             read: null,
             element: null,
             compare: null
@@ -95,7 +89,6 @@ describe("pendingAutoRuns", () => {
         // Another instance of the same party: the read and everything under it are due again.
         const elsewhere = { ...selected, instanceGuid: "another" };
         const afterInstance = pendingAutoRuns({ ...ready, selection: elsewhere, attempted });
-        assert.equal(afterInstance.list, null);
         assert.ok(afterInstance.read);
         assert.ok(afterInstance.element);
 
@@ -132,7 +125,6 @@ describe("pendingAutoRuns", () => {
     it("asks everything again for another token, since the answers were that token's", () => {
         const attempted = keysOf(ready);
         const runs = pendingAutoRuns({ ...ready, selection: { ...selected, tokenId: "0000" }, attempted });
-        assert.ok(runs.list);
         assert.ok(runs.read);
         assert.ok(runs.element);
         assert.ok(runs.compare);

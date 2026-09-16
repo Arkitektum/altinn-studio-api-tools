@@ -22,6 +22,14 @@ import { QueryClient } from "@tanstack/react-query";
  *
  * A function rather than one client, because a test wants its own: a client shared between tests
  * carries the answers of the last one into the next, which is a test passing for the wrong reason.
+ *
+ * ## Where the run log gets its entry
+ *
+ * Inside the `queryFn`, not in an effect on the answer and not in a cache-wide hook. The log is a
+ * record of requests that were made, and the `queryFn` is the request: it runs once per fetch and
+ * not at all when an answer comes from the cache, which is exactly the distinction the log draws.
+ * It also leaves room for the reads that are two requests and one entry, an instance read and its
+ * validation being the pair the log has always shown together.
  */
 export function makeQueryClient(): QueryClient {
     return new QueryClient({
@@ -75,5 +83,13 @@ export const queryKeys = {
      */
     app: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app] as const,
     appMetadata: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "metadata"] as const,
-    appParties: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "parties"] as const
+    appParties: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "parties"] as const,
+
+    /**
+     * One party's instances. `completed` is in the key rather than a parameter to the same read,
+     * because asking storage for the finished ones is a different question with a different answer,
+     * and turning it on should not look like the short list being wrong.
+     */
+    instances: (tokenId: string, org: string, app: string, party: string, completed: boolean) =>
+        ["app", tokenId, org, app, "instances", party, completed] as const
 };

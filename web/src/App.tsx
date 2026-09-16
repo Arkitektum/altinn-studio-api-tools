@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { queryKeys } from "./queries";
 import { isExpired } from "./lib/format";
@@ -54,6 +54,7 @@ import type {
     ExampleGroup,
     FetchedDataElement,
     InstanceSummary,
+    ListInstancesResult,
     LogEntry,
     LogResult,
     ProcessSummary,
@@ -78,6 +79,9 @@ const NO_PARTIES: AppParty[] = [];
 /** Org and app are typed a character at a time, and "et-v4" should not be five probes. */
 const PROBE_DELAY_MS = 400;
 
+/** So is a party id, and so is a guid pasted into "Other instance". */
+const SELECTION_DELAY_MS = 500;
+
 /**
  * Whether the payload is xml the server could compare, asked of the browser's own parser.
  *
@@ -90,6 +94,8 @@ function isWellFormedXml(text: string): boolean {
 }
 
 export function App() {
+    const queryClient = useQueryClient();
+
     /*
      * What the server has to say for itself, asked once. None of these are keyed on anything the
      * operator can move, so they are read at startup and not again: the settings come from the
@@ -216,22 +222,11 @@ export function App() {
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
 
     /**
-     * The party's instances from the last listing, so a guid can be picked instead of pasted.
-     * Null means nothing has been listed yet, which reads differently from a party with none.
-     */
-    const [instanceList, setInstanceList] = useState<InstanceSummary[] | null>(null);
-    const [listing, setListing] = useState(false);
-    const [listError, setListError] = useState<unknown>(null);
-    /**
      * Whether the listing also asks storage for the instances the app's active list leaves out.
      * A view of the moment rather than something you chose, so it is not persisted: the cheaper
      * listing is the right thing to come back to.
      */
     const [includeCompleted, setIncludeCompleted] = useState(false);
-    /** False when the completed ones were asked for and storage would not answer. */
-    const [completedListed, setCompletedListed] = useState<boolean | null>(null);
-    /** Which token, app and party the listing has already been attempted for. */
-    const [listAttempted, setListAttempted] = useState<string | null>(null);
     /** And which instance has already been read, so it is read once per selection. */
     const [readAttempted, setReadAttempted] = useState<string | null>(null);
     /** Which data element has been read back, keyed by what was stored under it at the time. */
@@ -359,6 +354,39 @@ export function App() {
     }, []);
 
     const clearValidations = useCallback(() => setValidations([]), []);
+
+    /*
+     * The party's instances, so a guid can be picked rather than pasted.
+     *
+     * The party settles first, the way the target does: it is typed, and it is also filled in from
+     * the token's claim, both of which would otherwise list a party per character.
+     *
+     * The log entry is written in the `queryFn` rather than from the answer, because the log is a
+     * record of requests made and this is the request. A listing read back out of the cache is not
+     * one, and does not appear.
+     */
+    const settledParty = useDebounced(instanceOwnerPartyId, SELECTION_DELAY_MS);
+    const listParams = { tokenId: activeTokenId ?? "", org: settledOrg, app: settledApp, instanceOwnerPartyId: settledParty };
+
+    const instancesKey = queryKeys.instances(listParams.tokenId, settledOrg, settledApp, settledParty, includeCompleted);
+
+    const listQuery = useQuery({
+        queryKey: instancesKey,
+        queryFn: async () => {
+            const result = await api.listInstances({ ...listParams, includeCompleted: includeCompleted ? "true" : "false" });
+            appendLog(logFromInstances(result));
+            return result;
+        },
+        enabled: probeAimed && Boolean(settledParty)
+    });
+
+    /**
+     * A failed listing stays null rather than empty, since "none" would be a claim we cannot make
+     * when the request never answered. So does one the app refused, for the same reason.
+     */
+    const instanceList = listQuery.data?.ok ? listQuery.data.instances : null;
+    /** False when the completed ones were asked for and storage would not answer. */
+    const completedListed = listQuery.data?.completedListed ?? null;
 
     /** Picking another data element drops the held one, which is no longer what is selected. */
     const changeDataGuid = useCallback((next: string) => {
@@ -517,11 +545,6 @@ export function App() {
         setDataElements((current) => withAppDefaults(current, dataTypes));
     }, [dataTypes, setDataElements]);
 
-    // An instance listing belongs to one app and one party, so drop it when either moves.
-    useEffect(() => {
-        setInstanceList(null);
-    }, [org, app, instanceOwnerPartyId]);
-
     /**
      * The reads the tool makes without being asked. Which of them are outstanding, and how long
      * each waits for its field to settle, is decided in `lib/autoRuns.ts` and tested there. What
@@ -535,7 +558,6 @@ export function App() {
      * for, and there is nothing to add to them that `lib/autoRuns.ts` does not already decide.
      */
     const {
-        list: nextList,
         read: nextRead,
         element: nextElement,
         compare: nextCompare
@@ -545,7 +567,6 @@ export function App() {
         elementChangedAt: selectedElement?.lastChanged ?? null,
         comparable,
         attempted: {
-            list: listAttempted,
             read: readAttempted,
             element: elementAttempted,
             compare: compareAttempted
@@ -553,15 +574,6 @@ export function App() {
     });
 
     /* oxlint-disable react-hooks/exhaustive-deps -- the key is the whole of it, see above */
-
-    useEffect(() => {
-        if (!nextList) return;
-        const timer = window.setTimeout(() => {
-            setListAttempted(nextList.key);
-            void listInstances();
-        }, nextList.delayMs);
-        return () => window.clearTimeout(timer);
-    }, [nextList?.key]);
 
     // A post marks its own instance as read, since it already reads and validates it.
     useEffect(() => {
@@ -684,54 +696,14 @@ export function App() {
         }
     }
 
-    /** The scope is an argument, so the toggle can list again without waiting for its own state. */
-    async function listInstances(completed = includeCompleted) {
-        if (!activeTokenId || !org || !app || !instanceOwnerPartyId) return;
-        const requested = keys.party;
-        setListing(true);
-        setListError(null);
-        try {
-            const result = await api.listInstances({
-                tokenId: activeTokenId,
-                org,
-                app,
-                instanceOwnerPartyId,
-                includeCompleted: completed ? "true" : "false"
-            });
-            // The request happened, so it keeps its place in the log whatever is selected by now.
-            // The listing itself is another party's the moment the party moves.
-            appendLog(logFromInstances(result));
-            if (movedOn(requested, "party")) return;
-            // A failed listing stays null rather than empty, since "none" would be a claim we
-            // cannot make when the request never answered.
-            setInstanceList(result.ok ? result.instances : null);
-            setCompletedListed(result.completedListed);
-        } catch (error) {
-            if (movedOn(requested, "party")) return;
-            setListError(error);
-        } finally {
-            setListing(false);
-        }
-    }
-
     /**
      * Lists again on demand, for the Refresh button and after a post.
      *
-     * Marks the current target as attempted rather than clearing the marker: clearing it would
-     * make the effect below schedule a second listing on top of this one.
+     * A refetch rather than an invalidation, because this is the one listing on screen and the
+     * question is not whether it has gone stale but that it is being asked again.
      */
     function refreshInstances() {
-        if (!activeTokenId) return;
-        setListAttempted(keys.party);
-        void listInstances();
-    }
-
-    /** Turning the completed ones on or off is a different listing, so it asks again straight away. */
-    function changeIncludeCompleted(next: boolean) {
-        setIncludeCompleted(next);
-        if (!next) setCompletedListed(null);
-        setListAttempted(keys.party);
-        void listInstances(next);
+        void listQuery.refetch();
     }
 
     /**
@@ -1015,13 +987,10 @@ export function App() {
      * not offered here: everything this tool can reach is local test data, and a soft delete left
      * the instance in storage where the completed listing would keep finding it.
      */
-    async function removeInstance(instance: InstanceSummary) {
-        if (!activeTokenId) return;
-        setListing(true);
-        setListError(null);
-        try {
+    const removeInstance = useMutation({
+        mutationFn: async (instance: InstanceSummary) => {
             const result = await api.deleteInstance({
-                tokenId: activeTokenId,
+                tokenId: activeTokenId ?? "",
                 org,
                 app,
                 instanceOwnerPartyId: instance.instanceOwnerPartyId,
@@ -1029,20 +998,22 @@ export function App() {
                 hard: "true"
             });
             appendLog(logFromDelete(result));
+            return result;
+        },
+        onSuccess: (result) => {
             if (!result.ok) return;
 
-            // Take it out of the listing, since a deleted instance is not one to offer next.
-            setInstanceList((current) => current?.filter((held) => held.instanceGuid !== result.instanceGuid) ?? null);
+            // Taken out of the listing rather than asking for it again: a delete that succeeded is
+            // the whole of what changed, and a deleted instance is not one to offer next.
+            queryClient.setQueryData<ListInstancesResult>(instancesKey, (current) =>
+                current ? { ...current, instances: current.instances.filter((held) => held.instanceGuid !== result.instanceGuid) } : current
+            );
             // Only clear the fields when they pointed at the instance that just went. Clearing the
             // guid drops the data elements, process and issues along with it, which would be wrong
             // to do while looking at a different instance.
             if (instanceGuid === result.instanceGuid) selectInstance(null);
-        } catch (error) {
-            setListError(error);
-        } finally {
-            setListing(false);
         }
-    }
+    });
 
     async function advance() {
         if (!activeTokenId) return;
@@ -1284,17 +1255,17 @@ export function App() {
                             instanceGuid={instanceGuid}
                             onSelect={selectInstance}
                             onSelectTyped={selectTypedInstance}
-                            onDelete={(instance) => void removeInstance(instance)}
+                            onDelete={(instance) => removeInstance.mutate(instance)}
                             onRefresh={refreshInstances}
                             includeCompleted={includeCompleted}
-                            onIncludeCompletedChange={changeIncludeCompleted}
+                            onIncludeCompletedChange={setIncludeCompleted}
                             completedListed={completedListed}
                             // Listing only. A read of the selected instance is reported by the
                             // panels that show what it returns, and holding this one busy would
                             // put a spinner on Refresh for a request it did not make.
-                            busy={listing}
+                            busy={listQuery.isFetching || removeInstance.isPending}
                             // The error does belong here: selecting a row is what starts the read.
-                            error={listError ?? readError}
+                            error={listQuery.error ?? removeInstance.error ?? readError}
                         />
                     )}
 

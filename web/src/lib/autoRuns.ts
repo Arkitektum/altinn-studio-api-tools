@@ -12,8 +12,6 @@ export interface AutoRun {
 }
 
 export interface AutoRuns {
-    /** List the party's instances, so a guid never has to be pasted. */
-    list: AutoRun | null;
     /** Read the selected instance and validate it. */
     read: AutoRun | null;
     /** Read the selected data element back, and validate it where that says anything. */
@@ -39,7 +37,7 @@ export interface AutoRunInputs {
      */
     comparable: string | null;
     /** The key each scope has already been attempted for, so a refusal is not retried forever. */
-    attempted: { list: string | null; read: string | null; element: string | null; compare: string | null };
+    attempted: { read: string | null; element: string | null; compare: string | null };
 }
 
 /** So is a party id, and so is a guid pasted into "Other instance". */
@@ -86,7 +84,6 @@ export function pendingAutoRuns(inputs: AutoRunInputs): AutoRuns {
     const onElement = onInstance && Boolean(dataGuid);
 
     return {
-        list: ready && Boolean(party) && inputs.attempted.list !== keys.party ? { key: keys.party, delayMs: SELECTION_DELAY_MS } : null,
         read: onInstance && inputs.attempted.read !== keys.instance ? { key: keys.instance, delayMs: SELECTION_DELAY_MS } : null,
         element: onElement && inputs.attempted.element !== elementKey ? { key: elementKey, delayMs: SELECTION_DELAY_MS } : null,
         compare:

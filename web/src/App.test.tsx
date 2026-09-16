@@ -257,6 +257,33 @@ describe("App", () => {
     });
 
     /*
+     * Asking storage for the finished instances is a different question, so it is a different key
+     * rather than a parameter to the same read. Turning it back off is then the short list, which
+     * the cache already holds: the answer has not changed and nothing asks for it again.
+     */
+    it("asks again for the completed instances, and not again when they are turned back off", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001" });
+        const { app, stub } = await mount(t, boot);
+        await app.wait(700);
+
+        const listings = () => stub.calls.filter((made) => made === "GET /api/instances/active").length;
+        assert.equal(listings(), 1, "the short list should have been asked for once");
+
+        await openInstances(app);
+        const box = () => find<HTMLInputElement>(app, "#panel-instances input[type='checkbox']");
+
+        await click(app, box());
+        await app.wait(50);
+        assert.equal(listings(), 2, "turning the completed ones on is another question");
+        const asked = stub.calls.lastIndexOf("GET /api/instances/active");
+        assert.equal(stub.url(asked).searchParams.get("includeCompleted"), "true");
+
+        await click(app, box());
+        await app.wait(50);
+        assert.equal(listings(), 2, "and turning them off is the list already in hand");
+    });
+
+    /*
      * Everything below the instance describes that instance, so pointing the tool at another one
      * has to drop all of it together. Stale is more misleading than absent.
      */
