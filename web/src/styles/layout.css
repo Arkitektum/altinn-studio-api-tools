@@ -233,6 +233,24 @@
 }
 
 /*
+ * Room below the last panel, so the rail can tell the last few apart.
+ *
+ * Without it the panels in the final screenful all bottom out at the same instant: there is no
+ * scroll position where Pdf has reached the line and Process has not, because the page runs out
+ * first. The rail went straight from Data element to Process and Pdf was never marked at all, by
+ * scrolling or by clicking its row.
+ *
+ * The 460px is the line the spy measures against plus the two panels that have to fit above the
+ * room: it is a measurement rather than a guess, and because the rest scales with the viewport it
+ * holds from a 700px window to a 1600px one. Under-shooting it costs the Pdf marker back; over-
+ * shooting would let the last panel scroll off the top into blank space. This sits between the two,
+ * leaving the last panel 144px down the screen at the very bottom whatever the height.
+ */
+.column:not(.column--log) {
+    padding-bottom: max(16px, calc(100vh - 460px));
+}
+
+/*
  * No rule between the columns. The panels carry their own borders, so a divider only drew a second
  * line beside the ones already there. The gap between columns is enough to read them apart.
  */
