@@ -179,10 +179,32 @@
 /*
  * The panel you are looking at. A bar down the left edge rather than a fill, since the row already
  * carries a colour in its glyph and two backgrounds a row apart read as a selection you made.
+ *
+ * The accent rather than the violet it was. Violet is one of the three payload-element hues, which
+ * is a different thing entirely, and the row you are on is usually also the row you can act on: one
+ * blue for both says they are the same place rather than two facts to read apart.
  */
 .rail__step--here .rail__row {
     background: var(--bg-subtle);
-    box-shadow: inset 2px 0 0 var(--violet);
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/*
+ * A run of current rows reads as one block rather than a stack of them.
+ *
+ * Application and Party are both set in Target, so scrolling there marks both, and two rounded
+ * blocks a pixel apart looked like two answers to the same question. Only the outside corners of a
+ * run stay rounded: a row with a current neighbour above loses its top corners, one with a current
+ * neighbour below loses its bottom, and a row in the middle of three loses all four.
+ */
+.rail__step--here + .rail__step--here .rail__row {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.rail__step--here:has(+ .rail__step--here) .rail__row {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -247,6 +269,15 @@
         bottom: auto;
         width: 8px;
         height: 1px;
+    }
+    /*
+     * And the run of current rows comes apart again. Side by side with a gap between them there is
+     * nothing to join up, so each keeps its own corners. Written with the same selectors rather
+     * than a blunter one, because they are what it has to outweigh.
+     */
+    .rail__step--here + .rail__step--here .rail__row,
+    .rail__step--here:has(+ .rail__step--here) .rail__row {
+        border-radius: var(--radius);
     }
     .rail__row {
         padding: 6px 8px;
