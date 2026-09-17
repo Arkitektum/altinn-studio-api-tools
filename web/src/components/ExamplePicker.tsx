@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import { useSession } from "../session";
 import type { ExampleContent, ExampleGroup } from "../types";
+import { Icon } from "./Icon";
 
 /** One selectable example, flattened out of the group it came from. */
 export interface ExampleOption {
@@ -141,7 +142,7 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
                         disabled={busy}
                         title="Re-load the file, discarding your edits"
                     >
-                        {busy ? <span className="btn__spinner" /> : "↻"}
+                        {busy ? <span className="btn__spinner" /> : <Icon name="refresh" label="Re-load this example" />}
                     </button>
                 )}
             </div>

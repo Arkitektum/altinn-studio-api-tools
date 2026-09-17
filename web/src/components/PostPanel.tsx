@@ -5,6 +5,7 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { PrevalidationSummary } from "../lib/chain";
 import type { DataElementInput } from "../types";
+import { Icon } from "./Icon";
 
 interface PostPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -34,7 +35,7 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
     const blockers = postBlockers({ hasToken: tokenUsable, org, app, party: partyId, elements: dataElements });
 
     return (
-        <Panel id="panel-post" notReady={notReady} tone="post" title="Post">
+        <Panel icon="upload" id="panel-post" notReady={notReady} tone="post" title="Post">
             <p className="field__hint" style={{ marginBottom: 10 }}>
                 The instance is read back and validated automatically after every post.
             </p>
@@ -90,7 +91,7 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
                     onClick={() => post.mutate({ dataElements, advanceProcess })}
                     disabled={post.isPending || blockers.length > 0}
                 >
-                    {post.isPending && <span className="btn__spinner" />}
+                    {post.isPending ? <span className="btn__spinner" /> : <Icon name="upload" />}
                     {post.isPending ? "Posting…" : instanceGuid ? `Add data to ${instanceGuid.slice(0, 8)}` : `Post a new instance to ${org}/${app}`}
                 </button>
             </div>

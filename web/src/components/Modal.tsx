@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { Icon } from "./Icon";
 
 interface ModalProps {
     title: string;
@@ -44,6 +45,7 @@ export function Modal({ title, className, aside, onClose, bodyClassName, childre
                 <span className="spacer" />
                 {aside}
                 <button type="button" className="btn btn--ghost" onClick={() => dialog.current?.close()}>
+                    <Icon name="cross" />
                     Close
                 </button>
             </div>

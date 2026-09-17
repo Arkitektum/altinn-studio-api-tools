@@ -10,6 +10,7 @@ import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DataElementSummary } from "../types";
+import { Icon } from "./Icon";
 
 interface FetchPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -84,6 +85,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
             tone="element"
             id={id}
             title="Data element"
+            icon="download"
             aside={
                 instanceGuid ? (
                     <span className="row" style={{ gap: 6 }}>
@@ -93,7 +95,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
                         {/* Nothing here waits for a press, so the only button left is the one
                             that asks again: for an element the app has changed underneath us. */}
                         <button type="button" className="btn btn--get" onClick={refresh} disabled={busy || !canGetInstance || !dataGuid}>
-                            {busy && <span className="btn__spinner" />}
+                            {busy ? <span className="btn__spinner" /> : <Icon name="refresh" />}
                             Refresh
                         </button>
                     </span>
@@ -147,6 +149,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
                         <>
                             <div className="row" style={{ marginTop: 12 }}>
                                 <button type="button" className="btn btn--ghost" onClick={() => setShowing(true)} aria-haspopup="dialog">
+                                    <Icon name="eye" />
                                     Show content
                                 </button>
                                 <span className="field__hint" style={{ margin: 0 }}>
@@ -165,6 +168,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
                                                 fetched && downloadContent(fetched.filename, fetched.content, fetched.encoding, fetched.contentType)
                                             }
                                         >
+                                            <Icon name="download" />
                                             Download
                                         </button>
                                     }

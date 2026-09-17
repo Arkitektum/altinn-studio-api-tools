@@ -45,6 +45,23 @@
     text-overflow: ellipsis;
 }
 
+/*
+ * Answering or not, as a shape as well as a colour. This was a `.led`, a 7px dot, which made the
+ * masthead three dots of the same size that you had to know the order of to read.
+ */
+.gauge__mark {
+    display: flex;
+    flex: none;
+}
+
+.gauge__mark--ok {
+    color: var(--ok);
+}
+
+.gauge__mark--bad {
+    color: var(--bad);
+}
+
 /* ------------------------------------------------------------------- rail */
 
 /*
@@ -138,10 +155,26 @@
     min-width: 0;
 }
 
+/*
+ * The panel's mark sits with the label rather than with the state glyph on the left, so the two do
+ * not read as one pair of symbols. Faint, because the state glyph is the one carrying something
+ * you cannot otherwise see and this one only says which panel, which the label says as well.
+ */
 .rail__label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-size: var(--size-label);
     color: var(--text-muted);
     line-height: 1.5;
+}
+
+.rail__label .icon {
+    color: var(--text-faint);
+}
+
+.rail__step--waiting .rail__label .icon {
+    color: var(--border-strong);
 }
 
 /*

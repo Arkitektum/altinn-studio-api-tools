@@ -73,7 +73,7 @@ web/src
   writes.ts           posting the payload and prevalidating it, as hooks
   api.ts              typed calls to /api, one function per endpoint
   types.ts            the wire shapes, mirroring the server's
-  components/         one file per panel, plus CopyButton and Notice
+  components/         one file per panel, plus CopyButton, Notice and Icon
   lib/                every pure decision, each with a test
   testDom.ts          a jsdom browser, for the tests that have to render
   styles.css          the imports, in the order the cascade needs

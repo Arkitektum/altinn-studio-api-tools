@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Painted, languageOf } from "./Code";
 import { Modal } from "./Modal";
 import type { Language } from "../lib/highlight";
+import { Icon } from "./Icon";
 
 interface SurfaceProps {
     id: string;
@@ -88,6 +89,7 @@ export function CodeEditor({ id, label, value, onChange, placeholder, contentTyp
                  */}
                 <span className="editor__grow">
                     <button type="button" className="btn btn--ghost" onClick={() => setFull(true)} aria-haspopup="dialog">
+                        <Icon name="expand" />
                         Full size
                     </button>
                 </span>

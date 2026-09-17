@@ -97,11 +97,27 @@
  * read quickly rather than plain in the way that was wanted.
  */
 .panel__head h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
     font-size: var(--size-title);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text);
+}
+
+/*
+ * The panel's mark, quieter than its title. It is there to be recognised while scrolling past, not
+ * to be read, and at full strength it competed with the word beside it for the same job.
+ */
+.panel__icon {
+    color: var(--text-faint);
+}
+
+/* A panel that cannot be used yet greys its title, and the mark goes with it. */
+.panel--waiting .panel__icon {
+    color: var(--border-strong);
 }
 
 .panel__head > :last-child:not(h2) {

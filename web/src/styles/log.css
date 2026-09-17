@@ -19,11 +19,31 @@
     gap: 6px;
 }
 
-/* Names a run of issues. A line of text rather than a block, which is the whole point of it. */
+/*
+ * Names a run of issues. A line of text rather than a block, which is the whole point of it.
+ *
+ * The mark takes the severity's own colour while the words stay muted, so the line is scannable
+ * without becoming another coloured thing to look at.
+ */
 .issues__legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: var(--size-label);
     font-weight: 600;
     color: var(--text-muted);
+}
+
+.issues__legend--bad .icon {
+    color: var(--bad);
+}
+
+.issues__legend--warn .icon {
+    color: var(--warn);
+}
+
+.issues__legend--info .icon {
+    color: var(--accent);
 }
 
 /* A severity coloured edge, so a long list can be skimmed by seriousness. */
@@ -114,6 +134,21 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+}
+
+/* Whether the run worked, in the row's own colour. See the tick and cross in RunLog. */
+.run__mark {
+    display: flex;
+    flex: none;
+    font-size: var(--size-note);
+}
+
+.run__mark--ok {
+    color: var(--ok);
+}
+
+.run__mark--bad {
+    color: var(--bad);
 }
 
 .run__title {

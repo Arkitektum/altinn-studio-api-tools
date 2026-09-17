@@ -6,6 +6,7 @@ import { documentsToAdd, outstandingOf } from "../lib/validationReport";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DataElementInput } from "../types";
+import { Icon } from "./Icon";
 
 interface PrevalidationPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -71,7 +72,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
     }
 
     return (
-        <Panel id="panel-prevalidation" notReady={notReady} tone="prevalidation" title="Prevalidation">
+        <Panel icon="shield" id="panel-prevalidation" notReady={notReady} tone="prevalidation" title="Prevalidation">
             {/* The width of the post button below it, because it is the step before it. */}
             <button
                 type="button"
@@ -80,7 +81,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                 disabled={asking || Boolean(blockedBy)}
                 title={blockedBy ?? undefined}
             >
-                {asking && <span className="btn__spinner" />}
+                {asking ? <span className="btn__spinner" /> : <Icon name="shield" />}
                 Prevalidate
             </button>
             <p className="field__hint" style={{ marginBottom: 0 }}>

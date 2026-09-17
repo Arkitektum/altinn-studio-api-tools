@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Icon } from "./Icon";
 
 interface CopyButtonProps {
     /** What lands on the clipboard. A function so a large body is only built when asked for. */
@@ -34,6 +35,8 @@ export function CopyButton({ text, label, title }: CopyButtonProps) {
 
     return (
         <button type="button" className="btn btn--ghost" onClick={() => void copy()} title={title ?? label}>
+            {/* The mark answers the same question the text does, so it follows the state too. */}
+            <Icon name={state === "failed" ? "cross" : state === "copied" ? "check" : "copy"} />
             {state === "idle" ? label : state === "copied" ? "Copied" : "Copy failed"}
         </button>
     );

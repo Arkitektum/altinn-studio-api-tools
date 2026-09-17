@@ -1,6 +1,30 @@
 import { useRef } from "react";
 import { requestChain, type ChainInputs, type ChainState, type ChainStep } from "../lib/chain";
 import { useScrollSpy } from "../lib/useScrollSpy";
+import { Icon, type IconName } from "./Icon";
+
+/**
+ * The panel each row leads to, wearing that panel's own mark.
+ *
+ * Keyed on the anchor rather than on the label, because the anchor is the panel: Application and
+ * Party are both set in Target and so both carry Target's mark, which is the truth about where you
+ * would go to change them.
+ *
+ * This is the mark's second half. A shape in a panel heading is only worth learning if the thing
+ * that takes you there wears it too, and then the pair of them say which panel without either
+ * having to be read.
+ */
+const STEP_ICON: Record<string, IconName> = {
+    "panel-test-user": "user",
+    "panel-target": "target",
+    "panel-instances": "layers",
+    "panel-payload": "form",
+    "panel-prevalidation": "shield",
+    "panel-post": "upload",
+    "panel-data-element": "download",
+    "panel-pdf": "file",
+    "panel-process": "flow"
+};
 
 /**
  * The glyph for a step's state.
@@ -81,7 +105,10 @@ export function Chain(inputs: ChainInputs) {
                             <Glyph state={step.state} />
                         </span>
                         <span className="rail__text">
-                            <span className="rail__label">{step.label}</span>
+                            <span className="rail__label">
+                                {STEP_ICON[step.anchor] && <Icon name={STEP_ICON[step.anchor]!} />}
+                                {step.label}
+                            </span>
                             <span className="rail__value">{step.value ?? "-"}</span>
                         </span>
                         <span className="sr-only">{SAID[step.state]}</span>

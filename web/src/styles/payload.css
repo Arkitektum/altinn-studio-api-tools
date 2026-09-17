@@ -38,11 +38,16 @@
     color: var(--text-muted);
 }
 
+/*
+ * The disclosure arrow. One shape turned rather than two characters swapped: the triangles it used
+ * to be were ▼ and ▶, which are different widths in most fonts, so a row shifted as it opened.
+ */
 .element__chevron {
+    display: flex;
     width: 12px;
     flex: 0 0 auto;
-    /* A literal, and the only one: this sizes a triangle rather than any text. */
-    font-size: 10px;
+    /* A literal, and the only one: this sizes an arrow rather than any text. */
+    font-size: 11px;
     line-height: 1;
     color: var(--text-muted);
 }

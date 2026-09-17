@@ -91,6 +91,8 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 **A subform example, or a form the testmotor has no data for.** Drop the file in `examples/subforms/{dataType}/` or `examples/forms/{dataType}/`. The directory name is the data type and the numeric prefix orders the list while being stripped from the label, so `01_Maksimumsversjon.xml` reads as "Maksimumsversjon". No restart: the directory is read per request.
 
+**An icon.** Add the paths to `PATHS` in `web/src/components/Icon.tsx` and the name to `IconName`. A 16 grid, stroked in `currentColor`, no `fill`, so it takes the colour and size of the text it sits in. There is no icon library on purpose: it would be a fourth runtime dependency for two dozen shapes, and it would bring a house style that is not this one. The rule for whether an icon belongs is the rail's: it carries something on its own, or it sits beside a label that still says the word. Never an icon alone, with the one exception of the example reload button, which has a `label` for the screen reader.
+
 **A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `npm run gaps --workspace server` tells you which content types your apps declare that no dummy covers.
 
 **A known app.** `server/src/appCatalogue.ts` is generated, so regenerate it rather than editing by hand. The catalogue is only a convenience: once an app is probed, its own `applicationmetadata` takes over.

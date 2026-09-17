@@ -82,6 +82,7 @@ export function PayloadPanel({
             notReady={notReady}
             tone="payload"
             title="Payload"
+            icon="form"
             aside={
                 <span className="row" style={{ gap: 6 }}>
                     {/* The payload as a whole, which is what these two act on. */}

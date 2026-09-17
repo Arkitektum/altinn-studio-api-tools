@@ -212,6 +212,30 @@ body {
 }
 
 /*
+ * Icons, drawn in components/Icon.tsx.
+ *
+ * Sized in em and stroked in currentColor, so an icon is the size and the colour of the text it
+ * sits in and nothing has to restate either. A disabled button greys its icon, a bad notice reds
+ * it, a small label shrinks it, all without a rule here.
+ *
+ * Slightly under 1em, because a 16 grid drawn edge to edge next to 13px text reads as heavier than
+ * the letters beside it. `flex: none` because these sit in flex rows that would otherwise squash
+ * them before the text.
+ */
+.icon {
+    width: 1.08em;
+    height: 1.08em;
+    flex: none;
+    /* Centres the glyph on the text's own middle rather than its baseline. */
+    vertical-align: -0.16em;
+}
+
+/* The one shape used in more than one direction. */
+.icon--turn {
+    transform: rotate(-90deg);
+}
+
+/*
  * Read aloud, never drawn. For the few places where the state is a coloured dot: colour is not
  * available to everyone, and a title attribute is not read reliably.
  */

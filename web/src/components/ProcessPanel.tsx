@@ -4,6 +4,7 @@ import { useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
+import { Icon } from "./Icon";
 
 interface ProcessPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -48,6 +49,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
             notReady={notReady}
             tone="process"
             title="Process"
+            icon="flow"
             aside={
                 <span className="badge">
                     <span className={`led ${ended ? "led--ok" : "led--warn"}`} aria-hidden="true" />
@@ -91,7 +93,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
                          * submitted, and "advance the process" only ever described the request.
                          */}
                         <button type="button" className="btn btn--put" onClick={onAdvance} disabled={busy || !canAdvance}>
-                            {busy && <span className="btn__spinner" />}
+                            {busy ? <span className="btn__spinner" /> : <Icon name="flow" />}
                             {advanceLabel(process.taskType)}
                         </button>
                     </div>

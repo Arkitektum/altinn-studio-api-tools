@@ -6,6 +6,7 @@ import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
 import { CopyButton } from "./CopyButton";
 import { Dump } from "./Dump";
+import { Icon } from "./Icon";
 import { Modal } from "./Modal";
 import { Panel } from "./Panel";
 import type { LogEntry, LogResult, RunStep } from "../types";
@@ -30,6 +31,7 @@ export function RunLog() {
     return (
         <Panel
             title="Run log"
+            icon="terminal"
             aside={
                 // A request starting or a run landing is worth hearing about, and this is the terse
                 // version of it. The runs themselves are not a live region: each one is a wall of
@@ -45,6 +47,7 @@ export function RunLog() {
                         <>
                             {/* Named apart from the payload element's Clear, which does something else. */}
                             <button type="button" className="btn btn--ghost" onClick={clearEntries}>
+                                <Icon name="cross" />
                                 Clear history
                             </button>
                             <span className="badge">
@@ -85,8 +88,12 @@ function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: b
     return (
         <div className={`run ${result.ok ? "run--ok" : "run--bad"}`}>
             <button type="button" className="run__head" aria-expanded={open} onClick={onToggle}>
-                <span className="element__chevron" aria-hidden="true">
-                    {open ? "▼" : "▶"}
+                <span className="element__chevron">
+                    <Icon name="chevron" className={open ? undefined : "icon--turn"} />
+                </span>
+                {/* Whether the run worked was the row's colour and the word "Failed" alone. */}
+                <span className={`run__mark run__mark--${result.ok ? "ok" : "bad"}`}>
+                    <Icon name={result.ok ? "check" : "cross"} label={result.ok ? "succeeded" : "failed"} />
                 </span>
                 <span className="run__title">{result.ok ? result.title : "Failed"}</span>
                 <span className="spacer" />

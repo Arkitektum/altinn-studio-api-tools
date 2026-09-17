@@ -2,6 +2,7 @@ import { useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { PdfStand } from "../lib/pdfCache";
+import { Icon } from "./Icon";
 
 interface PdfPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -40,7 +41,7 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
     const current = stand === "current";
 
     return (
-        <Panel id="panel-pdf" notReady={notReady} title="Pdf" tone="pdf">
+        <Panel icon="file" id="panel-pdf" notReady={notReady} title="Pdf" tone="pdf">
             <p className="field__hint" style={{ marginBottom: 10 }}>
                 What the app would archive, rendered from the data as it stands. The quickest way to see what the form turns into without walking the
                 process to the end. It opens in a window over the tool.
@@ -58,18 +59,20 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
                     onClick={current ? onShow : onRender}
                     disabled={busy || !ready}
                 >
-                    {busy && <span className="btn__spinner" />}
+                    {busy ? <span className="btn__spinner" /> : <Icon name={current ? "eye" : "file"} />}
                     {current ? "Show pdf" : "Render pdf"}
                 </button>
 
                 {/* The other half of the choice, offered only where it is a different thing to do. */}
                 {current && (
                     <button type="button" className="btn btn--get" onClick={onRender} disabled={busy || !ready}>
+                        <Icon name="refresh" />
                         Render again
                     </button>
                 )}
                 {stand === "stale" && (
                     <button type="button" className="btn btn--ghost" onClick={onShow} disabled={busy}>
+                        <Icon name="eye" />
                         Show the last one
                     </button>
                 )}

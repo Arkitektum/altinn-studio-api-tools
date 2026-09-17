@@ -34,6 +34,7 @@ import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
 import type { DataElementInput, ExampleContent, InstanceSummary, ReadInstanceResult, SavedPayload, ValidateResult } from "./types";
+import { Icon } from "./components/Icon";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
 
@@ -528,23 +529,31 @@ export function App() {
             <header className="masthead">
                 <span className="masthead__mark">Altinn API tools</span>
                 {/*
-                 * Three states, each of them a coloured dot. The dot is the whole message, so each
-                 * one carries the same message in words for anyone the colour does not reach. The
-                 * region is polite: these change on their own, and they are worth hearing about.
+                 * Three states. Each was a coloured dot and nothing else, which made the masthead a
+                 * row of three greens or three reds you had to already know the order of. A tick or
+                 * a cross says which without the colour, and each still carries the same message in
+                 * words for anyone neither reaches. The region is polite: these change on their own,
+                 * and they are worth hearing about.
                  */}
                 <div className="masthead__meta" role="status">
                     <span className="gauge" title={appHost}>
-                        <span className={`led ${serverConfig ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                        <span className={`gauge__mark gauge__mark--${serverConfig ? "ok" : "bad"}`}>
+                            <Icon name={serverConfig ? "check" : "cross"} />
+                        </span>
                         {appHost.replace(/^https?:\/\//, "")}
                         <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
                     </span>
                     <span className="gauge" title={localtest?.error ?? localtest?.url}>
-                        <span className={`led ${localtest?.reachable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                        <span className={`gauge__mark gauge__mark--${localtest?.reachable ? "ok" : "bad"}`}>
+                            <Icon name={localtest?.reachable ? "check" : "cross"} />
+                        </span>
                         LocalTest
                         <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
                     </span>
                     <span className="gauge">
-                        <span className={`led ${tokenUsable ? "led--ok" : "led--bad"}`} aria-hidden="true" />
+                        <span className={`gauge__mark gauge__mark--${tokenUsable ? "ok" : "bad"}`}>
+                            <Icon name={tokenUsable ? "check" : "cross"} />
+                        </span>
                         {activeToken ? activeToken.label : "No token"}
                         <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
                     </span>

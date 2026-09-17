@@ -3,6 +3,7 @@ import { partyLabel } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { AppMetadataResponse, AppParty, CatalogueApp } from "../types";
+import { Icon } from "./Icon";
 
 interface TargetPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -89,6 +90,7 @@ export function TargetPanel({
             tone="target"
             id={id}
             title="Target"
+            icon="target"
             aside={metadata ? <span className="badge badge--ok">{metadata.metadata.dataTypes?.length ?? 0} data types</span> : undefined}
         >
             <div className="field">
@@ -152,6 +154,7 @@ export function TargetPanel({
                 <div style={{ marginTop: 12 }}>
                     <ErrorNotice error={probeError} />
                     <button type="button" className="btn btn--get" style={{ marginTop: 8 }} onClick={onProbe} disabled={probing}>
+                        <Icon name="refresh" />
                         Try again
                     </button>
                 </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRunLog } from "../runLog";
 import { groupBySeverity } from "../lib/issueGroups";
+import { Icon, type IconName } from "./Icon";
 import { Panel } from "./Panel";
 import type { LogIssue } from "../types";
 
@@ -10,6 +11,20 @@ function severityTone(severity: number): "bad" | "warn" | "info" {
     if (severity === 2) return "warn";
     return "info";
 }
+
+/**
+ * A shape per tone, so severity is not carried by colour alone.
+ *
+ * This is the case an icon is actually for. A red edge and an amber edge are the same edge to
+ * anyone who cannot separate the two, and "3 errors, 1 warning" is a sentence you have to read
+ * rather than something you can see at the speed you scan a column.
+ */
+const TONE_ICON: Record<"ok" | "bad" | "warn" | "info", IconName> = {
+    ok: "check",
+    bad: "cross",
+    warn: "warning",
+    info: "info"
+};
 
 /** Worst severity present, so a folded block still says whether it is blocking. */
 function summarise(issues: LogIssue[]): { text: string; tone: "ok" | "warn" | "bad" } {
@@ -42,11 +57,13 @@ export function ValidationPanel() {
     return (
         <Panel
             title="Validation"
+            icon="clipboard"
             aside={
                 validations.length > 0 ? (
                     <span className="row" style={{ gap: 6 }}>
                         {/* Named apart from the run log's Clear history, which does something else. */}
                         <button type="button" className="btn btn--ghost" onClick={clearValidations}>
+                            <Icon name="cross" />
                             Clear results
                         </button>
                         <span className="badge">
@@ -78,13 +95,16 @@ export function ValidationPanel() {
                                     aria-expanded={open}
                                     onClick={() => setOpenKeys((current) => ({ ...current, [validation.key]: !open }))}
                                 >
-                                    <span className="element__chevron" aria-hidden="true">
-                                        {open ? "▼" : "▶"}
+                                    <span className="element__chevron">
+                                        <Icon name="chevron" className={open ? undefined : "icon--turn"} />
                                     </span>
                                     <span className="result__label" title={validation.scope === "data element" ? validation.label : undefined}>
                                         {validation.label}
                                     </span>
-                                    <span className={`badge badge--${summary.tone}`}>{summary.text}</span>
+                                    <span className={`badge badge--${summary.tone}`}>
+                                        <Icon name={TONE_ICON[summary.tone]} />
+                                        {summary.text}
+                                    </span>
                                     <span className="spacer" />
                                     <span className="result__meta">{validation.at}</span>
                                 </button>
@@ -122,10 +142,11 @@ function Groups({ issues }: { issues: LogIssue[] }) {
             {groupBySeverity(issues).map((group) => (
                 <div key={group.severity} className="issues__group">
                     {/*
-                     * Named rather than only coloured. The cards carry the severity as a coloured
-                     * edge, which says nothing to anyone the colour does not reach.
+                     * Named and marked rather than only coloured. The cards carry the severity as a
+                     * coloured edge, which says nothing to anyone the colour does not reach.
                      */}
-                    <span className="issues__legend">
+                    <span className={`issues__legend issues__legend--${severityTone(group.severity)}`}>
+                        <Icon name={TONE_ICON[severityTone(group.severity)]} />
                         {group.issues.length} {group.label}
                         {group.issues.length === 1 ? "" : "s"}
                     </span>

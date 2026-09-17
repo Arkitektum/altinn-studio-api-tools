@@ -8,6 +8,7 @@ import { readPickedFile } from "../lib/fileUpload";
 import { CodeEditor } from "./CodeEditor";
 import { ExamplePicker } from "./ExamplePicker";
 import type { AppDataType, DataElementInput } from "../types";
+import { Icon } from "./Icon";
 
 interface PayloadElementProps {
     /** Its place in the payload, which is only used to make the field ids unique. */
@@ -155,8 +156,8 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                     aria-expanded={!element.collapsed}
                     title={element.collapsed ? "Expand" : "Collapse"}
                 >
-                    <span className="element__chevron" aria-hidden="true">
-                        {element.collapsed ? "\u25b6" : "\u25bc"}
+                    <span className="element__chevron">
+                        <Icon name="chevron" className={element.collapsed ? "icon--turn" : undefined} />
                     </span>
                     <span className="element__ord">{index + 1}</span>
                     {element.dataType && <span className={badgeClass}>{element.dataType}</span>}
@@ -174,6 +175,7 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                 {/* Only useful for JSON payloads, since the shipped examples are all XML. */}
                 {!element.collapsed && /^\s*[[{]/.test(element.content) && (
                     <button type="button" className="btn btn--ghost" onClick={() => formatJson()}>
+                        <Icon name="braces" />
                         Format JSON
                     </button>
                 )}
@@ -192,10 +194,12 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                         }
                         disabled={!element.content}
                     >
+                        <Icon name="cross" />
                         Clear
                     </button>
                 )}
                 <button type="button" className="btn btn--ghost" onClick={() => onRemove()} disabled={!canRemove}>
+                    <Icon name="cross" />
                     Remove
                 </button>
             </div>

@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { clearStored } from "../lib/useLocalStorage";
+import { Icon } from "./Icon";
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -58,6 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
                     <div className="crash__actions">
                         <button type="button" className="btn btn--primary" onClick={() => window.location.reload()}>
+                            <Icon name="refresh" />
                             Reload
                         </button>
                         {armed ? (
@@ -73,6 +75,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                                     Confirm: throw the payload away and reload
                                 </button>
                                 <button type="button" className="btn btn--ghost" onClick={() => this.setState({ armed: false })}>
+                                    <Icon name="cross" />
                                     Cancel
                                 </button>
                             </>

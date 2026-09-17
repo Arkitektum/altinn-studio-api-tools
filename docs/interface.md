@@ -30,6 +30,8 @@ Ten steps, one per panel in the column beside it, in the same order the column i
 
 Each row carries a glyph for where it stands: a tick for done, a ring for the one you can act on, a dot for one still out of reach. The glyph says what a word would otherwise have to, which is the test for whether a glyph belongs at all, and the screen reader gets the word anyway.
 
+Each row also wears the mark of the panel it leads to, faintly, beside its label. That is the other half of the mark in the panel heading: a shape in a heading is only worth learning if the thing that takes you there wears it too. It is keyed on the panel rather than the row, so Application and Party carry the same one, both being set in Target.
+
 The steps are not a single line, and the rail does not pretend they are. A payload can be written before a party is chosen, and reading a data element needs an instance that posting one does not. So reachability is stated per step, more than one can be open at once, and the rail says both rather than picking one to call next.
 
 Two details are worth knowing. The instance step is settled as soon as there is a party, reading `new` when the new instance row is what is selected, because that is a choice rather than a gap: posting creates one. And the prevalidation step is left out entirely when no validation service is configured, because switched off is not a step you failed to do. `chain.test.ts` covers all of it.

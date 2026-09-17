@@ -11,6 +11,7 @@ import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { InstanceSummary, ListInstancesResult } from "../types";
+import { Icon } from "./Icon";
 
 interface InstancesPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -175,9 +176,10 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
             tone="instances"
             id={id}
             title="Instances"
+            icon="layers"
             aside={
                 <button type="button" className="btn btn--ghost" onClick={() => setPicking(true)}>
-                    {busy && <span className="btn__spinner" />}
+                    {busy ? <span className="btn__spinner" /> : <Icon name="layers" />}
                     Open{instances === null ? "" : ` (${instances.length})`}
                 </button>
             }
@@ -233,7 +235,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                 Log in
                             </a>
                             <button type="button" className="btn btn--get" onClick={() => void listQuery.refetch()} disabled={busy}>
-                                {busy && <span className="btn__spinner" />}
+                                {busy ? <span className="btn__spinner" /> : <Icon name="refresh" />}
                                 Refresh
                             </button>
                         </>
@@ -314,9 +316,11 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                                 onClick={() => remove.mutate(instance)}
                                                 disabled={busy}
                                             >
+                                                <Icon name="trash" />
                                                 Confirm delete
                                             </button>
                                             <button type="button" className="btn btn--ghost" onClick={() => setConfirming(null)}>
+                                                <Icon name="cross" />
                                                 Cancel
                                             </button>
                                         </>
@@ -328,6 +332,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                             disabled={busy}
                                             aria-label={`Delete instance ${instance.instanceGuid}`}
                                         >
+                                            <Icon name="trash" />
                                             Delete
                                         </button>
                                     )}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { payloadNamed } from "../lib/savedPayloads";
 import { Modal } from "./Modal";
 import type { SavedPayload } from "../types";
+import { Icon } from "./Icon";
 
 interface SavedPayloadsProps {
     payloads: SavedPayload[];
@@ -50,6 +51,7 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
                 Open{payloads.length > 0 ? ` (${payloads.length})` : ""}
             </button>
             <button type="button" className="btn btn--ghost" onClick={() => setDialog("save")} disabled={!canSave}>
+                <Icon name="bookmark" />
                 Save
             </button>
 

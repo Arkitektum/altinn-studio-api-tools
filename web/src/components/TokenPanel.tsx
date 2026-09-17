@@ -6,6 +6,7 @@ import { describeExpiry, isExpired, summariseClaims } from "../lib/format";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { LocaltestStatus, LocaltestUser, LocaltestUsers, PublicToken, ServerConfig } from "../types";
+import { Icon } from "./Icon";
 
 /** Offered when LocalTest tells us nothing about its users. The two we work with. */
 const FALLBACK_USERS: LocaltestUser[] = [
@@ -136,6 +137,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             tone="user"
             id={id}
             title="Test user"
+            icon="user"
             aside={
                 <span className="badge" title={describeSource(available)}>
                     {badgeSource(available)}
@@ -193,7 +195,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                 </div>
 
                 <button type="submit" className="btn btn--primary" style={{ width: "100%" }} disabled={busy || !userId}>
-                    {busy && <span className="btn__spinner" />}
+                    {busy ? <span className="btn__spinner" /> : <Icon name="key" />}
                     Get token
                 </button>
             </form>
@@ -250,7 +252,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 onClick={() => renew.mutate(activeToken)}
                                 disabled={renewing || busy}
                             >
-                                {renewing && <span className="btn__spinner" />}
+                                {renewing ? <span className="btn__spinner" /> : <Icon name="refresh" />}
                                 {renewing ? "Renewing…" : "Renew"}
                             </button>
                             <span className="field__hint" style={{ margin: 0 }}>
