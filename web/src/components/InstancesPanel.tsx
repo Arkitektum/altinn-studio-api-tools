@@ -116,6 +116,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
     const instances = listQuery.data?.ok ? listQuery.data.instances : null;
     /** False when the completed ones were asked for and storage would not answer. */
     const completedListed = listQuery.data?.completedListed ?? null;
+    /** And what it answered, so the notice below names the refusal rather than guessing at it. */
+    const completedStatus = listQuery.data?.completedStatus ?? null;
     const busy = listQuery.isFetching || remove.isPending;
     const error = listQuery.error ?? remove.error;
 
@@ -212,8 +214,15 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
             {/* Asked for and refused, so the list is short by however many there were. */}
             {completedListed === false && (
                 <div className="notice notice--warn" style={{ marginTop: 10 }}>
-                    LocalTest&rsquo;s storage api would not list this party&rsquo;s instances, so only the active ones are here. The step in the run
-                    log says what it answered. A 403 usually means this token may not act for that party.
+                    LocalTest&rsquo;s storage api {completedStatus === null ? "could not be reached" : `answered ${completedStatus}`}, so only the
+                    active ones are here and the list is short by however many had finished.
+                    <span className="notice__why">
+                        {completedStatus === 403
+                            ? "A 403 is this token not being allowed to act for that party. Get one for a user who may, or clear the checkbox."
+                            : completedStatus === 404
+                              ? "A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here."
+                              : "That is LocalTest rather than the request, so it is worth trying again. The step in the run log has what it said."}
+                    </span>
                 </div>
             )}
 

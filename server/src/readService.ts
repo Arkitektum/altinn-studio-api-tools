@@ -52,6 +52,13 @@ export interface ListInstancesResult {
      * half of what was requested should not read as a party with nothing finished.
      */
     completedListed: boolean | null;
+    /**
+     * What storage answered when it would not list them, so the notice can say which refusal this
+     * was rather than naming the likeliest. A 403 is the token not being allowed to act for that
+     * party, which is a thing you fix; a 500 or a timeout is LocalTest, which is a thing you wait
+     * for. Null when storage was not asked, or answered.
+     */
+    completedStatus: number | null;
 }
 
 /** Where an instance stands in its process, trimmed to what you need to decide what to do next. */
@@ -285,6 +292,7 @@ export async function listInstances(
 
     let instances = [...active].sort(byLastChanged);
     let completedListed: boolean | null = null;
+    let completedStatus: number | null = null;
 
     /*
      * The finished ones, from storage, and only when asked for. Two reads rather than one because
@@ -297,6 +305,7 @@ export async function listInstances(
         const storageUrl = storageInstancesUrl(request.org, request.app, request.instanceOwnerPartyId);
         const stored = await recorder.run("List every instance from storage", "GET", storageUrl, () => altinnFetch({ url: storageUrl, token }));
         completedListed = stored.ok;
+        completedStatus = stored.ok ? null : stored.status;
 
         if (stored.ok) {
             const known = new Set(active.map((instance) => instance.instanceGuid));
@@ -313,7 +322,8 @@ export async function listInstances(
         failedAt: response.ok ? null : "Could not list the instances for this party.",
         instanceOwnerPartyId: request.instanceOwnerPartyId,
         instances,
-        completedListed
+        completedListed,
+        completedStatus
     };
 }
 

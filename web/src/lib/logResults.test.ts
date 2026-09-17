@@ -335,7 +335,8 @@ describe("logFromInstances", () => {
         failedAt: null,
         instanceOwnerPartyId: "510001",
         instances: [instance(GUID, "active"), instance("bbbb", "completed"), instance("cccc", "deleted")],
-        completedListed: null
+        completedListed: null,
+        completedStatus: null
     };
 
     it("says nothing about storage when storage was not asked", () => {

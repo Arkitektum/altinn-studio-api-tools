@@ -313,6 +313,8 @@ export interface ListInstancesResult {
     instances: InstanceSummary[];
     /** True when storage answered, false when it was asked and would not, null when not asked. */
     completedListed: boolean | null;
+    /** What storage answered when it refused, so the panel names the refusal rather than guessing. */
+    completedStatus: number | null;
 }
 
 /** Where an instance stands in its process. */

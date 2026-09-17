@@ -104,6 +104,7 @@ describe("listInstances", () => {
         });
         // Nothing was asked of storage, which is not the same as storage having nothing to add.
         assert.equal(result.completedListed, null);
+        assert.equal(result.completedStatus, null);
         assert.equal(result.instances[1]?.instanceGuid, GUID);
         assert.equal(result.instances[1]?.lastChangedBy, "Pengelens Partner");
     });
@@ -205,6 +206,27 @@ describe("listInstances", () => {
             assert.equal(result.instances.length, 1);
             assert.equal(result.instances[0]?.instanceGuid, GUID);
             assert.equal(result.steps[1]?.ok, false);
+        });
+
+        /*
+         * A 403 is the token not being allowed to act for that party, which is a thing you fix. A
+         * 500 is LocalTest, which is a thing you wait for. The panel said "usually a 403" before
+         * this, which is a guess it does not have to make.
+         */
+        it("says which refusal it was, rather than leaving the panel to guess", async () => {
+            for (const status of [403, 404, 500]) {
+                active = stubBoth({ status, body: { detail: "no" } });
+                const result = await listInstances("test-token", { ...party, includeCompleted: true });
+                assert.equal(result.completedStatus, status, `expected ${status} to be carried through`);
+            }
+        });
+
+        it("has no status to report when storage answered", async () => {
+            active = stubBoth({ body: storageBody });
+            const result = await listInstances("test-token", { ...party, includeCompleted: true });
+
+            assert.equal(result.completedListed, true);
+            assert.equal(result.completedStatus, null);
         });
 
         it("treats a row it cannot place as active rather than hiding it", async () => {
