@@ -4,7 +4,7 @@ import { api } from "./api";
 import { queryKeys } from "./queries";
 import { useAppRead, useInstanceRead } from "./reads";
 import { usePrevalidation } from "./writes";
-import { outstandingOf } from "./lib/validationReport";
+import { summarisePrevalidation } from "./lib/validationReport";
 import { useRunLog } from "./runLog";
 import { useSession } from "./session";
 import { splitPastedInstanceId } from "./lib/instanceId";
@@ -500,13 +500,7 @@ export function App() {
      * Built once and handed to both the rail and the post panel, which want the same fact for
      * different reasons: one says where you are, the other says what you are about to skip.
      */
-    const prevalidationSummary: PrevalidationSummary | null = prevalidation.url
-        ? {
-              run: prevalidation.prevalidation !== null,
-              stale: prevalidation.prevalidation?.stale ?? false,
-              outstanding: prevalidation.prevalidation ? outstandingOf(prevalidation.prevalidation.requirements).length : 0
-          }
-        : null;
+    const prevalidationSummary: PrevalidationSummary | null = prevalidation.url ? summarisePrevalidation(prevalidation.prevalidation) : null;
 
     // Every panel is on screen from the start, and one you cannot use yet says what it is waiting
     // for. See lib/readiness.ts.

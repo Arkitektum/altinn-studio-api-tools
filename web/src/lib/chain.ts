@@ -10,8 +10,15 @@
 
 import type { PdfStand } from "./pdfCache";
 
-/** done: it is settled. next: you can act on it now. waiting: something before it is missing. */
-export type ChainState = "done" | "next" | "waiting";
+/**
+ * done: it is settled. next: you can act on it now. waiting: something before it is missing.
+ *
+ * error and warning are a step that has run and found something. They are states rather than a
+ * second axis beside the state, because "it answered and the answer was bad" is where a step
+ * stands, not a decoration on top of where it stands. Both are still reachable, so a row in either
+ * is a link to the panel that would fix it, the same as `next`.
+ */
+export type ChainState = "done" | "next" | "waiting" | "error" | "warning";
 
 export interface ChainStep {
     label: string;
@@ -41,6 +48,14 @@ export interface PrevalidationSummary {
     stale: boolean;
     /** Documents the service asks for that the submission does not have. */
     outstanding: number;
+    /**
+     * Everything the report called an error, the outstanding documents among them. So this is
+     * never smaller than `outstanding`, and the difference is what the report says about the form's
+     * own content rather than about what is attached to it.
+     */
+    errors: number;
+    /** And everything it only recommends or warns about, documents included the same way. */
+    warnings: number;
 }
 
 /** What the send has actually put there, which is the only thing that says a post landed. */
@@ -89,13 +104,32 @@ function describePayload(payload: PayloadSummary): string | null {
     return payload.ready ? count : `${count}, incomplete`;
 }
 
+/** "3 things" or "1 thing", since every part of the prevalidation line is a count of something. */
+function count(n: number, noun: string): string {
+    return `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
+
+/**
+ * What the service found, in the order it is worth knowing.
+ *
+ * Documents lead because they are the part you can act on from the panel this row scrolls to, and
+ * the rest of the report is counted rather than named: a rule about what is inside the form names
+ * no payload element, and the whole report is in the run log. The counts have to be here at all
+ * because the row is coloured by them now, and a red row reading "nothing missing" would be a row
+ * arguing with itself.
+ */
 function describePrevalidation(prevalidation: PrevalidationSummary): string {
     if (!prevalidation.run) return "not run";
     if (prevalidation.stale) return "payload has changed";
-    if (prevalidation.outstanding > 0) {
-        return `${prevalidation.outstanding} document${prevalidation.outstanding === 1 ? "" : "s"} missing`;
-    }
-    return "nothing missing";
+
+    const parts: string[] = [];
+    if (prevalidation.outstanding > 0) parts.push(`${count(prevalidation.outstanding, "document")} missing`);
+    // The errors that are not one of those documents, so nothing is counted twice.
+    const otherErrors = prevalidation.errors - prevalidation.outstanding;
+    if (otherErrors > 0) parts.push(count(otherErrors, "error"));
+    if (prevalidation.warnings > 0) parts.push(count(prevalidation.warnings, "warning"));
+
+    return parts.length > 0 ? parts.join(", ") : "nothing missing";
 }
 
 /** Whether there is a pdf, and whether it still describes the instance. */
@@ -124,7 +158,19 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
      * More than one step can be open at once, and that is the honest answer: after an application
      * is set you can pick a party or start writing the payload, and the rail says both.
      */
-    const steps: { label: string; value: string | null; anchor: string; reachable: boolean; done: boolean }[] = [
+    const steps: {
+        label: string;
+        value: string | null;
+        anchor: string;
+        reachable: boolean;
+        done: boolean;
+        /**
+         * What a step that has run found, for the ones that can find anything. It outranks `done`
+         * and `next` below: a step that has answered and the answer was bad is neither settled nor
+         * merely waiting for you.
+         */
+        found?: "error" | "warning";
+    }[] = [
         { label: "Test user", value: inputs.user, anchor: "panel-test-user", reachable: true, done: hasUser },
         { label: "Application", value: inputs.application, anchor: "panel-target", reachable: hasUser, done: hasApp },
         { label: "Party", value: inputs.party, anchor: "panel-target", reachable: hasApp, done: hasParty },
@@ -145,7 +191,25 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
                       value: describePrevalidation(inputs.prevalidation),
                       anchor: "panel-prevalidation",
                       reachable: hasApp && inputs.payload.ready,
-                      done: inputs.prevalidation.run && !inputs.prevalidation.stale && inputs.prevalidation.outstanding === 0
+                      done:
+                          inputs.prevalidation.run &&
+                          !inputs.prevalidation.stale &&
+                          inputs.prevalidation.errors === 0 &&
+                          inputs.prevalidation.warnings === 0,
+                      /*
+                       * The one step whose whole purpose is to find things wrong, so it is the one
+                       * that says so in colour. Only once it has actually answered: not run is a
+                       * step still ahead of you rather than a finding, and an answer the payload has
+                       * moved on from describes something else and is not worth colouring either.
+                       */
+                      found:
+                          !inputs.prevalidation.run || inputs.prevalidation.stale
+                              ? undefined
+                              : inputs.prevalidation.errors > 0
+                                ? ("error" as const)
+                                : inputs.prevalidation.warnings > 0
+                                  ? ("warning" as const)
+                                  : undefined
                   }
               ]
             : []),
@@ -197,10 +261,11 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
         }
     ];
 
-    return steps.map(({ label, value, anchor, reachable, done }) => ({
+    return steps.map(({ label, value, anchor, reachable, done, found }) => ({
         label,
         value,
         anchor,
-        state: !reachable ? ("waiting" as const) : done ? ("done" as const) : ("next" as const)
+        // Reachability first: a step you cannot get to yet has found nothing, whatever it holds.
+        state: !reachable ? ("waiting" as const) : (found ?? (done ? ("done" as const) : ("next" as const)))
     }));
 }

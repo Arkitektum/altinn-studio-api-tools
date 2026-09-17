@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { documentNames, documentsToAdd, isDocumentMessage, parseValidationReport, requirementsFrom } from "./validationReport";
+import {
+    documentNames,
+    documentsToAdd,
+    isDocumentMessage,
+    parseValidationReport,
+    requirementsFrom,
+    summarisePrevalidation
+} from "./validationReport";
+import type { DocumentRequirement, ReportRequirements } from "./validationReport";
 import type { AppDataType } from "../types";
 import type { ReportMessage } from "./validationReport";
 
@@ -249,5 +257,70 @@ describe("documentsToAdd", () => {
     it("leaves out what it cannot select", () => {
         const { required } = requirementsFrom(report, { ...inputs, dataTypes: [] });
         assert.deepEqual(documentsToAdd(required), []);
+    });
+});
+
+describe("summarisePrevalidation", () => {
+    /** A requirement, built by hand rather than through a report: this is about the counting. */
+    const doc = (severity: "error" | "warning", satisfied: boolean): DocumentRequirement => ({
+        severity,
+        dataTypes: [`${severity}-${satisfied}`],
+        known: true,
+        satisfied,
+        rule: "rule",
+        message: "message",
+        checklistReference: null
+    });
+
+    const requirements = (over: Partial<ReportRequirements> = {}): ReportRequirements => ({
+        soknadtype: "ET",
+        required: [],
+        recommended: [],
+        otherErrors: 0,
+        otherWarnings: 0,
+        ...over
+    });
+
+    it("has not run before it has been asked", () => {
+        assert.deepEqual(summarisePrevalidation(null), { run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 });
+    });
+
+    it("counts everything the report found, not only the documents", () => {
+        const summary = summarisePrevalidation({
+            stale: false,
+            requirements: requirements({
+                required: [doc("error", false), doc("error", false)],
+                recommended: [doc("warning", false)],
+                otherErrors: 3,
+                otherWarnings: 4
+            })
+        });
+
+        assert.equal(summary.run, true);
+        assert.equal(summary.outstanding, 2);
+        // The two missing documents are errors as well, so errors is never below outstanding.
+        assert.equal(summary.errors, 5);
+        assert.equal(summary.warnings, 5);
+    });
+
+    /* Found once and answered since. The row says where the submission stands, not what it asked. */
+    it("does not count a requirement the payload already satisfies", () => {
+        const summary = summarisePrevalidation({
+            stale: false,
+            requirements: requirements({
+                required: [doc("error", true), doc("error", false)],
+                recommended: [doc("warning", true)]
+            })
+        });
+
+        assert.equal(summary.outstanding, 1);
+        assert.equal(summary.errors, 1);
+        assert.equal(summary.warnings, 0);
+    });
+
+    it("carries the staleness through, since an answer the payload moved on from is not a finding", () => {
+        const summary = summarisePrevalidation({ stale: true, requirements: requirements({ otherErrors: 2 }) });
+        assert.equal(summary.stale, true);
+        assert.equal(summary.errors, 2);
     });
 });

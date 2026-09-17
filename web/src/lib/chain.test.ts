@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { requestChain } from "./chain";
-import type { ChainInputs } from "./chain";
+import type { ChainInputs, PrevalidationSummary } from "./chain";
 
 const nothing: ChainInputs = {
     user: null,
@@ -10,7 +10,7 @@ const nothing: ChainInputs = {
     instance: null,
     dataElement: null,
     payload: { elements: 1, ready: false },
-    prevalidation: { run: false, stale: false, outstanding: 0 },
+    prevalidation: { run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 },
     post: { stored: 0 },
     pdf: "none",
     process: null
@@ -62,13 +62,62 @@ describe("requestChain", () => {
 
     it("says what the service last answered", () => {
         const ready = { ...onApp, payload: { elements: 1, ready: true } };
-        assert.equal(step(ready, "Prevalidation")?.value, "not run");
-        assert.equal(step({ ...ready, prevalidation: { run: true, stale: false, outstanding: 2 } }, "Prevalidation")?.value, "2 documents missing");
-        assert.equal(step({ ...ready, prevalidation: { run: true, stale: true, outstanding: 0 } }, "Prevalidation")?.value, "payload has changed");
+        const said = (prevalidation: PrevalidationSummary) => step({ ...ready, prevalidation }, "Prevalidation")?.value;
 
-        const clean = { ...ready, prevalidation: { run: true, stale: false, outstanding: 0 } };
+        assert.equal(said({ run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 }), "not run");
+        assert.equal(said({ run: true, stale: false, outstanding: 2, errors: 2, warnings: 0 }), "2 documents missing");
+        assert.equal(said({ run: true, stale: false, outstanding: 1, errors: 1, warnings: 0 }), "1 document missing");
+        assert.equal(said({ run: true, stale: true, outstanding: 0, errors: 0, warnings: 0 }), "payload has changed");
+
+        const clean = { ...ready, prevalidation: { run: true, stale: false, outstanding: 0, errors: 0, warnings: 0 } };
         assert.equal(step(clean, "Prevalidation")?.value, "nothing missing");
         assert.equal(step(clean, "Prevalidation")?.state, "done");
+    });
+
+    /*
+     * The errors that are not one of the missing documents are counted separately, so nothing is
+     * said twice. Four errors of which three are documents is "3 documents missing, 1 error".
+     */
+    it("counts what the report found beyond the documents, without counting a document twice", () => {
+        const ready = { ...onApp, payload: { elements: 1, ready: true } };
+        const said = (prevalidation: PrevalidationSummary) => step({ ...ready, prevalidation }, "Prevalidation")?.value;
+
+        assert.equal(said({ run: true, stale: false, outstanding: 3, errors: 4, warnings: 0 }), "3 documents missing, 1 error");
+        assert.equal(said({ run: true, stale: false, outstanding: 0, errors: 2, warnings: 3 }), "2 errors, 3 warnings");
+        assert.equal(said({ run: true, stale: false, outstanding: 0, errors: 0, warnings: 1 }), "1 warning");
+        assert.equal(said({ run: true, stale: false, outstanding: 1, errors: 1, warnings: 2 }), "1 document missing, 2 warnings");
+    });
+
+    /*
+     * The one step whose job is to find things wrong, so it is the one that says so in colour. A
+     * row in either state is still reachable, and so is still a link to the panel that would fix it.
+     */
+    it("colours the prevalidation by what it found, worst first", () => {
+        const ready = { ...onApp, payload: { elements: 1, ready: true } };
+        const stateOf = (prevalidation: PrevalidationSummary) => step({ ...ready, prevalidation }, "Prevalidation")?.state;
+
+        assert.equal(stateOf({ run: true, stale: false, outstanding: 2, errors: 2, warnings: 0 }), "error");
+        assert.equal(stateOf({ run: true, stale: false, outstanding: 0, errors: 1, warnings: 4 }), "error");
+        assert.equal(stateOf({ run: true, stale: false, outstanding: 0, errors: 0, warnings: 1 }), "warning");
+        assert.equal(stateOf({ run: true, stale: false, outstanding: 0, errors: 0, warnings: 0 }), "done");
+    });
+
+    /*
+     * Not run is a step still ahead of you, and an answer the payload has moved on from describes
+     * something else. Neither is a finding, so neither is coloured as one.
+     */
+    it("does not colour an answer it has not got, or one that is out of date", () => {
+        const ready = { ...onApp, payload: { elements: 1, ready: true } };
+        const stateOf = (prevalidation: PrevalidationSummary) => step({ ...ready, prevalidation }, "Prevalidation")?.state;
+
+        assert.equal(stateOf({ run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 }), "next");
+        assert.equal(stateOf({ run: true, stale: true, outstanding: 3, errors: 3, warnings: 2 }), "next");
+    });
+
+    /* Out of reach outranks everything: a step you cannot get to yet has found nothing. */
+    it("stays waiting while the payload is not ready, whatever the last answer was", () => {
+        const notReady = { ...onApp, prevalidation: { run: true, stale: false, outstanding: 3, errors: 3, warnings: 0 } };
+        assert.equal(step(notReady, "Prevalidation")?.state, "waiting");
     });
 
     /* Switched off is not a step you failed to do, so it is left out rather than shown as waiting. */

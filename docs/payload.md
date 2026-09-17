@@ -92,7 +92,7 @@ A panel of its own, between Payload and [Post](posting.md), sending the payload 
 
 It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, which is why it sits directly above the panel that does the submitting.
 
-It is a step rather than a section because it is a thing you do between two other things you do, and the rail says so: `not run` until you press it, then what the service answered. The panel is not rendered at all when no service is configured, and the rail leaves the step out on the same condition, because switched off is not a step you failed to do.
+It is a step rather than a section because it is a thing you do between two other things you do, and the rail says so: `not run` until you press it, then what the service answered, in red where that was errors and amber where it was only warnings. The rail counts the whole report where this panel counts only the documents, since the panel has the room to leave the rest to the run log and a single row does not. The panel is not rendered at all when no service is configured, and the rail leaves the step out on the same condition, because switched off is not a step you failed to do.
 
 It exists because `applicationmetadata` is not a reliable answer to what a submission needs. The `minCount` an app declares does not match what the validation insists on, and the service does know, so the question goes where the answer is.
 

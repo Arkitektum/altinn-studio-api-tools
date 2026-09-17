@@ -29,21 +29,18 @@ const STEP_ICON: Record<string, IconName> = {
 /**
  * The glyph for a step's state.
  *
- * Drawn here rather than taken from an icon set, which would be a dependency for five shapes, and
- * chosen so each says what a word would otherwise have to: a tick for done, a ring for the one you
- * are on, a dot for one still out of reach. They carry the state on their own, which is the test
- * for whether a glyph belongs at all.
+ * Each says what a word would otherwise have to: a tick for done, a ring for the one you are on, a
+ * dot for one still out of reach, and a cross or a triangle for a step that has run and found
+ * something. They carry the state on their own, which is the test for whether a glyph belongs at
+ * all, and it is why the state is never colour alone.
+ *
+ * The ring is the only one still drawn here. It is two circles rather than a shape with a hollow
+ * middle, which is not what an outline set gives you, and it is the rail's own: nothing else in
+ * the tool means "you are here".
  *
  * `currentColor` throughout, so the state's colour is set once on the row and the glyph follows.
  */
 function Glyph({ state }: { state: ChainState }) {
-    if (state === "done") {
-        return (
-            <svg className="rail__glyph" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-                <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        );
-    }
     if (state === "next") {
         return (
             <svg className="rail__glyph" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
@@ -52,18 +49,23 @@ function Glyph({ state }: { state: ChainState }) {
             </svg>
         );
     }
-    return (
-        <svg className="rail__glyph" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <circle cx="8" cy="8" r="2.5" fill="currentColor" />
-        </svg>
-    );
+    if (state === "waiting") {
+        return (
+            <svg className="rail__glyph" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.5" fill="currentColor" />
+            </svg>
+        );
+    }
+    return <Icon className="rail__glyph" name={state === "done" ? "check" : state === "error" ? "cross" : "warning"} />;
 }
 
 /** What the glyph means, for anyone the shape does not reach. */
 const SAID: Record<ChainState, string> = {
     done: "done",
     next: "next to fill in",
-    waiting: "not reachable yet"
+    waiting: "not reachable yet",
+    error: "has errors",
+    warning: "has warnings"
 };
 
 /**

@@ -137,6 +137,16 @@
     flex: none;
 }
 
+/*
+ * Fixed rather than sized off the text, because the ring and the dot beside it are drawn at 14 and
+ * a state glyph that changed size with the state would read as emphasis rather than as a state.
+ */
+.rail__glyph {
+    width: 14px;
+    height: 14px;
+    vertical-align: baseline;
+}
+
 .rail__mark--done {
     color: var(--ok);
 }
@@ -147,6 +157,15 @@
 
 .rail__mark--waiting {
     color: var(--border-strong);
+}
+
+/* A step that has run and found something. See ChainState in lib/chain.ts. */
+.rail__mark--error {
+    color: var(--bad);
+}
+
+.rail__mark--warning {
+    color: var(--warn);
 }
 
 .rail__text {
@@ -207,6 +226,20 @@
 /* The one to fill in next, which is the only row that names an action. */
 .rail__step--next .rail__label {
     color: var(--accent);
+}
+
+/*
+ * A step that ran and found something takes its colour the same way, in the label rather than in
+ * the value. The value is the longer of the two and reads as prose, "2 documents missing, 3
+ * warnings", and a sentence in red is harder to read than a red label above a plain one. The
+ * glyph beside it carries the same state as a shape, so the colour is never doing this alone.
+ */
+.rail__step--error .rail__label {
+    color: var(--bad);
+}
+
+.rail__step--warning .rail__label {
+    color: var(--warn);
 }
 
 /*

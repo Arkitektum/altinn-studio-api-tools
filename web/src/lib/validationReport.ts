@@ -1,3 +1,4 @@
+import type { PrevalidationSummary } from "./chain";
 import type { AppDataType } from "../types";
 
 /**
@@ -208,6 +209,35 @@ export interface Prevalidation {
 /** Required documents the payload still does not have. */
 export function outstandingOf(requirements: ReportRequirements): DocumentRequirement[] {
     return requirements.required.filter((requirement) => !requirement.satisfied);
+}
+
+/**
+ * The report boiled down to what the rail says, and the post panel with it.
+ *
+ * Everything the report found, not only the documents. The panel splits them up because each part
+ * is acted on differently: the missing documents can be added from there, the recommended ones are
+ * a line to read, and what the rules say about the form's own content is counted and left to the
+ * run log. The rail has one row, and a row that went red for missing documents while staying quiet
+ * about four errors in the form would be answering a narrower question than the one it looks like
+ * it is answering.
+ *
+ * A requirement that is already satisfied is not counted. It was found once and has been answered,
+ * and the row is about where the submission stands now.
+ */
+export function summarisePrevalidation(prevalidation: Prevalidation | null): PrevalidationSummary {
+    if (!prevalidation) return { run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 };
+
+    const { requirements, stale } = prevalidation;
+    const outstanding = outstandingOf(requirements).length;
+    const advised = requirements.recommended.filter((requirement) => !requirement.satisfied).length;
+
+    return {
+        run: true,
+        stale,
+        outstanding,
+        errors: outstanding + requirements.otherErrors,
+        warnings: advised + requirements.otherWarnings
+    };
 }
 
 /**

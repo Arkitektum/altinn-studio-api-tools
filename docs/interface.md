@@ -15,20 +15,24 @@ The tool is a wizard in the one way that matters: each step needs the one before
 
 Ten steps, one per panel in the column beside it, in the same order the column is in:
 
-| Step              | Says                                                        |
-| ----------------- | ----------------------------------------------------------- |
-| **Test user**     | who the active token was minted for                         |
-| **Application**   | `dibk/et-v4`                                                |
-| **Party**         | the instance owner                                          |
-| **Instance**      | the guid, or `new` when the new instance row is selected    |
-| **Payload**       | `2 elements`, and `incomplete` when one could not be posted |
-| **Prevalidation** | `not run`, `payload has changed`, `3 documents missing`     |
-| **Post**          | what is stored on the instance, which is what a post leaves |
-| **Data element**  | the data type of the one being inspected                    |
-| **Pdf**           | `not rendered`, `rendered`, or `out of date`                |
-| **Process**       | the task the instance is in, or how it ended                |
+| Step              | Says                                                             |
+| ----------------- | ---------------------------------------------------------------- |
+| **Test user**     | who the active token was minted for                              |
+| **Application**   | `dibk/et-v4`                                                     |
+| **Party**         | the instance owner                                               |
+| **Instance**      | the guid, or `new` when the new instance row is selected         |
+| **Payload**       | `2 elements`, and `incomplete` when one could not be posted      |
+| **Prevalidation** | `not run`, `payload has changed`, `3 documents missing, 1 error` |
+| **Post**          | what is stored on the instance, which is what a post leaves      |
+| **Data element**  | the data type of the one being inspected                         |
+| **Pdf**           | `not rendered`, `rendered`, or `out of date`                     |
+| **Process**       | the task the instance is in, or how it ended                     |
 
 Each row carries a glyph for where it stands: a tick for done, a ring for the one you can act on, a dot for one still out of reach. The glyph says what a word would otherwise have to, which is the test for whether a glyph belongs at all, and the screen reader gets the word anyway.
+
+Two more states belong to Prevalidation, the one step whose whole job is to find things wrong. Once it has answered, the row goes red with a cross where the report found errors and amber with a triangle where it only found warnings, and its value says what they were: `3 documents missing, 1 error`, `2 warnings`. The counts are the whole report, not only the documents the panel can add for you, since a row that went red for missing documents while staying quiet about four errors in the form would be answering a narrower question than it looks like it is answering. A row in either state is still a link, because the panel it leads to is where you would fix it.
+
+Neither colours before there is something to colour. **Not run** is a step still ahead of you rather than a finding, and an answer the payload has changed since describes something else, so both stay blue.
 
 Each row also wears the mark of the panel it leads to, faintly, beside its label. That is the other half of the mark in the panel heading: a shape in a heading is only worth learning if the thing that takes you there wears it too. It is keyed on the panel rather than the row, so Application and Party carry the same one, both being set in Target.
 
