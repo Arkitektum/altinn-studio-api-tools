@@ -20,6 +20,7 @@ import {
 } from "./readService.js";
 import { appCatalogue } from "./appCatalogue.js";
 import { listExamples, readExample } from "./examples.js";
+import { cancelSweep, startSweep, sweepState } from "./sweepJob.js";
 
 /** Wrap an async handler so rejected promises reach the error middleware. */
 const asyncHandler =
@@ -381,3 +382,32 @@ router.put(
         res.json(await advanceProcess(token.token, input));
     })
 );
+
+// ---------------------------------------------------------------- the sweep
+
+/**
+ * Posting every example and reporting what each app's model did to it. A job rather than a request:
+ * it is a hundred posts and a hundred deletes, so it is started, then asked about. See sweepJob.ts.
+ */
+const sweepSchema = z.object({
+    tokenId: z.string().trim().min(1),
+    /** Where the instances are posted. The token's own party is the one it is certainly allowed. */
+    instanceOwnerPartyId: z.string().trim().min(1),
+    /** Empty walks the whole catalogue, which is the usual way to run it. */
+    targets: z.array(z.object({ org: z.string().trim().min(1), app: z.string().trim().min(1) })).default([]),
+    keep: z.boolean().default(false)
+});
+
+router.post("/sweep", (req, res) => {
+    const input = sweepSchema.parse(req.body);
+    const token = requireToken(input.tokenId);
+    res.status(202).json(startSweep({ token: token.token, party: input.instanceOwnerPartyId, targets: input.targets, keep: input.keep }));
+});
+
+router.get("/sweep", (_req, res) => {
+    res.json(sweepState());
+});
+
+router.delete("/sweep", (_req, res) => {
+    res.json(cancelSweep());
+});

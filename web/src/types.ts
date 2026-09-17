@@ -190,7 +190,7 @@ export interface ValidationReportResult {
     ok: boolean;
     steps: RunStep[];
     failedAt: string | null;
-    /** The report as the service answered it. Nothing reads it yet, so it goes to the log whole. */
+    /** The report as the service answered it, parsed by `lib/validationReport.ts` rather than here. */
     report: unknown;
 }
 
@@ -506,4 +506,43 @@ export interface ValidateResult {
     dataGuid: string | null;
     issues: ValidationIssue[];
     counts: ValidationCounts;
+}
+
+// ---------------------------------------------------------------- the sweep
+
+export type SweepOutcome = "identical" | "differs" | "row ids only" | "post failed" | "no stored xml";
+
+export interface SweepRow {
+    /** `dibk/et-v4`. */
+    app: string;
+    dataType: string;
+    file: string;
+    /** The file without its ordering prefix, which is how it reads. */
+    label: string;
+    outcome: SweepOutcome;
+    differences: number;
+    /** Differences that are only Altinn's own row ids, counted apart: they mean nothing. */
+    rowIds: number;
+    /** The first few differences in words, enough to recognise the problem. */
+    detail: string[];
+}
+
+export interface SweepState {
+    running: boolean;
+    startedAt: string | null;
+    finishedAt: string | null;
+    progress: {
+        done: number;
+        /** Null until the walk has been worked out, which is one read per app. */
+        total: number | null;
+        /** The file it is on, for a line that moves while a long sweep runs. */
+        at: string | null;
+    };
+    rows: SweepRow[];
+    /** Apps that could not be probed, which usually means they are not deployed locally. */
+    skipped: string[];
+    /** Why the whole sweep stopped, which is a different thing from why one file did. */
+    error: string | null;
+    cancelled: boolean;
+    party: string | null;
 }

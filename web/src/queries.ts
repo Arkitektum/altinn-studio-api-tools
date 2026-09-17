@@ -71,6 +71,8 @@ export const queryKeys = {
     catalogue: () => ["catalogue"] as const,
     /** Keyed on the app, since its main form examples come from the testmotor rather than disk. */
     examples: (app: string) => ["examples", app] as const,
+    /** The one sweep the server runs at a time, so it is keyed on nothing. */
+    sweep: () => ["sweep"] as const,
     localtestStatus: () => ["localtest", "status"] as const,
     localtestUsers: () => ["localtest", "users"] as const,
     tokens: () => ["tokens"] as const,

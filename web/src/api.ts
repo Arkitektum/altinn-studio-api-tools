@@ -17,6 +17,7 @@ import type {
     ReadInstanceResult,
     RunResult,
     ServerConfig,
+    SweepState,
     ValidateResult,
     ValidationReportRequest,
     ValidationReportResult
@@ -94,6 +95,13 @@ export const api = {
     getExamples: (app: string) => request<ExamplesResponse>(`/examples?${new URLSearchParams({ app })}`),
     getExampleFile: (params: { kind: ExampleKind; group: string; name: string; app: string }) =>
         request<ExampleContent>(`/examples/file?${new URLSearchParams(params)}`),
+
+    // The sweep is a job rather than a request: a hundred posts and a hundred deletes, so it is
+    // started and then asked about. See server/src/sweepJob.ts.
+    startSweep: (input: { tokenId: string; instanceOwnerPartyId: string; targets?: { org: string; app: string }[]; keep?: boolean }) =>
+        request<SweepState>("/sweep", jsonBody(input)),
+    getSweep: () => request<SweepState>("/sweep"),
+    cancelSweep: () => request<SweepState>("/sweep", { method: "DELETE" }),
 
     listTokens: () => request<PublicToken[]>("/tokens"),
     createTestUserToken: (input: { userId: string; label?: string }) => request<PublicToken>("/tokens/test-user", jsonBody(input)),

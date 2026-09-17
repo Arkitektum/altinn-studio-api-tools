@@ -16,6 +16,9 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms                                                                   |
 | `GET`    | `/api/examples`                        | `?app=an-v2`. Example files grouped by data type. The app decides whose main form examples are listed                        |
 | `GET`    | `/api/examples/file`                   | `?kind=form\|subform&group=AN&name=maksimum_ansvarserklaering_direkte_V2.xml&app=an-v2`                                      |
+| `POST`   | `/api/sweep`                           | Starts the sweep and answers at once. 409 while one is running                                                               |
+| `GET`    | `/api/sweep`                           | How it is going, or how it went. Never 404: not having run is a state                                                        |
+| `DELETE` | `/api/sweep`                           | Asks it to stop after the file it is on                                                                                      |
 | `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                                                                 |
 | `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have. No longer offered in the interface                                        |
 | `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                                                                          |

@@ -30,6 +30,8 @@ Everything the tool does to Altinn goes through `altinnClient.altinnFetch`, whic
 
 Two paths are not step-recorded, and both are answers to a question rather than actions on an instance: `appService`, which probes an app for its metadata and parties, and `localtestClient`, which mints a token and reads the user list. They report what they found or throw an `HttpError`, and nothing about them appears in the run log. It would be more consistent if a probe left a step behind, and it is not much work if the panels ever need it.
 
+`sweepService` is the third, and the only one that is writing rather than asking. It posts an instance per example file and deletes it again, a hundred of each, and recording that would bury the run you were actually reading under the tool's own traffic. It is the one place the rule works against itself, and what the sweep did is the table it returns.
+
 ## Failures are results, not exceptions
 
 Any request that reached Altinn and came back unhappy returns HTTP 200 with `ok: false`, a `failedAt` reason, and the steps up to the failure. This applies to `/api/runs`, every read endpoint, and `/api/instances/process/next`.
@@ -61,7 +63,9 @@ server/src
   contentTypeGaps.ts  reports content types with no dummy attachment
   catalogueDrift.ts   compares the catalogue against the testmotor's list of the same apps
   catalogueCheck.ts   the script that runs that comparison and prints it
-  storedDiffSweep.ts  posts every example and diffs it against what was stored
+  sweepService.ts     posts every example and diffs it against what was stored
+  sweepJob.ts         the one sweep at a time, in memory, so it is started and then asked about
+  storedDiffSweep.ts  the same sweep as a script, which is the printing
   jwt.ts              claim decoding, never verification
   urls.ts             app url building
   config.ts           env with defaults

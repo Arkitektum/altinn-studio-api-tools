@@ -111,7 +111,13 @@ The run log names them apart for the same reason, as "1, plus 2 altinnRowId", so
 
 ### The same thing over everything at once
 
-The panel confirms a problem you already suspect. `npm run diff --workspace server` finds the ones you do not:
+The panel confirms a problem you already suspect. **Sweep every example**, the button beside it, finds the ones you do not.
+
+For every form data type an app declares and every example there is for it, the sweep creates an instance, posts the file, compares the stored xml with it, and reports what the model changed. It is a hundred or so posts, so it runs as a job on the server rather than as a request: the window starts one and then asks how it is going. Closing the window does not stop it, and reopening finds the one still running. **Cancel** stops it after the file it is on, rather than abandoning an instance half posted, and keeps what it found so far.
+
+Only one sweep runs at a time. Two against the same localtest would be posting over each other's instances.
+
+The same sweep is a script, for when you want the whole thing in a terminal or in CI:
 
 ```bash
 npm run diff --workspace server                                 # the whole catalogue
@@ -119,11 +125,13 @@ npm run diff --workspace server -- 1001 dibk/varselplanoppstart-v3
 npm run diff --workspace server -- 1001 dibk/et-v4 --keep
 ```
 
-For every form data type an app declares and every example file on disk for it, it creates an instance, posts the file, compares the stored xml with it, and prints what the model changed, with the field types. The first argument is the LocalTest user id, defaulting to 1001, and the party is the token's own, which is the one it is certainly allowed to post as.
+Both run `sweepService.ts`, so there is one walk rather than one each. The script's first argument is the LocalTest user id, defaulting to 1001; the window uses the token you already have. The party is the token's own either way, which is the one it is certainly allowed to post as.
 
-Each instance is hard deleted once it has been compared, because a sweep that leaves a hundred instances behind is worse than no sweep. `--keep` leaves them, for when a difference needs looking at in the panel afterwards.
+Each instance is hard deleted once it has been compared, because a sweep that leaves a hundred instances behind is worse than no sweep. **Keep the instances** in the window, or `--keep` on the script, leaves them, for when a difference needs looking at in the panel afterwards.
 
-The summary counts four outcomes: identical, row ids only, differs, and could not. Only the third is a finding, and each one lists up to five differences with their paths and types. An app the catalogue names but localtest does not serve is listed separately rather than counted as a failure, the same way the content type sweep does it.
+The summary counts four outcomes: identical, row ids only, differs, and could not. Only the third is a finding, and each one lists up to five differences with their paths and types. The window sorts the findings to the top for that reason, so a sweep of a hundred files opens on the handful worth reading. An app the catalogue names but localtest does not serve is listed separately rather than counted as a failure, the same way the content type sweep does it.
+
+None of it reaches the run log. Every other write in this tool is recorded there, on the rule that a write you cannot see defeats the point of the tool, and the sweep is the one place that rule works against itself: a hundred posts and a hundred deletes would bury the run you were actually reading. What the sweep did is the table it returns.
 
 What it ignores is everything that carries no meaning: whitespace, the xml declaration, comments, self-closing versus longhand empty elements, attribute order and namespace prefixes. Two documents that differ only in those ways are reported as identical, which is the point: the noise is what made this cumbersome by hand. `xmlDiff.test.ts` pins all of it, and `compareService.test.ts` covers the storage read.
 

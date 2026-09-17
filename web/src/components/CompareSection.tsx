@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { partitionDifferences } from "../lib/differences";
+import { Icon } from "./Icon";
 import { ErrorNotice } from "./Notice";
+import { SweepWindow } from "./SweepWindow";
 import type { CompareResult, XmlDifferenceKind } from "../types";
 
 interface CompareSectionProps {
@@ -46,6 +48,8 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
 export function CompareSection({ dataType, payload, parses, result, busy, error }: CompareSectionProps) {
     /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
     const [hideRowIds, setHideRowIds] = useState(true);
+    /** The same comparison over every example there is, in a window. See SweepWindow.tsx. */
+    const [sweeping, setSweeping] = useState(false);
     const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
 
     return (
@@ -60,7 +64,23 @@ export function CompareSection({ dataType, payload, parses, result, busy, error 
                         {differences.length === 0 ? "identical" : `${differences.length} difference${differences.length === 1 ? "" : "s"}`}
                     </span>
                 )}
+                {/*
+                 * This panel confirms a problem you already suspect. The sweep finds the ones you do
+                 * not, which is why it sits beside it rather than anywhere else in the tool.
+                 */}
+                <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={() => setSweeping(true)}
+                    aria-haspopup="dialog"
+                    title="Post every example there is and compare each one, not only this element"
+                >
+                    <Icon name="flow" />
+                    Sweep every example
+                </button>
             </div>
+
+            {sweeping && <SweepWindow onClose={() => setSweeping(false)} />}
 
             <p className="field__hint" style={{ margin: "8px 0 12px" }}>
                 The <strong>{dataType}</strong> selected above, as Altinn stored it, against the xml as written. Each difference carries the field's

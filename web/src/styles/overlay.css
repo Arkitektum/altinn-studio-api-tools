@@ -298,3 +298,116 @@
     padding: 12px;
     overflow-y: auto;
 }
+
+/* ------------------------------------------------------------------ the sweep */
+
+/*
+ * One row per example posted, in a window over the tool. See components/SweepWindow.tsx.
+ *
+ * Rows rather than a table element. Each one carries a list of what the model changed underneath
+ * it, which a table cell cannot hold without the columns of every other row growing to fit it.
+ */
+.sweep {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/*
+ * A severity coloured edge, the same one the validation issues wear, so a long sweep is skimmed
+ * the same way the issue list is.
+ */
+.sweep__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-left-width: 3px;
+    border-radius: 4px;
+    font-size: var(--size-label);
+}
+
+/* Identical is the common case and the one you are not reading, so it stays quiet. */
+.sweep__row--ok {
+    border-left-color: var(--border-strong);
+}
+
+.sweep__row--info {
+    border-left-color: var(--accent-border);
+}
+
+.sweep__row--warn {
+    border-left-color: var(--warn);
+    background: var(--warn-bg);
+}
+
+.sweep__row--bad {
+    border-left-color: var(--bad);
+    background: var(--bad-bg);
+}
+
+.sweep__mark {
+    display: flex;
+    flex: none;
+    /* Aligned on the text's middle rather than the row's, the row being two lines when it wraps. */
+    align-self: flex-start;
+    margin-top: 1px;
+}
+
+.sweep__mark--ok {
+    color: var(--text-faint);
+}
+
+.sweep__mark--info {
+    color: var(--accent);
+}
+
+.sweep__mark--warn {
+    color: var(--warn);
+}
+
+.sweep__mark--bad {
+    color: var(--bad);
+}
+
+.sweep__what {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    min-width: 0;
+}
+
+.sweep__app {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.sweep__file {
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
+.sweep__outcome {
+    flex: none;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The first few differences, which is enough to recognise the problem. Full width under the row. */
+.sweep__detail {
+    flex-basis: 100%;
+    margin: 2px 0 0;
+    padding-left: 26px;
+    list-style: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--size-meta);
+}
+
+.sweep__detail li {
+    padding: 1px 0;
+    overflow-wrap: anywhere;
+}
