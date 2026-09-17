@@ -10,8 +10,21 @@ import { useTarget } from "../session";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { InstanceSummary, ListInstancesResult } from "../types";
+import type { InstanceState, InstanceSummary, ListInstancesResult } from "../types";
 import { Icon } from "./Icon";
+
+/**
+ * What a row says it is, where that is not the same as what Altinn calls it.
+ *
+ * `deleted` was the flag's own word, and it read as a contradiction: the row is on screen, it is
+ * still selectable, and it still has a Delete beside it. Altinn has only marked it, which is
+ * exactly why storage keeps handing it back, so the badge says marked and the button stays one
+ * button doing one thing.
+ */
+const STATE_LABEL: Record<Exclude<InstanceState, "active">, string> = {
+    completed: "completed",
+    deleted: "soft deleted"
+};
 
 interface InstancesPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -248,7 +261,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                             <span className="check__note">
                                 A second read, of <span className="method method--get">GET</span> {localtestUrl}
                                 /storage/api/v1/instances, which is the only place an instance whose process has ended is still listed. Soft deleted
-                                ones come with it, marked as such. Off by default, since it is a request that often has nothing to add.
+                                ones come with it, marked as such, since Altinn keeps them: this is where you clear those out for good. Off by
+                                default, since it is a request that often has nothing to add.
                             </span>
                         </span>
                     </label>
@@ -307,7 +321,9 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                         {/* Only storage lists these two, and which it is decides what is
                                             left to do with the instance, so it is a badge and not a word. */}
                                         {instance.state !== "active" && (
-                                            <span className={`badge badge--${instance.state === "completed" ? "ok" : "bad"}`}>{instance.state}</span>
+                                            <span className={`badge badge--${instance.state === "completed" ? "ok" : "bad"}`}>
+                                                {STATE_LABEL[instance.state]}
+                                            </span>
                                         )}
                                     </button>
 

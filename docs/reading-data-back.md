@@ -31,7 +31,7 @@ Altinn lists the instances whose process has not ended, so an archived one is no
 
 ### Include completed
 
-Which is only a way through if you know the guid, so the checkbox above the list is the way to all of them. It sits there, before the list and inside the same window, because what it decides is what the list holds. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· deleted`.
+Which is only a way through if you know the guid, so the checkbox above the list is the way to all of them. It sits there, before the list and inside the same window, because what it decides is what the list holds. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· soft deleted`.
 
 Two reads rather than one, because the app's own list is the one that must not depend on storage. If storage is not there, or refuses the party, the active listing still stands and the panel says the rest is missing rather than letting a short list read as a party with nothing finished. What both hold is listed once, as the app described it, and everything is ordered by when it was last changed, so the instance you just archived is where you left it rather than at the bottom.
 
@@ -175,7 +175,9 @@ An instance that cannot be fingerprinted counts as out of date rather than curre
 
 Every row in the instance window has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard=true` for that row, not for whatever is selected.
 
-It is always the hard one: the instance is removed rather than marked deleted. There was a checkbox for the choice, and the soft side of it earned its space nowhere: everything this tool can reach is local test data, and an instance marked deleted stays in storage, where **Include completed** keeps finding it and listing it as `· deleted`. The api still takes `hard=false` for a caller that wants it, see [API](api.md).
+It is always the hard one: the instance is removed rather than marked deleted. There was a checkbox for the choice, and the soft side of it earned its space nowhere: everything this tool can reach is local test data, and an instance marked deleted stays in storage, where **Include completed** keeps finding it and listing it as `· soft deleted`. The api still takes `hard=false` for a caller that wants it, see [API](api.md).
+
+Which is why a row already marked `· soft deleted` still has a delete, and why the badge says soft rather than just deleted. Altinn has only marked it, which is why storage keeps handing it back, and the hard delete is the only thing that clears it. The badge said `deleted` for a while, beside a Delete button, which read as a button that did nothing. The button is the one that does the same thing on every row, so it is the badge that had to be accurate.
 
 Delete asks twice. The first click arms that row's button, which then reads **Confirm delete**. One row is armed at a time, and a listing that changed underneath drops a pending confirmation, so a second click never lands on an instance you did not mean. A refusal from Altinn, a locked instance or a party you may not act for, lands in the run log with the app's own reason.
 
