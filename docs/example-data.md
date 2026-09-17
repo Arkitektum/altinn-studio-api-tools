@@ -34,7 +34,7 @@ GET {TESTMOTOR_URL}/api/xml/{appId}         that app's example files, contents a
 
 Answers are cached for five minutes, which is also how long the testmotor caches its own reads of the share.
 
-This is why the picker is keyed on the app and not only on the data type: the testmotor is keyed by app id, and it has to be, since `fa-v3` and `fa-v5` are both filed under the data type `FA` and hold different data. An app the testmotor has no data for contributes nothing, and its examples come off disk as before. That covers every subform app, `hoeringettersynuttalelse-v2` and `varselplanoppstartuttalelse-v3`.
+This is why the picker is keyed on the app and not only on the data type: the testmotor is keyed by app id, and it has to be, since `fa-v3` and `fa-v5` are both filed under the data type `FA` and hold different data. An app the testmotor has no data for contributes nothing, and its examples come off disk instead. That covers every subform app and `hoeringettersynuttalelse-v2`. Three apps have neither, which is [the reply forms](#the-reply-forms-are-the-gap) below.
 
 If the testmotor cannot be reached, the picker says so rather than showing an empty list. There is no on-disk fallback for the main forms, because the whole point was to stop keeping a second copy. `TESTMOTOR_URL=` switches the whole thing off.
 
@@ -104,6 +104,37 @@ npm run catalogue --workspace server
 It compares the app catalogue against the testmotor, which keeps its own list of the same apps, and says where each app's examples come from: the testmotor, disk, or nowhere. Nowhere is the finding worth having, since an app with no example data is one you cannot post to without writing the xml by hand. It also reports apps the testmotor holds that the catalogue does not name, which usually means the catalogue is due a regenerate, and the two disagreeing about a main form data type, which would put examples where nothing looks for them.
 
 Subforms are checked as well as the apps you can target. A subform app is referenced by its parent rather than given a catalogue entry of its own, because its data is posted as a data element of the parent instance, but it still needs a file in `examples/subforms/`.
+
+### The reply forms are the gap
+
+Running it today names three apps with no example data from either source:
+
+```
+dibk/nabovarsel-svar-v5             (NVS, entry)
+dibk/ts-v1                          (TS, entry)
+dibk/varselplanoppstartuttalelse-v3 (Planuttalelse, entry)
+```
+
+They are not three unrelated holes. Four apps in the catalogue are replies to another app, and these are three of the four:
+
+| Sent out                                        | Replied to with                  | Example data |
+| ----------------------------------------------- | -------------------------------- | ------------ |
+| `nabovarsel-v5`, a distribution                 | `nabovarsel-svar-v5` (NVS)       | none         |
+| `varselplanoppstart-v3`, a distribution         | `varselplanoppstartuttalelse-v3` | none         |
+| `hoeringettersyn-v2`, a distribution            | `hoeringettersynuttalelse-v2`    | one file     |
+| `fts-v1`, a request for the developer's consent | `ts-v1` (TS)                     | none         |
+
+The testmotor holds all four of the originators and none of the four replies, which is consistent rather than an oversight: it exists to test what a submission does on the way in, and a reply is the other direction.
+
+Adding three files is only half an answer, and the one file we have shows why. A reply names the thing it is replying to, by instance:
+
+```xml
+<hoeringOgOffentligEttersynReferanse>51638057/8b61600f-2caa-4f7d-a986-9e434252c5ec</hoeringOgOffentligEttersynReferanse>
+```
+
+That is `{instanceOwnerPartyId}/{instanceGuid}` of a hearing that exists in nobody's localtest, so the example already points at a parent that is not there. A static file cannot carry a live reference, which is exactly the kind of staleness the main forms were moved to the testmotor to escape, and the testmotor's date stamping does not help here because the problem is an identifier rather than a date.
+
+So the gap is really two pieces of work, and the second is the interesting one. Files for the three data types, which needs the schemas. And something to point the reference at a parent instance you have actually posted, which the tool has the mechanism for already: `web/src/lib/formIdentity.ts` writes the test user into the form as it loads by editing the text in place, and a reference is the same kind of edit. What it does not have is a notion of which instance is the parent.
 
 ## What the dummies actually are
 
