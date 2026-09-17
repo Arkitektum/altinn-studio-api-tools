@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<forespoerselTiltakshaversSamtykke xmlns="https://skjema.ft.dibk.no/forespoerseltiltakshaverssamtykke/v1" dataFormatProvider="DIBK" dataFormatId="10017" dataFormatVersion="1">
+<forespoerselTiltakshaversSamtykke
+  xmlns="https://skjema.ft.dibk.no/forespoerseltiltakshaverssamtykke/v1" dataFormatProvider="DIBK"
+  dataFormatId="10017" dataFormatVersion="1">
   <tiltakshaverNavn>UINTERESSERT LYSEBLÅ TIGER AS</tiltakshaverNavn>
   <tiltakshaverOrgnr>314039688</tiltakshaverOrgnr>
   <tiltakshaverPartstypeKode>
@@ -58,4 +60,5 @@
       <kodebeskrivelse>Nytt bygg - Over 70 m2 -Ikke boligformål</kodebeskrivelse>
     </kode>
   </tiltakstyper>
+  <bekreftTiltakshaver>true</bekreftTiltakshaver>
 </forespoerselTiltakshaversSamtykke>

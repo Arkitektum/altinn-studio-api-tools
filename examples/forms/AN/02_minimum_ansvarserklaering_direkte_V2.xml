@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ansvarserklaeringDirekte xmlns="https://skjema.ft.dibk.no/ansvarserklaeringdirekte/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/ansvarserklaeringdirekte/v2 ansvarserklaeringdirekte.xsd" dataFormatProvider="DIBK" dataFormatId="10019" dataFormatVersion="2">
+<ansvarserklaeringDirekte xmlns="https://skjema.ft.dibk.no/ansvarserklaeringdirekte/v2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/ansvarserklaeringdirekte/v2 ansvarserklaeringdirekte.xsd"
+  dataFormatProvider="DIBK" dataFormatId="10019" dataFormatVersion="2">
   <metadata>
-   <fraSluttbrukersystem>Fellestjenester BYGG testmotor</fraSluttbrukersystem>
+    <fraSluttbrukersystem>Fellestjenester BYGG testmotor</fraSluttbrukersystem>
     <ftbId></ftbId>
     <prosjektnavn></prosjektnavn>
     <prosjektnr></prosjektnr>
@@ -62,13 +65,13 @@
       <epost></epost>
     </kontaktperson>
   </ansvarligSoeker>
-   <ansvarligForetak>
-     <partstype>
-      <kodeverdi>Foretak</kodeverdi>
-      <kodebeskrivelse>Foretak</kodebeskrivelse>
+  <ansvarligForetak>
+    <partstype>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <organisasjonsnummer>310973513</organisasjonsnummer>
-    <navn>VERDIFULL FALSK APE</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1></adresselinje1>
       <postnr></postnr>
@@ -83,8 +86,9 @@
       <telefonnummer></telefonnummer>
       <mobilnummer></mobilnummer>
       <epost></epost>
-   </kontaktperson>
-   <harSentralGodkjenning>false</harSentralGodkjenning>
+    </kontaktperson>
+    <harSentralGodkjenning>false</harSentralGodkjenning>
+    <foedselsnummer>10921148513</foedselsnummer>
   </ansvarligForetak>
   <ansvarsomraader>
     <ansvarsomraade>

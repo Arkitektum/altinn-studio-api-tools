@@ -1,5 +1,8 @@
-<?xml version='1.0' encoding='utf-8'?>
-<kontrollerklaeringDirekte xmlns='https://skjema.ft.dibk.no/kontrollerklaeringdirekte/v2' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:schemaLocation='https://skjema.ft.dibk.no/kontrollerklaeringdirekte/v2 kontrollerklaeringdirekte.xsd' dataFormatProvider='DIBK' dataFormatId='10021' dataFormatVersion='2'>
+<?xml version="1.0" encoding="utf-8"?>
+<kontrollerklaeringDirekte xmlns="https://skjema.ft.dibk.no/kontrollerklaeringdirekte/v2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/kontrollerklaeringdirekte/v2 kontrollerklaeringdirekte.xsd"
+  dataFormatProvider="DIBK" dataFormatId="10021" dataFormatVersion="2">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -65,11 +68,11 @@
   </ansvarligSoeker>
   <ansvarligForetak>
     <partstype>
-      <kodeverdi>Foretak</kodeverdi>
-      <kodebeskrivelse>Foretak</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <organisasjonsnummer>897069652</organisasjonsnummer>
-    <navn>Test Organisasjon</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Test Adresse</adresselinje1>
       <postnr>3750</postnr>
@@ -86,6 +89,7 @@
       <epost>kontakt@person.no</epost>
     </kontaktperson>
     <harSentralGodkjenning>true</harSentralGodkjenning>
+    <foedselsnummer>10921148513</foedselsnummer>
   </ansvarligForetak>
   <ansvarsomraader>
     <ansvarsomraade>

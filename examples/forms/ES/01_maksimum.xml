@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<endring xmlns="https://skjema.ft.dibk.no/endring/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/endring/v2 endring.xsd" dataFormatId="10015" dataFormatProvider="DIBK" dataFormatVersion="2">
+<endring xmlns="https://skjema.ft.dibk.no/endring/v2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/endring/v2 endring.xsd" dataFormatId="10015"
+  dataFormatProvider="DIBK" dataFormatVersion="2">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -28,7 +31,7 @@
         <kodeverdi>fasade</kodeverdi>
         <kodebeskrivelse>Endring av bygg - utvendig - Fasade</kodebeskrivelse>
       </kode>
-       <kode>
+      <kode>
         <kodeverdi>nyttByggBlandetFormalNaringBolig</kodeverdi>
         <kodebeskrivelse>Nytt bygg – blandet formål næring og bolig</kodebeskrivelse>
       </kode>
@@ -49,8 +52,9 @@
         </kode>
       </tiltaksformaal>
       <beskrivTidligereFormaal>Arealet har blitt brukt som bod.</beskrivTidligereFormaal>
-      <beskrivPlanlagtFormaal>Vi ønsker å bruke rommet som vinterhage, som en utvidelse av stua med skikkelig store vinduer ut mot fjorden.</beskrivPlanlagtFormaal>
-    <bygningstype>
+      <beskrivPlanlagtFormaal>Vi ønsker å bruke rommet som vinterhage, som en utvidelse av stua med
+        skikkelig store vinduer ut mot fjorden.</beskrivPlanlagtFormaal>
+      <bygningstype>
         <kodeverdi>136</kodeverdi>
         <kodebeskrivelse>Andre småhus med 3 boliger eller flere</kodebeskrivelse>
       </bygningstype>
@@ -59,7 +63,12 @@
         <kodebeskrivelse>Overnattings- og serveringsvirksomhet</kodebeskrivelse>
       </naeringsgruppe>
     </bruk>
-    <foelgebrev>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</foelgebrev>
+    <foelgebrev>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+      incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+      exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+      reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+      occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+      laborum.</foelgebrev>
   </soeknadGjelder>
   <kommunensSaksnummer>
     <saksaar>2025</saksaar>
@@ -87,23 +96,23 @@
         <kodeverdi>endringUtformingUtvendig</kodeverdi>
         <kodebeskrivelse>Endring av fasader</kodebeskrivelse>
       </kode>
-       <kode>
+      <kode>
         <kodeverdi>endringFormaalBruk</kodeverdi>
         <kodebeskrivelse>Endring av formål eller bruk</kodebeskrivelse>
       </kode>
-       <kode>
+      <kode>
         <kodeverdi>endringLoefteinnretninger</kodeverdi>
         <kodebeskrivelse>Endring av løfteinnretninger</kodebeskrivelse>
       </kode>
-       <kode>
+      <kode>
         <kodeverdi>endringUtformingInnvendig</kodeverdi>
         <kodebeskrivelse>Endring av planløsning</kodebeskrivelse>
       </kode>
-       <kode>
+      <kode>
         <kodeverdi>endringPlassering</kodeverdi>
         <kodebeskrivelse>Endring av plassering</kodebeskrivelse>
       </kode>
-       <kode>
+      <kode>
         <kodeverdi>endringDispensasjon</kodeverdi>
         <kodebeskrivelse>Endringer som utløser krav til dispensasjon</kodebeskrivelse>
       </kode>
@@ -148,15 +157,15 @@
     <gjeldendePlan>
       <formaal>Arealformål</formaal>
       <navn>Kommuneplanens arealdel: Kommuneplanens arealdel 2022-2034</navn>
-        <plantype>
-          <kodeverdi>KP</kodeverdi>
-          <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
-        </plantype>
+      <plantype>
+        <kodeverdi>KP</kodeverdi>
+        <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
+      </plantype>
       <beregningsregelGradAvUtnytting>
         <kodeverdi>BYA</kodeverdi>
         <kodebeskrivelse>Bebygd areal</kodebeskrivelse>
       </beregningsregelGradAvUtnytting>
-      <utnyttingsgrad>160</utnyttingsgrad>
+      <utnyttingsgrad>3.14</utnyttingsgrad>
     </gjeldendePlan>
     <andrePlaner>
       <plan>
@@ -166,7 +175,7 @@
           <kodebeskrivelse>Reguleringsplan</kodebeskrivelse>
         </plantype>
       </plan>
-       <plan>
+      <plan>
         <navn>Mindre reguleringsendring: Stendal vestre</navn>
         <plantype>
           <kodeverdi>KP</kodeverdi>
@@ -189,19 +198,19 @@
       <erTillatelseGittKommunalVeg>false</erTillatelseGittKommunalVeg>
       <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
     </adkomst>
-   <arealdisponering>
-	   <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-	   <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-	   <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-	   <tomtearealBeregnet>526.6</tomtearealBeregnet>
-	   <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-	   <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-	   <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-	   <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-	   <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-	   <arealSumByggesak>136.65</arealSumByggesak>
-	   <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
-	</arealdisponering> 
+    <arealdisponering>
+      <tomtearealByggeomraade>95.15</tomtearealByggeomraade>
+      <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+      <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+      <tomtearealBeregnet>95.15</tomtearealBeregnet>
+      <beregnetMaksByggeareal>59.60</beregnetMaksByggeareal>
+      <arealBebyggelseEksisterende>36.20</arealBebyggelseEksisterende>
+      <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+      <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+      <parkeringsarealTerreng>36.20</parkeringsarealTerreng>
+      <arealSumByggesak>95.15</arealSumByggesak>
+      <beregnetGradAvUtnytting>36.85</beregnetGradAvUtnytting>
+    </arealdisponering>
     <kravTilByggegrunn>
       <muligeOmraadeRisikoer>
         <omraadeRisiko>
@@ -292,7 +301,7 @@
       </bestemmelserType>
     </dispensasjon>
   </dispensasjonOversikt>
-   <tiltakshaver>
+  <tiltakshaver>
     <partstype>
       <kodeverdi>Organisasjon</kodeverdi>
       <kodebeskrivelse>Organisasjon</kodebeskrivelse>
@@ -315,14 +324,14 @@
       <epost>sulten@krokodille.no</epost>
     </kontaktperson>
   </tiltakshaver>
-   <ansvarligSoeker>
+  <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <organisasjonsnummer>310973513</organisasjonsnummer>
-    <foedselsnummer></foedselsnummer>
-    <navn>VERDIFULL FALSK APE</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Næringsveien 10</adresselinje1>
       <postnr>0123</postnr>

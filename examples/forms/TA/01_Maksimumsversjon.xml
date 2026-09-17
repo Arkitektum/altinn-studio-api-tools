@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<utenansvarsrett xmlns="https://skjema.ft.dibk.no/utenansvarsrett/v4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/utenansvarsrett/v4 utenansvarsrett.xsd" dataFormatProvider="DIBK" dataFormatId="10014" dataFormatVersion="4">
+<utenansvarsrett xmlns="https://skjema.ft.dibk.no/utenansvarsrett/v4"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/utenansvarsrett/v4 utenansvarsrett.xsd"
+  dataFormatProvider="DIBK" dataFormatId="10014" dataFormatVersion="4">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -17,20 +20,16 @@
   <soeknadGjelder>
     <type>
       <kode>
-        <kodeverdi>plasseringmidlertidig</kodeverdi>
-        <kodebeskrivelse>Plassering av midlertidige bygninger, konstruksjoner og anlegg</kodebeskrivelse>
+        <kodeverdi>driftsbygningendringunder1000m2</kodeverdi>
+        <kodebeskrivelse>Endring av driftsbygning i landbruket under 1000m2 (BRA)</kodebeskrivelse>
       </kode>
       <kode>
-        <kodeverdi>nyttbyggunder70m2</kodeverdi>
-        <kodebeskrivelse>Nytt bygg - Under 70 m2 - ikke boligformål</kodebeskrivelse>
+        <kodeverdi>driftsbygningtilbyggunder1000m2</kodeverdi>
+        <kodebeskrivelse>Tilbygg til driftsbygning i landbruket med samlet area under 1000 m2 (BRA)</kodebeskrivelse>
       </kode>
       <kode>
-        <kodeverdi>bruksendringhoveddel</kodeverdi>
-        <kodebeskrivelse>Bruksendring fra tilleggsdel til hoveddel</kodebeskrivelse>
-      </kode>
-      <kode>
-        <kodeverdi>mikrohus</kodeverdi>
-        <kodebeskrivelse>Mikrohus til boligformål - Inntil 30 m2 BRA</kodebeskrivelse>
+        <kodeverdi>rivingdriftsbygninginntill1000m2</kodeverdi>
+        <kodebeskrivelse>Riving av driftsbygning i landbruket inntil 1000m2</kodebeskrivelse>
       </kode>
     </type>
     <foelgebrev></foelgebrev>
@@ -68,7 +67,7 @@
   <eiendomByggested>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -91,7 +90,7 @@
     </eiendom>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -114,7 +113,7 @@
     </eiendom>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -211,25 +210,25 @@
         <kode>
           <kodeverdi>RiksFylkesveg</kodeverdi>
           <kodebeskrivelse>Riksvei/fylkesvei</kodebeskrivelse>
-        </kode>        
+        </kode>
       </vegtype>
       <erTillatelseGittRiksFylkesveg>false</erTillatelseGittRiksFylkesveg>
       <erTillatelseGittKommunalVeg>false</erTillatelseGittKommunalVeg>
       <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
     </adkomst>
-   <arealdisponering>
-       <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-       <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-       <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-       <tomtearealBeregnet>526.6</tomtearealBeregnet>
-       <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-       <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-       <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-       <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-       <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-       <arealSumByggesak>136.65</arealSumByggesak>
-       <beregnetGradAvUtnytting>25.95</beregnetGradAvUtnytting>
-    </arealdisponering> 
+    <arealdisponering>
+      <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
+      <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+      <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+      <tomtearealBeregnet>526.6</tomtearealBeregnet>
+      <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
+      <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
+      <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+      <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+      <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
+      <arealSumByggesak>136.65</arealSumByggesak>
+      <beregnetGradAvUtnytting>25.95</beregnetGradAvUtnytting>
+    </arealdisponering>
     <vannforsyning>
       <tilknytningstype>
         <kodeverdi>AnnenPrivatInnlagt</kodeverdi>
@@ -308,57 +307,61 @@
             <kodeverdi>flom</kodeverdi>
             <kodebeskrivelse>Flom</kodebeskrivelse>
           </risikotype>
-            <sikkerhetsklasse>
-              <kodeverdi>f3</kodeverdi>
-              <kodebeskrivelse>F3</kodebeskrivelse>
-            </sikkerhetsklasse>
-          </omraadeRisiko>
-          <omraadeRisiko>
-            <risikotype>
-              <kodeverdi>kvikkLeire</kodeverdi>
-              <kodebeskrivelse>Kvikkleire</kodebeskrivelse>
-            </risikotype>
-            <sikkerhetsklasse>
-              <kodeverdi>k0</kodeverdi>
-              <kodebeskrivelse>K0</kodebeskrivelse>
-            </sikkerhetsklasse>
-            </omraadeRisiko>
-            <omraadeRisiko>
-              <risikotype>
-                <kodeverdi>plutseligFlom</kodeverdi>
-                <kodebeskrivelse>Plutselig flom</kodebeskrivelse>
-              </risikotype>
-              <sikkerhetsklasse>
-                <kodeverdi>bygNRBeredskap</kodeverdi>
-                <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
-              </sikkerhetsklasse>
-            </omraadeRisiko>
-            <omraadeRisiko>
-              <risikotype>
-                <kodeverdi>jordSkred</kodeverdi>
-                <kodebeskrivelse>Skred i bratt terreng - jordskred</kodebeskrivelse>
-              </risikotype>
-              <sikkerhetsklasse>
-                  <kodeverdi>utenforFO</kodeverdi>
-                  <kodebeskrivelse>Utenfor mulig fareområde</kodebeskrivelse>
-              </sikkerhetsklasse>
-            </omraadeRisiko>
-            <omraadeRisiko>
-              <risikotype>
-                <kodeverdi>stormFlo</kodeverdi>
-                <kodebeskrivelse>Stormflo</kodebeskrivelse>
-              </risikotype>
-              <sikkerhetsklasse>
-                <kodeverdi>f1</kodeverdi>
-                <kodebeskrivelse>F1</kodebeskrivelse>
-              </sikkerhetsklasse>
-            </omraadeRisiko>
-        </muligeOmraadeRisikoer>
+          <sikkerhetsklasse>
+            <kodeverdi>f3</kodeverdi>
+            <kodebeskrivelse>F3</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>kvikkLeire</kodeverdi>
+            <kodebeskrivelse>Kvikkleire</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>k0</kodeverdi>
+            <kodebeskrivelse>K0</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>plutseligFlom</kodeverdi>
+            <kodebeskrivelse>Plutselig flom</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>bygNRBeredskap</kodeverdi>
+            <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>jordSkred</kodeverdi>
+            <kodebeskrivelse>Skred i bratt terreng - jordskred</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>utenforFO</kodeverdi>
+            <kodebeskrivelse>Utenfor mulig fareområde</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>stormFlo</kodeverdi>
+            <kodebeskrivelse>Stormflo</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>f1</kodeverdi>
+            <kodebeskrivelse>F1</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+      </muligeOmraadeRisikoer>
       <harMiljoeforhold>true</harMiljoeforhold>
     </kravTilByggegrunn>
     <plassering>
       <erKonfliktMedHoeyspentkraftlinje>false</erKonfliktMedHoeyspentkraftlinje>
       <erKonfliktMedVannOgAvloep>false</erKonfliktMedVannOgAvloep>
+      <erBekreftetInnenforByggegrense>true</erBekreftetInnenforByggegrense>
+      <minsteAvstandNabogrense xsi:nil="true" />
+      <minsteAvstandTilMidtenAvVei xsi:nil="true" />
+      <minsteAvstandTilAnnenBygning xsi:nil="true" />
     </plassering>
   </rammebetingelser>
   <dispensasjonOversikt>
@@ -380,12 +383,12 @@
   </dispensasjonOversikt>
   <tiltakshaver>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
     <!--foedselsnummer>22929198178</foedselsnummer-->
-    <organisasjonsnummer>312949555</organisasjonsnummer>
-    <navn>DRIFTIG KUNNSKAP</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Bøgata 16</adresselinje1>
       <adresselinje2 xsi:nil="true" />
@@ -403,5 +406,6 @@
       <mobilnummer>12034043</mobilnummer>
       <epost>test2@arkitektum.no</epost>
     </kontaktperson>
+    <foedselsnummer>10921148513</foedselsnummer>
   </tiltakshaver>
 </utenansvarsrett>

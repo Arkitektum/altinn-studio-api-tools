@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<utenansvarsrett xmlns="https://skjema.ft.dibk.no/utenansvarsrett/v4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/utenansvarsrett/v4 utenansvarsrett.xsd" dataFormatProvider="DIBK" dataFormatId="10014" dataFormatVersion="4">
+<utenansvarsrett xmlns="https://skjema.ft.dibk.no/utenansvarsrett/v4"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/utenansvarsrett/v4 utenansvarsrett.xsd"
+  dataFormatProvider="DIBK" dataFormatId="10014" dataFormatVersion="4">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -12,7 +15,7 @@
   </metadata>
   <generelleVilkaar>
     <norskSvenskDansk>true</norskSvenskDansk>
-    <beroererArbeidsplasser>true</beroererArbeidsplasser>
+    <beroererArbeidsplasser>false</beroererArbeidsplasser>
   </generelleVilkaar>
   <soeknadGjelder>
     <type>
@@ -21,7 +24,7 @@
         <kodebeskrivelse>Skilt/reklame mindre enn 6,5 m2 - fasade</kodebeskrivelse>
       </kode>
     </type>
-    <foelgebrev>Jeg vil reklamere for min rørlegger bedrift</foelgebrev>
+    <foelgebrev>Jeg vil reklamere for min rørleggerbedrift</foelgebrev>
     <bruk>
       <tiltaksformaal>
         <kode>
@@ -56,7 +59,7 @@
   <eiendomByggested>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -77,7 +80,7 @@
       <bolignummer>H0101</bolignummer>
       <kommunenavn>Larvik</kommunenavn>
     </eiendom>
-    </eiendomByggested>
+  </eiendomByggested>
   <fakturamottaker>
     <partstype>
       <kodeverdi></kodeverdi>
@@ -91,7 +94,7 @@
     <adresse>
       <adresselinje1></adresselinje1>
       <adresselinje2></adresselinje2>
-      <adresselinje3/>
+      <adresselinje3 />
       <postnr></postnr>
       <poststed></poststed>
       <landkode></landkode>
@@ -144,7 +147,7 @@
         </plantype>
       </plan>
     </andrePlaner>
-    <andreRelevanteKrav>Alle skal ha et blivrak i hagen</andreRelevanteKrav>
+    <andreRelevanteKrav></andreRelevanteKrav>
   </planer>
   <rammebetingelser>
     <generellInformasjon>
@@ -160,25 +163,25 @@
         <kode>
           <kodeverdi>KommunalVeg</kodeverdi>
           <kodebeskrivelse>Kommunal vei</kodebeskrivelse>
-        </kode>        
+        </kode>
       </vegtype>
       <erTillatelseGittRiksFylkesveg>false</erTillatelseGittRiksFylkesveg>
       <erTillatelseGittKommunalVeg>true</erTillatelseGittKommunalVeg>
       <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
     </adkomst>
-   <arealdisponering>
-       <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-       <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-       <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-       <tomtearealBeregnet>526.6</tomtearealBeregnet>
-       <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-       <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-       <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-       <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-       <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-       <arealSumByggesak>136.65</arealSumByggesak>
-       <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
-    </arealdisponering> 
+    <arealdisponering>
+      <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
+      <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+      <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+      <tomtearealBeregnet>526.6</tomtearealBeregnet>
+      <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
+      <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
+      <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+      <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+      <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
+      <arealSumByggesak>136.65</arealSumByggesak>
+      <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
+    </arealdisponering>
     <vannforsyning>
       <tilknytningstype>
         <kodeverdi>TilknyttetOffVannverk</kodeverdi>
@@ -239,7 +242,8 @@
               </risikotype>
               <sikkerhetsklasse>
                 <kodeverdi>bygNRBeredskap</kodeverdi>
-                <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
+                <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional
+    beredskap</kodebeskrivelse>
               </sikkerhetsklasse>
             </omraadeRisiko>
             <omraadeRisiko>
@@ -268,6 +272,10 @@
     <plassering>
       <erKonfliktMedHoeyspentkraftlinje>false</erKonfliktMedHoeyspentkraftlinje>
       <erKonfliktMedVannOgAvloep>false</erKonfliktMedVannOgAvloep>
+      <erBekreftetInnenforByggegrense>false</erBekreftetInnenforByggegrense>
+      <minsteAvstandNabogrense>5.5</minsteAvstandNabogrense>
+      <minsteAvstandTilMidtenAvVei>5.5</minsteAvstandTilMidtenAvVei>
+      <minsteAvstandTilAnnenBygning>5.5</minsteAvstandTilAnnenBygning>
     </plassering>
   </rammebetingelser>
   <!--dispensasjonOversikt>
@@ -292,9 +300,9 @@
       <kodeverdi>Privatperson</kodeverdi>
       <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer>29121981780</foedselsnummer>
+    <foedselsnummer>10921148513</foedselsnummer>
     <organisasjonsnummer></organisasjonsnummer>
-    <navn>BLOMSTERDALEN OG ØVRE SNERTINGDAL</navn>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Bøgata 16</adresselinje1>
       <adresselinje2 xsi:nil="true" />

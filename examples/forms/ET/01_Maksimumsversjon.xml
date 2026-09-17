@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ettrinn xmlns="https://skjema.ft.dibk.no/ettrinn/v4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/ettrinn/v4 ettrinn.xsd" dataFormatProvider="DIBK" dataFormatId="10012" dataFormatVersion="4">
+<ettrinn xmlns="https://skjema.ft.dibk.no/ettrinn/v4"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/ettrinn/v4 ettrinn.xsd" dataFormatProvider="DIBK"
+  dataFormatId="10012" dataFormatVersion="4">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -9,7 +12,7 @@
       <kodeverdi>nb</kodeverdi>
       <kodebeskrivelse>Bokmål</kodebeskrivelse>
     </foretrukketSpraak>
-    <samtykkeTilByggeplaner></samtykkeTilByggeplaner>
+    <samtykkeTilByggeplaner>294eda4b-9580-437a-a025-baa2e6a99bc2</samtykkeTilByggeplaner>
   </metadata>
   <generelleVilkaar>
     <norskSvenskDansk>true</norskSvenskDansk>
@@ -42,7 +45,7 @@
         <kodebeskrivelse>Plassering av midlertidige bygninger, konstruksjoner og anlegg</kodebeskrivelse>
       </kode>
     </type>
-    <foelgebrev></foelgebrev>
+    <foelgebrev>Se vedlegg.</foelgebrev>
     <bruk>
       <tiltaksformaal>
         <kode>
@@ -50,7 +53,7 @@
           <kodebeskrivelse>Bolig</kodebeskrivelse>
         </kode>
       </tiltaksformaal>
-      <beskrivTidligereFormaal>Har vært en love</beskrivTidligereFormaal>
+      <beskrivTidligereFormaal>Har vært en låve</beskrivTidligereFormaal>
       <beskrivPlanlagtFormaal>Skal brukes som en garasje</beskrivPlanlagtFormaal>
       <bygningstype>
         <kodeverdi>136</kodeverdi>
@@ -77,7 +80,7 @@
   <eiendomByggested>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9998</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -100,7 +103,7 @@
     </eiendom>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9998</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -123,7 +126,7 @@
     </eiendom>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9998</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -431,12 +434,12 @@
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer></foedselsnummer>
-    <organisasjonsnummer>312949555</organisasjonsnummer>
-    <navn>FREIDIG ALLSIDIG KATT OMSTILLING</navn>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Test Adresse</adresselinje1>
       <postnr>3750</postnr>

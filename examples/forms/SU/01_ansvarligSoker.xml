@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<suppleringAvSoeknad
-	xmlns="https://skjema.ft.dibk.no/suppleringavsoeknad/v2"
+<?xml version="1.0" encoding="utf-8"?>
+<suppleringAvSoeknad xmlns="https://skjema.ft.dibk.no/suppleringavsoeknad/v2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="https://skjema.ft.dibk.no/suppleringavsoeknad/v2 suppleringavsoeknad.xsd"
 	dataFormatProvider="DIBK" dataFormatId="10008" dataFormatVersion="2">
@@ -130,12 +129,13 @@
 				<sjekkpunktId>1.6</sjekkpunktId>
 				<sjekkpunktEier>dibk</sjekkpunktEier>
 			</utloestFraSjekkpunkt>
-			<beskrivelse>Tiltaket berører en eksisterende bygning, og du må oppgi bygningsnummeret for denne bygningen. Bygningsnummeret finner du i matrikkelen under Se eiendom: https://seeiendom.kartverket.no/</beskrivelse>
+			<beskrivelse>Tiltaket berører en eksisterende bygning, og du må oppgi bygningsnummeret
+				for denne bygningen. Bygningsnummeret finner du i matrikkelen under Se eiendom:
+				https://seeiendom.kartverket.no/</beskrivelse>
 			<erUtfallBesvaresSenere>false</erUtfallBesvaresSenere>
 			<erUtfallBesvart>true</erUtfallBesvart>
 			<kommentar>Dette er besvart tidligere.</kommentar>
-			<vedleggsliste>
-			</vedleggsliste>
+			<vedleggsliste></vedleggsliste>
 		</utfallSvar>
 		<utfallSvar>
 			<utfallType>
@@ -152,12 +152,12 @@
 				<sjekkpunktId>1.36</sjekkpunktId>
 				<sjekkpunktEier>dibk</sjekkpunktEier>
 			</utloestFraSjekkpunkt>
-			<beskrivelse>Det er krav om fri sikt når du skal kjøre ut fra eiendommen til offentlig vei. Frisiktslinjene må tegnes inn på situasjonsplanen.</beskrivelse>
+			<beskrivelse>Det er krav om fri sikt når du skal kjøre ut fra eiendommen til offentlig
+				vei. Frisiktslinjene må tegnes inn på situasjonsplanen.</beskrivelse>
 			<erUtfallBesvaresSenere>true</erUtfallBesvaresSenere>
 			<erUtfallBesvart>false</erUtfallBesvart>
 			<kommentar>Jeg sender denne neste uke</kommentar>
-			<vedleggsliste>
-			</vedleggsliste>
+			<vedleggsliste></vedleggsliste>
 		</utfallSvar>
 		<utfallSvar>
 			<utfallType>
@@ -174,7 +174,10 @@
 				<sjekkpunktId>2.5</sjekkpunktId>
 				<sjekkpunktEier>dibk</sjekkpunktEier>
 			</utloestFraSjekkpunkt>
-			<beskrivelse>Tiltaket utløser krav til utvidet nabovarsling fordi tiltaket medfører økt tungtransport og støy for eiendommene i Mariboes gate. Du må sende inn en ny kvittering for nabovarsel når utvidet varsel er gjennomført. Eiere og festere av følgede eiendommer må varsles: Alle adresser i Mariboes gate.</beskrivelse>
+			<beskrivelse>Tiltaket utløser krav til utvidet nabovarsling fordi tiltaket medfører økt
+				tungtransport og støy for eiendommene i Mariboes gate. Du må sende inn en ny
+				kvittering for nabovarsel når utvidet varsel er gjennomført. Eiere og festere av
+				følgede eiendommer må varsles: Alle adresser i Mariboes gate.</beskrivelse>
 			<erUtfallBesvaresSenere>false</erUtfallBesvaresSenere>
 			<erUtfallBesvart>false</erUtfallBesvart>
 			<kommentar>Se vedlagt nabovarsel med merknader og min kommentar.</kommentar>
@@ -211,12 +214,12 @@
 	</utfallBesvarelse>
 	<ansvarligSoeker>
 		<partstype>
-			<kodeverdi>Organisasjon</kodeverdi>
-			<kodebeskrivelse>Organisasjon</kodebeskrivelse>
+			<kodeverdi>Privatperson</kodeverdi>
+			<kodebeskrivelse>Privatperson</kodebeskrivelse>
 		</partstype>
-		<foedselsnummer></foedselsnummer>
-		<organisasjonsnummer>910065203</organisasjonsnummer>
-		<navn>Arkitekt Flink</navn>
+		<foedselsnummer>10921148513</foedselsnummer>
+		<organisasjonsnummer></organisasjonsnummer>
+		<navn>UKLAR PLAST</navn>
 		<adresse>
 			<adresselinje1>Munkegata 1</adresselinje1>
 			<postnr>7013</postnr>

@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<suppleringAvSoeknad
-	xmlns="https://skjema.ft.dibk.no/suppleringavsoeknad/v2"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="https://skjema.ft.dibk.no/suppleringavsoeknad/v2 suppleringavsoeknad.xsd"
-  dataFormatProvider="DIBK" dataFormatId="10008" dataFormatVersion="2">
+<?xml version="1.0" encoding="utf-8"?>
+<suppleringAvSoeknad xmlns="https://skjema.ft.dibk.no/suppleringavsoeknad/v2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://skjema.ft.dibk.no/suppleringavsoeknad/v2 suppleringavsoeknad.xsd"
+	dataFormatProvider="DIBK" dataFormatId="10008" dataFormatVersion="2">
 	<eiendomByggested>
 		<eiendom>
 			<eiendomsidentifikasjon>
@@ -68,16 +67,15 @@
 			</vedleggsliste>
 		</ettersending>
 	</ettersendinger>
-	<utfallBesvarelse>
-	</utfallBesvarelse>
+	<utfallBesvarelse></utfallBesvarelse>
 	<tiltakshaver>
 		<partstype>
 			<kodeverdi>Privatperson</kodeverdi>
 			<kodebeskrivelse>Privatperson</kodebeskrivelse>
 		</partstype>
-		<foedselsnummer>28044102120</foedselsnummer>
+		<foedselsnummer>10921148513</foedselsnummer>
 		<organisasjonsnummer></organisasjonsnummer>
-		<navn>Ludvig Moholt</navn>
+		<navn>UKLAR PLAST</navn>
 		<adresse>
 			<adresselinje1></adresselinje1>
 			<postnr></postnr>
@@ -85,7 +83,7 @@
 			<landkode></landkode>
 		</adresse>
 		<telefonnummer></telefonnummer>
-		<mobilnummer>90909090</mobilnummer>	
+		<mobilnummer>90909090</mobilnummer>
 		<epost></epost>
 		<kontaktperson>
 			<navn></navn>

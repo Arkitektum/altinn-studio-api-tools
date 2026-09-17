@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ramme xmlns="https://skjema.ft.dibk.no/ramme/v4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/ramme/v4 ramme.xsd" dataFormatProvider="DIBK" dataFormatId="10013" dataFormatVersion="4">
-<metadata>
+<ramme xmlns="https://skjema.ft.dibk.no/ramme/v4"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/ramme/v4 ramme.xsd" dataFormatProvider="DIBK"
+  dataFormatId="10013" dataFormatVersion="4">
+  <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
     <prosjektnavn></prosjektnavn>
@@ -9,7 +12,7 @@
       <kodeverdi>nb</kodeverdi>
       <kodebeskrivelse>Bokmål</kodebeskrivelse>
     </foretrukketSpraak>
-    <samtykkeTilByggeplaner>samtykke</samtykkeTilByggeplaner>
+    <samtykkeTilByggeplaner>294eda4b-9580-437a-a025-baa2e6a99bc2</samtykkeTilByggeplaner>
   </metadata>
   <generelleVilkaar>
     <norskSvenskDansk>true</norskSvenskDansk>
@@ -57,7 +60,7 @@
   <eiendomByggested>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9999</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -78,7 +81,7 @@
       <bolignummer>H0101</bolignummer>
       <kommunenavn>Larvik</kommunenavn>
     </eiendom>
-    </eiendomByggested>
+  </eiendomByggested>
   <fakturamottaker>
     <partstype>
       <kodeverdi></kodeverdi>
@@ -92,7 +95,7 @@
     <adresse>
       <adresselinje1></adresselinje1>
       <adresselinje2></adresselinje2>
-      <adresselinje3/>
+      <adresselinje3 />
       <postnr></postnr>
       <poststed></poststed>
       <landkode></landkode>
@@ -161,25 +164,25 @@
         <kode>
           <kodeverdi>KommunalVeg</kodeverdi>
           <kodebeskrivelse>Kommunal vei</kodebeskrivelse>
-        </kode>        
+        </kode>
       </vegtype>
       <erTillatelseGittRiksFylkesveg>false</erTillatelseGittRiksFylkesveg>
       <erTillatelseGittKommunalVeg>true</erTillatelseGittKommunalVeg>
       <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
     </adkomst>
-   <arealdisponering>
-       <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-       <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-       <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-       <tomtearealBeregnet>526.6</tomtearealBeregnet>
-       <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-       <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-       <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-       <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-       <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-       <arealSumByggesak>136.65</arealSumByggesak>
-       <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
-    </arealdisponering> 
+    <arealdisponering>
+      <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
+      <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+      <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+      <tomtearealBeregnet>526.6</tomtearealBeregnet>
+      <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
+      <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
+      <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+      <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+      <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
+      <arealSumByggesak>136.65</arealSumByggesak>
+      <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
+    </arealdisponering>
     <vannforsyning>
       <tilknytningstype>
         <kodeverdi>TilknyttetOffVannverk</kodeverdi>
@@ -240,7 +243,8 @@
               </risikotype>
               <sikkerhetsklasse>
                 <kodeverdi>bygNRBeredskap</kodeverdi>
-                <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
+                <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional
+    beredskap</kodebeskrivelse>
               </sikkerhetsklasse>
             </omraadeRisiko>
             <omraadeRisiko>
@@ -324,12 +328,12 @@
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer></foedselsnummer>
-    <organisasjonsnummer>312949555</organisasjonsnummer>
-    <navn>FREIDIG ALLSIDIG KATT OMSTILLING</navn>
+    <foedselsnummer>109211*****</foedselsnummer>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Test Adresse</adresselinje1>
       <postnr>3750</postnr>

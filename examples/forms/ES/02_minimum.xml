@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<endring xmlns="https://skjema.ft.dibk.no/endring/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/endring/v2 endring.xsd" dataFormatId="10015" dataFormatProvider="DIBK" dataFormatVersion="2">
+<endring xmlns="https://skjema.ft.dibk.no/endring/v2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/endring/v2 endring.xsd" dataFormatId="10015"
+  dataFormatProvider="DIBK" dataFormatVersion="2">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId></ftbId>
@@ -30,7 +33,7 @@
       </tiltaksformaal>
       <beskrivTidligereFormaal></beskrivTidligereFormaal>
       <beskrivPlanlagtFormaal></beskrivPlanlagtFormaal>
-    <bygningstype>
+      <bygningstype>
         <kodeverdi></kodeverdi>
         <kodebeskrivelse></kodebeskrivelse>
       </bygningstype>
@@ -39,7 +42,12 @@
         <kodebeskrivelse></kodebeskrivelse>
       </naeringsgruppe>
     </bruk>
-    <foelgebrev>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</foelgebrev>
+    <foelgebrev>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+      incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+      exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+      reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+      occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+      laborum.</foelgebrev>
   </soeknadGjelder>
   <kommunensSaksnummer>
     <saksaar>2025</saksaar>
@@ -51,7 +59,7 @@
   </ansvarForByggesaken>
   <endringenGjelder>
     <endringstype>
-       <kode>
+      <kode>
         <kodeverdi>endringUtformingInnvendig</kodeverdi>
         <kodebeskrivelse>Endring av planløsning</kodebeskrivelse>
       </kode>
@@ -96,15 +104,15 @@
     <gjeldendePlan>
       <formaal>Arealformål</formaal>
       <navn>Kommuneplanens arealdel: Kommuneplanens arealdel 2022-2034</navn>
-        <plantype>
-          <kodeverdi>KP</kodeverdi>
-          <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
-        </plantype>
+      <plantype>
+        <kodeverdi>KP</kodeverdi>
+        <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
+      </plantype>
       <beregningsregelGradAvUtnytting>
         <kodeverdi>BYA</kodeverdi>
         <kodebeskrivelse>Bebygd areal</kodebeskrivelse>
       </beregningsregelGradAvUtnytting>
-      <utnyttingsgrad>160</utnyttingsgrad>
+      <utnyttingsgrad>3.14</utnyttingsgrad>
     </gjeldendePlan>
     <andrePlaner>
       <plan>
@@ -188,7 +196,7 @@
       </bestemmelserType>
     </dispensasjon>
   </dispensasjonOversikt>
-   <tiltakshaver>
+  <tiltakshaver>
     <partstype>
       <kodeverdi>Privatperson</kodeverdi>
       <kodebeskrivelse>Privatperson</kodebeskrivelse>
@@ -214,12 +222,12 @@
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <organisasjonsnummer>310973513</organisasjonsnummer>
-    <foedselsnummer></foedselsnummer>
-    <navn>VERDIFULL FALSK APE</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1></adresselinje1>
       <postnr></postnr>

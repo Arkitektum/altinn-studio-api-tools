@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ettrinn xmlns="https://skjema.ft.dibk.no/ettrinn/v4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/ettrinn/v4 ettrinn.xsd" dataFormatProvider="DIBK" dataFormatId="10012" dataFormatVersion="4">
+<ettrinn xmlns="https://skjema.ft.dibk.no/ettrinn/v4"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/ettrinn/v4 ettrinn.xsd" dataFormatProvider="DIBK"
+  dataFormatId="10012" dataFormatVersion="4">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
-    <ftbId>FTB-12345</ftbId>
-    <prosjektnavn>Rehab tveidalen</prosjektnavn>
-    <prosjektnr>4</prosjektnr>
+    <ftbId></ftbId>
+    <prosjektnavn></prosjektnavn>
+    <prosjektnr></prosjektnr>
     <foretrukketSpraak>
       <kodeverdi>nb</kodeverdi>
       <kodebeskrivelse>Bokmål</kodebeskrivelse>
@@ -22,7 +25,7 @@
         <kodebeskrivelse>Rehabilitering av skorstein</kodebeskrivelse>
       </kode>
     </type>
-    <foelgebrev>Skal rehabelitere skortstein</foelgebrev>
+    <foelgebrev>Se vedlegg.</foelgebrev>
     <bruk>
       <tiltaksformaal>
         <kode>
@@ -30,8 +33,8 @@
           <kodebeskrivelse>Bolig</kodebeskrivelse>
         </kode>
       </tiltaksformaal>
-      <!--beskrivTidligereFormaal></beskrivTidligereFormaal>
-      <beskrivPlanlagtFormaal></beskrivPlanlagtFormaal-->
+      <beskrivTidligereFormaal></beskrivTidligereFormaal>
+      <beskrivPlanlagtFormaal></beskrivPlanlagtFormaal>
       <bygningstype>
         <kodeverdi></kodeverdi>
         <kodebeskrivelse></kodebeskrivelse>
@@ -75,38 +78,38 @@
         <bokstav></bokstav>
       </adresse>
       <bygningsnummer>140805629</bygningsnummer>
-      <bolignummer>H0101</bolignummer>
+      <bolignummer></bolignummer>
       <kommunenavn>Larvik</kommunenavn>
     </eiendom>
   </eiendomByggested>
   <fakturamottaker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi></kodeverdi>
+      <kodebeskrivelse></kodebeskrivelse>
     </partstype>
-    <organisasjonsnummer>910297937</organisasjonsnummer>
-    <bestillerreferanse>Gunnar Testperson</bestillerreferanse>
-    <fakturareferanse>Ref999</fakturareferanse>
-    <prosjektnummer>12345</prosjektnummer>
-    <navn>FANA OG HAFSLO REVISJON</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <bestillerreferanse></bestillerreferanse>
+    <fakturareferanse></fakturareferanse>
+    <prosjektnummer></prosjektnummer>
+    <navn></navn>
     <adresse>
-      <adresselinje1>Bøgata 16</adresselinje1>
-      <adresselinje2>dør nr 2</adresselinje2>
-      <adresselinje3 xsi:nil="true" />
-      <postnr>3802</postnr>
-      <poststed>Bø i Telemark</poststed>
-      <landkode>NO</landkode>
+      <adresselinje1></adresselinje1>
+      <adresselinje2></adresselinje2>
+      <adresselinje3 />
+      <postnr></postnr>
+      <poststed></poststed>
+      <landkode></landkode>
     </adresse>
-    <epost>test-fana.hafslo.revisjon@epost.no</epost>
+    <epost></epost>
   </fakturamottaker>
   <varsling>
     <fritattFraNabovarsling>true</fritattFraNabovarsling>
-    <redegjorelseFritak>ingen utvendige endringer</redegjorelseFritak>
-    <!--foreliggerMerknader>true</foreliggerMerknader>
-    <antallMerknader>4</antallMerknader>
-    <vurderingAvMerknader>Besvart i vedlegg</vurderingAvMerknader>
-    <soeknadensHjemmeside>www.dibk.no</soeknadensHjemmeside>
-    <harPengeheftelser>true</harPengeheftelser-->
+    <redegjorelseFritak>Pipa skal erstatte eksisterende pipeløp</redegjorelseFritak>
+    <!--foreliggerMerknader>false</foreliggerMerknader-->
+    <!--antallMerknader></antallMerknader-->
+    <vurderingAvMerknader></vurderingAvMerknader>
+    <soeknadensHjemmeside></soeknadensHjemmeside>
+    <harPengeheftelser>false</harPengeheftelser>
   </varsling>
   <planer>
     <gjeldendePlan>
@@ -120,7 +123,7 @@
         <kodeverdi>BYA</kodeverdi>
         <kodebeskrivelse>Bebygd areal</kodebeskrivelse>
       </beregningsregelGradAvUtnytting>
-      <utnyttingsgrad>160</utnyttingsgrad>
+      <utnyttingsgrad>3.14</utnyttingsgrad>
     </gjeldendePlan>
     <andrePlaner>
       <plan>
@@ -130,34 +133,20 @@
           <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
         </plantype>
       </plan>
-      <plan>
-        <navn>Tvedalen Steinindustri</navn>
-        <plantype>
-          <kodeverdi>34</kodeverdi>
-          <kodebeskrivelse>Områderegulering</kodebeskrivelse>
-        </plantype>
-      </plan>
-      <plan>
-        <navn>Kommunedelplan for steinressurser 2012-2024</navn>
-        <plantype>
-          <kodeverdi>KP</kodeverdi>
-          <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
-        </plantype>
-      </plan>
     </andrePlaner>
-    <andreRelevanteKrav>Alle skal ha et blivrak i hagen</andreRelevanteKrav>
+    <andreRelevanteKrav></andreRelevanteKrav>
   </planer>
   <rammebetingelser>
     <generellInformasjon>
       <oppfyllerVilkaarForTreukersfrist>true</oppfyllerVilkaarForTreukersfrist>
-      <erPaalagtUavhengigKontroll>false</erPaalagtUavhengigKontroll>
-      <erForhaandskonferanseAvholdt>true</erForhaandskonferanseAvholdt>
+      <erPaalagtUavhengigKontroll>true</erPaalagtUavhengigKontroll>
+      <erForhaandskonferanseAvholdt>false</erForhaandskonferanseAvholdt>
       <skalUtarbeideAvfallsplan>false</skalUtarbeideAvfallsplan>
       <erAvhengigAvTillatelse>false</erAvhengigAvTillatelse>
       <beroererByggEldreEnn1850>false</beroererByggEldreEnn1850>
     </generellInformasjon>
-    <!--adkomst>
-      <erNyEllerEndretAdkomst>true</erNyEllerEndretAdkomst>
+    <adkomst>
+      <erNyEllerEndretAdkomst>false</erNyEllerEndretAdkomst>
       <vegtype>
         <kode>
           <kodeverdi>KommunalVeg</kodeverdi>
@@ -165,80 +154,98 @@
         </kode>
       </vegtype>
       <erTillatelseGittRiksFylkesveg>false</erTillatelseGittRiksFylkesveg>
-      <erTillatelseGittKommunalVeg>false</erTillatelseGittKommunalVeg>
+      <erTillatelseGittKommunalVeg>true</erTillatelseGittKommunalVeg>
       <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
-    </adkomst-->
-    <!--arealdisponering>
-      <tomtearealByggeomraade>95.15</tomtearealByggeomraade>
-      <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-      <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-      <tomtearealBeregnet>95.15</tomtearealBeregnet-->
-    <!--beregnetMaksByggeareal>59.60</beregnetMaksByggeareal>
-      <arealBebyggelseEksisterende>36.20</arealBebyggelseEksisterende>
-      <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-      <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-      <parkeringsarealTerreng>36.20</parkeringsarealTerreng>
-      <arealSumByggesak>0</arealSumByggesak>
-      <beregnetGradAvUtnytting>1.22</beregnetGradAvUtnytting>
-    </arealdisponering-->
-    <!--vannforsyning>
+    </adkomst>
+    <arealdisponering></arealdisponering>
+    <vannforsyning>
       <tilknytningstype>
         <kodeverdi>TilknyttetOffVannverk</kodeverdi>
         <kodebeskrivelse>Offentlig vannverk</kodebeskrivelse>
       </tilknytningstype>
-      <beskrivelse>Vanlig rør</beskrivelse>
-      <krysserVannforsyningAnnensGrunn>true</krysserVannforsyningAnnensGrunn>
-      <harTinglystErklaering>true</harTinglystErklaering>
+      <beskrivelse></beskrivelse>
+      <krysserVannforsyningAnnensGrunn>false</krysserVannforsyningAnnensGrunn>
+      <harTinglystErklaering>false</harTinglystErklaering>
     </vannforsyning>
     <avloep>
       <tilknytningstype>
         <kodeverdi>OffentligKloakk</kodeverdi>
         <kodebeskrivelse>Offentlig avløpsanlegg</kodebeskrivelse>
       </tilknytningstype>
-      <skalInstallereVannklosett>true</skalInstallereVannklosett>
+      <skalInstallereVannklosett>false</skalInstallereVannklosett>
       <harUtslippstillatelse>false</harUtslippstillatelse>
-      <krysserAvloepAnnensGrunn>true</krysserAvloepAnnensGrunn>
-      <harTinglystErklaering>true</harTinglystErklaering>
-      <ledesOvervannTilTerreng>true</ledesOvervannTilTerreng>
+      <krysserAvloepAnnensGrunn>false</krysserAvloepAnnensGrunn>
+      <harTinglystErklaering>false</harTinglystErklaering>
+      <ledesOvervannTilTerreng>false</ledesOvervannTilTerreng>
       <ledesOvervannTilAvloepssystem>false</ledesOvervannTilAvloepssystem>
-    </avloep-->
-    <!--<kravTilByggegrunn>
+    </avloep>
+    <kravTilByggegrunn>
       <muligeOmraadeRisikoer>
         <omraadeRisiko>
           <risikotype>
+            <kodeverdi>fjellSkred</kodeverdi>
+            <kodebeskrivelse>Fjellskred</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>s1</kodeverdi>
+            <kodebeskrivelse>S1</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
             <kodeverdi>flom</kodeverdi>
-            <kodebeskrivelse>Fare for flom</kodebeskrivelse>
+            <kodebeskrivelse>Flom</kodebeskrivelse>
           </risikotype>
           <sikkerhetsklasse>
-            <kodeverdi>F1</kodeverdi>
-            <kodebeskrivelse>Mindre fare for flom</kodebeskrivelse>
+            <kodeverdi>f2</kodeverdi>
+            <kodebeskrivelse>F2</kodebeskrivelse>
           </sikkerhetsklasse>
         </omraadeRisiko>
         <omraadeRisiko>
           <risikotype>
-            <kodeverdi>skred</kodeverdi>
-            <kodebeskrivelse>Fare for skred</kodebeskrivelse>
+            <kodeverdi>kvikkLeire</kodeverdi>
+            <kodebeskrivelse>Kvikkleire</kodebeskrivelse>
           </risikotype>
           <sikkerhetsklasse>
-            <kodeverdi>S1</kodeverdi>
-            <kodebeskrivelse>Mindre fare for skred</kodebeskrivelse>
+            <kodeverdi>k0</kodeverdi>
+            <kodebeskrivelse>K0</kodebeskrivelse>
           </sikkerhetsklasse>
         </omraadeRisiko>
         <omraadeRisiko>
           <risikotype>
-            <kodeverdi>kvikkleire</kodeverdi>
-            <kodebeskrivelse>Fare for kvikkleire</kodebeskrivelse>
+            <kodeverdi>plutseligFlom</kodeverdi>
+            <kodebeskrivelse>Plutselig flom</kodebeskrivelse>
           </risikotype>
           <sikkerhetsklasse>
-            <kodeverdi>K1</kodeverdi>
-            <kodebeskrivelse>Mindre fare for kvikkleire</kodebeskrivelse>
+            <kodeverdi>bygNRBeredskap</kodeverdi>
+            <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>jordSkred</kodeverdi>
+            <kodebeskrivelse>Skred i bratt terreng - jordskred</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>utenforFO</kodeverdi>
+            <kodebeskrivelse>Utenfor mulig fareområde</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>stormFlo</kodeverdi>
+            <kodebeskrivelse>Stormflo</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>f1</kodeverdi>
+            <kodebeskrivelse>F1</kodebeskrivelse>
           </sikkerhetsklasse>
         </omraadeRisiko>
       </muligeOmraadeRisikoer>
       <harMiljoeforhold>false</harMiljoeforhold>
-    </kravTilByggegrunn-->
-    <!--loefteinnretninger>
-      <erLoefteinnretningIBygning>true</erLoefteinnretningIBygning>
+    </kravTilByggegrunn>
+    <loefteinnretninger>
+      <erLoefteinnretningIBygning>false</erLoefteinnretningIBygning>
       <planleggesLoefteinnretningIBygning>false</planleggesLoefteinnretningIBygning>
       <planleggesHeis>false</planleggesHeis>
       <planleggesTrappeheis>false</planleggesTrappeheis>
@@ -248,38 +255,48 @@
     <plassering>
       <erKonfliktMedHoeyspentkraftlinje>false</erKonfliktMedHoeyspentkraftlinje>
       <erKonfliktMedVannOgAvloep>false</erKonfliktMedVannOgAvloep>
-    </plassering-->
+    </plassering>
   </rammebetingelser>
+  <!--dispensasjonOversikt>
+    <dispensasjon>
+      <dispensasjonReferanse></dispensasjonReferanse>
+      <dispensasjonKategori>
+        <kodeverdi></kodeverdi>
+        <kodebeskrivelse></kodebeskrivelse>
+      </dispensasjonKategori>
+      <dispensasjonTittel>
+        <kodeverdi></kodeverdi>
+        <kodebeskrivelse></kodebeskrivelse>
+      </dispensasjonTittel>
+      <bestemmelserType>
+        <kodeverdi></kodeverdi>
+        <kodebeskrivelse></kodebeskrivelse>
+      </bestemmelserType>
+    </dispensasjon>
+  </dispensasjonOversikt-->
   <automatiseringskrav>
     <sjekklistekrav>
       <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.120</kodeverdi>
-        <kodebeskrivelse>Har søker erklært at veiledning om egenerklæring for automatisk behandling er lest og forstått?</kodebeskrivelse>
+        <kodebeskrivelse>Bekrefter søker å ha lest og forstått veiledningen om egenerklæring?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon></dokumentasjon>
     </sjekklistekrav>
     <sjekklistekrav>
-      <sjekklistepunktsvar>false</sjekklistepunktsvar>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.109</kodeverdi>
-        <kodebeskrivelse>Vil tiltaket medføre utvendige endringer?</kodebeskrivelse>
+        <kodebeskrivelse>Bekrefter søker at tiltaket ikke medfører utvendige endringer?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon></dokumentasjon>
     </sjekklistekrav>
     <sjekklistekrav>
-      <sjekklistepunktsvar>false</sjekklistepunktsvar>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.110</kodeverdi>
-        <kodebeskrivelse>Er tiltaket omfattet av et midlertidig byggeforbud?</kodebeskrivelse>
-      </sjekklistepunkt>
-      <dokumentasjon />
-    </sjekklistekrav>
-    <sjekklistekrav>
-      <sjekklistepunktsvar>false</sjekklistepunktsvar>
-      <sjekklistepunkt>
-        <kodeverdi>1.112</kodeverdi>
-        <kodebeskrivelse>Ligger tiltaket innenfor en byggeforbudssone?</kodebeskrivelse>
+        <kodebeskrivelse>Bekrefter søker at tiltaket ikke omfattes av et midlertidig forbud mot
+          tiltak?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
@@ -287,7 +304,15 @@
       <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.111</kodeverdi>
-        <kodebeskrivelse>Er bygningen fredet?</kodebeskrivelse>
+        <kodebeskrivelse>Er bygningen ikke fredet etter kulturminneloven?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon />
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>1.112</kodeverdi>
+        <kodebeskrivelse>Ligger tiltaket i et område der bygging er tillatt?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
@@ -295,23 +320,24 @@
       <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.113</kodeverdi>
-        <kodebeskrivelse>Er aktuelle skorsteiner markert på situasjonsplanen eller et kartutsnitt som er vedlagt søknaden?</kodebeskrivelse>
+        <kodebeskrivelse>Kommer det tydelig frem av søknadsdokumentasjonen hvilken pipe/skorstein
+          som omfattes av søknaden?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
     <sjekklistekrav>
-      <sjekklistepunktsvar>false</sjekklistepunktsvar>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.114</kodeverdi>
-        <kodebeskrivelse>Er bygningen maksimum i to etasjer?</kodebeskrivelse>
+        <kodebeskrivelse>Bekrefter søker at søknaden ikke omfattes av selvbyggeransvar?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
     <sjekklistekrav>
-      <sjekklistepunktsvar>false</sjekklistepunktsvar>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.115</kodeverdi>
-        <kodebeskrivelse>Er det erklært ansvarsrett for tiltaksklasse 2?</kodebeskrivelse>
+        <kodebeskrivelse>Oppfyller foretakene kravene til utdanning eller praksis?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
@@ -319,15 +345,8 @@
       <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.116</kodeverdi>
-        <kodebeskrivelse>Berører skorsteinen flere bruksenheter?</kodebeskrivelse>
-      </sjekklistepunkt>
-      <dokumentasjon />
-    </sjekklistekrav>
-    <sjekklistekrav>
-      <sjekklistepunktsvar>true</sjekklistepunktsvar>
-      <sjekklistepunkt>
-        <kodeverdi>1.117</kodeverdi>
-        <kodebeskrivelse>Er det erklært ansvarsrett for tiltaksklasse 2?</kodebeskrivelse>
+        <kodebeskrivelse>Bekrefter søker at skorsteinen/pipen kun er tilknyttet én boenhet eller én
+          branncelle?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
@@ -335,36 +354,44 @@
       <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>1.118</kodeverdi>
-        <kodebeskrivelse>Eier tiltakshaver den aktuelle bygningen?</kodebeskrivelse>
+        <kodebeskrivelse>Er tiltakshaver eier av den aktuelle bygningen?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon />
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>1.122</kodeverdi>
+        <kodebeskrivelse>Er tiltaket i samsvar med bestemmelser i kommunens arealplaner?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon />
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>1.123</kodeverdi>
+        <kodebeskrivelse>Er alle oppgavene i tiltaket dekket med ansvar?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon />
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>1.124</kodeverdi>
+        <kodebeskrivelse>Bekrefter søker at opplysningene i søknaden er korrekte, og forstår
+          konsekvensene av å oppgi feil eller uriktig informasjon?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon />
     </sjekklistekrav>
   </automatiseringskrav>
-  <!--dispensasjonOversikt>
-    <dispensasjon>
-      <dispensasjonReferanse>89fa33df-079a-407c-8371-4e85df5cf418</dispensasjonReferanse>
-      <dispensasjonKategori>
-        <kodeverdi>plassering</kodeverdi>
-        <kodebeskrivelse>Plassering</kodebeskrivelse>
-      </dispensasjonKategori>
-      <dispensasjonTittel>
-        <kodeverdi>byggegrenser</kodeverdi>
-        <kodebeskrivelse>Byggegrenser</kodebeskrivelse>
-      </dispensasjonTittel>
-      <bestemmelserType>
-        <kodeverdi>RP</kodeverdi>
-        <kodebeskrivelse>Reguleringsplan</kodebeskrivelse>
-      </bestemmelserType>
-    </dispensasjon>
-  </dispensasjonOversikt-->
   <tiltakshaver>
     <partstype>
-      <kodeverdi>Foretak</kodeverdi>
-      <kodebeskrivelse>Foretak</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer xsi:nil="true" />
-    <organisasjonsnummer>910748548</organisasjonsnummer>
-    <navn>BLOMSTERDALEN OG ØVRE SNERTINGDAL</navn>
+    <foedselsnummer>26904997195</foedselsnummer>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>Minimalistisk Opportunist</navn>
     <adresse>
       <adresselinje1>Bøgata 16</adresselinje1>
       <adresselinje2 xsi:nil="true" />
@@ -373,42 +400,42 @@
       <poststed>Bø i Telemark</poststed>
       <landkode>NO</landkode>
     </adresse>
-    <telefonnummer>111223344</telefonnummer>
-    <mobilnummer>12034043</mobilnummer>
-    <epost>test2@arkitektum.no</epost>
+    <telefonnummer>221223344</telefonnummer>
+    <mobilnummer></mobilnummer>
+    <epost>opportunist@epost.no</epost>
     <kontaktperson>
-      <navn>Test Person</navn>
-      <telefonnummer>111223344</telefonnummer>
-      <mobilnummer>12034043</mobilnummer>
-      <epost>test2@arkitektum.no</epost>
+      <navn></navn>
+      <telefonnummer></telefonnummer>
+      <mobilnummer></mobilnummer>
+      <epost></epost>
     </kontaktperson>
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer></foedselsnummer>
-    <organisasjonsnummer>312949555</organisasjonsnummer>
-    <navn>FREIDIG ALLSIDIG KATT OMSTILLING</navn>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
-      <adresselinje1>Test Adresse</adresselinje1>
+      <adresselinje1>Storgata 1</adresselinje1>
       <postnr>3750</postnr>
       <poststed>Drangedal</poststed>
       <landkode>NO</landkode>
     </adresse>
     <telefonnummer>12345678</telefonnummer>
     <mobilnummer>87654321</mobilnummer>
-    <epost>e@post.com</epost>
+    <epost>allsidigkatt@post.com</epost>
     <kontaktperson>
-      <navn>Kontakt Person</navn>
+      <navn>Inderlig Personlig Nordmann</navn>
       <telefonnummer>11223344</telefonnummer>
-      <mobilnummer>99887766</mobilnummer>
-      <epost>kontakt@person.no</epost>
+      <mobilnummer></mobilnummer>
+      <epost>inderlig@freidigkatt.no</epost>
     </kontaktperson>
   </ansvarligSoeker>
   <ansvarsrettSoeker>
-    <harSentralGodkjenning>true</harSentralGodkjenning>
+    <harSentralGodkjenning>false</harSentralGodkjenning>
     <tiltaksklasse>
       <kodeverdi>1</kodeverdi>
       <kodebeskrivelse>1</kodebeskrivelse>

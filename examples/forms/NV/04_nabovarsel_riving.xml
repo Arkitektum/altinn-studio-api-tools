@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<nabovarsel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dataFormatProvider="DIBK" dataFormatId="10009" dataFormatVersion="5" xmlns="https://skjema.ft.dibk.no/nabovarsel/v5">
+<nabovarsel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dataFormatProvider="DIBK"
+  dataFormatId="10009" dataFormatVersion="5" xmlns="https://skjema.ft.dibk.no/nabovarsel/v5">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester BYGG testmotor</fraSluttbrukersystem>
     <ftbId></ftbId>
@@ -62,15 +63,15 @@
     </eiendom>
   </eiendomByggested>
   <planer>
-      <gjeldendePlan>
+    <gjeldendePlan>
       <navn>Kommuneplanens arealdel: Kommuneplanens arealdel 2022-2034</navn>
-        <plantype>
-          <kodeverdi>KP</kodeverdi>
-          <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
-        </plantype>
+      <plantype>
+        <kodeverdi>KP</kodeverdi>
+        <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
+      </plantype>
     </gjeldendePlan>
   </planer>
-  <svarfrist>2025-12-31</svarfrist>
+  <svarfrist>2026-12-31</svarfrist>
   <tiltakshaver>
     <partstype>
       <kodeverdi>Privatperson</kodeverdi>
@@ -95,12 +96,12 @@
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi></kodeverdi>
-      <kodebeskrivelse></kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
     <organisasjonsnummer></organisasjonsnummer>
-    <foedselsnummer></foedselsnummer>
-    <navn></navn>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1></adresselinje1>
       <postnr></postnr>

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ramme xmlns="https://skjema.ft.dibk.no/ramme/v4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/ramme/v4 ramme.xsd" dataFormatProvider="DIBK" dataFormatId="10013" dataFormatVersion="4">
+<ramme xmlns="https://skjema.ft.dibk.no/ramme/v4"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/ramme/v4 ramme.xsd" dataFormatProvider="DIBK"
+  dataFormatId="10013" dataFormatVersion="4">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -9,7 +12,7 @@
       <kodeverdi>nb</kodeverdi>
       <kodebeskrivelse>Bokmål</kodebeskrivelse>
     </foretrukketSpraak>
-    <samtykkeTilByggeplaner>samtykke</samtykkeTilByggeplaner>
+    <samtykkeTilByggeplaner>294eda4b-9580-437a-a025-baa2e6a99bc2</samtykkeTilByggeplaner>
   </metadata>
   <generelleVilkaar>
     <norskSvenskDansk>true</norskSvenskDansk>
@@ -81,7 +84,7 @@
   <eiendomByggested>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -104,7 +107,7 @@
     </eiendom>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -127,7 +130,7 @@
     </eiendom>
     <eiendom>
       <eiendomsidentifikasjon>
-        <kommunenummer>3909</kommunenummer>
+        <kommunenummer>9997</kommunenummer>
         <gaardsnummer>4080</gaardsnummer>
         <bruksnummer>1</bruksnummer>
         <festenummer>0</festenummer>
@@ -231,25 +234,25 @@
         <kode>
           <kodeverdi>PrivatVeg</kodeverdi>
           <kodebeskrivelse>Privat vei</kodebeskrivelse>
-        </kode>        
+        </kode>
       </vegtype>
       <erTillatelseGittRiksFylkesveg>false</erTillatelseGittRiksFylkesveg>
       <erTillatelseGittKommunalVeg>false</erTillatelseGittKommunalVeg>
       <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
     </adkomst>
-   <arealdisponering>
-       <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-       <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-       <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-       <tomtearealBeregnet>526.6</tomtearealBeregnet>
-       <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-       <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-       <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-       <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-       <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-       <arealSumByggesak>136.65</arealSumByggesak>
-       <beregnetGradAvUtnytting>25.95</beregnetGradAvUtnytting>
-    </arealdisponering> 
+    <arealdisponering>
+      <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
+      <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+      <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+      <tomtearealBeregnet>526.6</tomtearealBeregnet>
+      <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
+      <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
+      <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+      <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+      <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
+      <arealSumByggesak>136.65</arealSumByggesak>
+      <beregnetGradAvUtnytting>25.95</beregnetGradAvUtnytting>
+    </arealdisponering>
     <vannforsyning>
       <tilknytningstype>
         <kodeverdi>AnnenPrivatInnlagt</kodeverdi>
@@ -283,7 +286,7 @@
             <kodebeskrivelse>S2</kodebeskrivelse>
           </sikkerhetsklasse>
         </omraadeRisiko>
-          <omraadeRisiko>
+        <omraadeRisiko>
           <risikotype>
             <kodeverdi>sorpeSkred</kodeverdi>
             <kodebeskrivelse>Skred i bratt terreng - sørpeskred</kodebeskrivelse>
@@ -328,52 +331,52 @@
             <kodeverdi>flom</kodeverdi>
             <kodebeskrivelse>Flom</kodebeskrivelse>
           </risikotype>
-            <sikkerhetsklasse>
-              <kodeverdi>f3</kodeverdi>
-              <kodebeskrivelse>F3</kodebeskrivelse>
-            </sikkerhetsklasse>
-          </omraadeRisiko>
-          <omraadeRisiko>
-            <risikotype>
-              <kodeverdi>kvikkLeire</kodeverdi>
-              <kodebeskrivelse>Kvikkleire</kodebeskrivelse>
-            </risikotype>
-            <sikkerhetsklasse>
-              <kodeverdi>k0</kodeverdi>
-              <kodebeskrivelse>K0</kodebeskrivelse>
-            </sikkerhetsklasse>
-            </omraadeRisiko>
-            <omraadeRisiko>
-              <risikotype>
-                <kodeverdi>plutseligFlom</kodeverdi>
-                <kodebeskrivelse>Plutselig flom</kodebeskrivelse>
-              </risikotype>
-              <sikkerhetsklasse>
-                <kodeverdi>bygNRBeredskap</kodeverdi>
-                <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
-              </sikkerhetsklasse>
-            </omraadeRisiko>
-            <omraadeRisiko>
-              <risikotype>
-                <kodeverdi>jordSkred</kodeverdi>
-                <kodebeskrivelse>Skred i bratt terreng - jordskred</kodebeskrivelse>
-              </risikotype>
-              <sikkerhetsklasse>
-                  <kodeverdi>utenforFO</kodeverdi>
-                  <kodebeskrivelse>Utenfor mulig fareområde</kodebeskrivelse>
-              </sikkerhetsklasse>
-            </omraadeRisiko>
-            <omraadeRisiko>
-              <risikotype>
-                <kodeverdi>stormFlo</kodeverdi>
-                <kodebeskrivelse>Stormflo</kodebeskrivelse>
-              </risikotype>
-              <sikkerhetsklasse>
-                <kodeverdi>f1</kodeverdi>
-                <kodebeskrivelse>F1</kodebeskrivelse>
-              </sikkerhetsklasse>
-            </omraadeRisiko>
-        </muligeOmraadeRisikoer>
+          <sikkerhetsklasse>
+            <kodeverdi>f3</kodeverdi>
+            <kodebeskrivelse>F3</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>kvikkLeire</kodeverdi>
+            <kodebeskrivelse>Kvikkleire</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>k0</kodeverdi>
+            <kodebeskrivelse>K0</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>plutseligFlom</kodeverdi>
+            <kodebeskrivelse>Plutselig flom</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>bygNRBeredskap</kodeverdi>
+            <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>jordSkred</kodeverdi>
+            <kodebeskrivelse>Skred i bratt terreng - jordskred</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>utenforFO</kodeverdi>
+            <kodebeskrivelse>Utenfor mulig fareområde</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+        <omraadeRisiko>
+          <risikotype>
+            <kodeverdi>stormFlo</kodeverdi>
+            <kodebeskrivelse>Stormflo</kodebeskrivelse>
+          </risikotype>
+          <sikkerhetsklasse>
+            <kodeverdi>f1</kodeverdi>
+            <kodebeskrivelse>F1</kodebeskrivelse>
+          </sikkerhetsklasse>
+        </omraadeRisiko>
+      </muligeOmraadeRisikoer>
       <harMiljoeforhold>true</harMiljoeforhold>
     </kravTilByggegrunn>
     <loefteinnretninger>
@@ -434,12 +437,12 @@
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer></foedselsnummer>
-    <organisasjonsnummer>312949555</organisasjonsnummer>
-    <navn>FREIDIG ALLSIDIG KATT OMSTILLING</navn>
+    <foedselsnummer>109211*****</foedselsnummer>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Test Adresse</adresselinje1>
       <postnr>3750</postnr>

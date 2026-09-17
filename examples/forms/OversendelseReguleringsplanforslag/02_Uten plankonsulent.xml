@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<OversendelseReguleringsplanforslag
-    xmlns="https://skjema.ft.dibk.no/reguleringsplanforslag/v1"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="https://skjema.ft.dibk.no/reguleringsplanforslag/v1 oversendelseReguleringsplanforslag.xsd"
-    dataFormatProvider="DIBK" dataFormatId="11001" dataFormatVersion="1">
+<?xml version="1.0" encoding="utf-8"?>
+<OversendelseReguleringsplanforslag xmlns="https://skjema.ft.dibk.no/reguleringsplanforslag/v1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/reguleringsplanforslag/v1 oversendelseReguleringsplanforslag.xsd"
+  dataFormatProvider="DIBK" dataFormatId="11001" dataFormatVersion="1">
   <planforslag>
     <plannavn>Årstad, gnr. 11 bnr. 28 mfl. Nattlandsfjellet</plannavn>
     <nasjonalArealplanId>
@@ -31,7 +30,7 @@
     <dato>2025-06-11</dato>
     <nummer>1</nummer>
     <erFoersteVersjon>true</erFoersteVersjon>
-    <erAlternativ xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+    <erAlternativ>false</erAlternativ>
     <alternativReferanse>1234</alternativReferanse>
   </versjon>
   <metadata>
@@ -48,8 +47,8 @@
       <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
     <organisasjonsnummer></organisasjonsnummer>
-    <navn>FILET TANKEFULL</navn>
-    <epost>test@arkitektum.no</epost>
+    <navn>UKLAR PLAST</navn>
+    <epost>veronika@arkitektum.no</epost>
     <adresse>
       <adresselinje1>Sentrumsgate 1</adresselinje1>
       <postnr>3810</postnr>
@@ -57,7 +56,7 @@
       <landkode>NO</landkode>
     </adresse>
     <telefon>99999999</telefon>
-    <foedselsnummer>27845398386</foedselsnummer>
+    <foedselsnummer>10921148513</foedselsnummer>
   </forslagsstiller>
   <fakturamottaker>
     <fakturaSendesTil>plankonsulent</fakturaSendesTil>

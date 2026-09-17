@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<nabovarsel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dataFormatProvider="DIBK" dataFormatId="10009" dataFormatVersion="5" xmlns="https://skjema.ft.dibk.no/nabovarsel/v5">
+<nabovarsel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dataFormatProvider="DIBK"
+  dataFormatId="10009" dataFormatVersion="5" xmlns="https://skjema.ft.dibk.no/nabovarsel/v5">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester BYGG testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -32,9 +33,15 @@
         </kode>
       </tiltaksformaal>
       <beskrivTidligereFormaal>Arealet har blitt brukt som bod.</beskrivTidligereFormaal>
-      <beskrivPlanlagtFormaal>Vi ønsker å bruke rommet som vinterhage, som en utvidelse av stua med skikkelig store vinduer ut mot fjorden.</beskrivPlanlagtFormaal>
+      <beskrivPlanlagtFormaal>Vi ønsker å bruke rommet som vinterhage, som en utvidelse av stua med
+        skikkelig store vinduer ut mot fjorden.</beskrivPlanlagtFormaal>
     </bruk>
-    <foelgebrev>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</foelgebrev>
+    <foelgebrev>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+      incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+      exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+      reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+      occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+      laborum.</foelgebrev>
   </soeknadGjelder>
   <ansvarForByggesaken>
     <kodeverdi>selvbygger</kodeverdi>
@@ -68,10 +75,10 @@
   <planer>
     <gjeldendePlan>
       <navn>Kommuneplanens arealdel: Kommuneplanens arealdel 2022-2034</navn>
-        <plantype>
-          <kodeverdi>KP</kodeverdi>
-          <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
-        </plantype>
+      <plantype>
+        <kodeverdi>KP</kodeverdi>
+        <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
+      </plantype>
     </gjeldendePlan>
     <andrePlaner>
       <plan>
@@ -83,15 +90,15 @@
       </plan>
     </andrePlaner>
   </planer>
-  <svarfrist>2025-12-24</svarfrist>
+  <svarfrist>2026-12-31</svarfrist>
   <ansvarligSoeker>
     <partstype>
       <kodeverdi>Privatperson</kodeverdi>
       <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
     <organisasjonsnummer></organisasjonsnummer>
-    <foedselsnummer>23826696249</foedselsnummer>
-    <navn>Fjång Juni</navn>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Husgata 15</adresselinje1>
       <postnr>0123</postnr>

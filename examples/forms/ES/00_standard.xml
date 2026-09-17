@@ -1,5 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<endring xmlns="https://skjema.ft.dibk.no/endring/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/endring/v2 endring.xsd" dataFormatId="10015" dataFormatProvider="DIBK" dataFormatVersion="2">
+<?xml version="1.0" encoding="utf-8"?>
+<endring xmlns="https://skjema.ft.dibk.no/endring/v2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://skjema.ft.dibk.no/endring/v2 endring.xsd" dataFormatId="10015"
+	dataFormatProvider="DIBK" dataFormatVersion="2">
 	<metadata>
 		<fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
 		<ftbId>FTB-12345</ftbId>
@@ -27,10 +30,10 @@
 		<saksaar>2024</saksaar>
 		<sakssekvensnummer>12345</sakssekvensnummer>
 	</kommunensSaksnummer>
-  <ansvarForByggesaken>
-    <kodeverdi>utenAnsvar</kodeverdi>
-    <kodebeskrivelse>Søknad om tillatelse uten ansvarsrett etter pbl § 20-4</kodebeskrivelse>
-  </ansvarForByggesaken>
+	<ansvarForByggesaken>
+		<kodeverdi>utenAnsvar</kodeverdi>
+		<kodebeskrivelse>Søknad om tillatelse uten ansvarsrett etter pbl § 20-4</kodebeskrivelse>
+	</ansvarForByggesaken>
 	<endringenGjelder>
 		<endringstype>
 			<kode>
@@ -55,14 +58,14 @@
 			</eiendomsidentifikasjon>
 			<adresse>
 				<adresselinje1>Mariboes gate 13</adresselinje1>
-				<adresselinje2/>
-				<adresselinje3/>
+				<adresselinje2 />
+				<adresselinje3 />
 				<postnr>0183</postnr>
 				<poststed>Oslo</poststed>
 				<landkode>NO</landkode>
 				<gatenavn>Mariboes gate</gatenavn>
 				<husnr>13</husnr>
-				<bokstav/>
+				<bokstav />
 			</adresse>
 			<bygningsnummer>8626677</bygningsnummer>
 			<bolignummer>H0101</bolignummer>
@@ -78,14 +81,14 @@
 			</eiendomsidentifikasjon>
 			<adresse>
 				<adresselinje1>Mariboes gate 13</adresselinje1>
-				<adresselinje2/>
-				<adresselinje3/>
+				<adresselinje2 />
+				<adresselinje3 />
 				<postnr>0183</postnr>
 				<poststed>Oslo</poststed>
 				<landkode>NO</landkode>
 				<gatenavn>Mariboes gate</gatenavn>
 				<husnr>13</husnr>
-				<bokstav/>
+				<bokstav />
 			</adresse>
 			<bygningsnummer>81099618</bygningsnummer>
 			<bolignummer>H0101</bolignummer>
@@ -146,19 +149,19 @@
 			<erTillatelseGittKommunalVeg>false</erTillatelseGittKommunalVeg>
 			<erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
 		</adkomst>
-	   <arealdisponering>
-		   <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-		   <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-		   <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-		   <tomtearealBeregnet>526.6</tomtearealBeregnet>
-		   <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-		   <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-		   <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-		   <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-		   <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-		   <arealSumByggesak>136.65</arealSumByggesak>
-		   <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
-		</arealdisponering> 
+		<arealdisponering>
+			<tomtearealByggeomraade>550.0</tomtearealByggeomraade>
+			<tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+			<tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+			<tomtearealBeregnet>526.6</tomtearealBeregnet>
+			<beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
+			<arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
+			<arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+			<arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+			<parkeringsarealTerreng>36.00</parkeringsarealTerreng>
+			<arealSumByggesak>136.65</arealSumByggesak>
+			<beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
+		</arealdisponering>
 		<kravTilByggegrunn>
 			<muligeOmraadeRisikoer>
 				<omraadeRisiko>
@@ -226,16 +229,16 @@
 	</dispensasjonOversikt>
 	<tiltakshaver>
 		<partstype>
-			<kodeverdi>Foretak</kodeverdi>
-			<kodebeskrivelse>Foretak</kodebeskrivelse>
+			<kodeverdi>Privatperson</kodeverdi>
+			<kodebeskrivelse>Privatperson</kodebeskrivelse>
 		</partstype>
-		<foedselsnummer></foedselsnummer>
-		<organisasjonsnummer>910748548</organisasjonsnummer>
-		<navn>BLOMSTERDALEN OG ØVRE SNERTINGDAL</navn>
+		<foedselsnummer>10921148513</foedselsnummer>
+		<organisasjonsnummer></organisasjonsnummer>
+		<navn>UKLAR PLAST</navn>
 		<adresse>
 			<adresselinje1>Bøgata 16</adresselinje1>
-			<adresselinje2 xsi:nil="true"/>
-			<adresselinje3 xsi:nil="true"/>
+			<adresselinje2 xsi:nil="true" />
+			<adresselinje3 xsi:nil="true" />
 			<postnr>3802</postnr>
 			<poststed>Bø i Telemark</poststed>
 			<landkode>NO</landkode>

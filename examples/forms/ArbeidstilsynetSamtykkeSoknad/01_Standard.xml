@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ArbeidstilsynetsSamtykke xmlns="https://skjema.ft.dibk.no/arbeidstilsynetssamtykke/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://skjema.ft.dibk.no/arbeidstilsynetssamtykke/v3 arbeidstilsynetsSamtykke.xsd" dataFormatProvider="ATIL" dataFormatId="12000" dataFormatVersion="3">
+<ArbeidstilsynetsSamtykke xmlns="https://skjema.ft.dibk.no/arbeidstilsynetssamtykke/v3"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://skjema.ft.dibk.no/arbeidstilsynetssamtykke/v3 arbeidstilsynetsSamtykke.xsd"
+  dataFormatProvider="ATIL" dataFormatId="12000" dataFormatVersion="3">
   <eiendomByggested>
     <eiendom>
       <eiendomsidentifikasjon>
@@ -56,7 +59,11 @@
     <eksisterende>true</eksisterende>
     <utleieBygg>false</utleieBygg>
     <antallVirksomheter>1</antallVirksomheter>
-    <beskrivelse>Lorem ipsum odor amet, consectetuer adipiscing elit. Hendrerit nunc natoque vehicula sapien tellus; faucibus et dis. Taciti iaculis viverra venenatis integer rhoncus ultrices. Blandit neque nam suspendisse sapien elementum netus netus inceptos. Netus ut sapien magna facilisis orci? Hac ipsum ornare eleifend sodales habitasse. Taciti convallis ex ad vel vulputate.
+    <beskrivelse>Lorem ipsum odor amet, consectetuer adipiscing elit. Hendrerit nunc natoque
+      vehicula sapien tellus; faucibus et dis. Taciti iaculis viverra venenatis integer rhoncus
+      ultrices. Blandit neque nam suspendisse sapien elementum netus netus inceptos. Netus ut sapien
+      magna facilisis orci? Hac ipsum ornare eleifend sodales habitasse. Taciti convallis ex ad vel
+      vulputate.
     </beskrivelse>
     <veiledning>false</veiledning>
   </arbeidsplasser>
@@ -82,12 +89,12 @@
   </fakturamottaker>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Foretak</kodeverdi>
-      <kodebeskrivelse>Foretak</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <foedselsnummer>28044102120</foedselsnummer>
-    <organisasjonsnummer>910598023</organisasjonsnummer>
-    <navn>HUSNES OG OPPDAL</navn>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <organisasjonsnummer></organisasjonsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>c/o Ola Nordmann</adresselinje1>
       <adresselinje2>andre etasje</adresselinje2>
@@ -124,14 +131,240 @@
       <beskrivelse>Søknad om dispensasjon fra bestemmelsen NN...</beskrivelse>
     </dispensasjon>
   </dispensasjoner>
-   <krav>
+  <krav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>1.15</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>2.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>2.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>2.5</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>2.7</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>2.9</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>3.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>3.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>3.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>4.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>4.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>5.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>5.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>5.5</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>5.7</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>6.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>7.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>7.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>8.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>8.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>9.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>10.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>10.3</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
     <sjekklistekrav>
       <sjekklistepunktsvar>true</sjekklistepunktsvar>
       <sjekklistepunkt>
         <kodeverdi>11.2</kodeverdi>
-        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon>Dette er dokumentasjon for pkt 11.2...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.4</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
     </sjekklistekrav>
     <sjekklistekrav>
       <sjekklistepunktsvar>false</sjekklistepunktsvar>
@@ -140,6 +373,159 @@
         <kodebeskrivelse>Er bygning(er) vernet?</kodebeskrivelse>
       </sjekklistepunkt>
       <dokumentasjon>Dette er dokumentasjon for pkt 11.6...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.7</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.10</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.12</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.15</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.19</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.20</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.23</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>11.24</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>12.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>13.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>13.2</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>13.4</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>13.6</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>14.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>15.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>16.1</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
+    </sjekklistekrav>
+    <sjekklistekrav>
+      <sjekklistepunktsvar>true</sjekklistepunktsvar>
+      <sjekklistepunkt>
+        <kodeverdi>16.2</kodeverdi>
+        <kodebeskrivelse>Har arbeidsgiver(e) som skal bruke tiltaket, plikt til å være tilknyttet
+          godkjent bedriftshelsetjeneste?</kodebeskrivelse>
+      </sjekklistepunkt>
+      <dokumentasjon>Dette er dokumentasjon...</dokumentasjon>
     </sjekklistekrav>
   </krav>
   <beskrivelseAvTiltak>
@@ -159,7 +545,7 @@
       <tiltaksformaal>
         <kode>
           <kodeverdi>Bolig</kodeverdi>
-          <kodebeskrivelse>Bolig</kodebeskrivelse>  
+          <kodebeskrivelse>Bolig</kodebeskrivelse>
         </kode>
         <kode>
           <kodeverdi>Annet</kodeverdi>

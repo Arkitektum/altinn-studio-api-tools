@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<nabovarsel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dataFormatProvider="DIBK" dataFormatId="10009" dataFormatVersion="5" xmlns="https://skjema.ft.dibk.no/nabovarsel/v5">
+<nabovarsel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dataFormatProvider="DIBK"
+  dataFormatId="10009" dataFormatVersion="5" xmlns="https://skjema.ft.dibk.no/nabovarsel/v5">
   <metadata>
     <fraSluttbrukersystem>Fellestjenester BYGG testmotor</fraSluttbrukersystem>
     <ftbId>FTB-12345</ftbId>
@@ -64,10 +65,10 @@
   <planer>
     <gjeldendePlan>
       <navn>Kommuneplanens arealdel: Kommuneplanens arealdel 2022-2034</navn>
-        <plantype>
-          <kodeverdi>KP</kodeverdi>
-          <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
-        </plantype>
+      <plantype>
+        <kodeverdi>KP</kodeverdi>
+        <kodebeskrivelse>Arealdel av kommuneplan</kodebeskrivelse>
+      </plantype>
     </gjeldendePlan>
     <andrePlaner>
       <plan>
@@ -111,7 +112,7 @@
       </bestemmelserType>
     </dispensasjon>
   </dispensasjonOversikt>
-  <svarfrist>2025-12-31</svarfrist>
+  <svarfrist>2026-12-31</svarfrist>
   <tiltakshaver>
     <partstype>
       <kodeverdi>Privatperson</kodeverdi>
@@ -136,12 +137,12 @@
   </tiltakshaver>
   <ansvarligSoeker>
     <partstype>
-      <kodeverdi>Organisasjon</kodeverdi>
-      <kodebeskrivelse>Organisasjon</kodebeskrivelse>
+      <kodeverdi>Privatperson</kodeverdi>
+      <kodebeskrivelse>Privatperson</kodebeskrivelse>
     </partstype>
-    <organisasjonsnummer>310973513</organisasjonsnummer>
-    <foedselsnummer></foedselsnummer>
-    <navn>Verdifull Falsk Ape</navn>
+    <organisasjonsnummer></organisasjonsnummer>
+    <foedselsnummer>10921148513</foedselsnummer>
+    <navn>UKLAR PLAST</navn>
     <adresse>
       <adresselinje1>Næringsveien 10</adresselinje1>
       <postnr>0123</postnr>
@@ -274,7 +275,8 @@
           <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
         <organisasjonsnummer></organisasjonsnummer>
-        <foedselsnummer>j5vPIvi7aD7poZdWqF5U9e9vG9iPgWa2oMIhXc9zHMVZow/QkN880EsaCyUNfr+z5SP6Gkn1BQzshOEJRkh3e9gPsaWyx+SoCelpwVAG3CytIW6AXhx1DfluzN0BA1cAkH0Q5saT3Zol4rzzz21eIeEKRdk/mx49/kQHtEXo49I=</foedselsnummer>
+        <foedselsnummer>
+          j5vPIvi7aD7poZdWqF5U9e9vG9iPgWa2oMIhXc9zHMVZow/QkN880EsaCyUNfr+z5SP6Gkn1BQzshOEJRkh3e9gPsaWyx+SoCelpwVAG3CytIW6AXhx1DfluzN0BA1cAkH0Q5saT3Zol4rzzz21eIeEKRdk/mx49/kQHtEXo49I=</foedselsnummer>
         <navn>ESTETISK JOURNALIST</navn>
         <adresse>
           <adresselinje1>Christian Eggens veg 51</adresselinje1>
@@ -325,7 +327,8 @@
           <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
         <organisasjonsnummer></organisasjonsnummer>
-        <foedselsnummer>F9PQkkmCoGFPq8lcygMqUj0RO4Q/9KSIGF+KupTdWk2ejE535TgVaE7LmjqBM2xC0qyQjG6derfQhsn9OOyh0V/92BAop+c/d+pezf/fXL1lUzj/C+tAQwzzsy5SZIbXvDcS6IN8YtFR4TaoHFAZuk6z7RHWrRMOmpG10nZhsy8=</foedselsnummer>
+        <foedselsnummer>
+          F9PQkkmCoGFPq8lcygMqUj0RO4Q/9KSIGF+KupTdWk2ejE535TgVaE7LmjqBM2xC0qyQjG6derfQhsn9OOyh0V/92BAop+c/d+pezf/fXL1lUzj/C+tAQwzzsy5SZIbXvDcS6IN8YtFR4TaoHFAZuk6z7RHWrRMOmpG10nZhsy8=</foedselsnummer>
         <navn>KNUSLETE BRA TAKKE</navn>
         <adresse>
           <adresselinje1>Christian Eggens veg 45</adresselinje1>
@@ -376,7 +379,8 @@
           <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
         <organisasjonsnummer></organisasjonsnummer>
-        <foedselsnummer>pOmvm5UNQhw1Qhaks65j9FkFYTj0YWqIH/IxLCW8GMzICLu70qKlpfuVTyVLkNvnczlMvUxMTLtrgNS3o5efpLICinwU5cdMmaVxc9pEKgexmNGjXhvpFIu76t2MT3p+XrOEIQgvyVwlQ7Qtfy3Zrz5IFbzM5X3cXtFgUquMars=</foedselsnummer>
+        <foedselsnummer>
+          pOmvm5UNQhw1Qhaks65j9FkFYTj0YWqIH/IxLCW8GMzICLu70qKlpfuVTyVLkNvnczlMvUxMTLtrgNS3o5efpLICinwU5cdMmaVxc9pEKgexmNGjXhvpFIu76t2MT3p+XrOEIQgvyVwlQ7Qtfy3Zrz5IFbzM5X3cXtFgUquMars=</foedselsnummer>
         <navn>ERFAREN BOK</navn>
         <adresse>
           <adresselinje1>213 Acklains Circle</adresselinje1>
@@ -428,7 +432,8 @@
           <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
         <organisasjonsnummer></organisasjonsnummer>
-        <foedselsnummer>vqCzi6YJJF0FCLrns7eXp9I7wNMeXCn8C2PgXtHcSFFwrdgi8NYVOSm16uEBw+KiQ+GmBj125Kdlgx/SceP5PaVITtIG7kMII/PEpQedW9i1bEiqowCrcXkrszoHlVRimZnc7OjdgohECYvfpzmy0Q8I6/WCQnm/7Wc6MrroOwA=</foedselsnummer>
+        <foedselsnummer>
+          vqCzi6YJJF0FCLrns7eXp9I7wNMeXCn8C2PgXtHcSFFwrdgi8NYVOSm16uEBw+KiQ+GmBj125Kdlgx/SceP5PaVITtIG7kMII/PEpQedW9i1bEiqowCrcXkrszoHlVRimZnc7OjdgohECYvfpzmy0Q8I6/WCQnm/7Wc6MrroOwA=</foedselsnummer>
         <navn>TILFREDSSTILLENDE ABAKUS</navn>
         <adresse>
           <adresselinje1>Christian Eggens veg 49</adresselinje1>
@@ -479,7 +484,8 @@
           <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
         <organisasjonsnummer></organisasjonsnummer>
-        <foedselsnummer>pd3kYCO1UroXWSaPHQ3TDECbhyoSUqFk3B2oPWdJblKONMBcNkaixobjWJZCuu+R4q63kjChEVSLtPUX77eby24VA1v0UJjdgFlZIyuVhkgyD00DZ0pb9Ezf4Y0LwSysh4JtaU+Uu2KpgdHbdkk9n0mphv9RgFICkRZStXCrjEU=</foedselsnummer>
+        <foedselsnummer>
+          pd3kYCO1UroXWSaPHQ3TDECbhyoSUqFk3B2oPWdJblKONMBcNkaixobjWJZCuu+R4q63kjChEVSLtPUX77eby24VA1v0UJjdgFlZIyuVhkgyD00DZ0pb9Ezf4Y0LwSysh4JtaU+Uu2KpgdHbdkk9n0mphv9RgFICkRZStXCrjEU=</foedselsnummer>
         <navn>Sliten Grense</navn>
         <adresse>
           <adresselinje1>Christian Eggens veg 39</adresselinje1>

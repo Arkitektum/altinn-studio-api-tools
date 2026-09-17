@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<utenansvarsrett
-    xmlns="https://skjema.ft.dibk.no/utenansvarsrett/v4"
+<?xml version="1.0" encoding="utf-8"?>
+<utenansvarsrett xmlns="https://skjema.ft.dibk.no/utenansvarsrett/v4"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="https://skjema.ft.dibk.no/utenansvarsrett/v4 utenansvarsrett.xsd"
     dataFormatProvider="DIBK" dataFormatId="10014" dataFormatVersion="4">
@@ -24,7 +23,7 @@
                 <kodeverdi>nytiltakstypesomgjelderskorstein</kodeverdi>
                 <kodebeskrivelse>Rehabilitering av skorstein</kodebeskrivelse>
             </kode>
-        </type>        
+        </type>
         <foelgebrev>Det søkes om rehabilitering av skorstein</foelgebrev>
         <bruk>
             <tiltaksformaal>
@@ -53,10 +52,10 @@
         <saksaar>2024</saksaar>
         <sakssekvensnummer>12345</sakssekvensnummer>
     </kommunensSaksnummer>
-  <ansvarForByggesaken>
-    <kodeverdi>utenAnsvar</kodeverdi>
-    <kodebeskrivelse>Søknad om tillatelse uten ansvarsrett etter pbl § 20-4</kodebeskrivelse>
-  </ansvarForByggesaken>
+    <ansvarForByggesaken>
+        <kodeverdi>utenAnsvar</kodeverdi>
+        <kodebeskrivelse>Søknad om tillatelse uten ansvarsrett etter pbl § 20-4</kodebeskrivelse>
+    </ansvarForByggesaken>
     <eiendomByggested>
         <eiendom>
             <eiendomsidentifikasjon>
@@ -180,25 +179,25 @@
                 <kode>
                     <kodeverdi>KommunalVeg</kodeverdi>
                     <kodebeskrivelse>Kommunal vei</kodebeskrivelse>
-                </kode>                
+                </kode>
             </vegtype>
             <erTillatelseGittRiksFylkesveg>false</erTillatelseGittRiksFylkesveg>
             <erTillatelseGittKommunalVeg>false</erTillatelseGittKommunalVeg>
             <erTillatelseGittPrivatVeg>false</erTillatelseGittPrivatVeg>
         </adkomst>
-	   <arealdisponering>
-		   <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
-		   <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
-		   <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
-		   <tomtearealBeregnet>526.6</tomtearealBeregnet>
-		   <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
-		   <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
-		   <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
-		   <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
-		   <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
-		   <arealSumByggesak>136.65</arealSumByggesak>
-		   <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
-		</arealdisponering> 
+        <arealdisponering>
+            <tomtearealByggeomraade>550.0</tomtearealByggeomraade>
+            <tomtearealSomTrekkesFra>59.60</tomtearealSomTrekkesFra>
+            <tomtearealSomLeggesTil>36.20</tomtearealSomLeggesTil>
+            <tomtearealBeregnet>526.6</tomtearealBeregnet>
+            <beregnetMaksByggeareal>160.0</beregnetMaksByggeareal>
+            <arealBebyggelseEksisterende>136.20</arealBebyggelseEksisterende>
+            <arealBebyggelseSomSkalRives>95.15</arealBebyggelseSomSkalRives>
+            <arealBebyggelseNytt>59.60</arealBebyggelseNytt>
+            <parkeringsarealTerreng>36.00</parkeringsarealTerreng>
+            <arealSumByggesak>136.65</arealSumByggesak>
+            <beregnetGradAvUtnytting>136.65</beregnetGradAvUtnytting>
+        </arealdisponering>
         <vannforsyning>
             <tilknytningstype>
                 <kodeverdi>TilknyttetOffVannverk</kodeverdi>
@@ -266,33 +265,37 @@
         <plassering>
             <erKonfliktMedHoeyspentkraftlinje>false</erKonfliktMedHoeyspentkraftlinje>
             <erKonfliktMedVannOgAvloep>false</erKonfliktMedVannOgAvloep>
+            <erBekreftetInnenforByggegrense>true</erBekreftetInnenforByggegrense>
+            <minsteAvstandNabogrense xsi:nil="true" />
+            <minsteAvstandTilMidtenAvVei xsi:nil="true" />
+            <minsteAvstandTilAnnenBygning xsi:nil="true" />
         </plassering>
     </rammebetingelser>
     <dispensasjonOversikt>
-      <dispensasjon>
-        <dispensasjonReferanse>89fa33df-079a-407c-8371-4e85df5cf418</dispensasjonReferanse>
-        <dispensasjonKategori>
-          <kodeverdi>plassering</kodeverdi>
-          <kodebeskrivelse>Plassering</kodebeskrivelse>         
-        </dispensasjonKategori>
-        <dispensasjonTittel>
-          <kodeverdi>byggegrenser</kodeverdi>
-          <kodebeskrivelse>Byggegrenser</kodebeskrivelse>         
-        </dispensasjonTittel>
-        <bestemmelserType>
-          <kodeverdi>RP</kodeverdi>
-          <kodebeskrivelse>Reguleringsplan</kodebeskrivelse>         
-        </bestemmelserType>
-      </dispensasjon>
+        <dispensasjon>
+            <dispensasjonReferanse>89fa33df-079a-407c-8371-4e85df5cf418</dispensasjonReferanse>
+            <dispensasjonKategori>
+                <kodeverdi>plassering</kodeverdi>
+                <kodebeskrivelse>Plassering</kodebeskrivelse>
+            </dispensasjonKategori>
+            <dispensasjonTittel>
+                <kodeverdi>byggegrenser</kodeverdi>
+                <kodebeskrivelse>Byggegrenser</kodebeskrivelse>
+            </dispensasjonTittel>
+            <bestemmelserType>
+                <kodeverdi>RP</kodeverdi>
+                <kodebeskrivelse>Reguleringsplan</kodebeskrivelse>
+            </bestemmelserType>
+        </dispensasjon>
     </dispensasjonOversikt>
     <tiltakshaver>
         <partstype>
             <kodeverdi>Privatperson</kodeverdi>
             <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
-        <foedselsnummer>01899699552</foedselsnummer>
+        <foedselsnummer>10921148513</foedselsnummer>
         <organisasjonsnummer></organisasjonsnummer>
-        <navn>BLOMSTERDALEN OG ØVRE SNERTINGDAL</navn>
+        <navn>UKLAR PLAST</navn>
         <adresse>
             <adresselinje1>Bøgata 16</adresselinje1>
             <adresselinje2 xsi:nil="true" />

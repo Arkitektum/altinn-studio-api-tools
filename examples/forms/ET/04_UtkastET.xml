@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ettrinn
-    xmlns="https://skjema.ft.dibk.no/ettrinn/v4"
+<?xml version="1.0" encoding="utf-8"?>
+<ettrinn xmlns="https://skjema.ft.dibk.no/ettrinn/v4"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="https://skjema.ft.dibk.no/ettrinn/v4 ettrinn.xsd"
-    dataFormatProvider="DIBK" dataFormatId="10012" dataFormatVersion="4">
+    xsi:schemaLocation="https://skjema.ft.dibk.no/ettrinn/v4 ettrinn.xsd" dataFormatProvider="DIBK"
+    dataFormatId="10012" dataFormatVersion="4">
     <metadata>
         <fraSluttbrukersystem>Fellestjenester bygg testmotor</fraSluttbrukersystem>
         <ftbId>FTB-12345</ftbId>
@@ -13,7 +12,7 @@
             <kodeverdi>nb</kodeverdi>
             <kodebeskrivelse>Bokmål</kodebeskrivelse>
         </foretrukketSpraak>
-        <samtykkeTilByggeplaner>51060890/b0db9bbb-7379-4c17-944c-c9258c9e1a54</samtykkeTilByggeplaner>
+        <samtykkeTilByggeplaner>294eda4b-9580-437a-a025-baa2e6a99bc2</samtykkeTilByggeplaner>
     </metadata>
     <generelleVilkaar>
         <norskSvenskDansk>true</norskSvenskDansk>
@@ -261,7 +260,8 @@
                     </risikotype>
                     <sikkerhetsklasse>
                         <kodeverdi>bygNRBeredskap</kodeverdi>
-                        <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional beredskap</kodebeskrivelse>
+                        <kodebeskrivelse>Bygninger som er avgjørende for nasjonal eller regional
+                            beredskap</kodebeskrivelse>
                     </sikkerhetsklasse>
                 </omraadeRisiko>
                 <omraadeRisiko>
@@ -414,9 +414,9 @@
             <kodeverdi>Privatperson</kodeverdi>
             <kodebeskrivelse>Privatperson</kodebeskrivelse>
         </partstype>
-        <foedselsnummer>01899699552</foedselsnummer>
+        <foedselsnummer>10921148513</foedselsnummer>
         <organisasjonsnummer></organisasjonsnummer>
-        <navn>Test Person</navn>
+        <navn>UKLAR PLAST</navn>
         <adresse>
             <adresselinje1>Test Adresse</adresselinje1>
             <postnr>3750</postnr>
