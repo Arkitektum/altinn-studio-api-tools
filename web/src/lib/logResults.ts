@@ -282,6 +282,34 @@ export function logFromDelete(result: DeleteInstanceResult): LogResult {
     };
 }
 
+/**
+ * A whole cleanup as one entry rather than one per instance.
+ *
+ * Every delete is still a request and still shown, as a step inside this: clearing forty soft
+ * deleted instances is forty steps you can open, not forty runs. One per instance would push
+ * everything else out of a log that keeps the last twenty five, and the thing it would push out
+ * is the run you were deleting after.
+ *
+ * The steps are renumbered because each delete counted from one, and a reader following a list of
+ * forty wants it to read as forty.
+ */
+export function logFromCleanup(results: DeleteInstanceResult[]): LogResult {
+    const failed = results.filter((result) => !result.ok);
+    const steps: RunStep[] = results.flatMap((result) => result.steps).map((step, index) => ({ ...step, index }));
+
+    return {
+        ok: failed.length === 0,
+        steps,
+        failedAt: failed[0]?.failedAt ?? null,
+        title: "Cleared soft deleted instances",
+        rows: [
+            { label: "Party", value: results[0]?.instanceOwnerPartyId ?? "" },
+            { label: "Cleared", value: String(results.length - failed.length) },
+            ...(failed.length > 0 ? [{ label: "Refused", value: String(failed.length), tone: "bad" as const }] : [])
+        ]
+    };
+}
+
 export function logFromPdf(result: PdfPreviewResult, bytes: number): LogResult {
     return {
         ok: result.ok,

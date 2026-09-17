@@ -3,14 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { queryKeys } from "../queries";
 import { useRunLog } from "../runLog";
-import { logFromDelete, logFromInstances } from "../lib/logResults";
+import { softDeletedOf } from "../lib/instanceCleanup";
+import { logFromCleanup, logFromDelete, logFromInstances } from "../lib/logResults";
 import { SELECTION_DELAY_MS, useSettled } from "../lib/useDebounced";
 import { instanceLabel } from "../lib/format";
 import { useTarget } from "../session";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { InstanceState, InstanceSummary, ListInstancesResult } from "../types";
+import type { DeleteInstanceResult, InstanceState, InstanceSummary, ListInstancesResult } from "../types";
 import { Icon } from "./Icon";
 
 /**
@@ -54,6 +55,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
 
     /** Which row has been armed for deletion, by guid. One at a time. */
     const [confirming, setConfirming] = useState<string | null>(null);
+    /** The bulk clear, armed. Its own flag rather than a sentinel in `confirming`, which holds a guid. */
+    const [clearing, setClearing] = useState(false);
     /** Whether the guid field is showing, for an instance the list does not hold. */
     const [typing, setTyping] = useState(false);
     const [picking, setPicking] = useState(false);
@@ -123,6 +126,51 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
     });
 
     /**
+     * Clears every soft deleted instance this party has, which is what storage fills up with: a
+     * soft delete only marks one, so they come back on every listing forever and each is two
+     * clicks to be rid of.
+     *
+     * Only the soft deleted ones. A completed instance is a test run someone finished and may want
+     * to look at, and sweeping those away with the rest would be destroying the thing you were
+     * keeping rather than the litter around it.
+     *
+     * One at a time rather than all at once. These are deletes against a localtest on the same
+     * machine, and forty concurrent ones would be a load test rather than a tidy up.
+     */
+    const cleanup = useMutation({
+        mutationFn: async (targets: InstanceSummary[]) => {
+            const results: DeleteInstanceResult[] = [];
+            for (const instance of targets) {
+                results.push(
+                    await api.deleteInstance({
+                        tokenId: tokenId ?? "",
+                        org,
+                        app,
+                        instanceOwnerPartyId: instance.instanceOwnerPartyId,
+                        instanceGuid: instance.instanceGuid,
+                        hard: "true"
+                    })
+                );
+            }
+            // One entry for the lot. See logFromCleanup for why.
+            if (results.length > 0) append(logFromCleanup(results));
+            return results;
+        },
+        // Disarmed either way. A run that fell over has to be armed again rather than sitting there
+        // ready to fire at a count nothing has re-checked.
+        onSettled: () => setClearing(false),
+        onSuccess: (results) => {
+            const cleared = new Set(results.filter((result) => result.ok).map((result) => result.instanceGuid));
+            if (cleared.size === 0) return;
+            // The ones that refused stay listed, since they are still there to try again on.
+            queryClient.setQueryData<ListInstancesResult>(key, (current) =>
+                current ? { ...current, instances: current.instances.filter((held) => !cleared.has(held.instanceGuid)) } : current
+            );
+            if (cleared.has(instanceGuid)) onSelect(null);
+        }
+    });
+
+    /**
      * A failed listing stays null rather than empty, since "none" would be a claim we cannot make
      * when the request never answered. So does one the app refused, for the same reason.
      */
@@ -131,12 +179,14 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
     const completedListed = listQuery.data?.completedListed ?? null;
     /** And what it answered, so the notice below names the refusal rather than guessing at it. */
     const completedStatus = listQuery.data?.completedStatus ?? null;
-    const busy = listQuery.isFetching || remove.isPending;
-    const error = listQuery.error ?? remove.error;
+    const busy = listQuery.isFetching || remove.isPending || cleanup.isPending;
+    const error = listQuery.error ?? remove.error ?? cleanup.error;
 
-    // A list that changed under a pending confirmation is not the list it was armed against.
+    // A list that changed under a pending confirmation is not the list it was armed against, and
+    // the bulk clear is armed against a count from that same list.
     useEffect(() => {
         setConfirming(null);
+        setClearing(false);
     }, [instances]);
 
     /**
@@ -147,6 +197,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
      */
     const listed = instances ?? [];
     const selectedIsListed = instanceGuid === "" || listed.some((instance) => instance.instanceGuid === instanceGuid);
+    /** What the bulk clear is about, and only that. See lib/instanceCleanup.ts for why. */
+    const softDeleted = softDeletedOf(listed);
     const rows: { instance: InstanceSummary; absent: boolean }[] = [
         ...(selectedIsListed
             ? []
@@ -283,6 +335,44 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                       ? "A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here."
                                       : "That is LocalTest rather than the request, so it is worth trying again. The step in the run log has what it said."}
                             </span>
+                        </div>
+                    )}
+
+                    {/*
+                     * Only when there are some, and only about those: a completed instance is a
+                     * test run someone finished, and this is for the litter around it.
+                     */}
+                    {softDeleted.length > 0 && (
+                        <div className="apart">
+                            <div className="row">
+                                {clearing ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="btn btn--delete btn--armed"
+                                            onClick={() => cleanup.mutate(softDeleted)}
+                                            disabled={busy}
+                                        >
+                                            {cleanup.isPending ? <span className="btn__spinner" /> : <Icon name="trash" />}
+                                            Confirm, clears {softDeleted.length}
+                                        </button>
+                                        <button type="button" className="btn btn--ghost" onClick={() => setClearing(false)} disabled={busy}>
+                                            <Icon name="cross" />
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button type="button" className="btn btn--delete" onClick={() => setClearing(true)} disabled={busy}>
+                                        <Icon name="trash" />
+                                        Clear {softDeleted.length} soft deleted
+                                    </button>
+                                )}
+                            </div>
+                            <p className="field__hint" style={{ margin: 0 }}>
+                                {clearing
+                                    ? `One DELETE each, one after another, and the completed ones are left alone. ${softDeleted.length} of them.`
+                                    : "Storage keeps a soft deleted instance forever, so they come back on every listing. This takes them out for good."}
+                            </p>
                         </div>
                     )}
 

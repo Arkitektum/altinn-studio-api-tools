@@ -5,6 +5,7 @@ import {
     logFromCompare,
     logFromDataElement,
     logFromAdvance,
+    logFromCleanup,
     logFromDelete,
     logFromInstances,
     logFromRead,
@@ -13,7 +14,16 @@ import {
     renumber,
     toValidation
 } from "./logResults";
-import type { DataElementSummary, InstanceState, ListInstancesResult, ReadInstanceResult, RunResult, RunStep, ValidateResult } from "../types";
+import type {
+    DataElementSummary,
+    DeleteInstanceResult,
+    InstanceState,
+    ListInstancesResult,
+    ReadInstanceResult,
+    RunResult,
+    RunStep,
+    ValidateResult
+} from "../types";
 
 const GUID = "99d0632c-5917-448c-8ab6-a5d3b681376b";
 const DATA_GUID = "fdeb5550-f4e8-4f23-87d0-111234ac4771";
@@ -203,6 +213,59 @@ describe("logFromDataElement", () => {
             logFromDataElement({ ...read, ok: false, encoding: "base64", content: null }).rows.some((row) => row.label === "Bytes"),
             false
         );
+    });
+});
+
+describe("logFromCleanup", () => {
+    const cleared = (guid: string, ok = true): DeleteInstanceResult => ({
+        ok,
+        steps: [step("Delete instance")],
+        failedAt: ok ? null : "Altinn refused",
+        instanceOwnerPartyId: "510001",
+        instanceGuid: guid,
+        hard: true
+    });
+
+    /*
+     * One entry for the lot. Forty of these as forty runs would push everything else out of a log
+     * that keeps the last twenty five, and what it would push out is the run you were deleting
+     * after.
+     */
+    it("is one entry holding every delete as a step", () => {
+        const entry = logFromCleanup([cleared("a"), cleared("b"), cleared("c")]);
+
+        assert.equal(entry.ok, true);
+        assert.equal(entry.title, "Cleared soft deleted instances");
+        assert.equal(entry.steps.length, 3);
+        assert.equal(entry.rows.find((row) => row.label === "Cleared")?.value, "3");
+        // Nothing refused, so the row that would say so is left out rather than reading zero.
+        assert.equal(
+            entry.rows.find((row) => row.label === "Refused"),
+            undefined
+        );
+    });
+
+    /* Each delete counted its own steps from one, and a list of forty should read as forty. */
+    it("renumbers the steps, since each delete counted its own from one", () => {
+        const entry = logFromCleanup([cleared("a"), cleared("b"), cleared("c")]);
+        assert.deepEqual(
+            entry.steps.map((each) => each.index),
+            [0, 1, 2]
+        );
+    });
+
+    it("counts what refused apart, and carries the first reason", () => {
+        const entry = logFromCleanup([cleared("a"), cleared("b", false), cleared("c", false)]);
+
+        assert.equal(entry.ok, false);
+        assert.equal(entry.failedAt, "Altinn refused");
+        assert.equal(entry.rows.find((row) => row.label === "Cleared")?.value, "1");
+        assert.equal(entry.rows.find((row) => row.label === "Refused")?.value, "2");
+        assert.equal(entry.rows.find((row) => row.label === "Refused")?.tone, "bad");
+    });
+
+    it("names the party it cleared for", () => {
+        assert.equal(logFromCleanup([cleared("a")]).rows.find((row) => row.label === "Party")?.value, "510001");
     });
 });
 
