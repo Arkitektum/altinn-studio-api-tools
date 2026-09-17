@@ -251,6 +251,11 @@ textarea {
  * that talk to Altinn are told apart from the ones that only rearrange what is already here,
  * and by the colour of what they are about to do rather than by a decoration.
  *
+ * Red is the exception to that, and was already: deleting a saved payload or a token never sent a
+ * DELETE anywhere. It means the press throws something away, whether or not the request leaves
+ * the machine, which is what someone about to press one needs to know. So Clear and Remove wear
+ * it too, rather than being grey like Close and Cancel, which give nothing up.
+ *
  * Height is not part of it. Every button is the same height, whatever it does.
  */
 .btn--get {

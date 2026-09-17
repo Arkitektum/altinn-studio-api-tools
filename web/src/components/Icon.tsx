@@ -38,8 +38,11 @@ export type IconName =
     | "refresh"
     | "trash"
     | "bookmark"
+    | "folder"
     | "copy"
     | "expand"
+    | "unfold"
+    | "fold"
     | "braces"
     | "key"
     | "eye"
@@ -160,6 +163,13 @@ const PATHS: Record<IconName, ReactNode> = {
     ),
     /* A bookmark rather than a floppy: what Save does here is keep one to come back to. */
     bookmark: <path d="M4.3 2.1h7.4a.9.9 0 01.9.9v10.9L8 11.2l-4.6 2.7V3a.9.9 0 01.9-.9z" />,
+    /* Open, the other half of Save. Ajar, so it is not the same shape at rest. */
+    folder: (
+        <>
+            <path d="M1.9 12.4V3.7a.9.9 0 01.9-.9h3.1l1.6 1.9h4.7a.9.9 0 01.9.9v1.4" />
+            <path d="M1.9 12.4l1.8-4.7a.9.9 0 01.8-.6h9.1a.9.9 0 01.8 1.2l-1.5 4.1a.9.9 0 01-.8.6H2.8a.9.9 0 01-.9-.6z" />
+        </>
+    ),
     copy: (
         <>
             <rect x="5.4" y="5.4" width="8.5" height="8.5" rx="1.2" />
@@ -167,6 +177,25 @@ const PATHS: Record<IconName, ReactNode> = {
         </>
     ),
     expand: <path d="M6.2 2.4H2.4v3.8M9.8 2.4h3.8v3.8M6.2 13.6H2.4V9.8M9.8 13.6h3.8V9.8" />,
+    /*
+     * Expand all and collapse all. Two shapes rather than one turned, because the pair is arrows
+     * apart against arrows together: a rotation would turn "open them" into "open them upside
+     * down". The rule is the same at a glance either way, the arrows point where the rows go.
+     */
+    unfold: (
+        <>
+            <path d="M8 1.9v3.8M5.9 4l2.1-2.1L10.1 4" />
+            <path d="M8 14.1v-3.8M5.9 12l2.1 2.1 2.1-2.1" />
+            <path d="M2.6 8h10.8" />
+        </>
+    ),
+    fold: (
+        <>
+            <path d="M8 5.7V1.9M5.9 3.6L8 5.7l2.1-2.1" />
+            <path d="M8 10.3v3.8M5.9 12.4L8 10.3l2.1 2.1" />
+            <path d="M2.6 8h10.8" />
+        </>
+    ),
     /* Braces, for the button that puts the json back into shape. */
     braces: (
         <>

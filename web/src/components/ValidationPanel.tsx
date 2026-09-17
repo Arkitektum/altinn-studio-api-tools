@@ -62,8 +62,8 @@ export function ValidationPanel() {
                 validations.length > 0 ? (
                     <span className="row" style={{ gap: 6 }}>
                         {/* Named apart from the run log's Clear history, which does something else. */}
-                        <button type="button" className="btn btn--ghost" onClick={clearValidations}>
-                            <Icon name="cross" />
+                        <button type="button" className="btn btn--delete" onClick={clearValidations}>
+                            <Icon name="trash" />
                             Clear results
                         </button>
                         <span className="badge">

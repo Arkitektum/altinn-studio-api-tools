@@ -182,7 +182,7 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                 {!element.collapsed && (
                     <button
                         type="button"
-                        className="btn btn--ghost"
+                        className="btn btn--delete"
                         onClick={() =>
                             onPatch({
                                 content: "",
@@ -198,8 +198,8 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                         Clear
                     </button>
                 )}
-                <button type="button" className="btn btn--ghost" onClick={() => onRemove()} disabled={!canRemove}>
-                    <Icon name="cross" />
+                <button type="button" className="btn btn--delete" onClick={() => onRemove()} disabled={!canRemove}>
+                    <Icon name="trash" />
                     Remove
                 </button>
             </div>

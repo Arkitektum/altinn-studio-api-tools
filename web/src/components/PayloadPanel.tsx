@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useAppRead } from "../reads";
 import { useSession } from "../session";
 import { groupDataTypes, groupedDataTypeIds } from "../lib/dataTypeGroups";
+import { Icon } from "./Icon";
 import { PayloadElement } from "./PayloadElement";
 import { Panel } from "./Panel";
 import { SavedPayloads } from "./SavedPayloads";
@@ -98,6 +99,7 @@ export function PayloadPanel({
                     />
                     {dataElements.length > 1 && (
                         <button type="button" className="btn btn--ghost" onClick={() => setAllCollapsed(!allCollapsed)}>
+                            <Icon name={allCollapsed ? "unfold" : "fold"} />
                             {allCollapsed ? "Expand all" : "Collapse all"}
                         </button>
                     )}

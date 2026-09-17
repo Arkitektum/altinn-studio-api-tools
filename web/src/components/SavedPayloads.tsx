@@ -48,6 +48,7 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
                 disabled={payloads.length === 0}
                 title={payloads.length === 0 ? "Nothing saved yet" : "Load a payload saved earlier"}
             >
+                <Icon name="folder" />
                 Open{payloads.length > 0 ? ` (${payloads.length})` : ""}
             </button>
             <button type="button" className="btn btn--ghost" onClick={() => setDialog("save")} disabled={!canSave}>

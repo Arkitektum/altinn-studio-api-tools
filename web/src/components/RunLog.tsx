@@ -46,8 +46,8 @@ export function RunLog() {
                     {entries.length > 0 && (
                         <>
                             {/* Named apart from the payload element's Clear, which does something else. */}
-                            <button type="button" className="btn btn--ghost" onClick={clearEntries}>
-                                <Icon name="cross" />
+                            <button type="button" className="btn btn--delete" onClick={clearEntries}>
+                                <Icon name="trash" />
                                 Clear history
                             </button>
                             <span className="badge">
