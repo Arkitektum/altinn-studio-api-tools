@@ -33,7 +33,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
      */
     if (!process) {
         return (
-            <Panel id="panel-process" notReady={notReady ?? "Reading the instance…"} tone="process" title="Process">
+            <Panel icon="flow" id="panel-process" notReady={notReady ?? "Reading the instance…"} tone="process" title="Process">
                 {null}
             </Panel>
         );
