@@ -15,17 +15,18 @@ For anything beyond the UI rendering you also need Altinn Studio localtest runni
 
 ## The loop
 
-| Command                           |                                                               |
-| --------------------------------- | ------------------------------------------------------------- |
-| `npm run dev`                     | Both servers with prefixed output                             |
-| `npm test`                        | Server and web tests, stubbed Altinn, no network              |
-| `npm run lint`                    | oxlint, mainly the hook rules                                 |
-| `npm run typecheck`               | Both workspaces                                               |
-| `npm run format`                  | Apply Prettier                                                |
-| `npm run format:check`            | Fail if anything is unformatted                               |
-| `npm run build`                   | Compile the server and bundle the UI                          |
-| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
-| `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
+| Command                                |                                                               |
+| -------------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                          | Both servers with prefixed output                             |
+| `npm test`                             | Server and web tests, stubbed Altinn, no network              |
+| `npm run lint`                         | oxlint, mainly the hook rules                                 |
+| `npm run typecheck`                    | Both workspaces                                               |
+| `npm run format`                       | Apply Prettier                                                |
+| `npm run format:check`                 | Fail if anything is unformatted                               |
+| `npm run build`                        | Compile the server and bundle the UI                          |
+| `npm run gaps --workspace server`      | Which content types your apps declare that have no dummy      |
+| `npm run diff --workspace server`      | Posts every example and reports what each app's model changed |
+| `npm run catalogue --workspace server` | Where the catalogue and the testmotor have drifted apart      |
 
 CI runs `format:check`, `lint`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `npm test` and `npm run format` before pushing and you will not be surprised.
 
@@ -96,6 +97,8 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 **A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `npm run gaps --workspace server` tells you which content types your apps declare that no dummy covers.
 
 **A known app.** `server/src/appCatalogue.ts` is generated, so regenerate it rather than editing by hand. The catalogue is only a convenience: once an app is probed, its own `applicationmetadata` takes over.
+
+`npm run catalogue --workspace server` says when it is worth regenerating. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
 
 **An endpoint.** Add a zod schema next to the others in `routes.ts`, do the work in `runService` or `readService` through `StepRecorder`, return the `{ ok, steps, failedAt, … }` shape, and add the matching function to `web/src/api.ts` and its type to `web/src/types.ts`. Then decide what the run log entry looks like, in `web/src/lib/logResults.ts`.
 

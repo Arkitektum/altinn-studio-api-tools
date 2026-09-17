@@ -93,6 +93,18 @@ npm run gaps --workspace server -- 1001 dibk/et-v4           # one or more speci
 
 It probes each app's `applicationmetadata`, collects every `allowedContentTypes` entry, and prints which are covered, which are missing and which data types ask for them. The first argument is the LocalTest user id, defaulting to 1001. Apps in the catalogue that are not deployed locally are listed separately rather than treated as a gap.
 
+## Which apps have example data at all
+
+The other gap is whole apps rather than content types, and it needs no localtest, only the testmotor:
+
+```bash
+npm run catalogue --workspace server
+```
+
+It compares the app catalogue against the testmotor, which keeps its own list of the same apps, and says where each app's examples come from: the testmotor, disk, or nowhere. Nowhere is the finding worth having, since an app with no example data is one you cannot post to without writing the xml by hand. It also reports apps the testmotor holds that the catalogue does not name, which usually means the catalogue is due a regenerate, and the two disagreeing about a main form data type, which would put examples where nothing looks for them.
+
+Subforms are checked as well as the apps you can target. A subform app is referenced by its parent rather than given a catalogue entry of its own, because its data is posted as a data element of the parent instance, but it still needs a file in `examples/subforms/`.
+
 ## What the dummies actually are
 
 The GML is a real Reguleringsplanforslag feature collection of about 950 kB, and the GeoJSON a real feature collection. Both are registered under their own content types rather than as plain XML or JSON, so the large GML does not become the default example for every XML attachment.

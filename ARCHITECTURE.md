@@ -59,6 +59,8 @@ server/src
   testmotorClient.ts  the FtPB testmotor, which holds the main form examples and re-dates them
   appCatalogue.ts     generated list of known apps and their data types
   contentTypeGaps.ts  reports content types with no dummy attachment
+  catalogueDrift.ts   compares the catalogue against the testmotor's list of the same apps
+  catalogueCheck.ts   the script that runs that comparison and prints it
   storedDiffSweep.ts  posts every example and diffs it against what was stored
   jwt.ts              claim decoding, never verification
   urls.ts             app url building

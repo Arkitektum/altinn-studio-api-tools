@@ -10,7 +10,8 @@
         "typecheck": "tsc -p tsconfig.json --noEmit",
         "test": "tsx --test src/**/*.test.ts",
         "gaps": "tsx src/contentTypeGaps.ts",
-        "diff": "tsx src/storedDiffSweep.ts"
+        "diff": "tsx src/storedDiffSweep.ts",
+        "catalogue": "tsx src/catalogueCheck.ts"
     },
     "dependencies": {
         "dotenv": "^17.4.2",

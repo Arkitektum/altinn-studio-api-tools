@@ -57,15 +57,16 @@ Main form examples come from the FtPB testmotor, which keeps them current and re
 
 ## Scripts
 
-| Command                           |                                                               |
-| --------------------------------- | ------------------------------------------------------------- |
-| `npm run dev`                     | Both servers with prefixed output                             |
-| `npm test`                        | Server and web tests, stubbed Altinn, no network              |
-| `npm run typecheck`               | Both workspaces                                               |
-| `npm run build`                   | Compile the server and bundle the UI                          |
-| `npm run format`                  | Format everything with Prettier                               |
-| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
-| `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
+| Command                                |                                                               |
+| -------------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                          | Both servers with prefixed output                             |
+| `npm test`                             | Server and web tests, stubbed Altinn, no network              |
+| `npm run typecheck`                    | Both workspaces                                               |
+| `npm run build`                        | Compile the server and bundle the UI                          |
+| `npm run format`                       | Format everything with Prettier                               |
+| `npm run gaps --workspace server`      | Which content types your apps declare that have no dummy      |
+| `npm run diff --workspace server`      | Posts every example and reports what each app's model changed |
+| `npm run catalogue --workspace server` | Where the catalogue and the testmotor have drifted apart      |
 
 `npm run dev` is how you run the tool. `npm run build` is a check, and the fourth thing CI does: it compiles the server and bundles the UI to prove both still build. Nothing serves `web/dist`, and `npm start` runs the api alone. This is a local dev tool, so there is no deployment for the bundle to be part of.
 
