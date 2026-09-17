@@ -24,15 +24,22 @@
      * The inset also had to move. It was a flat #191b1e, which was below the page until the page
      * darkened and then sat above it, so a code block read as raised when the whole point of it is
      * to be sunk.
+     *
+     * The lift is a cool white rather than a pure one. Everything else here is blue to purple by
+     * intent, right down to the panel hues refusing the warm half of the wheel, so a neutral white
+     * was the one thing in the palette pulling the other way: over the page it landed on a flat
+     * grey that read as a patch rather than as the same surface lit a little harder. Tinting it
+     * costs lightness, since the tint is darker than white, so the alpha goes up to 7.5% to keep
+     * the step the same size as it was.
      */
-    --bg-subtle: rgb(255 255 255 / 6%);
+    --bg-subtle: rgb(180 208 255 / 7.5%);
     --bg-inset: rgb(0 0 0 / 22%);
 
     /*
      * The one place that has to be opaque: the masthead is sticky and the page scrolls under it.
      * Matched to --bg-subtle over the page, which is where it sits.
      */
-    --bg-header: #23262a;
+    --bg-header: #22262c;
     --border: #34383d;
     --border-strong: #4a5057;
 
