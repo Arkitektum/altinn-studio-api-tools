@@ -377,7 +377,9 @@ export function App() {
         await Promise.all(
             neededExamples(payload).map(async (ref) => {
                 try {
-                    files.set(refKey(ref), await api.getExampleFile(ref));
+                    // The app as selected now, not as it was when the payload was saved: a saved
+                    // payload is a pointer at the examples, and it is read as they stand today.
+                    files.set(refKey(ref), await api.getExampleFile({ ...ref, app }));
                 } catch {
                     /* left out of the map, which is what marks it missing below */
                 }

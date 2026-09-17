@@ -5,31 +5,48 @@ nav_order: 7
 
 # Example data
 
-73 example XML files ship in `examples/`, laid out so that the directory name is the data type:
+Example data comes from two places. The main form examples are read from the FtPB testmotor at request time. Everything else is a file in `examples/`, laid out so that the directory name is the data type:
 
 ```
 examples/
-  forms/ET/01_Maksimumsversjon.xml
-  forms/ET/02_Minimumsversjon.xml
-  forms/MB/08_Tiltakstype oppretting av matrikkelenhet.xml
+  forms/HoeringOgOffentligEttersynUttalelse/uttalelse.xml
   subforms/GjennomfoeringsplanDataV7/GjennomfoeringsplanDataV7.xml
   attachments/dummy.pdf
   attachments/dummy.png
 ```
 
-Each data element's example picker lists the files matching its data type. The numeric prefix is stripped for display, so `01_Maksimumsversjon.xml` shows as "Maksimumsversjon", but it still determines the order. Loading a file also sets the content type to `application/xml`.
+Each data element's example picker lists what matches its data type. Loading a file also sets the content type to `application/xml`.
 
 Changing the data type clears the content and loads the new type's first example automatically, so picking a type leaves the element holding something valid to post. A type with no examples leaves the content empty. Two cases deliberately do not auto-load: pressing **Clear** stays cleared, and content restored from a previous session is never overwritten.
 
+## The main forms, and why they are not files here
+
+They used to be. The problem with a committed copy is dates: a ferdigattest example is only valid while its `bekreftelseInnen` and `utfoertInnen` fall inside the next fortnight, so a file is right on the day it is committed and stale a couple of weeks later. Several form types have a rule of that shape.
+
+The testmotor at `TESTMOTOR_URL` serves the copy the DIBK test team maintains, out of an Azure file share, and stamps those date fields with a date ten days out on every request. So the tool reads the examples from there instead and the dates are always inside the window. It is the same data the testmotor's own interface offers, and it is where the examples that used to be in this repo were copied from by hand.
+
+Two of its endpoints are used, both open and neither carrying a token:
+
+```
+GET {TESTMOTOR_URL}/api/altinn-app          the apps it holds data for, and each one's main form data type
+GET {TESTMOTOR_URL}/api/xml/{appId}         that app's example files, contents and all
+```
+
+Answers are cached for five minutes, which is also how long the testmotor caches its own reads of the share.
+
+This is why the picker is keyed on the app and not only on the data type: the testmotor is keyed by app id, and it has to be, since `fa-v3` and `fa-v5` are both filed under the data type `FA` and hold different data. An app the testmotor has no data for contributes nothing, and its examples come off disk as before. That covers every subform app, `hoeringettersynuttalelse-v2` and `varselplanoppstartuttalelse-v3`.
+
+If the testmotor cannot be reached, the picker says so rather than showing an empty list. There is no on-disk fallback for the main forms, because the whole point was to stop keeping a second copy. `TESTMOTOR_URL=` switches the whole thing off.
+
 ## Pointing at your own directory
 
-These files were copied from the example data used by our other Altinn tooling. To avoid maintaining a second copy, point the tool at your canonical directory instead:
+For the examples that are still files, point the tool at your canonical directory rather than maintaining a second copy:
 
 ```
 ALTINN_EXAMPLE_DATA_DIR=/path/to/exampleData
 ```
 
-It expects `forms/{dataType}/*.xml`, `subforms/{dataType}/*.xml` and `attachments/*` under that directory. Any of them may be absent. Adding a file needs no restart, because the directory is read on each request.
+It expects `forms/{dataType}/*.xml`, `subforms/{dataType}/*.xml` and `attachments/*` under that directory. Any of them may be absent. Adding a file needs no restart, because the directory is read on each request. The numeric prefix in a name like `01_Maksimumsversjon.xml` is stripped for display but still determines the order.
 
 ## Dummy attachments
 

@@ -3,9 +3,11 @@ export interface ServerConfig {
     appHost: string;
     /** The LocalTest project, e.g. http://localhost:5101 */
     localtestUrl: string;
-    /** The DIBK validation service, the one call that leaves this machine. Empty when switched off. */
+    /** The DIBK validation service, one of the two calls that leave this machine. Empty when switched off. */
     validationUrl: string;
-    /** Directory the example form data is read from. */
+    /** The FtPB testmotor, which serves the main form examples. Empty when switched off. */
+    testmotorUrl: string;
+    /** Directory the example data that is still on disk is read from. */
     exampleDataDir: string;
 }
 
@@ -254,9 +256,20 @@ export interface ExampleGroup {
     files: ExampleFile[];
 }
 
+/** Where the main form examples came from, so a picker with nothing in it can say why. */
+export interface RemoteFormSource {
+    url: string;
+    app: string;
+    /** Null when the fetch worked, including when the testmotor does not hold this app. */
+    error: string | null;
+}
+
 export interface ExamplesResponse {
+    /** Where the examples still on disk are read from: subforms, uttalelse forms, attachments. */
     dir: string;
     groups: ExampleGroup[];
+    /** Null when no app is selected, or when the testmotor is switched off. */
+    remote: RemoteFormSource | null;
 }
 
 export interface ExampleContent {

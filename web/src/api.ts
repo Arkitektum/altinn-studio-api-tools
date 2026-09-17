@@ -89,8 +89,10 @@ export const api = {
     getLocaltestUsers: () => request<LocaltestUsers>("/localtest/users"),
 
     getCatalogue: () => request<CatalogueApp[]>("/catalogue"),
-    getExamples: () => request<ExamplesResponse>("/examples"),
-    getExampleFile: (params: { kind: ExampleKind; group: string; name: string }) =>
+    // The app is part of both, because the main form examples come from the testmotor and it is
+    // keyed by app id: fa-v3 and fa-v5 are both filed under the data type FA and differ.
+    getExamples: (app: string) => request<ExamplesResponse>(`/examples?${new URLSearchParams({ app })}`),
+    getExampleFile: (params: { kind: ExampleKind; group: string; name: string; app: string }) =>
         request<ExampleContent>(`/examples/file?${new URLSearchParams(params)}`),
 
     listTokens: () => request<PublicToken[]>("/tokens"),

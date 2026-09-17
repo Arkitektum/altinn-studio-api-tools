@@ -1,45 +1,218 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
 import { listExamples, readExample } from "./examples.js";
 import { HttpError } from "./httpError.js";
+import { clearTestmotorCache } from "./testmotorClient.js";
 
-describe("example data catalogue", () => {
-    it("groups the shipped xml files by data type", async () => {
-        const groups = await listExamples();
+/** The two testmotor endpoints, answered from a map of path to body. A path with no entry 500s. */
+function stubTestmotor(bodies: Record<string, unknown>): { paths: string[]; restore: () => void } {
+    const original = globalThis.fetch;
+    const paths: string[] = [];
 
-        const et = groups.find((group) => group.key === "ET");
-        assert.ok(et, "expected an ET group");
-        assert.equal(et.kind, "form");
-        assert.equal(et.files[0]?.contentType, "application/xml");
-        assert.equal(et.files[0]?.encoding, "utf8");
-        assert.ok(et.files.length >= 4, `expected several ET examples, got ${et.files.length}`);
+    globalThis.fetch = (async (input: unknown) => {
+        const { pathname } = new URL(String(input));
+        paths.push(pathname);
+        if (!(pathname in bodies)) return new Response("not found", { status: 500, statusText: "Server Error" });
+        return new Response(JSON.stringify(bodies[pathname]), { status: 200, headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
 
-        // The numeric ordering prefix is stripped for display but kept for sorting and lookup.
-        const first = et.files[0];
-        assert.equal(first?.name, "01_Maksimumsversjon.xml");
-        assert.equal(first?.label, "Maksimumsversjon");
-        assert.ok((first?.sizeBytes ?? 0) > 0);
+    return { paths, restore: () => (globalThis.fetch = original) };
+}
+
+/** What the testmotor answers for an-v2: stems with the ordering prefix and extension already off. */
+const AN_APPS = [
+    { appId: "an-v2", name: "Erklæring om ansvarsrett", mainFormId: "AN" },
+    { appId: "fa-v5", name: "Søknad om ferdigattest", mainFormId: "FA" }
+];
+const AN_XML = [
+    { name: "maksimum_ansvarserklaering_direkte_V2", contents: '<?xml version="1.0" encoding="utf-8"?>\n<ansvarsrett>æøå</ansvarsrett>' },
+    { name: "minimum_ansvarserklaering_direkte_V2", contents: '<?xml version="1.0" encoding="utf-8"?>\n<ansvarsrett />' }
+];
+
+describe("main form examples from the testmotor", () => {
+    afterEach(() => clearTestmotorCache());
+
+    it("offers an app's main form under the data type the testmotor files it by", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS, "/api/xml/an-v2": AN_XML });
+        try {
+            const { groups, remote } = await listExamples("an-v2");
+
+            assert.deepEqual(remote, { url: "https://app-ftpb-testmotor.azurewebsites.net", app: "an-v2", error: null });
+
+            const an = groups.find((group) => group.key === "AN");
+            assert.ok(an, "expected an AN group");
+            assert.equal(an.kind, "form");
+            // The extension is put back, because that is what the name is looked up and typed by.
+            assert.deepEqual(
+                an.files.map((file) => file.name),
+                ["maksimum_ansvarserklaering_direkte_V2.xml", "minimum_ansvarserklaering_direkte_V2.xml"]
+            );
+            assert.equal(an.files[0]?.label, "maksimum_ansvarserklaering_direkte_V2");
+            assert.equal(an.files[0]?.contentType, "application/xml");
+            assert.equal(an.files[0]?.encoding, "utf8");
+            assert.equal(an.files[0]?.sizeBytes, Buffer.byteLength(AN_XML[0]!.contents, "utf8"));
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("keeps the order the testmotor answers in", async () => {
+        // The stems arrive with their ordering prefix stripped, so sorting them here would put
+        // Minimum before Maksimum by accident. The share's own order is the one the app shows.
+        const reversed = [...AN_XML].reverse();
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS, "/api/xml/an-v2": reversed });
+        try {
+            const { groups } = await listExamples("an-v2");
+            assert.deepEqual(
+                groups.find((group) => group.key === "AN")?.files.map((file) => file.label),
+                reversed.map((file) => file.name)
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("reads a file back verbatim, contents and all", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS, "/api/xml/an-v2": AN_XML });
+        try {
+            const loaded = await readExample("form", "AN", "maksimum_ansvarserklaering_direkte_V2.xml", "an-v2");
+
+            assert.equal(loaded.content, AN_XML[0]!.contents);
+            assert.match(loaded.content, /^<\?xml version="1\.0"/);
+            assert.equal(loaded.contentType, "application/xml");
+            assert.equal(loaded.encoding, "utf8");
+            // sizeBytes is the UTF-8 length, which exceeds the character count because of æøå.
+            assert.equal(loaded.sizeBytes, Buffer.byteLength(loaded.content, "utf8"));
+            assert.ok(loaded.content.length < loaded.sizeBytes, "expected multi-byte characters");
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("404s for a file the testmotor does not have, rather than looking on disk", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS, "/api/xml/an-v2": AN_XML });
+        try {
+            await assert.rejects(
+                () => readExample("form", "AN", "nope.xml", "an-v2"),
+                (error: unknown) => error instanceof HttpError && error.status === 404
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("reports a testmotor it cannot reach instead of throwing the whole listing away", async () => {
+        const stub = stubTestmotor({});
+        try {
+            const { groups, remote } = await listExamples("an-v2");
+
+            assert.ok(remote?.error, "expected the failure to be reported");
+            assert.match(remote.error, /500/);
+            // The attachment dummies and the subforms are still worth having.
+            assert.ok(groups.some((group) => group.kind === "attachment"));
+            assert.ok(groups.some((group) => group.kind === "subform"));
+            assert.equal(
+                groups.find((group) => group.key === "AN"),
+                undefined
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("502s when a file is asked for and the testmotor cannot be reached", async () => {
+        const stub = stubTestmotor({});
+        try {
+            await assert.rejects(
+                () => readExample("form", "AN", "maksimum_ansvarserklaering_direkte_V2.xml", "an-v2"),
+                (error: unknown) => error instanceof HttpError && error.status === 502
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("leaves an app it does not hold to the disk, and says nothing went wrong", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS });
+        try {
+            // hoeringettersynuttalelse-v2 is one of the apps the testmotor has no data for.
+            const { groups, remote } = await listExamples("hoeringettersynuttalelse-v2");
+
+            assert.equal(remote?.error, null);
+            const uttalelse = groups.find((group) => group.key === "HoeringOgOffentligEttersynUttalelse");
+            assert.ok(uttalelse, "expected the disk group to still be offered");
+
+            const loaded = await readExample("form", "HoeringOgOffentligEttersynUttalelse", "uttalelse.xml", "hoeringettersynuttalelse-v2");
+            assert.match(loaded.content, /^<HoeringOgOffentligEttersynUttalelse[\s>]/);
+            // Only the app list was asked for. There is no point asking for files it has none of.
+            assert.deepEqual(new Set(stub.paths), new Set(["/api/altinn-app"]));
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("asks once and reuses the answer, however many elements want an example", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS, "/api/xml/an-v2": AN_XML });
+        try {
+            await Promise.all([
+                listExamples("an-v2"),
+                listExamples("an-v2"),
+                readExample("form", "AN", "minimum_ansvarserklaering_direkte_V2.xml", "an-v2")
+            ]);
+
+            assert.deepEqual(stub.paths.sort(), ["/api/altinn-app", "/api/xml/an-v2"]);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("does not reach for the testmotor when no app is selected", async () => {
+        const stub = stubTestmotor({});
+        try {
+            const { remote } = await listExamples();
+            assert.equal(remote, null);
+            assert.deepEqual(stub.paths, []);
+        } finally {
+            stub.restore();
+        }
+    });
+});
+
+describe("example data still on disk", () => {
+    it("groups the xml files that stayed here by data type", async () => {
+        const { groups } = await listExamples();
+
+        // The main forms moved to the testmotor. What is left under forms/ is the one form it does
+        // not hold, which is exactly why it is still a file.
+        const uttalelse = groups.find((group) => group.key === "HoeringOgOffentligEttersynUttalelse");
+        assert.ok(uttalelse, "expected the uttalelse group");
+        assert.equal(uttalelse.kind, "form");
+        assert.equal(uttalelse.files[0]?.contentType, "application/xml");
+        assert.equal(uttalelse.files[0]?.encoding, "utf8");
+        assert.ok((uttalelse.files[0]?.sizeBytes ?? 0) > 0);
 
         const subform = groups.find((group) => group.key === "GjennomfoeringsplanDataV7");
         assert.ok(subform, "expected the subform group");
         assert.equal(subform.kind, "subform");
     });
 
-    it("handles data types whose file names contain spaces and Norwegian characters", async () => {
-        const groups = await listExamples();
-        const mb = groups.find((group) => group.key === "MB");
-        assert.ok(mb);
-        const withSpaces = mb.files.find((file) => file.name.includes(" "));
-        assert.ok(withSpaces, "expected at least one MB example with spaces in the name");
+    it("labels a file by its stem and looks it up by its full name", async () => {
+        const { groups } = await listExamples();
+        const subform = groups.find((group) => group.key === "GjennomfoeringsplanDataV7");
+        assert.ok(subform);
 
-        const loaded = await readExample("form", "MB", withSpaces.name);
+        const file = subform.files[0];
+        assert.ok(file);
+        assert.equal(file.label, file.name.replace(/\.[^.]+$/, "").replace(/^\d+[_-]\s*/, ""));
+
+        const loaded = await readExample("subform", "GjennomfoeringsplanDataV7", file.name);
         assert.ok(loaded.content.length > 0);
     });
 
-    it("reads an example verbatim, preserving the xml declaration", async () => {
-        const loaded = await readExample("form", "ET", "02_Minimumsversjon.xml");
-        assert.match(loaded.content, /^<\?xml version="1\.0"/);
-        assert.match(loaded.content, /<ettrinn[\s>]/);
+    it("reads an example verbatim, down to the line endings it was written with", async () => {
+        const loaded = await readExample("form", "HoeringOgOffentligEttersynUttalelse", "uttalelse.xml");
+        assert.match(loaded.content, /^<HoeringOgOffentligEttersynUttalelse[\s>]/);
+        assert.ok(loaded.content.includes("\r\n"), "expected the file's own CRLF endings to survive");
         // sizeBytes is UTF-8 on disk, and the string is shorter because of æøå.
         assert.equal(Buffer.byteLength(loaded.content, "utf8"), loaded.sizeBytes);
         assert.ok(loaded.content.length < loaded.sizeBytes, "expected multi-byte characters");
@@ -47,7 +220,7 @@ describe("example data catalogue", () => {
 
     it("404s for a file that does not exist", async () => {
         await assert.rejects(
-            () => readExample("form", "ET", "nope.xml"),
+            () => readExample("form", "HoeringOgOffentligEttersynUttalelse", "nope.xml"),
             (error: unknown) => error instanceof HttpError && error.status === 404
         );
     });
@@ -68,7 +241,7 @@ describe("example data catalogue", () => {
 
     it("refuses non-xml files", async () => {
         await assert.rejects(
-            () => readExample("form", "ET", "secrets.env"),
+            () => readExample("form", "HoeringOgOffentligEttersynUttalelse", "secrets.env"),
             (error: unknown) => error instanceof HttpError && error.status === 400
         );
     });
@@ -76,7 +249,7 @@ describe("example data catalogue", () => {
 
 describe("attachment examples", () => {
     it("groups the dummy attachments by the content type their extension implies", async () => {
-        const groups = await listExamples();
+        const { groups } = await listExamples();
         const attachments = groups.filter((group) => group.kind === "attachment");
 
         const byKey = new Map(attachments.map((group) => [group.key, group]));
@@ -140,7 +313,7 @@ describe("attachment examples", () => {
     });
 
     it("offers one group per content type alias", async () => {
-        const groups = await listExamples();
+        const { groups } = await listExamples();
         const keys = groups.filter((group) => group.kind === "attachment").map((group) => group.key);
 
         for (const alias of ["application/xml", "text/xml", "application/zip", "application/x-zip-compressed"]) {
@@ -153,7 +326,7 @@ describe("attachment examples", () => {
     });
 
     it("covers every format it ships a dummy for", async () => {
-        const groups = await listExamples();
+        const { groups } = await listExamples();
         const keys = new Set(groups.filter((group) => group.kind === "attachment").map((group) => group.key));
 
         for (const contentType of [
@@ -201,7 +374,7 @@ describe("attachment examples", () => {
 
     it("still refuses to escape the example root", async () => {
         // The group is ignored for attachments, so the file name is the only way in.
-        for (const name of ["../forms/ET/01_Maksimumsversjon.xml", "../../package.json", "/etc/hosts.txt"]) {
+        for (const name of ["../forms/HoeringOgOffentligEttersynUttalelse/uttalelse.xml", "../../package.json", "/etc/hosts.txt"]) {
             await assert.rejects(
                 () => readExample("attachment", "", name),
                 (error: unknown) => error instanceof HttpError && error.status === 400,
@@ -244,7 +417,7 @@ describe("geodata attachments", () => {
     });
 
     it("does not offer the geodata files as plain xml or json", async () => {
-        const groups = await listExamples();
+        const { groups } = await listExamples();
         const byKey = new Map(groups.filter((group) => group.kind === "attachment").map((g) => [g.key, g]));
 
         // A 949 kB GML would otherwise become the default for every xml attachment.

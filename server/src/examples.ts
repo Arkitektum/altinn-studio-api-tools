@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.js";
 import { HttpError } from "./httpError.js";
+import { fetchTestmotorApps, fetchTestmotorFormXml, testmotorConfigured, type TestmotorXmlFile } from "./testmotorClient.js";
 
 export type ExampleKind = "form" | "subform" | "attachment";
 
@@ -171,9 +172,80 @@ async function readAttachmentGroups(): Promise<ExampleGroup[]> {
         .sort((a, b) => a.key.localeCompare(b.key));
 }
 
-export async function listExamples(): Promise<ExampleGroup[]> {
+/**
+ * A main form example as the testmotor answers it, described the way a file on disk would be.
+ *
+ * The stem arrives without its extension, so the `.xml` is put back: the name is what gets asked
+ * for again, and everything downstream reads the content type off the extension.
+ */
+function describeRemote(file: TestmotorXmlFile): ExampleFile {
+    return {
+        name: `${file.name}.xml`,
+        label: file.name,
+        sizeBytes: Buffer.byteLength(file.contents, "utf8"),
+        contentType: "application/xml",
+        encoding: "utf8"
+    };
+}
+
+/** The data type the testmotor files an app's main form under, or null if it does not hold the app. */
+async function remoteFormDataType(app: string): Promise<string | null> {
+    if (!app || !testmotorConfigured()) return null;
+    const apps = await fetchTestmotorApps();
+    return apps.find((entry) => entry.appId === app)?.mainFormId ?? null;
+}
+
+/** Where the main form examples came from, so a page that got none can say why. */
+export interface RemoteFormSource {
+    url: string;
+    /** The app they were asked for. Main form examples are only main form examples of something. */
+    app: string;
+    /** Null when the fetch worked, including when the testmotor simply does not hold this app. */
+    error: string | null;
+}
+
+export interface ExampleCatalogue {
+    /** Where the examples that are still on disk are read from. */
+    dir: string;
+    groups: ExampleGroup[];
+    /** Null when no app is selected, or when the testmotor is switched off. */
+    remote: RemoteFormSource | null;
+}
+
+/**
+ * Every example on offer for one app.
+ *
+ * Subforms and attachment dummies come off disk, keyed the way they always were. The main form
+ * comes from the testmotor, which is why this takes an app at all: the testmotor is keyed by app
+ * id, and it has to be, since fa-v3 and fa-v5 are both filed under the data type FA and hold
+ * different data. An app the testmotor does not know, which is every subform app and the two
+ * uttalelse forms, simply contributes no remote group and is served from disk as before.
+ *
+ * A testmotor that cannot be reached is reported rather than thrown. The attachment dummies and
+ * the subforms are still worth having, and the page can say what happened to the rest.
+ */
+export async function listExamples(app = ""): Promise<ExampleCatalogue> {
     const [forms, subforms, attachments] = await Promise.all([readFormGroups("form"), readFormGroups("subform"), readAttachmentGroups()]);
-    return [...forms, ...subforms, ...attachments];
+    const disk = [...forms, ...subforms, ...attachments];
+
+    if (!app || !testmotorConfigured()) {
+        return { dir: config.exampleDataDir, groups: disk, remote: null };
+    }
+
+    const remote: RemoteFormSource = { url: config.testmotorUrl, app, error: null };
+    let group: ExampleGroup | null = null;
+    try {
+        const dataType = await remoteFormDataType(app);
+        if (dataType) {
+            const files = (await fetchTestmotorFormXml(app)).map(describeRemote);
+            if (files.length > 0) group = { kind: "form", key: dataType, files };
+        }
+    } catch (error) {
+        remote.error = error instanceof Error ? error.message : String(error);
+    }
+
+    // Ahead of the disk groups, so a data type that somehow has both is served the fresh copy.
+    return { dir: config.exampleDataDir, groups: group ? [group, ...disk] : disk, remote };
 }
 
 export interface ExampleContent {
@@ -191,14 +263,45 @@ export interface ExampleContent {
  *
  * `group` is the data type directory for forms and subforms. Attachments are flat, so for them
  * it is not part of the path at all, and instead names the content type to post the file as.
+ *
+ * `app` is what decides whether a form example is the testmotor's or the disk's. When the
+ * testmotor holds the app, it is the only source asked: the disk copies of those forms were
+ * removed, and falling back to one that is not there would only turn a clear error into a 404.
  */
-export async function readExample(kind: ExampleKind, group: string, fileName: string): Promise<ExampleContent> {
+export async function readExample(kind: ExampleKind, group: string, fileName: string, app = ""): Promise<ExampleContent> {
     if (!(kind in KIND_DIRS)) {
         throw new HttpError(400, `Unknown example kind "${kind}".`);
     }
     const format = formatOf(fileName);
     if (!format) {
         throw new HttpError(400, `Cannot read "${fileName}". Known example formats: ${Object.keys(FORMATS).join(", ")}.`);
+    }
+
+    if (kind === "form" && app && testmotorConfigured()) {
+        let files: TestmotorXmlFile[] | null = null;
+        try {
+            files = (await remoteFormDataType(app)) ? await fetchTestmotorFormXml(app) : null;
+        } catch (error) {
+            throw new HttpError(
+                502,
+                `Could not read the examples for ${app} from the testmotor: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
+
+        if (files) {
+            const file = files.find((entry) => `${entry.name}.xml` === fileName);
+            if (!file) {
+                throw new HttpError(404, `The testmotor has no example "${fileName}" for ${app}.`);
+            }
+            const described = describeRemote(file);
+            return {
+                name: described.name,
+                content: file.contents,
+                encoding: described.encoding,
+                contentType: described.contentType,
+                sizeBytes: described.sizeBytes
+            };
+        }
     }
 
     const root = path.resolve(config.exampleDataDir, KIND_DIRS[kind]);

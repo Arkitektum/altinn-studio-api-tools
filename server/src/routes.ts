@@ -89,6 +89,7 @@ router.get("/config", (_req, res) => {
         appHost: config.appHost,
         localtestUrl: config.localtestUrl,
         validationUrl: config.validationUrl,
+        testmotorUrl: config.testmotorUrl,
         exampleDataDir: config.exampleDataDir
     });
 });
@@ -127,10 +128,18 @@ router.get("/catalogue", (_req, res) => {
     res.json(appCatalogue);
 });
 
+/**
+ * What is on offer for one app. The app matters because the main form examples come from the
+ * testmotor, which is keyed by app id rather than by data type. Without one, only the examples
+ * still on disk are listed.
+ */
+const examplesSchema = z.object({ app: z.string().trim().default("") });
+
 router.get(
     "/examples",
-    asyncHandler(async (_req, res) => {
-        res.json({ dir: config.exampleDataDir, groups: await listExamples() });
+    asyncHandler(async (req, res) => {
+        const query = examplesSchema.parse(req.query);
+        res.json(await listExamples(query.app));
     })
 );
 
@@ -138,14 +147,16 @@ const exampleFileSchema = z.object({
     kind: z.enum(["form", "subform", "attachment"]),
     // Data type for forms and subforms. Attachments are flat, so it may be empty.
     group: z.string().trim().default(""),
-    name: z.string().trim().min(1)
+    name: z.string().trim().min(1),
+    // Which app's main form example, for the same reason as above.
+    app: z.string().trim().default("")
 });
 
 router.get(
     "/examples/file",
     asyncHandler(async (req, res) => {
         const query = exampleFileSchema.parse(req.query);
-        res.json(await readExample(query.kind, query.group, query.name));
+        res.json(await readExample(query.kind, query.group, query.name, query.app));
     })
 );
 

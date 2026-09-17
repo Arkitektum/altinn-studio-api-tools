@@ -52,7 +52,7 @@ async function sweepOne(token: string, target: Target, keep: boolean): Promise<R
     const label = `${org}/${app}`;
     const row: Row = { app: label, dataType, file, outcome: "identical", differences: 0, rowIds: 0, detail: [] };
 
-    const example = await readExample(target.kind, dataType, file);
+    const example = await readExample(target.kind, dataType, file, app);
 
     // One instance per file, so nothing carries over from the last one.
     const posted = await postDataToApp(token, {
@@ -141,7 +141,6 @@ async function main(): Promise<void> {
     }
     console.log(`posting as party ${party}\n`);
 
-    const groups = await listExamples();
     const rows: Row[] = [];
     const skipped: string[] = [];
 
@@ -154,6 +153,11 @@ async function main(): Promise<void> {
             skipped.push(`${label}: ${error instanceof Error ? error.message : String(error)}`);
             continue;
         }
+
+        // Per app rather than once for the sweep: the main form examples come from the testmotor,
+        // keyed by app id, so what is on offer moves as the sweep walks the catalogue.
+        const { groups, remote } = await listExamples(target.app);
+        if (remote?.error) skipped.push(`${label}: main form examples unavailable, ${remote.error}`);
 
         // Only what the app has a model for, since only those go through a model to be mangled.
         for (const dataType of dataTypes.filter((entry) => entry.appLogic)) {

@@ -39,7 +39,7 @@ The reason is that the step log is the product. Collapsing a refused process adv
 ## Module map
 
 ```
-examples/             form and subform xml by data type, and dummy attachments
+examples/             subform xml by data type, dummy attachments, and the forms the testmotor has none of
 server/src
   index.ts            express app, CORS, body limit, error middleware
   routes.ts           endpoints and zod schemas
@@ -55,7 +55,8 @@ server/src
   localtestClient.ts  GetTestUserToken, and the test user list
   tokenStore.ts       in-memory token store
   multipart.ts        hand-written multipart body
-  examples.ts         reads examples/, with a path traversal guard
+  examples.ts         main forms from the testmotor, the rest from examples/ behind a traversal guard
+  testmotorClient.ts  the FtPB testmotor, which holds the main form examples and re-dates them
   appCatalogue.ts     generated list of known apps and their data types
   contentTypeGaps.ts  reports content types with no dummy attachment
   storedDiffSweep.ts  posts every example and diffs it against what was stored
@@ -154,7 +155,7 @@ The same holds for the instance listing. The app's `/instances/{party}/active` i
 
 ## Deliberate limits
 
-- Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. The one exception is `validationService.ts`, which posts a payload to the DIBK validation service because that service knows what a submission requires and `applicationmetadata` does not. No token goes with it, and `VALIDATION_URL` switches it off.
+- Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. There are two exceptions, neither carrying a token. `validationService.ts` posts a payload to the DIBK validation service, because that service knows what a submission requires and `applicationmetadata` does not; `VALIDATION_URL` switches it off. `testmotorClient.ts` reads the main form examples from the FtPB testmotor, because it stamps their date fields afresh on every request and a file committed here would be right only on the day it was committed; `TESTMOTOR_URL` switches it off, leaving the examples still on disk.
 - Token claims are decoded for display, never verified. The app does that, and it holds the key.
 - Request bodies are parsed up to 25 MB, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - Altinn calls time out after 30 seconds, configurable with `REQUEST_TIMEOUT_MS`.

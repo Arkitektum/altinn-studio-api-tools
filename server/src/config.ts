@@ -33,9 +33,20 @@ export const config = {
     validationUrl: (process.env.VALIDATION_URL ?? "https://validering.ft-test.dibk.no/api/validationReport").replace(/\/+$/, ""),
 
     /**
-     * Example form data, laid out as {dir}/forms/{dataType}/*.xml and
-     * {dir}/subforms/{dataType}/*.xml. Point this at your canonical copy to avoid a second
-     * copy drifting out of date.
+     * The FtPB testmotor, which holds the main form examples.
+     *
+     * They are read from here rather than kept in this repo because it re-stamps their date fields
+     * on every request, so an example whose rules insist on a date within the next fortnight is in
+     * that window whenever it is asked for. No token is sent with the request. Empty it to switch
+     * the feature off, which leaves only the examples still on disk: subforms, the uttalelse forms
+     * and the attachment dummies.
+     */
+    testmotorUrl: (process.env.TESTMOTOR_URL ?? "https://app-ftpb-testmotor.azurewebsites.net").replace(/\/+$/, ""),
+
+    /**
+     * Example data that stays on disk, laid out as {dir}/forms/{dataType}/*.xml,
+     * {dir}/subforms/{dataType}/*.xml and {dir}/attachments/*. The main forms are not here; see
+     * `testmotorUrl` above.
      */
     exampleDataDir: process.env.ALTINN_EXAMPLE_DATA_DIR ? path.resolve(process.env.ALTINN_EXAMPLE_DATA_DIR) : path.join(repoRoot, "examples")
 } as const;

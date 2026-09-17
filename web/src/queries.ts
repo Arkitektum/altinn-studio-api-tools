@@ -69,7 +69,8 @@ export const queryKeys = {
     /** Read once at startup and not keyed on anything: the server's own settings and fixtures. */
     config: () => ["config"] as const,
     catalogue: () => ["catalogue"] as const,
-    examples: () => ["examples"] as const,
+    /** Keyed on the app, since its main form examples come from the testmotor rather than disk. */
+    examples: (app: string) => ["examples", app] as const,
     localtestStatus: () => ["localtest", "status"] as const,
     localtestUsers: () => ["localtest", "users"] as const,
     tokens: () => ["tokens"] as const,

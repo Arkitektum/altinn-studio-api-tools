@@ -14,8 +14,8 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                                                                               |
 | `GET`    | `/api/localtest/users`                 | Its test users, with `source` naming where the list came from                                                                |
 | `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms                                                                   |
-| `GET`    | `/api/examples`                        | Example files grouped by data type                                                                                           |
-| `GET`    | `/api/examples/file`                   | `?kind=form\|subform&dataType=ET&name=01_Maksimumsversjon.xml`                                                               |
+| `GET`    | `/api/examples`                        | `?app=an-v2`. Example files grouped by data type. The app decides whose main form examples are listed                        |
+| `GET`    | `/api/examples/file`                   | `?kind=form\|subform&group=AN&name=maksimum_ansvarserklaering_direkte_V2.xml&app=an-v2`                                      |
 | `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                                                                 |
 | `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have. No longer offered in the interface                                        |
 | `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                                                                          |

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
+import { useSession } from "../session";
 import type { ExampleContent, ExampleGroup } from "../types";
 
 /** One selectable example, flattened out of the group it came from. */
@@ -45,6 +46,9 @@ function describe(option: ExampleOption): string {
  * to post without a second click.
  */
 export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad }: ExamplePickerProps) {
+    // Read rather than passed in: the main form examples belong to an app, and the session is
+    // already where every panel reads which app that is.
+    const { app, exampleSource } = useSession();
     const [selected, setSelected] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -62,7 +66,8 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
                 const file = await api.getExampleFile({
                     kind: option.kind,
                     group: option.group,
-                    name: option.name
+                    name: option.name,
+                    app
                 });
                 setSelected(name);
                 onLoad(file, option);
@@ -72,7 +77,7 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
                 setBusy(false);
             }
         },
-        [options, onLoad]
+        [options, onLoad, app]
     );
 
     useEffect(() => {
@@ -89,9 +94,18 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
     }
 
     if (options.length === 0) {
+        // The main form examples come from the testmotor, so "there are none" and "it could not be
+        // reached" are different answers and the second one is the one worth reading.
+        if (exampleSource?.error) {
+            return (
+                <div className="notice notice--bad">
+                    No example data for <strong>{dataType}</strong>: the testmotor at {exampleSource.url} could not be read. {exampleSource.error}
+                </div>
+            );
+        }
         return (
             <p className="field__hint">
-                No example data on disk for <strong>{dataType}</strong>.
+                No example data for <strong>{dataType}</strong>.
             </p>
         );
     }

@@ -87,7 +87,9 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 ## Adding things
 
-**An example form or subform.** Drop the file in `examples/forms/{dataType}/` or `examples/subforms/{dataType}/`. The directory name is the data type and the numeric prefix orders the list while being stripped from the label, so `01_Maksimumsversjon.xml` reads as "Maksimumsversjon". No restart: the directory is read per request.
+**A main form example.** Not here. Add it to the testmotor's Azure file share under `{appId}/forms/`, which is where the tool reads them from and where they get their dates re-stamped. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/) for why.
+
+**A subform example, or a form the testmotor has no data for.** Drop the file in `examples/subforms/{dataType}/` or `examples/forms/{dataType}/`. The directory name is the data type and the numeric prefix orders the list while being stripped from the label, so `01_Maksimumsversjon.xml` reads as "Maksimumsversjon". No restart: the directory is read per request.
 
 **A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `npm run gaps --workspace server` tells you which content types your apps declare that no dummy covers.
 

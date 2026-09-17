@@ -6,7 +6,7 @@ import { isExpired } from "./lib/format";
 import { targetUrls, type TargetUrls } from "./lib/target";
 import { PROBE_DELAY_MS, SELECTION_DELAY_MS, useSettled } from "./lib/useDebounced";
 import { useLocalStorage } from "./lib/useLocalStorage";
-import type { CatalogueApp, ExampleGroup, LocaltestStatus, PublicToken, ServerConfig } from "./types";
+import type { CatalogueApp, ExampleGroup, LocaltestStatus, PublicToken, RemoteFormSource, ServerConfig } from "./types";
 
 /** Stood in for a query that has not answered yet, and the same array every time it is. */
 const NO_APPS: CatalogueApp[] = [];
@@ -63,6 +63,8 @@ export interface Session extends TargetUrls {
     localtestUrl: string;
     catalogue: CatalogueApp[];
     exampleGroups: ExampleGroup[];
+    /** Where the main form examples came from, so a picker with none can say why. */
+    exampleSource: RemoteFormSource | null;
     /** The three reads that have to answer before anything works. */
     bootError: unknown;
 }
@@ -74,13 +76,11 @@ const SessionContext = createContext<Session | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
     /*
-     * What the server has to say for itself, asked once. None of these are keyed on anything the
-     * operator can move: the settings come from the server's environment, and the catalogue and the
-     * example files are fixtures on disk.
+     * What the server has to say for itself, asked once. Neither is keyed on anything the operator
+     * can move: the settings come from the server's environment and the catalogue is a fixture.
      */
     const configQuery = useQuery({ queryKey: queryKeys.config(), queryFn: api.getConfig });
     const catalogueQuery = useQuery({ queryKey: queryKeys.catalogue(), queryFn: api.getCatalogue });
-    const examplesQuery = useQuery({ queryKey: queryKeys.examples(), queryFn: api.getExamples });
     /* Its own, because it is allowed to fail. The status dot stays grey and nothing else cares. */
     const localtestQuery = useQuery({ queryKey: queryKeys.localtestStatus(), queryFn: api.getLocaltestStatus });
 
@@ -129,6 +129,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const partySettled = useSettled(partyId, SELECTION_DELAY_MS);
     const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
 
+    /*
+     * What there is to load into a data element, which is no longer a fixture: the subforms and
+     * the attachment dummies are still files on the server, but the main form examples come from
+     * the testmotor, keyed by app id. So this is keyed on the app as typed and gated on the typing
+     * having stopped, the same as the app probe above it, and for the same reason.
+     *
+     * No token is involved. An app that has not been probed, or cannot be, still has examples.
+     */
+    const examplesQuery = useQuery({
+        queryKey: queryKeys.examples(app),
+        queryFn: () => api.getExamples(app),
+        enabled: targetSettled
+    });
+
     const appHost = configQuery.data?.appHost ?? "http://local.altinn.cloud:8000";
     const localtestUrl = localtestQuery.data?.url ?? configQuery.data?.localtestUrl ?? "http://localhost:5101";
 
@@ -157,6 +171,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             localtestUrl,
             catalogue: catalogueQuery.data ?? NO_APPS,
             exampleGroups: examplesQuery.data?.groups ?? NO_GROUPS,
+            exampleSource: examplesQuery.data?.remote ?? null,
             bootError: configQuery.error ?? catalogueQuery.error ?? examplesQuery.error ?? null
         }),
         [

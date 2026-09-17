@@ -2,7 +2,7 @@
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest. It fetches a test user token from LocalTest, targets an org and app, posts one or more data elements, and shows the full request and response log for every call it made. It reads data back as well, so an instance can be inspected, validated, previewed as a pdf, edited and reposted, or deleted.
 
-Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so it only talks to a local Altinn. It has no knowledge of tt02 or production. One call goes elsewhere: the DIBK validation service, which answers what a submission requires. It carries no token and can be switched off with `VALIDATION_URL`.
+Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so it only talks to a local Altinn. It has no knowledge of tt02 or production. Two calls go elsewhere, both hosted, both carrying no token: the DIBK validation service, which answers what a submission requires, and the FtPB testmotor, which serves the main form examples. They can be switched off with `VALIDATION_URL` and `TESTMOTOR_URL`.
 
 **[Documentation](https://arkitektum.github.io/altinn-studio-api-tools/)** for everything in detail. This page is the overview.
 
@@ -53,7 +53,7 @@ For an app the catalogue does not list, pick **Other application** and type the 
 | [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                 |
 | [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                                             | The backend on its own, for scripting a data load                                    |
 
-73 example XML files and 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
+Main form examples come from the FtPB testmotor, which keeps them current and re-dates them per request. Subforms and 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
 
 ## Scripts
 

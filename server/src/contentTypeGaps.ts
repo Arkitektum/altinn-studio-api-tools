@@ -56,7 +56,7 @@ async function main(): Promise<void> {
         }
     }
 
-    const covered = new Set((await listExamples()).filter((group) => group.kind === "attachment").map((group) => group.key));
+    const covered = new Set((await listExamples()).groups.filter((group) => group.kind === "attachment").map((group) => group.key));
 
     const declared = [...usage.keys()].sort();
     const missing = declared.filter((contentType) => !covered.has(contentType));
