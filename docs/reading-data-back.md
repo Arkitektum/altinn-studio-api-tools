@@ -35,7 +35,7 @@ Which is only a way through if you know the guid, so the checkbox above the list
 
 Two reads rather than one, because the app's own list is the one that must not depend on storage. If storage is not there, or refuses the party, the active listing still stands and the panel says the rest is missing rather than letting a short list read as a party with nothing finished. What both hold is listed once, as the app described it, and everything is ordered by when it was last changed, so the instance you just archived is where you left it rather than at the bottom.
 
-When it refuses, the panel says which refusal it was rather than naming the likeliest. A 403 is this token not being allowed to act for that party, which you fix by getting one for a user who may. A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here however you are authenticated. Anything else is LocalTest rather than the request, and worth trying again. The step in the run log has what it said either way.
+When it refuses, the notice under the checkbox says which refusal it was rather than naming the likeliest. A 403 is this token not being allowed to act for that party, which you fix by getting one for a user who may. A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here however you are authenticated. Anything else is LocalTest rather than the request, and worth trying again. The step in the run log has what it said either way.
 
 Off by default. It is a request that often has nothing to add, and it is a view of the moment rather than something you chose, so a reload comes back to the cheaper listing.
 

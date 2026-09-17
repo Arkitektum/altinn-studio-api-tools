@@ -211,21 +211,6 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                 <p className="field__hint">{instanceGuid ? "Onto the instance selected above." : "Creating a new instance."}</p>
             </div>
 
-            {/* Asked for and refused, so the list is short by however many there were. */}
-            {completedListed === false && (
-                <div className="notice notice--warn" style={{ marginTop: 10 }}>
-                    LocalTest&rsquo;s storage api {completedStatus === null ? "could not be reached" : `answered ${completedStatus}`}, so only the
-                    active ones are here and the list is short by however many had finished.
-                    <span className="notice__why">
-                        {completedStatus === 403
-                            ? "A 403 is this token not being allowed to act for that party. Get one for a user who may, or clear the checkbox."
-                            : completedStatus === 404
-                              ? "A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here."
-                              : "That is LocalTest rather than the request, so it is worth trying again. The step in the run log has what it said."}
-                    </span>
-                </div>
-            )}
-
             {error ? (
                 <div style={{ marginTop: 12 }}>
                     <ErrorNotice error={error} />
@@ -267,6 +252,25 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                             </span>
                         </span>
                     </label>
+
+                    {/*
+                     * Under the checkbox that caused it rather than in the panel. The checkbox is
+                     * in here, and a dialog is in the browser's top layer, so a notice left behind
+                     * in the panel was covered by the very window you would have ticked it from.
+                     */}
+                    {completedListed === false && (
+                        <div className="notice notice--warn">
+                            LocalTest&rsquo;s storage api {completedStatus === null ? "could not be reached" : `answered ${completedStatus}`}, so only
+                            the active ones are below and the list is short by however many had finished.
+                            <span className="notice__why">
+                                {completedStatus === 403
+                                    ? "A 403 is this token not being allowed to act for that party. Get one for a user who may, or clear the checkbox."
+                                    : completedStatus === 404
+                                      ? "A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here."
+                                      : "That is LocalTest rather than the request, so it is worth trying again. The step in the run log has what it said."}
+                            </span>
+                        </div>
+                    )}
 
                     <div className="picklist">
                         {/* The instance that does not exist yet. Selected means the post will create it. */}
