@@ -24,7 +24,8 @@ export const config = {
     localtestUrl: (process.env.ALTINN_LOCALTEST_URL ?? "http://localhost:5101").replace(/\/+$/, ""),
 
     /**
-     * The DIBK validation service, the one thing here that is not on your machine.
+     * The DIBK validation service, one of the two things here that are not on your machine. The
+     * testmotor below is the other.
      *
      * It answers what a submission actually requires, which `applicationmetadata` does not: the
      * `minCount` an app declares is not what the validation insists on. No token is sent with the

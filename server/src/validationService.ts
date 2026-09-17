@@ -3,8 +3,8 @@ import { config } from "./config.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
 
 /**
- * The DIBK validation service, which is the one thing this tool talks to that is not on your
- * machine.
+ * The DIBK validation service, one of the two things this tool talks to that are not on your
+ * machine. The other is the testmotor the main form examples come from, `testmotorClient.ts`.
  *
  * It exists here because `applicationmetadata` is not a reliable answer to "what does this
  * submission need": the `minCount` an app declares does not match what the validation actually
@@ -40,11 +40,17 @@ export interface ValidationReportResult {
     steps: RunStep[];
     failedAt: string | null;
     /**
-     * The report, exactly as the service answered, unread.
+     * The report, exactly as the service answered, unread here.
      *
-     * Nothing here interprets it yet. What the tool wants from it is which parts of a submission
-     * are required, and that reading has to be written against a real report rather than guessed
-     * at, so for now the whole thing goes to the run log where it can be seen.
+     * `unknown` rather than a type, because nothing on this side looks at it. It is passed through
+     * whole: to the run log, where the raw report can be read, and to the browser, where
+     * `web/src/lib/validationReport.ts` parses it into the documents a submission is missing and
+     * the counts the rail colours itself by.
+     *
+     * Read there rather than here because the reading needs what only the browser holds: the app's
+     * declared data types, to turn a name in the report into a type you can select, and what the
+     * payload and the instance already have, to know which requirements are already answered. The
+     * server would have to be handed all of it to do the same job.
      */
     report: unknown;
 }
