@@ -78,7 +78,7 @@ textarea {
     font-family: inherit;
     font-size: var(--size-note);
     color: var(--text);
-    background: var(--bg);
+    background: var(--bg-sunk);
     border: 1px solid var(--border-strong);
     border-radius: 4px;
     padding: 6px 8px;
@@ -210,7 +210,7 @@ textarea {
     padding: 7px 9px;
     border: 1px solid var(--border);
     border-radius: 4px;
-    background: var(--bg);
+    background: var(--bg-sunk);
     color: var(--text-muted);
     font-family: inherit;
     text-align: left;
@@ -297,7 +297,7 @@ textarea {
     padding: 6px 12px;
     border: 1px solid var(--border-strong);
     border-radius: 4px;
-    background: var(--bg);
+    background: var(--bg-sunk);
     color: var(--text);
     font-family: inherit;
     font-size: var(--size-note);
@@ -356,6 +356,7 @@ textarea {
  *
  * Height is not part of it. Every button is the same height, whatever it does.
  */
+/* GET keeps --bg-sunk, which is already the blue the other three are getting their own of. */
 .btn--get {
     color: var(--accent);
     border-color: var(--accent-border);
@@ -368,6 +369,7 @@ textarea {
 .btn--post {
     color: var(--ok);
     border-color: var(--ok-border);
+    background: var(--ok-sunk);
 }
 
 .btn--post:hover:not(:disabled) {
@@ -377,6 +379,7 @@ textarea {
 .btn--put {
     color: var(--warn);
     border-color: var(--warn-border);
+    background: var(--warn-sunk);
 }
 
 .btn--put:hover:not(:disabled) {
@@ -386,6 +389,7 @@ textarea {
 .btn--delete {
     color: var(--bad);
     border-color: var(--bad-border);
+    background: var(--bad-sunk);
 }
 
 .btn--delete:hover:not(:disabled) {

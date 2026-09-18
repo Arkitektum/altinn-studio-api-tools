@@ -36,6 +36,23 @@
     --bg-inset: rgb(0 0 0 / 22%);
 
     /*
+     * What a control sits on: --bg-subtle going the other way, a step down rather than up.
+     *
+     * Inputs and buttons were the page colour, opaque, which is right on the page and a hole
+     * anywhere else. A panel has a hue and a control on it was a near-black slab in the middle of
+     * that hue, reading as a gap in the surface rather than as a part of it sunk into it.
+     * Translucent, it darkens what it is on instead of replacing it, so the same variable works on
+     * the page, on all nine panel hues and inside a dialog.
+     *
+     * Cool for the reason the lift is cool: the palette is blue to purple throughout, and a neutral
+     * dark landed on a grey that nothing else here is. Only just cool, though. At a full blue it
+     * pulled every control towards the same hue and fought the panel it was on, which for the seven
+     * panels that are not blue meant the control read as a different colour rather than as the
+     * surface pressed in.
+     */
+    --bg-sunk: rgb(20 24 34 / 38%);
+
+    /*
      * The one place that has to be opaque: the masthead is sticky and the page scrolls under it.
      * Matched to --bg-subtle over the page, which is where it sits.
      */
@@ -52,17 +69,26 @@
     --accent-bg: #222f3c;
     --accent-border: #38587a;
 
+    /*
+     * The `-sunk` of each is what a button wearing that colour sits on, so the tint under a POST is
+     * green and the tint under a DELETE is red rather than both being the cool one. There is no
+     * accent-sunk, because --bg-sunk is already that blue: a GET button takes the default and is
+     * right for the same reason everything else taking it is.
+     */
     --ok: #56d28c;
     --ok-bg: #1d2c24;
     --ok-border: #2f4a3a;
+    --ok-sunk: rgb(14 40 26 / 38%);
 
     --bad: #ef8b83;
     --bad-bg: #2f2020;
     --bad-border: #573331;
+    --bad-sunk: rgb(48 18 16 / 38%);
 
     --warn: #ddb264;
     --warn-bg: #2b2519;
     --warn-border: #4d422a;
+    --warn-sunk: rgb(46 34 12 / 38%);
 
     /*
      * Categorical, not semantic: the three kinds of payload element, which sit in one list and so

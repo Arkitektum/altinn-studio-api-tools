@@ -217,6 +217,12 @@
     /* Scrolled in step with the textarea over it, which is why it hides its own bars. */
     overflow: hidden;
     color: var(--text);
+    /*
+     * Opaque, where every other control is now --bg-sunk. The textarea over this is transparent, so
+     * this layer is the editor's surface, and .editor__grow has to cover the code it sits on with
+     * the same colour. A translucent one would show the code through the button, and an opaque one
+     * cannot match a tint whose result depends on the panel behind it.
+     */
     background: var(--bg);
     pointer-events: none;
 }
