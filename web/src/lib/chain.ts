@@ -118,10 +118,13 @@ function count(n: number, noun: string): string {
  * because the row is coloured by them now, and a red row reading "nothing missing" would be a row
  * arguing with itself.
  */
-function describePrevalidation(prevalidation: PrevalidationSummary): string {
-    if (!prevalidation.run) return "not run";
-    if (prevalidation.stale) return "payload has changed";
-
+/**
+ * What the report found, counted: "2 documents missing, 1 error, 7 warnings", or "nothing missing".
+ *
+ * Exported because the prevalidation panel leads its notice with the same sentence. The two used to
+ * describe one report in two places and could be read as contradicting each other.
+ */
+export function prevalidationCounts(prevalidation: PrevalidationSummary): string {
     const parts: string[] = [];
     if (prevalidation.outstanding > 0) parts.push(`${count(prevalidation.outstanding, "document")} missing`);
     // The errors that are not one of those documents, so nothing is counted twice.
@@ -130,6 +133,34 @@ function describePrevalidation(prevalidation: PrevalidationSummary): string {
     if (prevalidation.warnings > 0) parts.push(count(prevalidation.warnings, "warning"));
 
     return parts.length > 0 ? parts.join(", ") : "nothing missing";
+}
+
+export type PrevalidationVerdict = "error" | "warning" | "clean";
+
+/**
+ * And the same report as one word, which is what the rail row and the panel's notice are both
+ * coloured by.
+ *
+ * One function because they were deciding it separately and answered different questions. The panel
+ * asked only whether a required document was missing, so a report with an error inside the form and
+ * four documents it recommends was a green notice under a red rail row, reading as two views of the
+ * same report that disagreed. They never disagreed about the counts: the panel was colouring by a
+ * narrower question than the one its notice looked like it was answering.
+ *
+ * Null where there is no verdict to give. A report that has not been asked for has found nothing,
+ * and one the payload has moved on from describes something other than what is on screen.
+ */
+export function verdictOf(prevalidation: PrevalidationSummary): PrevalidationVerdict | null {
+    if (!prevalidation.run || prevalidation.stale) return null;
+    if (prevalidation.errors > 0) return "error";
+    if (prevalidation.warnings > 0) return "warning";
+    return "clean";
+}
+
+function describePrevalidation(prevalidation: PrevalidationSummary): string {
+    if (!prevalidation.run) return "not run";
+    if (prevalidation.stale) return "payload has changed";
+    return prevalidationCounts(prevalidation);
 }
 
 /** Whether there is a pdf, and whether it still describes the instance. */
@@ -145,6 +176,7 @@ function describePost(post: PostSummary): string {
 }
 
 export function requestChain(inputs: ChainInputs): ChainStep[] {
+    const verdict = inputs.prevalidation ? verdictOf(inputs.prevalidation) : null;
     const hasUser = Boolean(inputs.user);
     const hasApp = hasUser && Boolean(inputs.application);
     const hasParty = hasApp && Boolean(inputs.party);
@@ -191,25 +223,15 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
                       value: describePrevalidation(inputs.prevalidation),
                       anchor: "panel-prevalidation",
                       reachable: hasApp && inputs.payload.ready,
-                      done:
-                          inputs.prevalidation.run &&
-                          !inputs.prevalidation.stale &&
-                          inputs.prevalidation.errors === 0 &&
-                          inputs.prevalidation.warnings === 0,
+                      done: verdict === "clean",
                       /*
                        * The one step whose whole purpose is to find things wrong, so it is the one
-                       * that says so in colour. Only once it has actually answered: not run is a
-                       * step still ahead of you rather than a finding, and an answer the payload has
-                       * moved on from describes something else and is not worth colouring either.
+                       * that says so in colour. Only once it has actually answered, which is what
+                       * `verdictOf` returning null means: not run is a step still ahead of you
+                       * rather than a finding, and an answer the payload has moved on from
+                       * describes something else and is not worth colouring either.
                        */
-                      found:
-                          !inputs.prevalidation.run || inputs.prevalidation.stale
-                              ? undefined
-                              : inputs.prevalidation.errors > 0
-                                ? ("error" as const)
-                                : inputs.prevalidation.warnings > 0
-                                  ? ("warning" as const)
-                                  : undefined
+                      found: verdict === "error" || verdict === "warning" ? verdict : undefined
                   }
               ]
             : []),

@@ -2,7 +2,8 @@ import type { Dispatch, SetStateAction } from "react";
 import { useAppRead } from "../reads";
 import { usePrevalidation } from "../writes";
 import { preferredContentType } from "../lib/contentType";
-import { documentsToAdd, outstandingOf } from "../lib/validationReport";
+import { prevalidationCounts, verdictOf } from "../lib/chain";
+import { documentsToAdd, outstandingOf, summarisePrevalidation } from "../lib/validationReport";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DataElementInput } from "../types";
@@ -55,6 +56,19 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
     const other = (requirements?.otherErrors ?? 0) + (requirements?.otherWarnings ?? 0);
 
     /**
+     * The whole report, which is what the notice below is coloured by and what it leads with.
+     *
+     * The same summary the rail is built from, through the same two functions. This used to ask
+     * `outstanding.length > 0`, so the notice answered "is a required document missing" while
+     * looking like it answered "what did the service make of this submission": a report with an
+     * error inside the form and four documents it recommends came out green here and red on the
+     * rail. Reading it twice costs nothing, since the report is in the cache.
+     */
+    const summary = summarisePrevalidation(prevalidation);
+    const verdict = verdictOf(summary);
+    const tone = verdict === "error" ? "notice--bad" : verdict === "warning" ? "notice--warn" : verdict === "clean" ? "notice--ok" : "";
+
+    /**
      * Appends one element per document still wanted, which the example picker fills in on mount:
      * the body of a folded element is hidden rather than left unrendered, so the picker is there
      * to do it.
@@ -103,11 +117,22 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
              * the run log, where the whole report is.
              */}
             {requirements && (
-                <div className={`notice notice--${outstanding.length > 0 ? "warn" : "ok"}`} style={{ marginTop: 12 }}>
+                <div className={["notice", tone].filter(Boolean).join(" ")} style={{ marginTop: 12 }}>
                     {prevalidation?.stale && (
                         <p style={{ margin: "0 0 6px" }}>
                             <strong>The payload has changed since it was prevalidated.</strong> The service reads the form to decide which documents
                             its rules ask for, so run it again to be sure.
+                        </p>
+                    )}
+
+                    {/*
+                     * What it found, in the rail's own words, so the two can be read against each
+                     * other. Only where there is something: under a green notice saying nothing is
+                     * missing, "nothing missing" is the same sentence twice.
+                     */}
+                    {verdict && verdict !== "clean" && (
+                        <p style={{ margin: "0 0 6px" }}>
+                            <strong>{prevalidationCounts(summary)}</strong>
                         </p>
                     )}
 

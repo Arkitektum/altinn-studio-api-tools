@@ -160,6 +160,11 @@ function instancePicked(app: Rendered): string {
     return app.container.querySelector("#panel-instances .picked__name")?.textContent ?? "";
 }
 
+/** The classes on a panel's notice, which is how it says what it thinks of what it is reporting. */
+function noticeTone(app: Rendered, panel: string): string {
+    return app.container.querySelector(`${panel} .notice`)?.className ?? "";
+}
+
 /** The url the panel says the post will go to. */
 function willCall(app: Rendered): string {
     return app.container.querySelector("#panel-instances .dump")?.textContent ?? "";
@@ -602,6 +607,71 @@ describe("App", () => {
         assert.equal(railValue(app, "Prevalidation"), "1 document missing");
         // And the panel read the same report, rather than each holding one of its own.
         assert.match(app.container.textContent ?? "", /Situasjonsplan/);
+    });
+
+    /*
+     * The rail and the panel are two views of one report, and they used to be readable as
+     * disagreeing. The panel coloured its notice by whether a required document was missing, which
+     * is a narrower question than the one the notice looks like it is answering, so a report with an
+     * error inside the form and four documents it only recommends was green there and red on the
+     * rail. The counts were never wrong: 1 error and 7 warnings is the same eight findings as four
+     * recommendations and four rules about the form's own content.
+     */
+    it("colours the prevalidation notice by the whole report, the way the rail is", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+
+        /** A rule about a document, which is what `Vedlegg` in the reference path makes it. */
+        const document = (name: string) => ({
+            rule: name,
+            reference: `Ettrinn.Vedlegg.${name}`,
+            message: `${name} mangler`,
+            messagetype: "WARNING"
+        });
+        /** And one about the form's own content, which names no attachment and so no payload element. */
+        const content = (name: string, messagetype: string) => ({
+            rule: name,
+            reference: `Ettrinn.Eiendom.${name}`,
+            message: `${name} er ikke fylt ut`,
+            messagetype
+        });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/config": { ...config, validationUrl: "http://localhost:6000/validate" },
+            "POST /api/validation-report": {
+                ok: true,
+                steps: [],
+                failedAt: null,
+                report: {
+                    soknadtype: "ET",
+                    messages: [
+                        document("TegningNyPlan"),
+                        document("TegningNyFasade"),
+                        document("SamtykkeArbeidstilsynet"),
+                        document("Avkjoerselsplan"),
+                        content("Adresse", "ERROR"),
+                        content("Gnr", "WARNING"),
+                        content("Bnr", "WARNING"),
+                        content("Kommunenavn", "WARNING")
+                    ]
+                }
+            }
+        });
+        await app.wait(700);
+
+        await click(app, findByText(app, "#panel-prevalidation button", "Prevalidate"));
+        await app.wait(50);
+
+        // No document is required and missing, so nothing is outstanding and the panel used to be
+        // green on the strength of that alone.
+        assert.equal(railValue(app, "Prevalidation"), "1 error, 7 warnings");
+        assert.equal(noticeTone(app, "#panel-prevalidation"), "notice notice--bad");
+
+        const notice = app.container.querySelector("#panel-prevalidation .notice")?.textContent ?? "";
+        assert.match(notice, /1 error, 7 warnings/, "the panel leads with what the rail says");
+        assert.match(notice, /asks for no document this ET submission does not have/, "which is still true, and still said");
+        assert.match(notice, /recommends TegningNyPlan, TegningNyFasade, SamtykkeArbeidstilsynet and Avkjoerselsplan/);
+        assert.match(notice, /4 things about the form's own content/);
     });
 
     /*

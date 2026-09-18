@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { requestChain } from "./chain";
+import { requestChain, verdictOf } from "./chain";
 import type { ChainInputs, PrevalidationSummary } from "./chain";
 
 const nothing: ChainInputs = {
@@ -215,5 +215,25 @@ describe("requestChain", () => {
                 "panel-process"
             ]
         );
+    });
+});
+
+/*
+ * The rail row and the prevalidation panel's notice are coloured by this one function, which is the
+ * whole reason it exists. They used to decide separately, and the panel asked only whether a
+ * required document was missing, so a report with an error inside the form and four documents it
+ * recommends was a green notice under a red rail row.
+ */
+describe("verdictOf", () => {
+    it("takes the worst of everything the report found, not only the documents", () => {
+        assert.equal(verdictOf({ run: true, stale: false, outstanding: 0, errors: 1, warnings: 7 }), "error");
+        assert.equal(verdictOf({ run: true, stale: false, outstanding: 2, errors: 2, warnings: 0 }), "error");
+        assert.equal(verdictOf({ run: true, stale: false, outstanding: 0, errors: 0, warnings: 4 }), "warning");
+        assert.equal(verdictOf({ run: true, stale: false, outstanding: 0, errors: 0, warnings: 0 }), "clean");
+    });
+
+    it("has no verdict on a report it has not got, or one the payload has moved on from", () => {
+        assert.equal(verdictOf({ run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 }), null);
+        assert.equal(verdictOf({ run: true, stale: true, outstanding: 0, errors: 3, warnings: 2 }), null);
     });
 });
