@@ -97,10 +97,16 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
 
     return (
         <Panel icon="shield" id="panel-prevalidation" notReady={notReady} tone="prevalidation" title="Prevalidation">
-            {/* The width of the post button below it, because it is the step before it. */}
+            {/*
+             * The shape of the post button below it, because it is the step before it and the main
+             * thing to press in this panel. It was outlined in the POST green it sends, which is the
+             * rule for a button that makes a request and not the rule for the one action a panel is
+             * for: primacy wins where the two disagree, which is why Post is filled rather than
+             * green as well.
+             */}
             <button
                 type="button"
-                className="btn btn--post btn--fire"
+                className="btn btn--primary btn--fire"
                 onClick={onValidationReport}
                 disabled={asking || Boolean(blockedBy)}
                 title={blockedBy ?? undefined}

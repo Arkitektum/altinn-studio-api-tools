@@ -104,14 +104,14 @@ Colour is never the only carrier. A method is named next to its colour, a status
 
 Buttons come in four kinds, all the same height, since height is not a thing worth encoding:
 
-| Kind                    | Looks like                    | Means                                                                                                                              |
-| ----------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| The primary action      | Filled accent                 | The main thing to press here: **Post**, **Get token**, a **Renew** on a token that has expired                                     |
-| Sends a request         | Outlined in its method colour | **Refresh** and **Render pdf** are GET blue, **Prevalidate** is POST green, **Sign and submit** is PUT amber                       |
-| Throws something away   | Outlined red                  | **Delete**, **Remove**, **Clear**, **Clear history**, **Clear results**, whether or not a request leaves the machine               |
-| Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Show pdf**, **Full size**, **Collapse all**, **Open**, **Save**, **Close**, **Cancel** |
+| Kind                    | Looks like                    | Means                                                                                                                                                              |
+| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The primary action      | Filled accent                 | The main thing to press here: **Prevalidate**, **Post**, **Get token**, a **Renew** on a token that has expired                                                    |
+| Sends a request         | Outlined in its method colour | **Refresh** and **Render pdf** are GET blue, **Sign and submit** is PUT amber, **Start** on a sweep and a **Renew** on a token that has not expired are POST green |
+| Throws something away   | Outlined red                  | **Delete**, **Remove**, **Clear**, **Clear history**, **Clear results**, whether or not a request leaves the machine                                               |
+| Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Show pdf**, **Full size**, **Collapse all**, **Open**, **Save**, **Close**, **Cancel**                                 |
 
-So the colour answers "will this talk to Altinn, and how", which is the question worth answering before clicking in a tool whose whole purpose is making requests. Primacy wins where the two disagree: the post button is filled rather than green, because being the main action says more than being a POST.
+So the colour answers "will this talk to Altinn, and how", which is the question worth answering before clicking in a tool whose whole purpose is making requests. Primacy wins where the two disagree: **Post** and **Prevalidate** are filled rather than green, because being the one action a panel is for says more than being a POST.
 
 Red is the one that is not about the method. Deleting a saved payload or a token never sent a DELETE anywhere, so the red was already saying "this throws something away" rather than naming a verb, and **Clear** and **Remove** wear it for the same reason. **Close** and **Cancel** stay grey: they give nothing up.
 
