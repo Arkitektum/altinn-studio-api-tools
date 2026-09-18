@@ -123,9 +123,20 @@ export interface ReportRequirements {
     required: DocumentRequirement[];
     /** The ones it only recommends. */
     recommended: DocumentRequirement[];
-    /** Messages about the form's own content, which no payload element answers. */
-    otherErrors: number;
-    otherWarnings: number;
+    /**
+     * Messages about the form's own content, which no payload element answers.
+     *
+     * Kept whole rather than counted. They were two numbers, on the grounds that the panel can do
+     * nothing about them, but an error is worth reading whether or not the tool can act on it: a
+     * submission with every document attached and an empty address field is still a submission that
+     * would be refused, and "and one thing about the form's own content" does not say which.
+     */
+    other: ReportMessage[];
+}
+
+/** The findings about the form itself, of one severity. */
+export function contentIssues(requirements: ReportRequirements, severity: ReportSeverity): ReportMessage[] {
+    return requirements.other.filter((message) => message.severity === severity);
 }
 
 export interface RequirementInputs {
@@ -169,17 +180,15 @@ function requirementFrom(message: ReportMessage, inputs: RequirementInputs): Doc
  * by another is required, and saying both would be saying it twice.
  */
 export function requirementsFrom(report: ValidationReport | null, inputs: RequirementInputs): ReportRequirements {
-    const empty: ReportRequirements = { soknadtype: "", required: [], recommended: [], otherErrors: 0, otherWarnings: 0 };
+    const empty: ReportRequirements = { soknadtype: "", required: [], recommended: [], other: [] };
     if (!report) return empty;
 
     const documents = new Map<string, DocumentRequirement>();
-    let otherErrors = 0;
-    let otherWarnings = 0;
+    const other: ReportMessage[] = [];
 
     for (const message of report.messages) {
         if (!isDocumentMessage(message)) {
-            if (message.severity === "error") otherErrors += 1;
-            else otherWarnings += 1;
+            other.push(message);
             continue;
         }
         const requirement = requirementFrom(message, inputs);
@@ -195,8 +204,7 @@ export function requirementsFrom(report: ValidationReport | null, inputs: Requir
         soknadtype: report.soknadtype,
         required: all.filter((requirement) => requirement.severity === "error"),
         recommended: all.filter((requirement) => requirement.severity === "warning"),
-        otherErrors,
-        otherWarnings
+        other
     };
 }
 
@@ -235,8 +243,8 @@ export function summarisePrevalidation(prevalidation: Prevalidation | null): Pre
         run: true,
         stale,
         outstanding,
-        errors: outstanding + requirements.otherErrors,
-        warnings: advised + requirements.otherWarnings
+        errors: outstanding + contentIssues(requirements, "error").length,
+        warnings: advised + contentIssues(requirements, "warning").length
     };
 }
 

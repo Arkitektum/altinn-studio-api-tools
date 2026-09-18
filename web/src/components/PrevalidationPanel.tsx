@@ -3,7 +3,7 @@ import { useAppRead } from "../reads";
 import { usePrevalidation } from "../writes";
 import { preferredContentType } from "../lib/contentType";
 import { prevalidationCounts, verdictOf } from "../lib/chain";
-import { documentsToAdd, outstandingOf, summarisePrevalidation } from "../lib/validationReport";
+import { contentIssues, documentsToAdd, outstandingOf, summarisePrevalidation } from "../lib/validationReport";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DataElementInput } from "../types";
@@ -53,7 +53,17 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
     const advised = (requirements?.recommended ?? [])
         .filter((requirement) => !requirement.satisfied)
         .map((requirement) => requirement.dataTypes[0] as string);
-    const other = (requirements?.otherErrors ?? 0) + (requirements?.otherWarnings ?? 0);
+    /**
+     * What the report says about the form itself rather than about what is attached to it.
+     *
+     * The errors are listed, whether or not a document is missing. Nothing here can be added from
+     * this panel, which was the reason they were only counted, but a submission with every document
+     * attached and an empty field in the form is still one that would be refused, and "one thing
+     * about the form's own content" does not say which thing. The warnings stay a count: they are
+     * the larger half of a long report and the run log has all of it.
+     */
+    const contentErrors = requirements ? contentIssues(requirements, "error") : [];
+    const contentWarnings = requirements ? contentIssues(requirements, "warning").length : 0;
 
     /**
      * The whole report, which is what the notice below is coloured by and what it leads with.
@@ -168,10 +178,32 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                     {/* Named only, since a recommendation you decide against should be one line. */}
                     {advised.length > 0 && <p style={{ margin: "6px 0 0" }}>It also recommends {list(advised)}.</p>}
 
-                    {other > 0 && (
+                    {contentErrors.length > 0 && (
+                        <>
+                            <p style={{ margin: "6px 0 0" }}>
+                                And {contentErrors.length === 1 ? "one error" : `${contentErrors.length} errors`} about the form&rsquo;s own content
+                                rather than about what is attached to it:
+                            </p>
+                            <ul>
+                                {contentErrors.map((issue) => (
+                                    <li key={`${issue.rule}|${issue.reference}|${issue.message}`}>
+                                        {/* The sentence leads, where a document's own name leads above: there is no
+                                            element to add here, so what the rule says is the whole of the finding. */}
+                                        {issue.message}
+                                        {issue.checklistReference && <span className="badge">{issue.checklistReference}</span>}
+                                        {(issue.xpathField ?? issue.reference) && (
+                                            <span className="notice__why">{issue.xpathField ?? issue.reference}</span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+
+                    {contentWarnings > 0 && (
                         <p style={{ margin: "6px 0 0" }}>
-                            And {other === 1 ? "one thing" : `${other} things`} about the form's own content rather than what is attached to it. The
-                            whole report is in the run log.
+                            And {contentWarnings === 1 ? "one warning" : `${contentWarnings} warnings`} about the form&rsquo;s own content, which the
+                            run log has in full.
                         </p>
                     )}
                 </div>

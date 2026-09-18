@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+    contentIssues,
     documentNames,
     documentsToAdd,
     isDocumentMessage,
@@ -207,9 +208,15 @@ describe("requirementsFrom", () => {
         assert.deepEqual(unknown.required[0]?.dataTypes, ["Situasjonsplan"]);
     });
 
-    it("leaves what is inside the form to the run log", () => {
-        assert.equal(found.otherErrors, 1);
-        assert.equal(found.otherWarnings, 1);
+    it("keeps what is inside the form apart from the documents, whole rather than counted", () => {
+        assert.deepEqual(
+            contentIssues(found, "error").map((issue) => issue.rule),
+            ["Gyldig"]
+        );
+        assert.deepEqual(
+            contentIssues(found, "warning").map((issue) => issue.rule),
+            ["Prosjektnavn"]
+        );
     });
 
     it("marks one already in the payload, or already on the instance", () => {
@@ -272,12 +279,22 @@ describe("summarisePrevalidation", () => {
         checklistReference: null
     });
 
+    /** And n findings about the form itself, which are only ever counted here. */
+    const issues = (severity: "error" | "warning", n: number): ReportMessage[] =>
+        Array.from({ length: n }, (_, index) => ({
+            rule: `${severity}-${index}`,
+            reference: "",
+            message: "",
+            severity,
+            xpathField: null,
+            checklistReference: null
+        }));
+
     const requirements = (over: Partial<ReportRequirements> = {}): ReportRequirements => ({
         soknadtype: "ET",
         required: [],
         recommended: [],
-        otherErrors: 0,
-        otherWarnings: 0,
+        other: [],
         ...over
     });
 
@@ -291,8 +308,7 @@ describe("summarisePrevalidation", () => {
             requirements: requirements({
                 required: [doc("error", false), doc("error", false)],
                 recommended: [doc("warning", false)],
-                otherErrors: 3,
-                otherWarnings: 4
+                other: [...issues("error", 3), ...issues("warning", 4)]
             })
         });
 
@@ -319,7 +335,7 @@ describe("summarisePrevalidation", () => {
     });
 
     it("carries the staleness through, since an answer the payload moved on from is not a finding", () => {
-        const summary = summarisePrevalidation({ stale: true, requirements: requirements({ otherErrors: 2 }) });
+        const summary = summarisePrevalidation({ stale: true, requirements: requirements({ other: issues("error", 2) }) });
         assert.equal(summary.stale, true);
         assert.equal(summary.errors, 2);
     });

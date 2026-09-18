@@ -671,7 +671,15 @@ describe("App", () => {
         assert.match(notice, /1 error, 7 warnings/, "the panel leads with what the rail says");
         assert.match(notice, /asks for no document this ET submission does not have/, "which is still true, and still said");
         assert.match(notice, /recommends TegningNyPlan, TegningNyFasade, SamtykkeArbeidstilsynet and Avkjoerselsplan/);
-        assert.match(notice, /4 things about the form's own content/);
+
+        // The error is read out rather than counted, which is the whole point of it being an error:
+        // nothing here can be added from this panel, and it would still refuse the submit.
+        assert.match(notice, /one error about the form’s own content/);
+        assert.match(notice, /Adresse er ikke fylt ut/, "the rule's own sentence");
+        assert.match(notice, /Ettrinn\.Eiendom\.Adresse/, "and where in the form it is about");
+        // The warnings stay a count, since they are the long half of a report the log has in full.
+        assert.match(notice, /3 warnings about the form’s own content/);
+        assert.doesNotMatch(notice, /Gnr er ikke fylt ut/, "a warning about the form is not read out");
     });
 
     /*
