@@ -363,6 +363,9 @@ describe("App", () => {
 
         assert.match(postingTo(app), /^Existing instance/, "a seeded guid means the post adds to that one");
         assert.match(instancePicked(app), new RegExp(A.slice(0, 8)), "and the panel says which, without the window");
+        // What the listing holds, which is none of them: an instance reached by its guid is a row in
+        // the window but is not one the listing offered, and it is already the one in force.
+        assert.equal(app.container.querySelector("#panel-instances .modes__count")?.textContent, "0");
         assert.match(willCall(app), new RegExp(`/instances/510001/${A}/data`));
 
         // Back to creating one, from the panel rather than from the window.
@@ -372,6 +375,47 @@ describe("App", () => {
         assert.equal(postingTo(app), "New instance");
         assert.equal(instancePicked(app), "", "nothing to name once the post is the thing that creates it");
         assert.match(willCall(app), /\/instances {2}\(multipart/);
+    });
+
+    /*
+     * The window is now only ever about which existing instance, so picking one out of it is the
+     * whole of what it does, and nothing was covering that at all: every other test here reaches an
+     * instance by typing its guid.
+     */
+    it("takes the instance picked in the window as the one to add to", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001" });
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/instances/active": {
+                ok: true,
+                steps: [],
+                failedAt: null,
+                instanceOwnerPartyId: "510001",
+                instances: [
+                    { id: `510001/${A}`, instanceOwnerPartyId: "510001", instanceGuid: A, lastChanged: null, lastChangedBy: null, state: "active" }
+                ],
+                completedListed: null
+            },
+            "GET /api/instances": (url) => instanceRead(url.searchParams.get("instanceGuid") ?? "", "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        // Nothing chosen, and the panel says how many there are to choose from before you open it.
+        assert.equal(postingTo(app), "New instance");
+        assert.match(app.container.querySelector("#panel-instances .modes__count")?.textContent ?? "", /^1$/);
+
+        await openInstances(app);
+        await click(app, findByText(app, "#panel-instances .picklist__item", A.slice(0, 8)));
+        await app.wait(700);
+
+        assert.match(postingTo(app), /^Existing instance/, "picking one is how you get to that answer");
+        assert.match(instancePicked(app), new RegExp(A.slice(0, 8)));
+        assert.equal(app.container.querySelector("#panel-instances .picklist") === null, true, "picking closes the window");
+        assert.ok(stub.calls.includes("GET /api/instances"), "and the tool reads what it is now pointed at");
     });
 
     /*
@@ -399,7 +443,7 @@ describe("App", () => {
         // Reached by its guid rather than by a row, which is the panel's own way to an instance the
         // active list leaves out. The window it lives in has to be opened first.
         await openInstances(app);
-        await click(app, findByText(app, "#panel-instances button", "Other instance"));
+        await click(app, findByText(app, "#panel-instances button", "Reach one by guid"));
         await type(app, find<HTMLInputElement>(app, "#typedInstanceGuid"), B);
 
         assert.doesNotMatch(elementsListed(app), /GammelType/, "the previous instance's data element should have gone");
@@ -429,12 +473,12 @@ describe("App", () => {
         assert.equal(reads(), 1);
         assert.match(elementsListed(app), /Type-99d0/);
 
-        // "Other instance" toggles the field rather than opening it, so this only asks for it when
+        // "Reach one by guid" toggles the field rather than opening it, so this only asks for it when
         // it is not already there.
         const typed = async (guid: string) => {
             if (!app.container.querySelector("#typedInstanceGuid")) {
                 await openInstances(app);
-                await click(app, findByText(app, "#panel-instances button", "Other instance"));
+                await click(app, findByText(app, "#panel-instances button", "Reach one by guid"));
             }
             await type(app, find<HTMLInputElement>(app, "#typedInstanceGuid"), guid);
             await app.wait(700);
@@ -633,7 +677,7 @@ describe("App", () => {
         assert.ok(stub.calls.includes("GET /api/instances"), "the read of the first instance should be out");
 
         await openInstances(app);
-        await click(app, findByText(app, "#panel-instances button", "Other instance"));
+        await click(app, findByText(app, "#panel-instances button", "Reach one by guid"));
         await type(app, find<HTMLInputElement>(app, "#typedInstanceGuid"), B);
         await app.wait(700);
 

@@ -239,7 +239,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
         setConfirming(null);
     }
 
-    function pick(instance: InstanceSummary | null) {
+    /** Only an instance: creating one is the panel's own answer and is not in here to be picked. */
+    function pick(instance: InstanceSummary) {
         onSelect(instance);
         close();
     }
@@ -299,7 +300,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
 
             {picking && (
                 <Modal
-                    title="Pick an instance"
+                    title="Pick an existing instance"
                     className="modal--form"
                     bodyClassName="modal__form"
                     onClose={close}
@@ -392,18 +393,6 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                     )}
 
                     <div className="picklist">
-                        {/* The instance that does not exist yet. Selected means the post will create it. */}
-                        <button
-                            type="button"
-                            className="picklist__item"
-                            aria-current={instanceGuid === ""}
-                            onClick={() => pick(null)}
-                            title="Posting creates a new instance for this party"
-                        >
-                            <span>New instance</span>
-                            {instanceGuid === "" && <span className="picklist__now">current</span>}
-                        </button>
-
                         {rows.map(({ instance, absent }) => {
                             const armed = confirming === instance.instanceGuid;
                             const current = instance.instanceGuid === instanceGuid;
@@ -439,7 +428,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                         className="btn btn--ghost"
                                         title="Open it in the app, which needs a LocalTest session in the browser"
                                     >
-                                        Open
+                                        Open in app
                                     </a>
 
                                     {armed ? (
@@ -473,20 +462,36 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                 </div>
                             );
                         })}
+                    </div>
 
-                        {/* Altinn's active list leaves out an instance whose process has ended, and this
-                            is the way back to one: its guid, or the whole "510001/guid" pair. */}
+                    {instances === null && !busy && <p className="field__hint">Nothing listed yet.</p>}
+                    {/* Nothing on screen rather than nothing listed: an instance reached by its guid is
+                        a row here even when the listing came back empty, and "nothing" over a visible
+                        row is a contradiction. */}
+                    {instances !== null && rows.length === 0 && (
+                        <p className="field__hint">
+                            Nothing here: this party has no {includeCompleted ? "instances at all" : "active instances to add data to"}.
+                        </p>
+                    )}
+
+                    {/*
+                     * Altinn's active list leaves out an instance whose process has ended, and this is
+                     * the way back to one: its guid, or the whole "510001/guid" pair.
+                     *
+                     * A disclosure rather than a row in the list above, which is what it used to be.
+                     * Nothing is selected by pressing it, so it had no business sitting among the
+                     * things that are, wearing their styling and their keyboard behaviour.
+                     */}
+                    <div className="row">
                         <button
                             type="button"
-                            className="picklist__item"
-                            // Expanded rather than current: this reveals the field below rather than
-                            // being one of the things you can select.
+                            className="btn btn--ghost"
                             aria-expanded={typing}
                             aria-controls="typedInstanceGuid"
                             onClick={() => setTyping(!typing)}
-                            title="Reach an instance the list does not hold, by its guid"
                         >
-                            <span>Other instance…</span>
+                            <Icon name="chevron" className={typing ? undefined : "icon--turn"} />
+                            Reach one by guid
                         </button>
                     </div>
 
@@ -503,12 +508,9 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                         />
                     )}
 
-                    {instances === null && !busy && <p className="field__hint">Nothing listed yet.</p>}
-                    {instances !== null && instances.length === 0 && (
-                        <p className="field__hint">
-                            Nothing else here: this party has no {includeCompleted ? "instances at all" : "active instances to add data to"}.
-                        </p>
-                    )}
+                    <p className="field__hint">
+                        Only the instances that are already there. To create one, close this and choose <strong>New instance</strong>.
+                    </p>
 
                     <p className="field__hint">
                         Picking one closes this window, reads it and validates it, and fills the data element panel:
@@ -519,8 +521,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                     </p>
 
                     <p className="field__hint">
-                        <strong>Open</strong> is a link into the app, which is a session of its own: the token here lives in server memory, so the
-                        browser never gets one. If it bounces to a user picker, <strong>Log in</strong> above is that same picker, and opening the
+                        <strong>Open in app</strong> is a link into the app, which is a session of its own: the token here lives in server memory, so
+                        the browser never gets one. If it bounces to a user picker, <strong>Log in</strong> above is that same picker, and opening the
                         instance again then works. <strong>Delete</strong> removes an instance outright, and asks twice first.
                     </p>
 
