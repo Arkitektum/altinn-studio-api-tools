@@ -150,6 +150,21 @@ function elementsListed(app: Rendered): string {
     return app.container.querySelector("#dataGuid")?.textContent ?? "";
 }
 
+/** Which of the two the instances panel says a post goes to. A string, for the reason above. */
+function postingTo(app: Rendered): string {
+    return app.container.querySelector("#panel-instances .modes__choice[aria-pressed='true'] .modes__title")?.textContent ?? "";
+}
+
+/** And which instance, where that answer has one. Empty where the panel is showing none. */
+function instancePicked(app: Rendered): string {
+    return app.container.querySelector("#panel-instances .picked__name")?.textContent ?? "";
+}
+
+/** The url the panel says the post will go to. */
+function willCall(app: Rendered): string {
+    return app.container.querySelector("#panel-instances .dump")?.textContent ?? "";
+}
+
 /** What the rail says one step is holding. A string, for the same reason `waitingPanels` is. */
 function railValue(app: Rendered, label: string): string {
     const step = [...app.container.querySelectorAll(".rail__step")].find((row) => row.querySelector(".rail__label")?.textContent === label);
@@ -326,6 +341,37 @@ describe("App", () => {
         await click(app, box());
         await app.wait(50);
         assert.equal(listings(), 2, "and turning them off is the list already in hand");
+    });
+
+    /*
+     * Creating an instance and adding to one are two answers to the same question, and the panel
+     * used to carry the difference between them in nothing but the words in a row: "New instance"
+     * against a guid, both drawn the way the window behind it draws its list. Which one is in force
+     * is now the control, so it can be read and changed without opening anything.
+     */
+    it("says whether a post creates an instance or adds to one, and changes which without the window", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": (url) => instanceRead(url.searchParams.get("instanceGuid") ?? "", "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        assert.match(postingTo(app), /^Existing instance/, "a seeded guid means the post adds to that one");
+        assert.match(instancePicked(app), new RegExp(A.slice(0, 8)), "and the panel says which, without the window");
+        assert.match(willCall(app), new RegExp(`/instances/510001/${A}/data`));
+
+        // Back to creating one, from the panel rather than from the window.
+        await click(app, findByText(app, "#panel-instances .modes__choice", "New instance"));
+        await app.wait(20);
+
+        assert.equal(postingTo(app), "New instance");
+        assert.equal(instancePicked(app), "", "nothing to name once the post is the thing that creates it");
+        assert.match(willCall(app), /\/instances {2}\(multipart/);
     });
 
     /*

@@ -41,12 +41,17 @@ interface InstancesPanelProps {
 }
 
 /**
- * What a post goes to: the instance selected, and a window to change it in.
+ * What a post goes to: creating an instance or adding to one that is there, and which one.
  *
- * The list is behind an Open button rather than in the panel, the way saved payloads are. Both are
- * the same shape of thing, a list you visit to make one choice and then stop looking at, and the
- * choice is what the panel is for. What the choice decides is directly under it: an instance means
- * the data is added to that one, and no instance means the post creates one.
+ * Those are two questions and they were one control. The panel showed the choice as a lone row
+ * styled like the list rows in the window behind it, which read as a list of one rather than as a
+ * decision already made, and the difference between the two answers was carried by nothing but the
+ * words in it: "New instance" against a guid. So the first question is a two-way control where both
+ * answers are readable at rest, and the second is the window, which only the second answer has.
+ *
+ * The mode is derived from whether a guid is set rather than held, so there is no state where you
+ * have chosen existing and there is no existing instance: choosing it opens the window, and closing
+ * the window without picking leaves you where you were.
  */
 export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectTyped }: InstancesPanelProps) {
     const { base, party, tokenId, tokenUsable, org, app, partyId, instanceGuid, localtestUrl } = useTarget();
@@ -220,6 +225,8 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
     ];
 
     const selected = rows.find((row) => row.instance.instanceGuid === instanceGuid)?.instance ?? null;
+    /** Which of the two questions the panel is answering. A guid is the whole of the difference. */
+    const creating = instanceGuid === "";
 
     // An instance selected means the data goes onto it, and none means the post creates one. There
     // is no separate destination to read, which is why this sits under the selection that decides it.
@@ -238,42 +245,50 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
     }
 
     return (
-        <Panel
-            notReady={notReady}
-            tone="instances"
-            id={id}
-            title="Instances"
-            icon="layers"
-            aside={
-                <button type="button" className="btn btn--ghost" onClick={() => setPicking(true)}>
-                    {busy ? <span className="btn__spinner" /> : <Icon name="layers" />}
-                    Open{instances === null ? "" : ` (${instances.length})`}
+        <Panel notReady={notReady} tone="instances" id={id} title="Instances" icon="layers">
+            <span className="legend">What you post to</span>
+            <div className="modes" role="group" aria-label="What you post to">
+                <button type="button" className="modes__choice" aria-pressed={creating} onClick={() => onSelect(null)}>
+                    <span className="modes__title">New instance</span>
+                    <span className="modes__note">Posting creates one</span>
                 </button>
-            }
-        >
-            <p className="field__hint" style={{ marginBottom: 10 }}>
-                What you post to. <strong>New instance</strong> means posting creates one, and an instance means posting adds data to that one.
-            </p>
-
-            {/* The one choice this panel is for, and the way back into the list to change it. */}
-            <div className="picklist">
-                <button type="button" className="picklist__item" aria-haspopup="dialog" onClick={() => setPicking(true)}>
-                    <span>
-                        {selected ? instanceLabel(selected) : "New instance"}
-                        {selected && !selectedIsListed ? " · not in the active list" : ""}
+                {/*
+                 * Opens the window whether or not an instance is already chosen, since switching to
+                 * this answer and changing which instance it is are the same act: picking one.
+                 */}
+                <button type="button" className="modes__choice" aria-pressed={!creating} aria-haspopup="dialog" onClick={() => setPicking(true)}>
+                    <span className="modes__title">
+                        Existing instance
+                        {/* How many there are, so the window is worth opening or plainly is not. */}
+                        {busy ? <span className="btn__spinner" /> : instances && <span className="modes__count">{instances.length}</span>}
                     </span>
-                    {selected && selected.state !== "active" && (
-                        <span className={`badge badge--${selected.state === "completed" ? "ok" : "bad"}`}>{selected.state}</span>
-                    )}
+                    <span className="modes__note">Posting adds data to it</span>
                 </button>
             </div>
+
+            {/* Which one, under the answer that has a which. Shown rather than offered: Change is the control. */}
+            {selected && (
+                <div className="picked">
+                    <span className="picked__what">
+                        <span className="picked__name" title={selected.id}>
+                            {instanceLabel(selected)}
+                            {!selectedIsListed ? " · not in the active list" : ""}
+                        </span>
+                        {selected.state !== "active" && (
+                            <span className={`badge badge--${selected.state === "completed" ? "ok" : "bad"}`}>{STATE_LABEL[selected.state]}</span>
+                        )}
+                    </span>
+                    <button type="button" className="btn btn--ghost" aria-haspopup="dialog" onClick={() => setPicking(true)}>
+                        Change
+                    </button>
+                </div>
+            )}
 
             <div style={{ marginTop: 14 }}>
                 <span className="legend">Will call</span>
                 <pre className="dump" style={{ margin: 0 }}>
                     <span className="method method--post">POST</span> {preview}
                 </pre>
-                <p className="field__hint">{instanceGuid ? "Onto the instance selected above." : "Creating a new instance."}</p>
             </div>
 
             {error ? (

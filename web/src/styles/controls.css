@@ -189,6 +189,104 @@ textarea {
     color: var(--text-faint);
 }
 
+/*
+ * A choice between two answers that decide what the panel under them means, so both are readable at
+ * rest. A select would put the alternative behind a click, and a pair of radios would spend the
+ * width on two dots saying what the accent already says.
+ *
+ * aria-pressed rather than aria-current: these are buttons that set something, not links into a set
+ * of pages, and one of them opens a dialog on top of setting it.
+ */
+.modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.modes__choice {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.modes__choice:hover {
+    background: var(--bg-subtle);
+}
+
+.modes__choice[aria-pressed="true"] {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+    color: var(--text);
+}
+
+.modes__title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--size-note);
+}
+
+.modes__note {
+    font-size: var(--size-label);
+    color: var(--text-faint);
+}
+
+/* How many there are to choose from, so the window is worth opening or plainly is not. */
+.modes__count,
+.modes__title .btn__spinner {
+    margin-left: auto;
+}
+
+.modes__count {
+    padding: 0 5px;
+    border-radius: 3px;
+    background: var(--bg-subtle);
+    font-size: var(--size-meta);
+}
+
+.modes__choice[aria-pressed="true"] .modes__count {
+    background: var(--accent-border);
+}
+
+/*
+ * The instance chosen, under the answer that has one. Not a button: it is what the choice came out
+ * as, and Change beside it is the thing that acts. A row you could click would be a third way to
+ * the same window and would read as an offer rather than as a decision.
+ */
+.picked {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 5px 5px 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-subtle);
+}
+
+.picked__what {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    font-size: var(--size-note);
+}
+
+.picked__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ------------------------------------------------------------------ buttons */
 
 .btn {
