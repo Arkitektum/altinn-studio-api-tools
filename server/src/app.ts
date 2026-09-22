@@ -5,6 +5,29 @@ import { HttpError } from "./httpError.js";
 import { router } from "./routes.js";
 
 /**
+ * The status an error thrown by `express.json()` deserves, or null if it came from somewhere else.
+ *
+ * These are raised before any handler runs — a body that is not JSON, or one past the 25mb limit — and they are
+ * `http-errors`, carrying both a `type` naming what went wrong and the status that goes with it: 400 for a parse
+ * failure, 413 for an oversized one. They are the client's mistakes, not the server's, so they are told apart from
+ * the errors that really are ours.
+ *
+ * @param error - Whatever reached the error middleware.
+ * @returns The status to answer with, or null when this is not a body-parser error.
+ */
+function requestBodyErrorStatus(error: unknown): number | null {
+    if (typeof error !== "object" || error === null) {
+        return null;
+    }
+    const { type, status } = error as { type?: unknown; status?: unknown };
+    if (typeof type !== "string" || !type.startsWith("entity.")) {
+        return null;
+    }
+    // Fall back to 400 rather than trusting a status outside the client-error range onto the response.
+    return typeof status === "number" && status >= 400 && status < 500 ? status : 400;
+}
+
+/**
  * The API, wired up but not listening.
  *
  * Kept apart from starting the process so the whole surface can be exercised without binding a
@@ -49,6 +72,12 @@ export function createApp() {
         }
         if (error instanceof HttpError) {
             res.status(error.status).json({ error: error.message, details: error.details ?? undefined });
+            return;
+        }
+        const bodyStatus = requestBodyErrorStatus(error);
+        if (bodyStatus !== null) {
+            // Not logged: the request was malformed, which is the caller's business and not a fault here.
+            res.status(bodyStatus).json({ error: error instanceof Error ? error.message : String(error) });
             return;
         }
         const message = error instanceof Error ? error.message : String(error);
