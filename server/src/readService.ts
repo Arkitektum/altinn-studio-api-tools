@@ -157,19 +157,6 @@ export interface ValidateResult {
     counts: ValidationCounts;
 }
 
-/** Altinn's ValidationIssueSeverity. */
-const SEVERITY_LABELS: Record<number, string> = {
-    1: "error",
-    2: "warning",
-    3: "info",
-    4: "fixed",
-    5: "success"
-};
-
-export function severityLabel(severity: number): string {
-    return SEVERITY_LABELS[severity] ?? `severity ${severity}`;
-}
-
 function toSummary(value: unknown): DataElementSummary | null {
     if (!value || typeof value !== "object") return null;
     const record = value as Record<string, unknown>;

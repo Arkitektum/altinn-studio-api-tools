@@ -6,7 +6,6 @@ import {
     listInstances,
     readDataElement,
     readInstance,
-    severityLabel,
     validateDataElement,
     validateInstance
 } from "./readService.js";
@@ -561,13 +560,3 @@ describe("validateDataElement", () => {
     });
 });
 
-describe("severityLabel", () => {
-    it("names the severities Altinn uses", () => {
-        assert.equal(severityLabel(1), "error");
-        assert.equal(severityLabel(2), "warning");
-        assert.equal(severityLabel(3), "info");
-        assert.equal(severityLabel(4), "fixed");
-        assert.equal(severityLabel(5), "success");
-        assert.equal(severityLabel(9), "severity 9");
-    });
-});

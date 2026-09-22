@@ -81,7 +81,12 @@ export function instanceLabel(instance: { instanceGuid: string; lastChanged: str
     return bits.join(" · ");
 }
 
-/** Altinn's ValidationIssueSeverity. Mirrors severityLabel on the server. */
+/**
+ * Altinn's ValidationIssueSeverity, named here because this is where it is read.
+ *
+ * The api answers `severity` as the number Altinn gives it and leaves the wording alone, so these labels are the
+ * client's own: nothing on the server needs them, and a second copy there would only be something to keep in step.
+ */
 const SEVERITY_LABELS: Record<number, string> = {
     1: "error",
     2: "warning",
