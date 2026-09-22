@@ -28,7 +28,7 @@ export function summariseClaims(claims: Record<string, unknown>): ClaimRow[] {
     return rows;
 }
 
-/** Renders an expiry claim as "expires in 42 min" or "expired 3 min ago". */
+/** Renders an expiry claim as "expires in 45s", "expires in 1m 30s" or "expires in 2h 5m" — and "expired 3m 0s ago" once it has passed. */
 export function describeExpiry(expiresAt: string | null, now: number): string {
     if (!expiresAt) return "no expiry claim";
     const deltaMs = Date.parse(expiresAt) - now;
