@@ -182,7 +182,8 @@ router.post(
         const identity = await fetchTokenIdentity(input.token);
         const token = storeToken({
             kind: "raw",
-            label: input.label?.trim() || identity.name || "Pasted token",
+            // Already trimmed: rawTokenSchema declares the label as z.string().trim().
+            label: input.label || identity.name || "Pasted token",
             token: input.token,
             ssn: identity.ssn
         });
