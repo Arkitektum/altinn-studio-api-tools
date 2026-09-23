@@ -56,6 +56,22 @@ describe("main form examples from the testmotor", () => {
         }
     });
 
+    it("carries the reason on the remote source when the testmotor answers an error", async () => {
+        // Requests go out through altinnFetch, which answers an envelope rather than throwing, so this is also what
+        // proves that envelope still reaches the caller as a readable error rather than an empty list.
+        const stub = stubTestmotor({ "/api/altinn-app": AN_APPS });
+        try {
+            const { groups, remote } = await listExamples("an-v2");
+
+            assert.equal(remote?.app, "an-v2");
+            assert.match(remote?.error ?? "", /\/api\/xml\/an-v2 answered 500 Server Error/);
+            // The disk examples are unaffected by the testmotor being unhappy.
+            assert.ok(groups.length > 0, "expected the disk groups to survive");
+        } finally {
+            stub.restore();
+        }
+    });
+
     it("keeps the order the testmotor answers in", async () => {
         // The stems arrive with their ordering prefix stripped, so sorting them here would put
         // Minimum before Maksimum by accident. The share's own order is the one the app shows.
