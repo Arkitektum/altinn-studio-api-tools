@@ -1,10 +1,16 @@
 /**
  * Known Altinn Studio apps and the data type each one's form data lives under.
- * Generated from the altinnStudioApps registry used by our other Altinn tooling.
  *
- * This is a convenience list for the org/app picker and for guessing a data type before
- * the app has been probed. The app's own applicationmetadata is always authoritative.
+ * The list lives in `@arkitektum/ftpb-app-catalogue`. It used to be kept here as well, under a header claiming it
+ * was generated from the registry the components API maintains, though nothing generated it. By September 2026 the
+ * two copies had drifted: that registry had an app this one did not, and neither repository could notice. Add an
+ * app to the package, not here.
+ *
+ * This is a convenience list for the org/app picker and for guessing a data type before the app has been probed.
+ * The app's own applicationmetadata is always authoritative.
  */
+import { appCatalogue as sharedCatalogue } from "@arkitektum/ftpb-app-catalogue";
+
 export interface CatalogueSubform {
     org: string;
     app: string;
@@ -20,303 +26,27 @@ export interface CatalogueApp {
     subForms: CatalogueSubform[];
 }
 
-export const appCatalogue: CatalogueApp[] = [
-    {
-        org: "dat",
-        app: "byggesak-samtykke-v3",
-        dataType: "ArbeidstilsynetSamtykkeSoknad",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "an-v2",
-        dataType: "AN",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "disp-v1",
-        dataType: "DS",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjenpart-nabovarsel-v3",
-                dataType: "GjenpartNabovarselDataV3"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "es-v2",
-        dataType: "ES",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            },
-            {
-                org: "dibk",
-                app: "gjenpart-nabovarsel-v3",
-                dataType: "GjenpartNabovarselDataV3"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "et-v4",
-        dataType: "ET",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            },
-            {
-                org: "dibk",
-                app: "gjenpart-nabovarsel-v3",
-                dataType: "GjenpartNabovarselDataV3"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "fa-v3",
-        dataType: "FA",
-        subForms: [
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "fa-v5",
-        dataType: "FA",
-        subForms: [
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "fts-v1",
-        dataType: "FTS",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "hoeringettersyn-v2",
-        dataType: "HoeringOgOffentligEttersyn",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "hoeringettersynuttalelse-v2",
-        dataType: "HoeringOgOffentligEttersynUttalelse",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "ig-v3",
-        dataType: "IG",
-        subForms: [
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "ig-v5",
-        dataType: "IG",
-        subForms: [
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "innsending-planforslag",
-        dataType: "OversendelseReguleringsplanforslag",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "ko-v2",
-        dataType: "KO",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "mb-v3",
-        dataType: "MB",
-        subForms: [
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "mb-v5",
-        dataType: "MB",
-        subForms: [
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "nabovarsel-svar-v5",
-        dataType: "NVS",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "nabovarsel-v5",
-        dataType: "NV",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonsvarsel-v1",
-                dataType: "DispensasjonsvarselDataV1"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "rs-v4",
-        dataType: "RS",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            },
-            {
-                org: "dibk",
-                app: "gjenpart-nabovarsel-v3",
-                dataType: "GjenpartNabovarselDataV3"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "sa-v2",
-        dataType: "SA",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "su-v2",
-        dataType: "SU",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            },
-            {
-                org: "dibk",
-                app: "gjenpart-nabovarsel-v3",
-                dataType: "GjenpartNabovarselDataV3"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "ta-v4",
-        dataType: "TA",
-        subForms: [
-            {
-                org: "dibk",
-                app: "dispensasjonssoeknad-v1",
-                dataType: "DispensasjonssoeknadDataV1"
-            },
-            {
-                org: "dibk",
-                app: "gjennomfoeringsplan-v7",
-                dataType: "GjennomfoeringsplanDataV7"
-            },
-            {
-                org: "dibk",
-                app: "gjenpart-nabovarsel-v3",
-                dataType: "GjenpartNabovarselDataV3"
-            }
-        ]
-    },
-    {
-        org: "dibk",
-        app: "ts-v1",
-        dataType: "TS",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "varselplanoppstart-v3",
-        dataType: "Planvarsel",
-        subForms: []
-    },
-    {
-        org: "dibk",
-        app: "varselplanoppstartuttalelse-v3",
-        dataType: "Planuttalelse",
-        subForms: []
-    }
-];
+/**
+ * The shared list, carrying only what this server has ever carried.
+ *
+ * The package also holds the layout files a few apps name, which the components API reads and nothing here does.
+ * `GET /catalogue` answers with this array as it stands, so letting a new field through would change that response
+ * as a side effect of sharing the data rather than because anything asked for it.
+ */
+export const appCatalogue: CatalogueApp[] = sharedCatalogue.map((entry) => ({
+    org: entry.org,
+    app: entry.app,
+    dataType: entry.dataType,
+    subForms: entry.subForms
+}));
 
+/**
+ * Finds a catalogue app by its org and name.
+ *
+ * @param org - The organisation that owns the app.
+ * @param app - The app's name within that organisation.
+ * @returns The app, or undefined when the catalogue does not name it.
+ */
 export function findCatalogueApp(org: string, app: string): CatalogueApp | undefined {
     return appCatalogue.find((entry) => entry.org === org && entry.app === app);
 }
