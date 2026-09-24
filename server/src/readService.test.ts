@@ -559,4 +559,3 @@ describe("validateDataElement", () => {
         assert.equal(result.failedAt, "Could not validate the data element.");
     });
 });
-

@@ -6,10 +6,10 @@ A local web tool for posting test data into Altinn 3 apps running under Altinn S
 
 Nothing to do with the custom components, which sit beside it in the same directory and solve a different problem. The one overlap is two small packages this server has in common with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
 
-| Package | What it gives this server |
-| ------- | ------------------------- |
+| Package                             | What it gives this server                                                                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@arkitektum/ftpb-testmotor-client` | Reading the main form examples. `testmotorClient.ts` passes in this server's own `altinnFetch`, so the request timeout and the 502 envelope stay this repository's. |
-| `@arkitektum/ftpb-app-catalogue` | The apps the target picker offers and the data types it suggests. `appCatalogue.ts` narrows it to the fields `GET /catalogue` serves. |
+| `@arkitektum/ftpb-app-catalogue`    | The apps the target picker offers and the data types it suggests. `appCatalogue.ts` narrows it to the fields `GET /catalogue` serves.                               |
 
 Both are published from their own repositories. Change them there rather than here; what is left in this repository is a thin wrapper in each case.
 
