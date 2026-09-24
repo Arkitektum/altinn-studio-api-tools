@@ -2,6 +2,17 @@
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest, and for reading it back. Two npm workspaces, `server` and `web`, with a shared root that runs both.
 
+## What it shares with the other repositories
+
+Nothing to do with the custom components, which sit beside it in the same directory and solve a different problem. The one overlap is two small packages this server has in common with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
+
+| Package | What it gives this server |
+| ------- | ------------------------- |
+| `@arkitektum/ftpb-testmotor-client` | Reading the main form examples. `testmotorClient.ts` passes in this server's own `altinnFetch`, so the request timeout and the 502 envelope stay this repository's. |
+| `@arkitektum/ftpb-app-catalogue` | The apps the target picker offers and the data types it suggests. `appCatalogue.ts` narrows it to the fields `GET /catalogue` serves. |
+
+Both are published from their own repositories. Change them there rather than here; what is left in this repository is a thin wrapper in each case.
+
 ## Why there is a server at all
 
 The UI could talk to a local Altinn app directly from the browser. It does not, for four reasons, and each one shapes the rest of the design:
@@ -58,8 +69,8 @@ server/src
   tokenStore.ts       in-memory token store
   multipart.ts        hand-written multipart body
   examples.ts         main forms from the testmotor, the rest from examples/ behind a traversal guard
-  testmotorClient.ts  the FtPB testmotor, which holds the main form examples and re-dates them
-  appCatalogue.ts     generated list of known apps and their data types
+  testmotorClient.ts  adapter over @arkitektum/ftpb-testmotor-client, using this server's own fetch
+  appCatalogue.ts     the shared catalogue of known apps, narrowed to what this server serves
   contentTypeGaps.ts  reports content types with no dummy attachment
   catalogueDrift.ts   compares the catalogue against the testmotor's list of the same apps
   catalogueCheck.ts   the script that runs that comparison and prints it

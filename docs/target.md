@@ -19,7 +19,7 @@ There is deliberately no link to the app root here. Altinn instantiates from it,
 
 ## Application
 
-A select, which is the only way to choose one. `server/src/appCatalogue.ts` lists 25 org and app pairs together with the data type each uses for its form data, generated from the same `altinnStudioApps` registry. Picking one fills in the org, the app and the main data type at once, and that app's subform data types become suggestions on any elements you add.
+A select, which is the only way to choose one. The list is `@arkitektum/ftpb-app-catalogue`, 26 org and app pairs together with the data type each uses for its form data, shared with the components API so the two cannot drift apart. Picking one fills in the org, the app and the main data type at once, and that app's subform data types become suggestions on any elements you add.
 
 **Other application** reveals an org and an app field, for an app the catalogue has never heard of, which is the case for one you have just started building. The read happens as soon as both are filled in, so it costs nothing beyond the typing. What you lose is the catalogue's data type suggestions, which is only a head start: the app's own `applicationmetadata` takes over the moment it is read, catalogued or not.
 

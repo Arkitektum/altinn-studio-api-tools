@@ -69,7 +69,7 @@ Prettier owns it, configured in `.prettierrc`: four space indent, double quotes,
 
 `.prettierignore` keeps Prettier away from `examples/`. Those files are fixtures posted byte for byte, and reformatting the JSON and GeoJSON dummies would change the very bytes the tests assert on.
 
-`server/src/appCatalogue.ts` is generated from the `altinnStudioApps` registry. If you regenerate it, run `npm run format` afterwards, or CI will tell you.
+`server/src/appCatalogue.ts` holds no data of its own any more: it narrows `@arkitektum/ftpb-app-catalogue` to the fields this server serves.
 
 ## House style
 
@@ -96,9 +96,11 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 **A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `npm run gaps --workspace server` tells you which content types your apps declare that no dummy covers.
 
-**A known app.** `server/src/appCatalogue.ts` is generated, so regenerate it rather than editing by hand. The catalogue is only a convenience: once an app is probed, its own `applicationmetadata` takes over.
+**A known app.** Not here. The list lives in `@arkitektum/ftpb-app-catalogue`, shared with `altinn-studio-custom-components-api`; add the app there, publish, and bump the dependency. `server/src/appCatalogue.ts` only narrows the shared list to the fields this server serves. The catalogue is a convenience either way: once an app is probed, its own `applicationmetadata` takes over.
 
-`npm run catalogue --workspace server` says when it is worth regenerating. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
+The file used to say it was generated from the components API's registry, and nothing generated it. The two lists drifted by an app before they were shared, which is what the package exists to prevent.
+
+`npm run catalogue --workspace server` says when the shared list needs an app added to it. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
 
 **An endpoint.** Add a zod schema next to the others in `routes.ts`, do the work in `runService` or `readService` through `StepRecorder`, return the `{ ok, steps, failedAt, … }` shape, and add the matching function to `web/src/api.ts` and its type to `web/src/types.ts`. Then decide what the run log entry looks like, in `web/src/lib/logResults.ts`.
 
