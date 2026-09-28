@@ -10,6 +10,14 @@ Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so it only talks t
 
 You need Node 22.12 or later, and localtest running with apps on `local.altinn.cloud:8000` and LocalTest on `localhost:5101`.
 
+Yarn 4 is used here, managed by [Corepack](https://nodejs.org/api/corepack.html). Enable it once:
+
+```bash
+corepack enable
+```
+
+The right Yarn version is then taken from the `packageManager` field in `package.json`.
+
 ```bash
 yarn install
 yarn dev

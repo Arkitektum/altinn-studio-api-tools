@@ -9,6 +9,14 @@ nav_order: 2
 
 You need Node 22.12 or later, and Altinn Studio localtest running with apps served on `local.altinn.cloud:8000` and LocalTest itself on `localhost:5101`.
 
+Yarn 4 is used here, managed by [Corepack](https://nodejs.org/api/corepack.html). Enable it once:
+
+```bash
+corepack enable
+```
+
+The right Yarn version is then taken from the `packageManager` field in `package.json`.
+
 ```bash
 yarn install
 yarn dev

@@ -4,6 +4,14 @@
 
 You need Node 22.12 or later. The test scripts hand `src/**/*.test.ts`, and in web `src/**/*.test.tsx` as well, to `node --test` and let node expand them, which node has only done since 22, and Vite 8 wants 22.12 as well.
 
+Yarn 4 is used here, managed by [Corepack](https://nodejs.org/api/corepack.html). Enable it once:
+
+```bash
+corepack enable
+```
+
+The right Yarn version is then taken from the `packageManager` field in `package.json`.
+
 ```bash
 yarn install
 yarn dev
@@ -29,6 +37,19 @@ For anything beyond the UI rendering you also need Altinn Studio localtest runni
 | `yarn workspace server run catalogue` | Where the catalogue and the testmotor have drifted apart      |
 
 CI runs `format:check`, `lint`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `yarn test` and `yarn format` before pushing and you will not be surprised.
+
+## Dependencies
+
+`yarn.lock` is committed, and CI installs with `yarn install --immutable`, which fails rather than quietly updating it. So a dependency change has to bring the lockfile with it, or the build stops on the install step before it reaches anything you changed.
+
+Add to the workspace that needs it, not to the root:
+
+```bash
+yarn workspace server add zod
+yarn workspace web add --dev @types/react
+```
+
+The root holds only the scripts that drive both workspaces, plus the tools that run across the whole repository.
 
 ## Linting
 

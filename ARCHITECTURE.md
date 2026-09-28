@@ -1,6 +1,6 @@
 # Architecture
 
-A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest, and for reading it back. Two yarn workspaces, `server` and `web`, with a shared root that runs both.
+A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest, and for reading it back. Two Yarn workspaces, `server` and `web`, with a shared root that runs both.
 
 ## What it shares with the other repositories
 
