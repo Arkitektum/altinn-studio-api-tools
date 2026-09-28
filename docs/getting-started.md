@@ -10,8 +10,8 @@ nav_order: 2
 You need Node 22.12 or later, and Altinn Studio localtest running with apps served on `local.altinn.cloud:8000` and LocalTest itself on `localhost:5101`.
 
 ```bash
-npm install
-npm run dev
+yarn install
+yarn dev
 ```
 
 - UI: <http://127.0.0.1:5173>
@@ -42,15 +42,15 @@ What you get back is the instance, read and validated automatically, with every 
 
 ## Scripts
 
-| Command                           |                                                               |
-| --------------------------------- | ------------------------------------------------------------- |
-| `npm run dev`                     | Both servers with prefixed output                             |
-| `npm test`                        | Server and web tests, stubbed Altinn, no network              |
-| `npm run typecheck`               | Both workspaces                                               |
-| `npm run build`                   | Compile the server and bundle the UI                          |
-| `npm run format`                  | Format everything with Prettier                               |
-| `npm run format:check`            | Fail if anything is unformatted, for CI                       |
-| `npm run gaps --workspace server` | Which content types your apps declare that have no dummy      |
-| `npm run diff --workspace server` | Posts every example and reports what each app's model changed |
+| Command                          |                                                               |
+| -------------------------------- | ------------------------------------------------------------- |
+| `yarn dev`                       | Both servers with prefixed output                             |
+| `yarn test`                      | Server and web tests, stubbed Altinn, no network              |
+| `yarn typecheck`                 | Both workspaces                                               |
+| `yarn build`                     | Compile the server and bundle the UI                          |
+| `yarn format`                    | Format everything with Prettier                               |
+| `yarn format:check`              | Fail if anything is unformatted, for CI                       |
+| `yarn workspace server run gaps` | Which content types your apps declare that have no dummy      |
+| `yarn workspace server run diff` | Posts every example and reports what each app's model changed |
 
 For the development loop in more detail, see [CONTRIBUTING.md](https://github.com/Arkitektum/altinn-studio-api-tools/blob/main/CONTRIBUTING.md).

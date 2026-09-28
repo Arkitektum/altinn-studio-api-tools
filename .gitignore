@@ -7,3 +7,10 @@ dist/
 .DS_Store
 .claude/
 temp/
+
+# Yarn. The cache and install state are machine-specific; anything Yarn is told to keep, such as patches, is not
+# listed here so it stays tracked.
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz

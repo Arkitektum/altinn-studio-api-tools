@@ -87,8 +87,8 @@ A content type with no dummy is simply not offered. Adding one means dropping a 
 To find out which content types your own apps declare and which of them have no dummy, run this with localtest up:
 
 ```bash
-npm run gaps --workspace server                              # walks the whole catalogue
-npm run gaps --workspace server -- 1001 dibk/et-v4           # one or more specific apps
+yarn workspace server run gaps                              # walks the whole catalogue
+yarn workspace server run gaps -- 1001 dibk/et-v4           # one or more specific apps
 ```
 
 It probes each app's `applicationmetadata`, collects every `allowedContentTypes` entry, and prints which are covered, which are missing and which data types ask for them. The first argument is the LocalTest user id, defaulting to 1001. Apps in the catalogue that are not deployed locally are listed separately rather than treated as a gap.
@@ -98,7 +98,7 @@ It probes each app's `applicationmetadata`, collects every `allowedContentTypes`
 The other gap is whole apps rather than content types, and it needs no localtest, only the testmotor:
 
 ```bash
-npm run catalogue --workspace server
+yarn workspace server run catalogue
 ```
 
 It compares the app catalogue against the testmotor, which keeps its own list of the same apps, and says where each app's examples come from: the testmotor, disk, or nowhere. Nowhere is the finding worth having, since an app with no example data is one you cannot post to without writing the xml by hand. It also reports apps the testmotor holds that the catalogue does not name, which usually means the catalogue is due a regenerate, and the two disagreeing about a main form data type, which would put examples where nothing looks for them.

@@ -5,8 +5,8 @@
 You need Node 22.12 or later. The test scripts hand `src/**/*.test.ts`, and in web `src/**/*.test.tsx` as well, to `node --test` and let node expand them, which node has only done since 22, and Vite 8 wants 22.12 as well.
 
 ```bash
-npm install
-npm run dev
+yarn install
+yarn dev
 ```
 
 That runs both workspaces with prefixed output: the api on `http://127.0.0.1:4000/api` and the UI on `http://127.0.0.1:5173`, where Vite proxies `/api` to the server.
@@ -15,20 +15,20 @@ For anything beyond the UI rendering you also need Altinn Studio localtest runni
 
 ## The loop
 
-| Command                                |                                                               |
-| -------------------------------------- | ------------------------------------------------------------- |
-| `npm run dev`                          | Both servers with prefixed output                             |
-| `npm test`                             | Server and web tests, stubbed Altinn, no network              |
-| `npm run lint`                         | oxlint, mainly the hook rules                                 |
-| `npm run typecheck`                    | Both workspaces                                               |
-| `npm run format`                       | Apply Prettier                                                |
-| `npm run format:check`                 | Fail if anything is unformatted                               |
-| `npm run build`                        | Compile the server and bundle the UI                          |
-| `npm run gaps --workspace server`      | Which content types your apps declare that have no dummy      |
-| `npm run diff --workspace server`      | Posts every example and reports what each app's model changed |
-| `npm run catalogue --workspace server` | Where the catalogue and the testmotor have drifted apart      |
+| Command                               |                                                               |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `yarn dev`                            | Both servers with prefixed output                             |
+| `yarn test`                           | Server and web tests, stubbed Altinn, no network              |
+| `yarn lint`                           | oxlint, mainly the hook rules                                 |
+| `yarn typecheck`                      | Both workspaces                                               |
+| `yarn format`                         | Apply Prettier                                                |
+| `yarn format:check`                   | Fail if anything is unformatted                               |
+| `yarn build`                          | Compile the server and bundle the UI                          |
+| `yarn workspace server run gaps`      | Which content types your apps declare that have no dummy      |
+| `yarn workspace server run diff`      | Posts every example and reports what each app's model changed |
+| `yarn workspace server run catalogue` | Where the catalogue and the testmotor have drifted apart      |
 
-CI runs `format:check`, `lint`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `npm test` and `npm run format` before pushing and you will not be surprised.
+CI runs `format:check`, `lint`, `typecheck`, `test` and `build` on every push to main and every pull request. Run at least `yarn test` and `yarn format` before pushing and you will not be surprised.
 
 ## Linting
 
@@ -94,13 +94,13 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 **An icon.** Add the paths to `PATHS` in `web/src/components/Icon.tsx` and the name to `IconName`. A 16 grid, stroked in `currentColor`, no `fill`, so it takes the colour and size of the text it sits in. There is no icon library on purpose: it would be a fourth runtime dependency for two dozen shapes, and it would bring a house style that is not this one. The rule for whether an icon belongs is the rail's: it carries something on its own, or it sits beside a label that still says the word. Never an icon alone, with the one exception of the example reload button, which has a `label` for the screen reader.
 
-**A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `npm run gaps --workspace server` tells you which content types your apps declare that no dummy covers.
+**A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `yarn workspace server run gaps` tells you which content types your apps declare that no dummy covers.
 
 **A known app.** Not here. The list lives in `@arkitektum/ftpb-app-catalogue`, shared with `altinn-studio-custom-components-api`; add the app there, publish, and bump the dependency. `server/src/appCatalogue.ts` only narrows the shared list to the fields this server serves. The catalogue is a convenience either way: once an app is probed, its own `applicationmetadata` takes over.
 
 The file used to say it was generated from the components API's registry, and nothing generated it. The two lists drifted by an app before they were shared, which is what the package exists to prevent.
 
-`npm run catalogue --workspace server` says when the shared list needs an app added to it. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
+`yarn workspace server run catalogue` says when the shared list needs an app added to it. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
 
 **An endpoint.** Add a zod schema next to the others in `routes.ts`, do the work in `runService` or `readService` through `StepRecorder`, return the `{ ok, steps, failedAt, … }` shape, and add the matching function to `web/src/api.ts` and its type to `web/src/types.ts`. Then decide what the run log entry looks like, in `web/src/lib/logResults.ts`.
 

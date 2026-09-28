@@ -122,9 +122,9 @@ Only one sweep runs at a time. Two against the same localtest would be posting o
 The same sweep is a script, for when you want the whole thing in a terminal or in CI:
 
 ```bash
-npm run diff --workspace server                                 # the whole catalogue
-npm run diff --workspace server -- 1001 dibk/varselplanoppstart-v3
-npm run diff --workspace server -- 1001 dibk/et-v4 --keep
+yarn workspace server run diff                                 # the whole catalogue
+yarn workspace server run diff -- 1001 dibk/varselplanoppstart-v3
+yarn workspace server run diff -- 1001 dibk/et-v4 --keep
 ```
 
 Both run `sweepService.ts`, so there is one walk rather than one each. The script's first argument is the LocalTest user id, defaulting to 1001; the window uses the token you already have. The party is the token's own either way, which is the one it is certainly allowed to post as.

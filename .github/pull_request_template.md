@@ -12,9 +12,9 @@ in six months cannot reconstruct.
 
 ## Checks
 
-- [ ] `npm test`
-- [ ] `npm run typecheck`
-- [ ] `npm run format`
+- [ ] `yarn test`
+- [ ] `yarn typecheck`
+- [ ] `yarn format`
 - [ ] Behaviour that changed is documented: the relevant page under `docs/`, and the README if it is in the overview or the walkthrough
 - [ ] A pure decision landed in `web/src/lib/` with a test, rather than inline in a component
 - [ ] A new call to Altinn goes through `altinnFetch` and, if it acts on an instance, `StepRecorder`, so it shows up in the run log
