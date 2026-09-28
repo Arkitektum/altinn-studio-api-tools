@@ -7,7 +7,7 @@ on:
 
 # Least privilege, and stated rather than inherited: this workflow reads the code and writes
 # nothing back. Without it the job would get whatever the repository's default token scope is,
-# which is broader than checking out and running npm needs.
+# which is broader than checking out and running yarn needs.
 permissions:
     contents: read
 
@@ -20,28 +20,40 @@ jobs:
     check:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
-            - uses: actions/setup-node@v5
+            - uses: actions/setup-node@v6
               with:
                   # The test scripts pass `src/**/*.test.ts` and, in web, `.test.tsx` to node --test and let node
                   # expand them, which needs Node 22 or later. The shell leaves them alone, having nothing to match.
                   node-version: 24
-                  cache: npm
 
-            - run: npm ci
+            # setup-node is pinned to v6 and given no cache setting, matching the other repositories. v5 turns
+            # `package-manager-cache` on by default, which sees yarn.lock and runs `yarn cache dir` with the runner's
+            # global Yarn 1 before Corepack is enabled, and that fails against a `packageManager` of yarn@4.
+            # Removing Yarn 1 outright then lets Corepack take over.
+            - name: Remove preinstalled Yarn 1
+              run: sudo rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg || true
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Verify Yarn version
+              run: yarn --version
+
+            - run: yarn install --immutable
 
             # Cheapest first, so an unformatted file does not wait behind the build. Prettier owns the
             # formatting, and appCatalogue.ts is generated, which is the file that tends to drift.
-            - run: npm run format:check
+            - run: yarn format:check
 
             # Next cheapest, and the only step that reads what the code means rather than how it is
             # written. Its job here is the hook dependency lists: every one that leaves something out
             # does so on purpose, and this is what keeps the purpose stated rather than assumed.
-            - run: npm run lint
+            - run: yarn lint
 
-            - run: npm run typecheck
+            - run: yarn typecheck
 
-            - run: npm test
+            - run: yarn test
 
-            - run: npm run build
+            - run: yarn build
