@@ -2440,6 +2440,7 @@ __metadata:
     jsdom: "npm:^30.1.1"
     react: "npm:^19.3.0"
     react-dom: "npm:^19.3.0"
+    tsx: "npm:^4.23.15"
     typescript: "npm:^6.0.3"
     vite: "npm:^8.3.1"
   languageName: unknown
