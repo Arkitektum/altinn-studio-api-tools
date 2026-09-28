@@ -20,16 +20,18 @@ jobs:
     check:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
-            - uses: actions/setup-node@v5
+            - uses: actions/setup-node@v6
               with:
                   # The test scripts pass `src/**/*.test.ts` and, in web, `.test.tsx` to node --test and let node
                   # expand them, which needs Node 22 or later. The shell leaves them alone, having nothing to match.
                   node-version: 24
 
-            # Completely remove Yarn 1 so Corepack takes over. `cache: yarn` on setup-node is deliberately not used:
-            # it runs before Corepack, so it would read a Yarn 4 lockfile with the runner's preinstalled Yarn 1.
+            # setup-node is pinned to v6 and given no cache setting, matching the other repositories. v5 turns
+            # `package-manager-cache` on by default, which sees yarn.lock and runs `yarn cache dir` with the runner's
+            # global Yarn 1 before Corepack is enabled, and that fails against a `packageManager` of yarn@4.
+            # Removing Yarn 1 outright then lets Corepack take over.
             - name: Remove preinstalled Yarn 1
               run: sudo rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg || true
 
