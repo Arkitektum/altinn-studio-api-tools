@@ -60,6 +60,7 @@ server/src
   readService.ts      instance operations: list, get, validate, process, delete
   compareService.ts   the stored blob from LocalTest's storage api, and the diff
   validationService.ts the DIBK validation service, one of the two calls that leave the machine
+  validationSplit.ts  one submission as the several requests the service can answer, and back
   xmlDiff.ts          comparing two xml documents, ignoring what carries no meaning
   schemaTypes.ts      a field's declared type, from the app's json schema
   stepRecorder.ts     shared request logging for both flows
@@ -152,7 +153,9 @@ It is an edit in the text rather than a parse and a serialize. A round trip woul
 
 Only an element still holding an unedited example is written into, and it is written again whenever the identity changes rather than only at load: the app is read for its parties while the first example is already loading. Writing the same identity into a form it is already in changes nothing, so the effect settles after one pass.
 
-**What a submission requires is asked, not counted.** The prevalidation panel names the documents a submission is missing, and it gets them from the DIBK validation service rather than from `applicationmetadata`, because the `minCount` an app declares is not what the validation insists on. `lib/validationReport.ts` reads the report for the rules about documents, which are the ones with `Vedlegg` in their reference, and matches the names they use against the data types the app declares. Everything else in the report is about what is inside the form, so it is counted and left to the run log, where the whole report is.
+**What a submission requires is asked, not counted.** The prevalidation panel names the documents a submission is missing, and it gets them from the DIBK validation service rather than from `applicationmetadata`, because the `minCount` an app declares is not what the validation insists on. `lib/validationReport.ts` reads the report for the rules about documents, which are the ones with `Vedlegg` in their reference, and matches the names they use against the data types the app declares.
+
+The service takes one form and ignores the `subForms` property, so `validationSplit.ts` sends each form as a submission of its own and merges the answers. One button press is several requests and one report, with every request carrying the whole attachment list, since naming an attachment can only ever silence a document rule and a form sent bare reports documents the submission has as missing. Each message is tagged with the form it came from, because the service calls a subform its own submission type and an error out of one would otherwise read as the main form's.
 
 The report is a fixed answer about the payload as it was sent, and the list is counted against the payload as it stands, so the two can drift apart. Rather than clearing the report on the first keystroke, which would throw away the list you are working through, the panel keeps it and says it is stale.
 

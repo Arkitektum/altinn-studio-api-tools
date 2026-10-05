@@ -107,7 +107,7 @@ const inputs = { dataTypes, payload: [], onInstance: [] };
 const report = parseValidationReport(raw);
 
 function message(over: Partial<ReportMessage> = {}): ReportMessage {
-    return { rule: "", reference: "", message: "", severity: "error", xpathField: null, checklistReference: null, ...over };
+    return { rule: "", reference: "", message: "", severity: "error", xpathField: null, checklistReference: null, fromForm: "", ...over };
 }
 
 describe("parseValidationReport", () => {
@@ -287,11 +287,13 @@ describe("summarisePrevalidation", () => {
             message: "",
             severity,
             xpathField: null,
-            checklistReference: null
+            checklistReference: null,
+            fromForm: ""
         }));
 
     const requirements = (over: Partial<ReportRequirements> = {}): ReportRequirements => ({
         soknadtype: "ET",
+        mainFormName: "ET",
         required: [],
         recommended: [],
         other: [],

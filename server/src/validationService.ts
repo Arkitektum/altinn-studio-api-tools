@@ -1,6 +1,7 @@
 import { altinnFetch } from "./altinnClient.js";
 import { config } from "./config.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
+import { mergeReports, splitSubmission, type ReportPart } from "./validationSplit.js";
 
 /**
  * The DIBK validation service, one of the two things this tool talks to that are not on your
@@ -55,7 +56,23 @@ export interface ValidationReportResult {
     report: unknown;
 }
 
-export async function fetchValidationReport(request: ValidationReportRequest): Promise<ValidationReportResult> {
+/**
+ * One submission, asked as however many requests the service needs to be asked.
+ *
+ * It ignores `subForms`, so a submission with three of them was one question about the main form
+ * and the subforms were never looked at. Each form goes up on its own now, and what comes back is
+ * merged into one report. See validationSplit.ts for the splitting and the merging, and for why
+ * every request carries the whole attachment list.
+ *
+ * One at a time. This is a hosted service shared with whoever else is pointed at it, and five
+ * concurrent requests to answer one button press is not a reasonable way to use it.
+ *
+ * A form that is refused does not stop the rest. Its step says what happened, the report is short
+ * by whatever that form would have said, and `ok` is false so the caller knows not to trust the
+ * total. Carrying on is the better answer: the main form's findings are worth having even when a
+ * subform could not be asked about.
+ */
+export async function fetchValidationReport(request: ValidationReportRequest, mainFormName = "the form"): Promise<ValidationReportResult> {
     const recorder = new StepRecorder();
 
     if (!config.validationUrl) {
@@ -63,27 +80,33 @@ export async function fetchValidationReport(request: ValidationReportRequest): P
         return { ok: false, steps: recorder.steps, failedAt: "No validation service is configured.", report: null };
     }
 
-    const body = JSON.stringify(request, null, 2);
-    const response = await recorder.run(
-        "Prevalidate",
-        "POST",
-        config.validationUrl,
-        () =>
-            altinnFetch({
-                url: config.validationUrl,
-                method: "POST",
-                body,
-                contentType: "application/json"
-            }),
-        // Verbatim, since what is sent is the question you are asking the service, and being able
-        // to copy it as curl is how you find out whether the tool asked it properly.
-        { preview: body, verbatim: true }
-    );
+    const asked = splitSubmission(request, mainFormName);
+    const parts: ReportPart[] = [];
+    let refused: string | null = null;
+
+    for (const { formName, main, request: body } of asked) {
+        const text = JSON.stringify(body, null, 2);
+        const response = await recorder.run(
+            // Named for the form, since a run log holding five of these has to say which is which.
+            asked.length === 1 ? "Prevalidate" : `Prevalidate ${formName}`,
+            "POST",
+            config.validationUrl,
+            () => altinnFetch({ url: config.validationUrl, method: "POST", body: text, contentType: "application/json" }),
+            // Verbatim, since what is sent is the question you are asking the service, and being
+            // able to copy it as curl is how you find out whether the tool asked it properly.
+            { preview: text, verbatim: true }
+        );
+
+        if (response.ok) parts.push({ formName, main, report: response.body });
+        else refused ??= `The validation service would not answer about ${formName}.`;
+    }
 
     return {
-        ok: response.ok,
+        ok: refused === null,
         steps: recorder.steps,
-        failedAt: response.ok ? null : "The validation service would not answer.",
-        report: response.ok ? response.body : null
+        failedAt: refused,
+        // Whatever was answered, even when something else was not: a partial report still names
+        // documents you are missing, and the step log says which form is absent from it.
+        report: parts.length > 0 ? mergeReports(parts) : null
     };
 }

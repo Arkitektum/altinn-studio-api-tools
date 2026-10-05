@@ -342,6 +342,13 @@ router.post(
  */
 const validationReportSchema = z.object({
     authenticatedSubmitter: z.string().trim().default(""),
+    /**
+     * The main form's data type, used only to label its findings. The submission is split into one
+     * request per form and the answers are merged, so a message has to say which form it came from
+     * or a subform's error reads as the main form's. The service works out what it was given from
+     * the form itself, so nothing depends on this being right.
+     */
+    mainFormName: z.string().trim().default("the form"),
     formData: z.string().min(1, "formData is required"),
     subForms: z.array(z.object({ formName: z.string().trim().min(1), subFormData: z.string() })).default([]),
     attachments: z
@@ -352,9 +359,9 @@ const validationReportSchema = z.object({
 router.post(
     "/validation-report",
     asyncHandler(async (req, res) => {
-        const input = validationReportSchema.parse(req.body);
+        const { mainFormName, ...submission } = validationReportSchema.parse(req.body);
         // 200 with ok:false when the service refuses, matching every other call that got an answer.
-        res.json(await fetchValidationReport(input));
+        res.json(await fetchValidationReport(submission, mainFormName));
     })
 );
 

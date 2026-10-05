@@ -192,10 +192,18 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                             </p>
                             <ul>
                                 {contentErrors.map((issue) => (
-                                    <li key={`${issue.rule}|${issue.reference}|${issue.message}`}>
+                                    // The form is part of the key as well now. Each form is asked about separately
+                                    // and the answers merged, so two of them can report the very same rule.
+                                    <li key={`${issue.fromForm}|${issue.rule}|${issue.reference}|${issue.message}`}>
                                         {/* The sentence leads, where a document's own name leads above: there is no
                                             element to add here, so what the rule says is the whole of the finding. */}
                                         {issue.message}
+                                        {/* Only where it is not the main form. The service calls a subform its own
+                                            submission type, so without this a finding in one reads as a problem with
+                                            the form the panel is about. */}
+                                        {issue.fromForm && issue.fromForm !== requirements.mainFormName && (
+                                            <span className="badge badge--sub">{issue.fromForm}</span>
+                                        )}
                                         {issue.checklistReference && <span className="badge">{issue.checklistReference}</span>}
                                         {(issue.xpathField ?? issue.reference) && (
                                             <span className="notice__why">{issue.xpathField ?? issue.reference}</span>

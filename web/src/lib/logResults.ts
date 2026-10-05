@@ -255,8 +255,20 @@ export function logFromValidationReport(result: ValidationReportResult, asked: V
         title: "Prevalidate",
         rows: [
             { label: "Submitter", value: asked.authenticatedSubmitter || "none" },
-            { label: "Form", value: `${asked.formData.length.toLocaleString("nb")} characters` },
-            { label: "Subforms", value: asked.subForms.length === 0 ? "none" : asked.subForms.map((form) => form.formName).join(", ") },
+            { label: "Form", value: `${asked.mainFormName}, ${asked.formData.length.toLocaleString("nb")} characters` },
+            /*
+             * Asked rather than sent, because what went out is not what is on this row. The service
+             * ignores `subForms`, so the server splits a submission into one request per form and
+             * merges the answers. The steps below are those requests, one each.
+             */
+            {
+                label: "Asked",
+                value:
+                    asked.subForms.length === 0
+                        ? "the form on its own"
+                        : `the form, and ${asked.subForms.length} subform${asked.subForms.length === 1 ? "" : "s"} separately: ` +
+                          asked.subForms.map((form) => form.formName).join(", ")
+            },
             {
                 label: "Attachments",
                 value:

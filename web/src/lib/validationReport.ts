@@ -29,11 +29,26 @@ export interface ReportMessage {
     xpathField: string | null;
     /** The national checklist point, when the rule cites one. */
     checklistReference: string | null;
+    /**
+     * Which form this is about, set by the server when it merged the parts.
+     *
+     * The service ignores `subForms`, so each form is asked about separately and the answers come
+     * back together. A message out of a subform is about a document the main form never mentions,
+     * and without this it would read as a problem with the main form. Empty for a report that was
+     * never split, which is one the server answered before this existed.
+     */
+    fromForm: string;
 }
 
 export interface ValidationReport {
     /** What kind of submission the service read it as, `ET` and so on. Empty when it did not say. */
     soknadtype: string;
+    /**
+     * The data type of the form the submission is of, set by the server when it merged the parts.
+     * A message tagged with any other `fromForm` came from a subform. Empty for a report that was
+     * never split.
+     */
+    mainFormName: string;
     errors: number;
     warnings: number;
     messages: ReportMessage[];
@@ -68,7 +83,8 @@ export function parseValidationReport(raw: unknown): ValidationReport | null {
             message: text(entry.message),
             severity: text(entry.messagetype).toUpperCase() === "ERROR" ? ("error" as const) : ("warning" as const),
             xpathField: optional(entry.xpathField),
-            checklistReference: optional(entry.checklistReference)
+            checklistReference: optional(entry.checklistReference),
+            fromForm: text(entry.fromForm)
         }));
 
     const count = (key: string, severity: ReportSeverity): number =>
@@ -76,6 +92,7 @@ export function parseValidationReport(raw: unknown): ValidationReport | null {
 
     return {
         soknadtype: text(record.soknadtype),
+        mainFormName: text(record.mainFormName),
         errors: count("errors", "error"),
         warnings: count("warnings", "warning"),
         messages
@@ -119,6 +136,8 @@ export interface DocumentRequirement {
 
 export interface ReportRequirements {
     soknadtype: string;
+    /** The form the submission is of. A finding from any other form came out of a subform. */
+    mainFormName: string;
     /** Documents the report calls errors, so the submission is not complete without them. */
     required: DocumentRequirement[];
     /** The ones it only recommends. */
@@ -180,7 +199,7 @@ function requirementFrom(message: ReportMessage, inputs: RequirementInputs): Doc
  * by another is required, and saying both would be saying it twice.
  */
 export function requirementsFrom(report: ValidationReport | null, inputs: RequirementInputs): ReportRequirements {
-    const empty: ReportRequirements = { soknadtype: "", required: [], recommended: [], other: [] };
+    const empty: ReportRequirements = { soknadtype: "", mainFormName: "", required: [], recommended: [], other: [] };
     if (!report) return empty;
 
     const documents = new Map<string, DocumentRequirement>();
@@ -202,6 +221,7 @@ export function requirementsFrom(report: ValidationReport | null, inputs: Requir
     const all = [...documents.values()];
     return {
         soknadtype: report.soknadtype,
+        mainFormName: report.mainFormName,
         required: all.filter((requirement) => requirement.severity === "error"),
         recommended: all.filter((requirement) => requirement.severity === "warning"),
         other

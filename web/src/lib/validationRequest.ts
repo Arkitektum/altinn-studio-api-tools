@@ -123,6 +123,9 @@ export function buildValidationRequest(inputs: ValidationRequestInputs): BuiltVa
     return {
         request: {
             authenticatedSubmitter: submitterFor(inputs.parties, inputs.partyId, inputs.token),
+            // Only a label for the answers. The server splits this into one request per form, and a
+            // message has to say which form it came from. See server/src/validationSplit.ts.
+            mainFormName: form.dataType,
             formData: form.content,
             subForms,
             attachments

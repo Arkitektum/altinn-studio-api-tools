@@ -110,6 +110,18 @@ The payload becomes a submission on the way out, which is a translation rather t
 
 An element with nothing in it is left out, and a payload with no main form has nothing to ask about, which the line beside the button says instead of sending half a submission. The submitter comes from the app's parties, so pressing the button before the app has been read falls back to the token's own person number.
 
+### One button, one request per form
+
+The service does not support `subForms`. It reads `formData` and ignores the rest, which we found by sending a submission with the property set and getting back a report about the main form alone: the `soknadtype` that came back named whatever was in `formData`, whatever `subForms` held. So for as long as that table above described what went out, the subforms were never looked at and the panel was showing a report about one form while saying it was about the submission.
+
+Each form goes up as a submission of its own now, main form first, and the answers are merged into one report. The service recognises them: a gjennomføringsplan comes back as `GFP`, a dispensasjonssøknad as `DS`. The button is still one button and the panel still shows one result.
+
+Every request carries the whole attachment list, which was measured rather than assumed. Naming six attachments on an ET submission silenced six of its fourteen document rules, and nothing was ever added by naming one, so a form sent bare would report documents the submission has as missing. Attachments can only answer a rule, never raise one.
+
+Each message is tagged with the form it came from, and the panel names it where that is not the main form. Without it a `DS` error out of a subform is indistinguishable from one about the main form, and the panel would be naming a problem in a document it never mentions.
+
+A form the service refuses does not stop the rest. Its step says what happened, the report is short by whatever that form would have said, and the result is not `ok`, so the panel keeps the last report it trusted rather than replacing it with a partial one. The whole fan-out is one run log entry with a step per request, named for the form it asked about.
+
 ### What it says is required
 
 The report is one message per rule the service has something to say about, and the ones about documents name the document. Those become the line under the button: **The validation service wants 4 more documents in this ET submission**, each named with the service's own reason under it and the checklist point beside it, and a button that adds one element per document. Each lands folded, with its data type and content type filled in, and the example picker loads the first example for it, so a full payload is a click from an incomplete one.

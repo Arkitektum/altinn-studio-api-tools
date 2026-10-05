@@ -181,6 +181,8 @@ export interface ValidationAttachment {
 /** A submission as the DIBK validation service wants it: one form, its subforms, its attachments. */
 export interface ValidationReportRequest {
     authenticatedSubmitter: string;
+    /** The main form's data type, so its findings can be told from a subform's. See validationSplit.ts. */
+    mainFormName: string;
     formData: string;
     subForms: ValidationSubForm[];
     attachments: ValidationAttachment[];

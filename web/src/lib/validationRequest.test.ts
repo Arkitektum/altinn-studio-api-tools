@@ -68,6 +68,15 @@ describe("buildValidationRequest", () => {
         assert.deepEqual(request?.attachments, [{ attachmentTypeName: "vedlegg", filename: "dummy.pdf", fileSize: 3 }]);
     });
 
+    /*
+     * Only a label for the answers. The server splits the submission into one request per form,
+     * because the service ignores `subForms`, and a message has to say which form it came from or
+     * a subform's error reads as the main form's.
+     */
+    it("names the main form, so its findings can be told from a subform's", () => {
+        assert.equal(buildValidationRequest(inputs).request?.mainFormName, "ET");
+    });
+
     it("leaves out an element with nothing in it", () => {
         const empty = [...elements, { dataType: "valgfritt", content: "   " }];
         assert.deepEqual(buildValidationRequest({ ...inputs, elements: empty }).request?.attachments.length, 1);
