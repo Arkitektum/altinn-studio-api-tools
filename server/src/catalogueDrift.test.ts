@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { appCatalogue, type CatalogueApp } from "./appCatalogue.js";
-import { compareCatalogue } from "./catalogueDrift.js";
+import { compareCatalogue, subformKey, type SubformFiles } from "./catalogueDrift.js";
 import type { TestmotorApp } from "./testmotorClient.js";
 
 const app = (name: string, dataType: string, subForms: CatalogueApp["subForms"] = []): CatalogueApp => ({
@@ -13,6 +13,12 @@ const app = (name: string, dataType: string, subForms: CatalogueApp["subForms"] 
 
 const sub = (name: string, dataType: string) => ({ org: "dibk", app: name, dataType });
 const held = (appId: string, mainFormId: string): TestmotorApp => ({ appId, mainFormId });
+
+/** What the testmotor holds per parent and subform, as `[parent, dataType, count]`. */
+const files = (counts: [string, string, number][], errors: [string, string, string][] = []): SubformFiles => ({
+    counts: new Map(counts.map(([parent, dataType, count]) => [subformKey(parent, dataType), count])),
+    errors: new Map(errors.map(([parent, dataType, error]) => [subformKey(parent, dataType), error]))
+});
 
 describe("compareCatalogue", () => {
     it("finds no drift when the two lists agree", () => {
@@ -63,28 +69,88 @@ describe("compareCatalogue", () => {
 
     /*
      * A subform is a reference rather than an entry, because its data is posted as part of the
-     * parent instance and you never target the app. It still needs example data, from disk.
+     * parent instance and you never target the app. It still needs example data, which the
+     * testmotor holds per parent.
      */
     it("covers the subforms a parent references, not only the entries", () => {
         const catalogue = [app("et-v4", "ET", [sub("gjennomfoeringsplan-v7", "GjennomfoeringsplanDataV7"), sub("ts-v1", "TS")])];
-        const drift = compareCatalogue(catalogue, [held("et-v4", "ET")], ["GjennomfoeringsplanDataV7"]);
+        const drift = compareCatalogue(
+            catalogue,
+            [held("et-v4", "ET")],
+            [],
+            files([
+                ["et-v4", "GjennomfoeringsplanDataV7", 1],
+                ["et-v4", "TS", 0]
+            ])
+        );
 
         assert.deepEqual(
-            drift.coverage.map((entry) => [entry.app, entry.kind, entry.source]),
+            drift.coverage.map((entry) => [entry.app, entry.kind, entry.parent, entry.source]),
             [
-                ["et-v4", "entry", "testmotor"],
-                ["gjennomfoeringsplan-v7", "subform", "disk"],
-                ["ts-v1", "subform", "none"]
+                ["et-v4", "entry", undefined, "testmotor"],
+                ["gjennomfoeringsplan-v7", "subform", "et-v4", "testmotor"],
+                ["ts-v1", "subform", "et-v4", "none"]
             ]
         );
     });
 
-    /* One subform is carried by a dozen parents and is one app to fix either way. */
-    it("counts a subform once however many parents carry it", () => {
+    /* The testmotor files a subform's examples per parent, so one parent can have them and another not. */
+    it("covers a subform once under each parent carrying it", () => {
         const carried = sub("gjennomfoeringsplan-v7", "GjennomfoeringsplanDataV7");
-        const drift = compareCatalogue([app("et-v4", "ET", [carried]), app("rs-v4", "RS", [carried])], [], []);
+        const drift = compareCatalogue(
+            [app("rs-v4", "RS", [carried]), app("et-v4", "ET", [carried])],
+            [held("et-v4", "ET"), held("rs-v4", "RS")],
+            [],
+            files([
+                ["et-v4", "GjennomfoeringsplanDataV7", 2],
+                ["rs-v4", "GjennomfoeringsplanDataV7", 0]
+            ])
+        );
 
-        assert.equal(drift.coverage.filter((entry) => entry.app === "gjennomfoeringsplan-v7").length, 1);
+        assert.deepEqual(
+            drift.coverage.filter((entry) => entry.kind === "subform").map((entry) => [entry.parent, entry.source]),
+            [
+                ["et-v4", "testmotor"],
+                ["rs-v4", "none"]
+            ]
+        );
+    });
+
+    /* examples.ts asks nothing for a parent the testmotor does not hold, so neither may this. */
+    it("does not credit a subform under a parent the testmotor does not hold", () => {
+        const drift = compareCatalogue(
+            [app("et-v4", "ET", [sub("gjennomfoeringsplan-v7", "GjennomfoeringsplanDataV7")])],
+            [],
+            [],
+            files([["et-v4", "GjennomfoeringsplanDataV7", 1]])
+        );
+
+        assert.equal(drift.coverage.find((entry) => entry.kind === "subform")?.source, "none");
+    });
+
+    /* The subform folder is gone, so a data type that happens to be on disk is not a subform's examples. */
+    it("never credits a subform to disk", () => {
+        const drift = compareCatalogue(
+            [app("et-v4", "ET", [sub("gjennomfoeringsplan-v7", "GjennomfoeringsplanDataV7")])],
+            [held("et-v4", "ET")],
+            ["GjennomfoeringsplanDataV7"],
+            files([["et-v4", "GjennomfoeringsplanDataV7", 0]])
+        );
+
+        assert.equal(drift.coverage.find((entry) => entry.kind === "subform")?.source, "none");
+    });
+
+    it("says so when a subform could not be checked, rather than calling it missing", () => {
+        const drift = compareCatalogue(
+            [app("et-v4", "ET", [sub("gjennomfoeringsplan-v7", "GjennomfoeringsplanDataV7")])],
+            [held("et-v4", "ET")],
+            [],
+            files([], [["et-v4", "GjennomfoeringsplanDataV7", "answered 500"]])
+        );
+
+        const subform = drift.coverage.find((entry) => entry.kind === "subform");
+        assert.equal(subform?.source, "error");
+        assert.equal(subform?.error, "answered 500");
     });
 
     it("sorts by app id, so two runs read the same", () => {
