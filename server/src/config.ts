@@ -45,9 +45,8 @@ export const config = {
     testmotorUrl: (process.env.TESTMOTOR_URL ?? "https://app-ftpb-testmotor.azurewebsites.net").replace(/\/+$/, ""),
 
     /**
-     * Example data that stays on disk, laid out as {dir}/forms/{dataType}/*.xml,
-     * {dir}/subforms/{dataType}/*.xml and {dir}/attachments/*. The main forms are not here; see
-     * `testmotorUrl` above.
+     * Example data that stays on disk, laid out as {dir}/forms/{dataType}/*.xml and
+     * {dir}/attachments/*. The main forms and the subforms are not here, see `testmotorUrl` above.
      */
     exampleDataDir: process.env.ALTINN_EXAMPLE_DATA_DIR ? path.resolve(process.env.ALTINN_EXAMPLE_DATA_DIR) : path.join(repoRoot, "examples")
 } as const;

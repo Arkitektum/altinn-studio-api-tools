@@ -52,7 +52,7 @@ The reason is that the step log is the product. Collapsing a refused process adv
 ## Module map
 
 ```
-examples/             subform xml by data type, dummy attachments, and the forms the testmotor has none of
+examples/             dummy attachments, and the forms the testmotor has none of
 server/src
   index.ts            express app, CORS, body limit, error middleware
   routes.ts           endpoints and zod schemas

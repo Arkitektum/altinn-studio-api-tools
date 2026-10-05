@@ -13,7 +13,10 @@ import {
 
 export type ExampleKind = "form" | "subform" | "attachment";
 
-/** Directory name on disk for each kind. */
+/**
+ * Directory name on disk for each kind. Subforms are no longer kept on disk, since they come from the
+ * testmotor, but the kind is still listed so a request naming it is told that rather than refused.
+ */
 const KIND_DIRS: Record<ExampleKind, string> = {
     form: "forms",
     subform: "subforms",
@@ -401,6 +404,12 @@ export async function readExample(kind: ExampleKind, group: string, fileName: st
                 sizeBytes: described.sizeBytes
             };
         }
+    }
+
+    // Subforms come from the testmotor and nowhere else, so one it did not serve is not looked for on disk either. A
+    // subforms/ folder in an example directory of someone's own would otherwise be a quiet second source.
+    if (kind === "subform") {
+        throw new HttpError(404, `No example "${fileName}" for the subform ${group}. Subform examples come from the testmotor.`);
     }
 
     const root = path.resolve(config.exampleDataDir, KIND_DIRS[kind]);

@@ -373,6 +373,19 @@ describe("subform examples from the testmotor", () => {
         }
     });
 
+    it("404s for a subform no catalogue app declares, without looking on disk", async () => {
+        // Subforms come from the testmotor and nowhere else, so a subforms/ folder in an example directory is not read.
+        const stub = stubTestmotor({ "/api/altinn-app": APPS });
+        try {
+            await assert.rejects(
+                () => readExample("subform", "UkjentSkjemaDataV1", "Ukjent.xml", "an-v2"),
+                (error: unknown) => error instanceof HttpError && error.status === 404 && /come from the testmotor/.test(error.message)
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
     it("404s for a subform file the testmotor does not list", async () => {
         const stub = stubTestmotor({ "/api/altinn-app": APPS, "/api/attachment/fts-v1": [attachmentType("DispensasjonssoeknadDataV1", [])] });
         try {
