@@ -2,7 +2,14 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config.js";
 import { HttpError } from "./httpError.js";
-import { fetchTestmotorApps, fetchTestmotorFormXml, testmotorConfigured, type TestmotorXmlFile } from "./testmotorClient.js";
+import { appCatalogue } from "./appCatalogue.js";
+import {
+    fetchTestmotorApps,
+    fetchTestmotorFormXml,
+    fetchTestmotorSubformXml,
+    testmotorConfigured,
+    type TestmotorXmlFile
+} from "./testmotorClient.js";
 
 export type ExampleKind = "form" | "subform" | "attachment";
 
@@ -129,8 +136,9 @@ async function listFiles(dir: string): Promise<ExampleFile[]> {
     return files.filter((file): file is ExampleFile => file !== null).sort((a, b) => a.name.localeCompare(b.name, "nb"));
 }
 
-/** Forms and subforms are one group per data type, taken from the directory name. */
-async function readFormGroups(kind: "form" | "subform"): Promise<ExampleGroup[]> {
+/** The forms still on disk are one group per data type, taken from the directory name. */
+async function readFormGroups(): Promise<ExampleGroup[]> {
+    const kind = "form";
     const root = path.join(config.exampleDataDir, KIND_DIRS[kind]);
     let dataTypeDirs: string[];
     try {
@@ -173,7 +181,7 @@ async function readAttachmentGroups(): Promise<ExampleGroup[]> {
 }
 
 /**
- * A main form example as the testmotor answers it, described the way a file on disk would be.
+ * A main form or subform example as the testmotor answers it, described the way a file on disk would be.
  *
  * The stem arrives without its extension, so the `.xml` is put back: the name is what gets asked
  * for again, and everything downstream reads the content type off the extension.
@@ -195,12 +203,66 @@ async function remoteFormDataType(app: string): Promise<string | null> {
     return apps.find((entry) => entry.appId === app)?.mainFormId ?? null;
 }
 
-/** Where the main form examples came from, so a page that got none can say why. */
+/** Whether the testmotor holds an app at all, which decides whether there is anything to ask it for. */
+async function testmotorHolds(app: string): Promise<boolean> {
+    return (await fetchTestmotorApps()).some((entry) => entry.appId === app);
+}
+
+/** Every subform data type the catalogue declares, once each, in catalogue order. */
+function catalogueSubformDataTypes(): string[] {
+    return [...new Set(appCatalogue.flatMap((entry) => entry.subForms.map((subForm) => subForm.dataType)))];
+}
+
+/**
+ * The app a subform's examples are read through for the selected app.
+ *
+ * The testmotor files subform examples per app, and the same subform can hold different files under different apps, so the selected app's own files are the right ones when it declares the subform. Any other app, a subform app opened on its own or one the catalogue does not name, gets the files of the first catalogue app that declares it, so every subform still has examples whatever is selected.
+ *
+ * @param app - The selected app, possibly empty.
+ * @param dataType - The subform's data type.
+ * @returns The app to ask, or null when no catalogue app declares the data type.
+ */
+function subformSourceApp(app: string, dataType: string): string | null {
+    const declares = (entry: (typeof appCatalogue)[number]) => entry.subForms.some((subForm) => subForm.dataType === dataType);
+    if (appCatalogue.some((entry) => entry.app === app && declares(entry))) return app;
+    return appCatalogue.find(declares)?.app ?? null;
+}
+
+/**
+ * The subform groups for the selected app, one per data type the catalogue declares, and why any could not be had.
+ *
+ * Each is asked for separately, so one that fails costs that subform rather than the rest.
+ */
+async function readRemoteSubformGroups(app: string): Promise<{ groups: ExampleGroup[]; errors: string[] }> {
+    const errors: string[] = [];
+    const groups = await Promise.all(
+        catalogueSubformDataTypes().map(async (dataType): Promise<ExampleGroup | null> => {
+            const source = subformSourceApp(app, dataType);
+            try {
+                if (!source || !(await testmotorHolds(source))) return null;
+                const files = (await fetchTestmotorSubformXml(source, dataType)).map(describeRemote);
+                return files.length > 0 ? { kind: "subform", key: dataType, files } : null;
+            } catch (error) {
+                errors.push(error instanceof Error ? error.message : String(error));
+                return null;
+            }
+        })
+    );
+    return {
+        groups: groups.filter((group): group is ExampleGroup => group !== null).sort((a, b) => a.key.localeCompare(b.key, "nb")),
+        errors
+    };
+}
+
+/** Where the testmotor examples came from, so a page that got none can say why. */
 export interface RemoteFormSource {
     url: string;
     /** The app they were asked for. Main form examples are only main form examples of something. */
     app: string;
-    /** Null when the fetch worked, including when the testmotor simply does not hold this app. */
+    /**
+     * Null when every fetch worked, including when the testmotor simply does not hold this app. Otherwise every reason
+     * that came back, the main form's and the subforms', so a data element left without examples can say why.
+     */
     error: string | null;
 }
 
@@ -215,37 +277,43 @@ export interface ExampleCatalogue {
 /**
  * Every example on offer for one app.
  *
- * Subforms and attachment dummies come off disk, keyed the way they always were. The main form
- * comes from the testmotor, which is why this takes an app at all: the testmotor is keyed by app
- * id, and it has to be, since fa-v3 and fa-v5 are both filed under the data type FA and hold
- * different data. An app the testmotor does not know, which is every subform app and the two
- * uttalelse forms, simply contributes no remote group and is served from disk as before.
+ * The attachment dummies come off disk, and so does the one form the testmotor does not hold. The
+ * main form and the subforms come from the testmotor, which is why this takes an app at all: the
+ * testmotor is keyed by app id, and it has to be, since fa-v3 and fa-v5 are both filed under the
+ * data type FA and hold different data, and the same subform holds different files under disp-v1
+ * and fts-v1. An app the testmotor does not hold contributes no main form group, and gets each
+ * subform as the first catalogue app declaring it holds it.
  *
- * A testmotor that cannot be reached is reported rather than thrown. The attachment dummies and
- * the subforms are still worth having, and the page can say what happened to the rest.
+ * A testmotor that cannot be reached is reported rather than thrown. The attachment dummies are
+ * still worth having, and the page can say what happened to the rest.
  */
 export async function listExamples(app = ""): Promise<ExampleCatalogue> {
-    const [forms, subforms, attachments] = await Promise.all([readFormGroups("form"), readFormGroups("subform"), readAttachmentGroups()]);
-    const disk = [...forms, ...subforms, ...attachments];
+    const [forms, attachments] = await Promise.all([readFormGroups(), readAttachmentGroups()]);
 
     if (!app || !testmotorConfigured()) {
-        return { dir: config.exampleDataDir, groups: disk, remote: null };
+        return { dir: config.exampleDataDir, groups: [...forms, ...attachments], remote: null };
     }
 
-    const remote: RemoteFormSource = { url: config.testmotorUrl, app, error: null };
-    let group: ExampleGroup | null = null;
-    try {
-        const dataType = await remoteFormDataType(app);
-        if (dataType) {
+    const errors: string[] = [];
+    const mainForm = (async (): Promise<ExampleGroup | null> => {
+        try {
+            const dataType = await remoteFormDataType(app);
+            if (!dataType) return null;
             const files = (await fetchTestmotorFormXml(app)).map(describeRemote);
-            if (files.length > 0) group = { kind: "form", key: dataType, files };
+            return files.length > 0 ? { kind: "form", key: dataType, files } : null;
+        } catch (error) {
+            errors.push(error instanceof Error ? error.message : String(error));
+            return null;
         }
-    } catch (error) {
-        remote.error = error instanceof Error ? error.message : String(error);
-    }
+    })();
+    const [group, subforms] = await Promise.all([mainForm, readRemoteSubformGroups(app)]);
 
-    // Ahead of the disk groups, so a data type that somehow has both is served the fresh copy.
-    return { dir: config.exampleDataDir, groups: group ? [group, ...disk] : disk, remote };
+    // The main form's reason first, since it is the one most elements are waiting on. A reason the subforms share with
+    // it, which is what a testmotor that cannot be reached at all gives, is said once.
+    const reasons = [...new Set([...errors, ...subforms.errors])];
+    const remote: RemoteFormSource = { url: config.testmotorUrl, app, error: reasons.length > 0 ? reasons.join(" ") : null };
+    const groups = [...(group ? [group] : []), ...forms, ...subforms.groups, ...attachments];
+    return { dir: config.exampleDataDir, groups, remote };
 }
 
 export interface ExampleContent {
@@ -267,6 +335,10 @@ export interface ExampleContent {
  * `app` is what decides whether a form example is the testmotor's or the disk's. When the
  * testmotor holds the app, it is the only source asked: the disk copies of those forms were
  * removed, and falling back to one that is not there would only turn a clear error into a 404.
+ *
+ * A subform example always comes from the testmotor, read through the same app listExamples
+ * offered it from: the selected app when it declares the subform, otherwise the first catalogue
+ * app that does.
  */
 export async function readExample(kind: ExampleKind, group: string, fileName: string, app = ""): Promise<ExampleContent> {
     if (!(kind in KIND_DIRS)) {
@@ -292,6 +364,33 @@ export async function readExample(kind: ExampleKind, group: string, fileName: st
             const file = files.find((entry) => `${entry.name}.xml` === fileName);
             if (!file) {
                 throw new HttpError(404, `The testmotor has no example "${fileName}" for ${app}.`);
+            }
+            const described = describeRemote(file);
+            return {
+                name: described.name,
+                content: file.contents,
+                encoding: described.encoding,
+                contentType: described.contentType,
+                sizeBytes: described.sizeBytes
+            };
+        }
+    }
+
+    if (kind === "subform" && testmotorConfigured()) {
+        const source = subformSourceApp(app, group);
+        if (source) {
+            let files: TestmotorXmlFile[];
+            try {
+                files = (await testmotorHolds(source)) ? await fetchTestmotorSubformXml(source, group) : [];
+            } catch (error) {
+                throw new HttpError(
+                    502,
+                    `Could not read the ${group} examples for ${source} from the testmotor: ${error instanceof Error ? error.message : String(error)}`
+                );
+            }
+            const file = files.find((entry) => `${entry.name}.xml` === fileName);
+            if (!file) {
+                throw new HttpError(404, `The testmotor has no ${group} example "${fileName}" for ${source}.`);
             }
             const described = describeRemote(file);
             return {

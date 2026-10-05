@@ -111,7 +111,9 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 **A main form example.** Not here. Add it to the testmotor's Azure file share under `{appId}/forms/`, which is where the tool reads them from and where they get their dates re-stamped. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/) for why.
 
-**A subform example, or a form the testmotor has no data for.** Drop the file in `examples/subforms/{dataType}/` or `examples/forms/{dataType}/`. The directory name is the data type and the numeric prefix orders the list while being stripped from the label, so `01_Maksimumsversjon.xml` reads as "Maksimumsversjon". No restart: the directory is read per request.
+**A subform example.** Not here either. Add it to the testmotor's Azure file share as a predefined attachment of the app that declares it, under the subform's data type. The testmotor files them per app, and the tool reads them per app.
+
+**A form the testmotor has no data for.** Drop the file in `examples/forms/{dataType}/`. The directory name is the data type and the numeric prefix orders the list while being stripped from the label, so `01_Maksimumsversjon.xml` reads as "Maksimumsversjon". No restart: the directory is read per request.
 
 **An icon.** Add the paths to `PATHS` in `web/src/components/Icon.tsx` and the name to `IconName`. A 16 grid, stroked in `currentColor`, no `fill`, so it takes the colour and size of the text it sits in. There is no icon library on purpose: it would be a fourth runtime dependency for two dozen shapes, and it would bring a house style that is not this one. The rule for whether an icon belongs is the rail's: it carries something on its own, or it sits beside a label that still says the word. Never an icon alone, with the one exception of the example reload button, which has a `label` for the screen reader.
 

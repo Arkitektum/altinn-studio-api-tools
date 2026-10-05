@@ -267,7 +267,7 @@ export interface RemoteFormSource {
 }
 
 export interface ExamplesResponse {
-    /** Where the examples still on disk are read from: subforms, uttalelse forms, attachments. */
+    /** Where the examples still on disk are read from: the uttalelse form, and the attachments. */
     dir: string;
     groups: ExampleGroup[];
     /** Null when no app is selected, or when the testmotor is switched off. */

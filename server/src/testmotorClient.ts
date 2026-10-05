@@ -4,20 +4,24 @@ import { altinnFetch } from "./altinnClient.js";
 import { config } from "./config.js";
 
 /**
- * The FtPB testmotor, which is where the main form examples come from.
+ * The FtPB testmotor, which is where the main form and subform examples come from.
  *
- * The client itself lives in `@arkitektum/ftpb-testmotor-client`, shared with altinn-studio-custom-components-api, which reads the same two endpoints and used to carry its own copy of this. See that package for which entries it drops, why the files are not sorted, and how long an answer is reused.
+ * The client itself lives in `@arkitektum/ftpb-testmotor-client`, shared with altinn-studio-custom-components-api, which reads the same endpoints and used to carry its own copy of this. See that package for which entries it drops, why the files are not sorted, and how long an answer is reused.
  *
  * What is left here is the part that is this tool's own: the requests go through `altinnFetch`, so the testmotor gets the same request timeout as everything else and a request that never lands arrives as the 502 or 504 envelope the rest of the code already understands, rather than as a thrown error.
+ *
+ * A subform download needs two things from the transport. The `fileName` header, which is how the testmotor tells the files of one data type apart, and the body as the whole text. `altinnFetch` cuts an ordinary text body off at 200,000 characters for the log's sake, which would hand back a broken XML file without a word, so a download asks for the bytes instead, which are never cut.
  */
 
 export type { TestmotorApp, TestmotorXmlFile };
 
 const client = createTestmotorClient({
     baseUrl: config.testmotorUrl,
-    fetch: async (url) => {
-        const response = await altinnFetch({ url });
-        return { ok: response.ok, status: response.status, statusText: response.statusText, body: response.body };
+    fetch: async (url, request) => {
+        const asText = request?.accept === "text";
+        const response = await altinnFetch({ url, headers: request?.headers, binaryResponse: asText, accept: asText ? "*/*" : undefined });
+        const body = asText && response.ok ? response.bytes?.toString("utf8") : response.body;
+        return { ok: response.ok, status: response.status, statusText: response.statusText, body };
     }
 });
 
@@ -39,4 +43,9 @@ export function fetchTestmotorApps(): Promise<TestmotorApp[]> {
 /** One app's example form files, in the order the testmotor answers them. */
 export function fetchTestmotorFormXml(appId: string): Promise<TestmotorXmlFile[]> {
     return client.fetchFormXml(appId);
+}
+
+/** One subform's predefined example files as one app holds them, in the order the testmotor lists them. */
+export function fetchTestmotorSubformXml(appId: string, dataType: string): Promise<TestmotorXmlFile[]> {
+    return client.fetchSubformXml(appId, dataType);
 }

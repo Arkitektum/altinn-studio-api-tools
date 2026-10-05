@@ -130,8 +130,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
 
     /*
-     * What there is to load into a data element, which is no longer a fixture: the subforms and
-     * the attachment dummies are still files on the server, but the main form examples come from
+     * What there is to load into a data element, which is no longer a fixture: the attachment
+     * dummies are still files on the server, but the main form and subform examples come from
      * the testmotor, keyed by app id. So this is keyed on the app as typed and gated on the typing
      * having stopped, the same as the app probe above it, and for the same reason.
      *

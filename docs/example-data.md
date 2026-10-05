@@ -5,12 +5,11 @@ nav_order: 7
 
 # Example data
 
-Example data comes from two places. The main form examples are read from the FtPB testmotor at request time. Everything else is a file in `examples/`, laid out so that the directory name is the data type:
+Example data comes from two places. The main form and subform examples are read from the FtPB testmotor at request time. Everything else is a file in `examples/`, laid out so that the directory name is the data type:
 
 ```
 examples/
   forms/HoeringOgOffentligEttersynUttalelse/uttalelse.xml
-  subforms/GjennomfoeringsplanDataV7/GjennomfoeringsplanDataV7.xml
   attachments/dummy.pdf
   attachments/dummy.png
 ```
@@ -25,18 +24,26 @@ They used to be. The problem with a committed copy is dates: a ferdigattest exam
 
 The testmotor at `TESTMOTOR_URL` serves the copy the DIBK test team maintains, out of an Azure file share, and stamps those date fields with a date ten days out on every request. So the tool reads the examples from there instead and the dates are always inside the window. It is the same data the testmotor's own interface offers, and it is where the examples that used to be in this repo were copied from by hand.
 
-Two of its endpoints are used, both open and neither carrying a token:
+Four of its endpoints are used, all open and none carrying a token:
 
 ```
-GET {TESTMOTOR_URL}/api/altinn-app          the apps it holds data for, and each one's main form data type
-GET {TESTMOTOR_URL}/api/xml/{appId}         that app's example files, contents and all
+GET {TESTMOTOR_URL}/api/altinn-app                      the apps it holds data for, and each one's main form data type
+GET {TESTMOTOR_URL}/api/xml/{appId}                     that app's example files, contents and all
+GET {TESTMOTOR_URL}/api/attachment/{appId}              that app's attachment types, each with its predefined files
+GET {TESTMOTOR_URL}/api/attachment/{appId}/{dataType}   one predefined file, named by a fileName header
 ```
 
 Answers are cached for five minutes, which is also how long the testmotor caches its own reads of the share.
 
-This is why the picker is keyed on the app and not only on the data type: the testmotor is keyed by app id, and it has to be, since `fa-v3` and `fa-v5` are both filed under the data type `FA` and hold different data. An app the testmotor has no data for contributes nothing, and its examples come off disk instead. That covers every subform app and `hoeringettersynuttalelse-v2`. Three apps have neither, which is [the reply forms](#the-reply-forms-are-the-gap) below.
+This is why the picker is keyed on the app and not only on the data type: the testmotor is keyed by app id, and it has to be, since `fa-v3` and `fa-v5` are both filed under the data type `FA` and hold different data. An app the testmotor has no data for contributes no main form examples, and they come off disk instead, which covers `hoeringettersynuttalelse-v2`. Three apps have neither, which is [the reply forms](#the-reply-forms-are-the-gap) below.
 
-If the testmotor cannot be reached, the picker says so rather than showing an empty list. There is no on-disk fallback for the main forms, because the whole point was to stop keeping a second copy. `TESTMOTOR_URL=` switches the whole thing off.
+## The subforms, and why they are not files here either
+
+The testmotor holds subform examples too, as predefined attachments filed per app under the subform's data type. The same subform can hold different files under different apps: `DispensasjonssoeknadDataV1` does under `disp-v1` and `fts-v1`. A single copy in this repo could only ever be one of them.
+
+So the selected app's subforms are read through that app. A subform the selected app does not declare, which is every subform when the app is a subform app opened on its own or one the catalogue does not name, is read through the first catalogue app that declares it, so every subform still has examples whatever is selected.
+
+If the testmotor cannot be reached, the picker says so rather than showing an empty list. There is no on-disk fallback for the main forms or the subforms, because the whole point was to stop keeping a second copy. `TESTMOTOR_URL=` switches the whole thing off.
 
 ## Pointing at your own directory
 
@@ -46,7 +53,7 @@ For the examples that are still files, point the tool at your canonical director
 ALTINN_EXAMPLE_DATA_DIR=/path/to/exampleData
 ```
 
-It expects `forms/{dataType}/*.xml`, `subforms/{dataType}/*.xml` and `attachments/*` under that directory. Any of them may be absent. Adding a file needs no restart, because the directory is read on each request. The numeric prefix in a name like `01_Maksimumsversjon.xml` is stripped for display but still determines the order.
+It expects `forms/{dataType}/*.xml` and `attachments/*` under that directory. Either may be absent. Adding a file needs no restart, because the directory is read on each request. The numeric prefix in a name like `01_Maksimumsversjon.xml` is stripped for display but still determines the order.
 
 ## Dummy attachments
 

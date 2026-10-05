@@ -1,22 +1,52 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
+import { appCatalogue } from "./appCatalogue.js";
 import { listExamples, readExample } from "./examples.js";
 import { HttpError } from "./httpError.js";
 import { clearTestmotorCache } from "./testmotorClient.js";
 
-/** The two testmotor endpoints, answered from a map of path to body. A path with no entry 500s. */
-function stubTestmotor(bodies: Record<string, unknown>): { paths: string[]; restore: () => void } {
+/**
+ * The testmotor, answered from a map of path to body. A path with no entry 500s.
+ *
+ * A subform download is answered the way the testmotor answers it: the file named by the `fileName` header, as XML, out of
+ * `files` keyed by path and file name, and a 404 for a name it does not hold. Every request is recorded with that header.
+ */
+function stubTestmotor(
+    bodies: Record<string, unknown>,
+    files: Record<string, string> = {},
+    fileContentType = "text/xml"
+): { paths: string[]; fileNames: (string | null)[]; restore: () => void } {
     const original = globalThis.fetch;
     const paths: string[] = [];
+    const fileNames: (string | null)[] = [];
 
-    globalThis.fetch = (async (input: unknown) => {
+    globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
         const { pathname } = new URL(String(input));
+        const fileName = new Headers(init?.headers).get("fileName");
         paths.push(pathname);
+        fileNames.push(fileName);
+        if (fileName !== null) {
+            const contents = files[`${pathname}/${fileName}`];
+            if (contents === undefined) return new Response("Fant ikke vedlegg", { status: 404, statusText: "Not Found" });
+            return new Response(contents, { status: 200, headers: { "content-type": fileContentType } });
+        }
         if (!(pathname in bodies)) return new Response("not found", { status: 500, statusText: "Server Error" });
         return new Response(JSON.stringify(bodies[pathname]), { status: 200, headers: { "content-type": "application/json" } });
     }) as typeof fetch;
 
-    return { paths, restore: () => (globalThis.fetch = original) };
+    return { paths, fileNames, restore: () => (globalThis.fetch = original) };
+}
+
+/** One attachment type as the testmotor lists it, with only the fields the client reads. */
+function attachmentType(id: string, fileNames: string[]) {
+    return { id, predefined: fileNames.map((fileName) => ({ fileName })) };
+}
+
+/** The first catalogue app declaring a subform, which is whose files an app not declaring it is offered. */
+function firstDeclaring(dataType: string): string {
+    const entry = appCatalogue.find((candidate) => candidate.subForms.some((subForm) => subForm.dataType === dataType));
+    assert.ok(entry, `expected the catalogue to declare ${dataType}`);
+    return entry.app;
 }
 
 /** What the testmotor answers for an-v2: stems with the ordering prefix and extension already off. */
@@ -124,9 +154,14 @@ describe("main form examples from the testmotor", () => {
 
             assert.ok(remote?.error, "expected the failure to be reported");
             assert.match(remote.error, /500/);
-            // The attachment dummies and the subforms are still worth having.
+            // Every request failed the same way, and saying so once per subform as well would bury it.
+            assert.equal(remote.error.split("/api/altinn-app answered 500").length, 2, "expected the reason once");
+            // The attachment dummies are still worth having. The subforms came from the testmotor too, so they are gone.
             assert.ok(groups.some((group) => group.kind === "attachment"));
-            assert.ok(groups.some((group) => group.kind === "subform"));
+            assert.equal(
+                groups.some((group) => group.kind === "subform"),
+                false
+            );
             assert.equal(
                 groups.find((group) => group.key === "AN"),
                 undefined
@@ -194,6 +229,220 @@ describe("main form examples from the testmotor", () => {
     });
 });
 
+describe("subform examples from the testmotor", () => {
+    afterEach(() => clearTestmotorCache());
+
+    const APPS = [
+        { appId: "disp-v1", mainFormId: "DS" },
+        { appId: "fts-v1", mainFormId: "FTS" },
+        { appId: "an-v2", mainFormId: "AN" },
+        { appId: "es-v2", mainFormId: "ES" }
+    ];
+    const DISP_XML = '<?xml version="1.0" encoding="utf-8"?>\n<dispensasjonssoeknad>disp-v1 æøå</dispensasjonssoeknad>';
+    const FTS_XML = '<?xml version="1.0" encoding="utf-8"?>\n<dispensasjonssoeknad>fts-v1</dispensasjonssoeknad>';
+
+    it("offers the selected app's own subform files, fetched through that app by name", async () => {
+        const stub = stubTestmotor(
+            {
+                "/api/altinn-app": APPS,
+                "/api/attachment/fts-v1": [
+                    attachmentType("Annet", ["Annet.pdf"]),
+                    attachmentType("DispensasjonssoeknadDataV1", ["DispensasjonssoeknadV1.xml"])
+                ]
+            },
+            { "/api/attachment/fts-v1/DispensasjonssoeknadDataV1/DispensasjonssoeknadV1.xml": FTS_XML }
+        );
+        try {
+            const { groups } = await listExamples("fts-v1");
+
+            const dispensasjon = groups.find((group) => group.key === "DispensasjonssoeknadDataV1");
+            assert.deepEqual(dispensasjon, {
+                kind: "subform",
+                key: "DispensasjonssoeknadDataV1",
+                files: [
+                    {
+                        name: "DispensasjonssoeknadV1.xml",
+                        label: "DispensasjonssoeknadV1",
+                        sizeBytes: Buffer.byteLength(FTS_XML, "utf8"),
+                        contentType: "application/xml",
+                        encoding: "utf8"
+                    }
+                ]
+            });
+            assert.ok(stub.fileNames.includes("DispensasjonssoeknadV1.xml"), "expected the file to be asked for by name");
+            // fts-v1 declares this subform, so its own files are the ones. The subforms it does not declare are read
+            // through another app, which is the next test's concern.
+            assert.deepEqual(
+                stub.paths.filter((path) => path.endsWith("/DispensasjonssoeknadDataV1")),
+                ["/api/attachment/fts-v1/DispensasjonssoeknadDataV1"]
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("gives an app that does not declare a subform the files of the first app that does", async () => {
+        // A subform app opened on its own, or an app the catalogue does not name, still has something to post.
+        const source = firstDeclaring("DispensasjonssoeknadDataV1");
+        const stub = stubTestmotor(
+            {
+                "/api/altinn-app": [...APPS, { appId: source, mainFormId: "X" }],
+                [`/api/attachment/${source}`]: [attachmentType("DispensasjonssoeknadDataV1", ["Dispensasjonssoeknad1.xml"])]
+            },
+            { [`/api/attachment/${source}/DispensasjonssoeknadDataV1/Dispensasjonssoeknad1.xml`]: DISP_XML }
+        );
+        try {
+            const { groups } = await listExamples("an-v2");
+
+            assert.deepEqual(
+                groups.find((group) => group.key === "DispensasjonssoeknadDataV1")?.files.map((file) => file.name),
+                ["Dispensasjonssoeknad1.xml"]
+            );
+
+            const loaded = await readExample("subform", "DispensasjonssoeknadDataV1", "Dispensasjonssoeknad1.xml", "an-v2");
+            assert.equal(loaded.content, DISP_XML);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("reads a subform file back verbatim, through the app it was offered from", async () => {
+        const stub = stubTestmotor(
+            { "/api/altinn-app": APPS, "/api/attachment/fts-v1": [attachmentType("DispensasjonssoeknadDataV1", ["DispensasjonssoeknadV1.xml"])] },
+            { "/api/attachment/fts-v1/DispensasjonssoeknadDataV1/DispensasjonssoeknadV1.xml": FTS_XML }
+        );
+        try {
+            const loaded = await readExample("subform", "DispensasjonssoeknadDataV1", "DispensasjonssoeknadV1.xml", "fts-v1");
+
+            assert.deepEqual(loaded, {
+                name: "DispensasjonssoeknadV1.xml",
+                content: FTS_XML,
+                encoding: "utf8",
+                contentType: "application/xml",
+                sizeBytes: Buffer.byteLength(FTS_XML, "utf8")
+            });
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("hands a long subform over whole, rather than cut off where altinnFetch cuts a logged body", async () => {
+        const long = `<?xml version="1.0" encoding="utf-8"?>\n<dispensasjonssoeknad>${"x".repeat(250_000)}</dispensasjonssoeknad>`;
+        const stub = stubTestmotor(
+            { "/api/altinn-app": APPS, "/api/attachment/fts-v1": [attachmentType("DispensasjonssoeknadDataV1", ["Lang.xml"])] },
+            { "/api/attachment/fts-v1/DispensasjonssoeknadDataV1/Lang.xml": long }
+        );
+        try {
+            const loaded = await readExample("subform", "DispensasjonssoeknadDataV1", "Lang.xml", "fts-v1");
+
+            assert.equal(loaded.content.length, long.length);
+            assert.ok(loaded.content.endsWith("</dispensasjonssoeknad>"));
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("reads a subform file whatever content type the testmotor labels it with", async () => {
+        // altinnFetch only turns a body it thinks is text into text, so the file is read from its bytes instead.
+        const stub = stubTestmotor(
+            { "/api/altinn-app": APPS, "/api/attachment/fts-v1": [attachmentType("DispensasjonssoeknadDataV1", ["DispensasjonssoeknadV1.xml"])] },
+            { "/api/attachment/fts-v1/DispensasjonssoeknadDataV1/DispensasjonssoeknadV1.xml": FTS_XML },
+            "application/octet-stream"
+        );
+        try {
+            const loaded = await readExample("subform", "DispensasjonssoeknadDataV1", "DispensasjonssoeknadV1.xml", "fts-v1");
+            assert.equal(loaded.content, FTS_XML);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("404s for a subform file whose source app the testmotor does not hold, without asking it", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": [{ appId: "an-v2", mainFormId: "AN" }] });
+        try {
+            await assert.rejects(
+                () => readExample("subform", "DispensasjonssoeknadDataV1", "Dispensasjonssoeknad1.xml", "an-v2"),
+                (error: unknown) => error instanceof HttpError && error.status === 404
+            );
+            assert.equal(
+                stub.paths.some((path) => path.startsWith("/api/attachment/")),
+                false
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("404s for a subform file the testmotor does not list", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": APPS, "/api/attachment/fts-v1": [attachmentType("DispensasjonssoeknadDataV1", [])] });
+        try {
+            await assert.rejects(
+                () => readExample("subform", "DispensasjonssoeknadDataV1", "nope.xml", "fts-v1"),
+                (error: unknown) => error instanceof HttpError && error.status === 404
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("502s when a subform file is asked for and the testmotor cannot be reached", async () => {
+        const stub = stubTestmotor({});
+        try {
+            await assert.rejects(
+                () => readExample("subform", "DispensasjonssoeknadDataV1", "DispensasjonssoeknadV1.xml", "fts-v1"),
+                (error: unknown) => error instanceof HttpError && error.status === 502
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("offers the other subforms when one cannot be downloaded, and says which file it was", async () => {
+        const gjennomfoeringsplanSource = firstDeclaring("GjennomfoeringsplanDataV7");
+        const stub = stubTestmotor(
+            {
+                "/api/altinn-app": [...APPS, { appId: gjennomfoeringsplanSource, mainFormId: "Y" }],
+                "/api/attachment/fts-v1": [
+                    attachmentType("DispensasjonssoeknadDataV1", ["Mangler.xml"]),
+                    attachmentType("GjennomfoeringsplanDataV7", ["GjennomfoeringsplanDataV7.xml"])
+                ]
+            },
+            { "/api/attachment/fts-v1/GjennomfoeringsplanDataV7/GjennomfoeringsplanDataV7.xml": "<plan/>" }
+        );
+        try {
+            const { groups, remote } = await listExamples("fts-v1");
+
+            assert.equal(
+                groups.some((group) => group.key === "DispensasjonssoeknadDataV1"),
+                false
+            );
+            assert.ok(groups.some((group) => group.key === "GjennomfoeringsplanDataV7"));
+            assert.match(remote?.error ?? "", /\(file Mangler\.xml\) answered 404/);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it("asks nothing about a subform whose source app the testmotor does not hold", async () => {
+        const stub = stubTestmotor({ "/api/altinn-app": [{ appId: "an-v2", mainFormId: "AN" }], "/api/xml/an-v2": AN_XML });
+        try {
+            const { groups, remote } = await listExamples("an-v2");
+
+            assert.equal(remote?.error, null);
+            assert.equal(
+                groups.some((group) => group.kind === "subform"),
+                false
+            );
+            assert.equal(
+                stub.paths.some((path) => path.startsWith("/api/attachment/")),
+                false
+            );
+        } finally {
+            stub.restore();
+        }
+    });
+});
+
 describe("example data still on disk", () => {
     it("groups the xml files that stayed here by data type", async () => {
         const { groups } = await listExamples();
@@ -207,21 +456,23 @@ describe("example data still on disk", () => {
         assert.equal(uttalelse.files[0]?.encoding, "utf8");
         assert.ok((uttalelse.files[0]?.sizeBytes ?? 0) > 0);
 
-        const subform = groups.find((group) => group.key === "GjennomfoeringsplanDataV7");
-        assert.ok(subform, "expected the subform group");
-        assert.equal(subform.kind, "subform");
+        // The subforms moved to the testmotor as well, so with no app selected there are none.
+        assert.equal(
+            groups.some((group) => group.kind === "subform"),
+            false
+        );
     });
 
     it("labels a file by its stem and looks it up by its full name", async () => {
         const { groups } = await listExamples();
-        const subform = groups.find((group) => group.key === "GjennomfoeringsplanDataV7");
-        assert.ok(subform);
+        const uttalelse = groups.find((group) => group.key === "HoeringOgOffentligEttersynUttalelse");
+        assert.ok(uttalelse);
 
-        const file = subform.files[0];
+        const file = uttalelse.files[0];
         assert.ok(file);
         assert.equal(file.label, file.name.replace(/\.[^.]+$/, "").replace(/^\d+[_-]\s*/, ""));
 
-        const loaded = await readExample("subform", "GjennomfoeringsplanDataV7", file.name);
+        const loaded = await readExample("form", "HoeringOgOffentligEttersynUttalelse", file.name);
         assert.ok(loaded.content.length > 0);
     });
 

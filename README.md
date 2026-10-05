@@ -61,7 +61,7 @@ For an app the catalogue does not list, pick **Other application** and type the 
 | [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                 |
 | [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                                             | The backend on its own, for scripting a data load                                    |
 
-Main form examples come from the FtPB testmotor, which keeps them current and re-dates them per request. Subforms and 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
+Main form and subform examples come from the FtPB testmotor, which keeps the main forms current and re-dates them per request. 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
 
 ## Scripts
 
