@@ -43,8 +43,8 @@ function describe(option: ExampleOption): string {
  * Loads a shipped example into a data element.
  *
  * The parent keys this component on the data type, so a mount means the data type just changed.
- * That is when the first example is loaded automatically, giving every element something valid
- * to post without a second click.
+ * That is when the first example is loaded automatically, or as soon as it arrives if it has not
+ * yet, giving every element something valid to post without a second click.
  */
 export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad }: ExamplePickerProps) {
     // Read rather than passed in: the main form examples belong to an app, and the session is
@@ -82,13 +82,14 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
     );
 
     useEffect(() => {
-        // Mount only. Reacting to later content changes would pull the example back in every time
-        // the operator cleared or edited the field.
+        // On mount, and again when the first example arrives, since the examples are often still
+        // on their way when the data type changes. Never on content changes, which would pull the
+        // example back in every time the operator cleared or edited the field, and only ever once.
         if (autoLoaded.current || !first || hasContent || !autoLoad) return;
         autoLoaded.current = true;
         void load(first.name);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [first?.name]);
 
     if (!dataType) {
         return <p className="field__hint">Pick a data type to see its example files.</p>;

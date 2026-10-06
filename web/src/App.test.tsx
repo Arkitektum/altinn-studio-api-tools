@@ -56,6 +56,20 @@ const boot: Routes = {
     }
 };
 
+/** The one main form example the catalogue app below has. */
+const etExample = { name: "Maks.xml", label: "Maks", sizeBytes: 5, contentType: "application/xml", encoding: "utf8" };
+
+/** One app in the catalogue, whose example is only offered once that app is the one asked about. */
+const catalogueRoutes: Routes = {
+    ...boot,
+    "GET /api/catalogue": [{ org: "dibk", app: "et-v4", dataType: "ET", subForms: [] }],
+    "GET /api/examples": (url: URL) => ({
+        dir: "/examples",
+        groups: url.searchParams.get("app") === "et-v4" ? [{ kind: "form", key: "ET", files: [etExample] }] : []
+    }),
+    "GET /api/examples/file": { ...etExample, content: "<ET/>" }
+};
+
 /** An instance read, with one data element of its own so two answers can be told apart. */
 function instanceRead(guid: string, dataType: string) {
     return {
@@ -256,6 +270,44 @@ describe("App", () => {
      * not exist. The query is keyed on the settled name rather than the typed one, so the cache is
      * never told about those at all and there is nothing to cancel or log afterwards.
      */
+    /*
+     * Picking an app points the first element at its form at once, but that app's examples are
+     * asked for only once the target has settled. The picker is up before they arrive, so loading
+     * the first example on mount alone left the element empty.
+     */
+    it("loads the first example of an app picked from the catalogue once its examples arrive", async (t) => {
+        const { app, stub } = await mount(t, catalogueRoutes);
+
+        await choose(app, find<HTMLSelectElement>(app, "#application"), "dibk/et-v4");
+        await app.wait(800);
+
+        assert.ok(stub.calls.includes("GET /api/examples/file"), "the example should have been loaded");
+        assert.equal(find<HTMLTextAreaElement>(app, "textarea").value, "<ET/>");
+    });
+
+    it("does not load over what was typed while the examples were on their way", async (t) => {
+        const { app, stub } = await mount(t, catalogueRoutes);
+
+        await choose(app, find<HTMLSelectElement>(app, "#application"), "dibk/et-v4");
+        await type(app, find<HTMLTextAreaElement>(app, "textarea"), "typed by hand");
+        await app.wait(800);
+
+        assert.equal(stub.calls.includes("GET /api/examples/file"), false);
+        assert.equal(find<HTMLTextAreaElement>(app, "textarea").value, "typed by hand");
+    });
+
+    it("does not load the example again when the field it loaded into is cleared", async (t) => {
+        const { app, stub } = await mount(t, catalogueRoutes);
+
+        await choose(app, find<HTMLSelectElement>(app, "#application"), "dibk/et-v4");
+        await app.wait(800);
+        await type(app, find<HTMLTextAreaElement>(app, "textarea"), "");
+        await app.wait(100);
+
+        assert.equal(stub.calls.filter((made) => made === "GET /api/examples/file").length, 1);
+        assert.equal(find<HTMLTextAreaElement>(app, "textarea").value, "");
+    });
+
     it("asks the app once its name stops being typed, not once per character", async (t) => {
         const { app, stub } = await mount(t, boot);
 
