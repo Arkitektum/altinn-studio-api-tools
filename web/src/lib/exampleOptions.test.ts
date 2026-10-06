@@ -25,7 +25,7 @@ const GROUPS: ExampleGroup[] = [
 
 describe("exampleOptionsFor", () => {
     it("matches a form data type on its id", () => {
-        const options = exampleOptionsFor(GROUPS, "ET", ["application/xml"]);
+        const options = exampleOptionsFor(GROUPS, "ET", ["application/xml"], "main");
         assert.deepEqual(
             options.map((option) => [option.kind, option.group, option.name]),
             [["form", "ET", "01_Maks.xml"]]
@@ -33,12 +33,12 @@ describe("exampleOptionsFor", () => {
     });
 
     it("matches a subform data type on its id", () => {
-        const options = exampleOptionsFor(GROUPS, "GjennomfoeringsplanDataV7", []);
+        const options = exampleOptionsFor(GROUPS, "GjennomfoeringsplanDataV7", [], "sub");
         assert.equal(options[0]?.kind, "subform");
     });
 
     it("offers attachment dummies for every content type the data type allows", () => {
-        const options = exampleOptionsFor(GROUPS, "vedlegg", ["application/pdf", "image/png"]);
+        const options = exampleOptionsFor(GROUPS, "vedlegg", ["application/pdf", "image/png"], "attachment");
         assert.deepEqual(
             options.map((option) => option.name),
             ["dummy.pdf", "dummy.png"]
@@ -48,7 +48,7 @@ describe("exampleOptionsFor", () => {
     });
 
     it("follows the order the data type declares, so the first declared one auto-loads", () => {
-        const options = exampleOptionsFor(GROUPS, "vedlegg", ["image/png", "application/pdf"]);
+        const options = exampleOptionsFor(GROUPS, "vedlegg", ["image/png", "application/pdf"], "attachment");
         assert.deepEqual(
             options.map((option) => option.name),
             ["dummy.png", "dummy.pdf"]
@@ -56,7 +56,7 @@ describe("exampleOptionsFor", () => {
     });
 
     it("skips content types with no dummy on disk", () => {
-        const options = exampleOptionsFor(GROUPS, "vedlegg", ["application/vnd.oasis.opendocument.text", "text/plain"]);
+        const options = exampleOptionsFor(GROUPS, "vedlegg", ["application/vnd.oasis.opendocument.text", "text/plain"], "attachment");
         assert.deepEqual(
             options.map((option) => option.name),
             ["dummy.txt"]
@@ -66,16 +66,29 @@ describe("exampleOptionsFor", () => {
     it("prefers a data type match over the content type fallback", () => {
         // An attachment data type that also happens to have its own example directory.
         const groups: ExampleGroup[] = [...GROUPS, { kind: "form", key: "vedlegg", files: [file("spesiell.xml", "application/xml")] }];
-        const options = exampleOptionsFor(groups, "vedlegg", ["application/pdf"]);
+        const options = exampleOptionsFor(groups, "vedlegg", ["application/pdf"], "attachment");
         assert.deepEqual(
             options.map((option) => option.name),
             ["spesiell.xml"]
         );
     });
 
+    it("offers a main form or subform with no examples of its own nothing, rather than the attachment dummy.xml", () => {
+        const groups: ExampleGroup[] = [...GROUPS, { kind: "attachment", key: "application/xml", files: [file("dummy.xml", "application/xml")] }];
+        assert.deepEqual(exampleOptionsFor(groups, "RS", ["application/xml"], "main"), []);
+        assert.deepEqual(exampleOptionsFor(groups, "DispensasjonssoeknadDataV1", ["application/xml"], "sub"), []);
+    });
+
+    it("still offers dummy.xml to an attachment, or a data type the app has not been read for, that accepts XML", () => {
+        const groups: ExampleGroup[] = [...GROUPS, { kind: "attachment", key: "application/xml", files: [file("dummy.xml", "application/xml")] }];
+        const names = (kind: "attachment" | null) => exampleOptionsFor(groups, "vedlegg", ["application/xml"], kind).map((option) => option.name);
+        assert.deepEqual(names("attachment"), ["dummy.xml"]);
+        assert.deepEqual(names(null), ["dummy.xml"]);
+    });
+
     it("offers nothing without a data type, or when nothing matches", () => {
-        assert.deepEqual(exampleOptionsFor(GROUPS, "", ["application/pdf"]), []);
-        assert.deepEqual(exampleOptionsFor(GROUPS, "ukjent", []), []);
-        assert.deepEqual(exampleOptionsFor(GROUPS, "ukjent", ["image/tiff"]), []);
+        assert.deepEqual(exampleOptionsFor(GROUPS, "", ["application/pdf"], "attachment"), []);
+        assert.deepEqual(exampleOptionsFor(GROUPS, "ukjent", [], null), []);
+        assert.deepEqual(exampleOptionsFor(GROUPS, "ukjent", ["image/tiff"], null), []);
     });
 });

@@ -273,7 +273,7 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                         dataType={element.dataType}
                         hasContent={Boolean(element.content)}
                         autoLoad={!element.restored}
-                        options={exampleOptionsFor(exampleGroups, element.dataType, known?.allowedContentTypes ?? [])}
+                        options={exampleOptionsFor(exampleGroups, element.dataType, known?.allowedContentTypes ?? [], kind)}
                         onLoad={(file, option) =>
                             onPatch({
                                 content: file.content,

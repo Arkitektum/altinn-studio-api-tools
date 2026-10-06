@@ -87,6 +87,8 @@ Attachment data types are keyed not by data type but by the content types they a
 
 The picker offers the dummies matching the data type's `allowedContentTypes`, in the order the app declares them, so the first declared one is what loads automatically. Where a format has several content type spellings, the file is offered under each and posted as the one the app asked for, so an app declaring `text/xml` gets `text/xml` rather than `application/xml`.
 
+The dummies are for attachments only. A main form or subform accepts `application/xml` too, but when it has no examples of its own it is offered nothing rather than `dummy.xml`, which is not form data and would only be refused when posted.
+
 A content type with no dummy is simply not offered. Adding one means dropping a file into the directory and listing its extension in `FORMATS` in `server/src/examples.ts`. For a one-off, **File from disk** on the element takes any file without it having to be shipped first.
 
 ## Finding the gaps
