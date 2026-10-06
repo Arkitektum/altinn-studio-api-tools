@@ -20,7 +20,8 @@ const client = createTestmotorClient({
     fetch: async (url, request) => {
         const asText = request?.accept === "text";
         const response = await altinnFetch({ url, headers: request?.headers, binaryResponse: asText, accept: asText ? "*/*" : undefined });
-        const body = asText && response.ok ? response.bytes?.toString("utf8") : response.body;
+        // Decoded as Response.text() decodes, which is what the package's own transport uses: a leading byte order mark is dropped, where Buffer.toString keeps it as U+FEFF in front of "<?xml", and the .NET XML reader behind the app refuses a document that starts with one.
+        const body = asText && response.ok && response.bytes ? new TextDecoder().decode(response.bytes) : response.body;
         return { ok: response.ok, status: response.status, statusText: response.statusText, body };
     }
 });

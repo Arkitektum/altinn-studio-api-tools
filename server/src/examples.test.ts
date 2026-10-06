@@ -357,6 +357,19 @@ describe("subform examples from the testmotor", () => {
         }
     });
 
+    it("drops a byte order mark in front of a subform file, as the package's own transport does", async () => {
+        const stub = stubTestmotor(
+            { "/api/altinn-app": APPS, "/api/attachment/fts-v1": [attachmentType("DispensasjonssoeknadDataV1", ["DispensasjonssoeknadV1.xml"])] },
+            { "/api/attachment/fts-v1/DispensasjonssoeknadDataV1/DispensasjonssoeknadV1.xml": `\uFEFF${FTS_XML}` }
+        );
+        try {
+            const loaded = await readExample("subform", "DispensasjonssoeknadDataV1", "DispensasjonssoeknadV1.xml", "fts-v1");
+            assert.equal(loaded.content, FTS_XML);
+        } finally {
+            stub.restore();
+        }
+    });
+
     it("404s for a subform file whose source app the testmotor does not hold, without asking it", async () => {
         const stub = stubTestmotor({ "/api/altinn-app": [{ appId: "an-v2", mainFormId: "AN" }] });
         try {
