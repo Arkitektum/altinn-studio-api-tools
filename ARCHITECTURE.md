@@ -6,10 +6,10 @@ A local web tool for posting test data into Altinn 3 apps running under Altinn S
 
 Nothing to do with the custom components, which sit beside it in the same directory and solve a different problem. The one overlap is two small packages this server has in common with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
 
-| Package                             | What it gives this server                                                                                                                                           |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@arkitektum/ftpb-testmotor-client` | Reading the main form examples. `testmotorClient.ts` passes in this server's own `altinnFetch`, so the request timeout and the 502 envelope stay this repository's. |
-| `@arkitektum/ftpb-app-catalogue`    | The apps the target picker offers and the data types it suggests. `appCatalogue.ts` narrows it to the fields `GET /catalogue` serves.                               |
+| Package                             | What it gives this server                                                                                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@arkitektum/ftpb-testmotor-client` | Reading the main form and subform examples. `testmotorClient.ts` passes in this server's own `altinnFetch`, so the request timeout and the 502 envelope stay this repository's. |
+| `@arkitektum/ftpb-app-catalogue`    | The apps the target picker offers and the data types it suggests. `appCatalogue.ts` narrows it to the fields `GET /catalogue` serves.                                           |
 
 Both are published from their own repositories. Change them there rather than here; what is left in this repository is a thin wrapper in each case.
 
@@ -175,7 +175,7 @@ The same holds for the instance listing. The app's `/instances/{party}/active` i
 
 ## Deliberate limits
 
-- Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. There are two exceptions, neither carrying a token. `validationService.ts` posts a payload to the DIBK validation service, because that service knows what a submission requires and `applicationmetadata` does not; `VALIDATION_URL` switches it off. `testmotorClient.ts` reads the main form examples from the FtPB testmotor, because it stamps their date fields afresh on every request and a file committed here would be right only on the day it was committed; `TESTMOTOR_URL` switches it off, leaving the examples still on disk.
+- Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. There are two exceptions, neither carrying a token. `validationService.ts` posts a payload to the DIBK validation service, because that service knows what a submission requires and `applicationmetadata` does not; `VALIDATION_URL` switches it off. `testmotorClient.ts` reads the main form and subform examples from the FtPB testmotor, because it stamps their date fields afresh on every request and a file committed here would be right only on the day it was committed; `TESTMOTOR_URL` switches it off, leaving only what is on disk: the uttalelse form and the attachment dummies.
 - Token claims are decoded for display, never verified. The app does that, and it holds the key.
 - Request bodies are parsed up to 25 MB, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - Altinn calls time out after 30 seconds, configurable with `REQUEST_TIMEOUT_MS`.

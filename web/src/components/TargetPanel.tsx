@@ -103,7 +103,7 @@ export function TargetPanel({
                             {entry.subForms.length > 0 ? ` (+${entry.subForms.length} subform)` : ""}
                         </option>
                     ))}
-                    {/* The catalogue is generated, so an app it has never heard of needs typing. */}
+                    {/* The catalogue is a shared list, so an app it has never heard of needs typing. */}
                     <option value={OTHER}>Other application…</option>
                 </select>
 

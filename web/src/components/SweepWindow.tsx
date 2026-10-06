@@ -59,7 +59,7 @@ interface SweepWindowProps {
  *
  * The comparison in the panel behind this confirms a problem you already suspect. This finds the
  * ones you do not know about, which is why it is worth the hundred or so posts it makes. It is the
- * same sweep as `npm run diff --workspace server`, running on the same service.
+ * same sweep as `yarn workspace server run diff`, running on the same service.
  *
  * A job on the server rather than a request held open here, so this is a poll rather than a stream:
  * it starts one, then asks how it is going until it stops. Closing the window does not stop the

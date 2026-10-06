@@ -2,8 +2,8 @@
  * Reports which content types the locally running apps declare, and which of them have no dummy
  * attachment on disk. Run it with localtest up:
  *
- *   npm run gaps --workspace server
- *   npm run gaps --workspace server -- 1001 dibk/et-v4 dibk/nabovarsel-v5
+ *   yarn workspace server run gaps
+ *   yarn workspace server run gaps 1001 dibk/et-v4 dibk/nabovarsel-v5
  *
  * With no app arguments it walks the whole catalogue. The first argument is the LocalTest user
  * id, defaulting to 1001.

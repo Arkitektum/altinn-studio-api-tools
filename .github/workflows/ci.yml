@@ -44,7 +44,7 @@ jobs:
             - run: yarn install --immutable
 
             # Cheapest first, so an unformatted file does not wait behind the build. Prettier owns the
-            # formatting, and appCatalogue.ts is generated, which is the file that tends to drift.
+            # formatting.
             - run: yarn format:check
 
             # Next cheapest, and the only step that reads what the code means rather than how it is

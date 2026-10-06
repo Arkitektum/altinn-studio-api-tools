@@ -130,8 +130,8 @@ router.get("/catalogue", (_req, res) => {
 });
 
 /**
- * What is on offer for one app. The app matters because the main form examples come from the
- * testmotor, which is keyed by app id rather than by data type. Without one, only the examples
+ * What is on offer for one app. The app matters because the main form and subform examples come
+ * from the testmotor, which is keyed by app id rather than by data type. Without one, only the examples
  * still on disk are listed.
  */
 const examplesSchema = z.object({ app: z.string().trim().default("") });

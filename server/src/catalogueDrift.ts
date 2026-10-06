@@ -4,14 +4,14 @@ import type { TestmotorApp } from "./testmotorClient.js";
 /**
  * Comparing the app catalogue against the testmotor, which is the other list of the same apps.
  *
- * `appCatalogue.ts` is generated from the registry our other Altinn tooling uses, and the testmotor
- * keeps its own list of the apps it holds example data for. Neither knows about the other, so they
+ * `appCatalogue.ts` is read from `@arkitektum/ftpb-app-catalogue`, the list our other Altinn tooling
+ * shares, and the testmotor keeps its own list of the apps it holds example data for. Neither knows about the other, so they
  * drift, and the drift is invisible: an app the catalogue does not name still works if you type it,
  * because examples are asked for by app id rather than looked up here.
  *
  * So this is a check rather than a merge. What to do about drift is a judgement each time, and for
- * an app the catalogue lacks it is usually "regenerate the catalogue" rather than anything this
- * tool should decide. See `catalogueCheck.ts` for the script that runs it.
+ * an app the catalogue lacks it is usually "add it to the shared catalogue package" rather than
+ * anything this tool should decide. See `catalogueCheck.ts` for the script that runs it.
  */
 
 /** An app the testmotor holds data for that the catalogue does not name. */

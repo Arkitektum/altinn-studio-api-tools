@@ -2,9 +2,9 @@
  * Posts every example form file and reports what the app's model did to it. Run it with localtest
  * up:
  *
- *   npm run diff --workspace server
- *   npm run diff --workspace server -- 1001 dibk/et-v4
- *   npm run diff --workspace server -- 1001 dibk/et-v4 --keep
+ *   yarn workspace server run diff
+ *   yarn workspace server run diff 1001 dibk/et-v4
+ *   yarn workspace server run diff 1001 dibk/et-v4 --keep
  *
  * With no app arguments it walks the whole catalogue. The first argument is the LocalTest user id,
  * defaulting to 1001. `--keep` leaves the instances behind; without it each one is hard deleted

@@ -2,10 +2,10 @@
  * Compares the app catalogue against the testmotor's list of the same apps, and says where they
  * have drifted. Needs no localtest, only the testmotor:
  *
- *   npm run catalogue --workspace server
+ *   yarn workspace server run catalogue
  *
- * `appCatalogue.ts` is generated, so the answer to an app the testmotor has and it does not is
- * usually to regenerate it. See catalogueDrift.ts for what is compared and why.
+ * The catalogue comes from `@arkitektum/ftpb-app-catalogue`, so the answer to an app the testmotor
+ * has and it does not is usually to add it there, release it, and update the dependency. See catalogueDrift.ts for what is compared and why.
  */
 import { appCatalogue } from "./appCatalogue.js";
 import { compareCatalogue, subformKey, type SubformFiles } from "./catalogueDrift.js";
@@ -91,7 +91,7 @@ async function main(): Promise<void> {
         console.log("the testmotor holds these, the catalogue does not name them:");
         for (const entry of unlisted) console.log(`  ${entry.appId}  (${entry.dataType})`);
         console.log("  (examples still work if you type the app, since they are asked for by app id)");
-        console.log("  (appCatalogue.ts is generated, so regenerate it rather than editing by hand)\n");
+        console.log("  (the catalogue comes from @arkitektum/ftpb-app-catalogue, so add them there rather than here)\n");
     }
 
     const disk = from("disk");

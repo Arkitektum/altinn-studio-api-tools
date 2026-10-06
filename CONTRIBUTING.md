@@ -72,7 +72,7 @@ Reach for it only for what a render is the only way to see: an effect firing onc
 To run one file:
 
 ```bash
-npx tsx --test server/src/readService.test.ts
+yarn workspace server exec tsx --test src/readService.test.ts
 ```
 
 What is worth a test:

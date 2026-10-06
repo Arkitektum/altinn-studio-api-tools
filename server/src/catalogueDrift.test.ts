@@ -29,7 +29,7 @@ describe("compareCatalogue", () => {
         assert.ok(drift.coverage.every((entry) => entry.source === "testmotor"));
     });
 
-    /* The catalogue is generated, so this is the drift that actually happens. */
+    /* The catalogue is a shared package updated by hand, so this is the drift that actually happens. */
     it("names an app the testmotor holds and the catalogue does not", () => {
         const drift = compareCatalogue(
             [app("varselplanoppstart-v3", "Planvarsel")],
