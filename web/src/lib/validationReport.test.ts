@@ -300,6 +300,16 @@ describe("summarisePrevalidation", () => {
         ...over
     });
 
+    it("says when the report is partial, and when it is an earlier run's", () => {
+        const partial = summarisePrevalidation({ stale: false, refused: ["GjennomfoeringsplanDataV7"], requirements: requirements() });
+        assert.equal(partial.partial, true);
+        assert.equal(partial.superseded, false);
+
+        const earlier = summarisePrevalidation({ stale: false, superseded: true, requirements: requirements() });
+        assert.equal(earlier.partial, false);
+        assert.equal(earlier.superseded, true);
+    });
+
     it("has not run before it has been asked", () => {
         assert.deepEqual(summarisePrevalidation(null), { run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 });
     });

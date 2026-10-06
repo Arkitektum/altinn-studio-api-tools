@@ -232,6 +232,10 @@ export function requirementsFrom(report: ValidationReport | null, inputs: Requir
 export interface Prevalidation {
     requirements: ReportRequirements;
     stale: boolean;
+    /** The forms the service would not answer about, whose findings the report is missing. Absent means none. */
+    refused?: string[];
+    /** A later run got no answer, so this report is from an earlier one. Absent means no. */
+    superseded?: boolean;
 }
 
 /** Required documents the payload still does not have. */
@@ -255,13 +259,15 @@ export function outstandingOf(requirements: ReportRequirements): DocumentRequire
 export function summarisePrevalidation(prevalidation: Prevalidation | null): PrevalidationSummary {
     if (!prevalidation) return { run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 };
 
-    const { requirements, stale } = prevalidation;
+    const { requirements, stale, refused = [], superseded = false } = prevalidation;
     const outstanding = outstandingOf(requirements).length;
     const advised = requirements.recommended.filter((requirement) => !requirement.satisfied).length;
 
     return {
         run: true,
         stale,
+        partial: refused.length > 0,
+        superseded,
         outstanding,
         errors: outstanding + contentIssues(requirements, "error").length,
         warnings: advised + contentIssues(requirements, "warning").length

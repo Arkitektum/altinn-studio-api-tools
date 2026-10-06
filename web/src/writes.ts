@@ -118,6 +118,10 @@ export function usePostRun() {
 export interface ValidationAnswer {
     report: unknown;
     request: ValidationReportRequest;
+    /** The forms the service would not answer about, whose findings this report is therefore missing. */
+    refused: string[];
+    /** A later run got no answer at all, so this report is from an earlier one. */
+    superseded: boolean;
 }
 
 export interface PrevalidationState {
@@ -182,9 +186,22 @@ export function usePrevalidation(elements: DataElementInput[]): PrevalidationSta
             return { result, sent };
         },
         onSuccess: ({ result, sent }) => {
-            // A refusal leaves the previous report alone: the log says what happened, and dropping
-            // what the service last said would lose the list you were working through.
-            if (result.ok) queryClient.setQueryData<ValidationAnswer>(queryKeys.validationReport(), { report: result.report, request: sent });
+            // Whatever this run was told replaces what an earlier run was, even when some forms
+            // were refused: the earlier report is about a payload that has since changed, and the
+            // partial one says which forms it is missing. Only a run told nothing at all leaves the
+            // earlier report up, marked as earlier, so the list you were working through stays.
+            if (result.report !== null && result.report !== undefined) {
+                queryClient.setQueryData<ValidationAnswer>(queryKeys.validationReport(), {
+                    report: result.report,
+                    request: sent,
+                    refused: result.refused ?? [],
+                    superseded: false
+                });
+            } else {
+                queryClient.setQueryData<ValidationAnswer | null>(queryKeys.validationReport(), (previous) =>
+                    previous ? { ...previous, superseded: true } : previous
+                );
+            }
         }
     });
 
@@ -197,7 +214,9 @@ export function usePrevalidation(elements: DataElementInput[]): PrevalidationSta
                 payload: elements.map((element) => element.dataType).filter(Boolean),
                 onInstance: onInstance.map((element) => element.dataType)
             }),
-            stale: !sameSubmission(answer?.request ?? null, request.request)
+            stale: !sameSubmission(answer?.request ?? null, request.request),
+            refused: answer?.refused ?? [],
+            superseded: answer?.superseded ?? false
         };
     }, [answer, dataTypes, elements, onInstance, request.request]);
 

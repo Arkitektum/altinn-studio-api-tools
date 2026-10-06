@@ -40,6 +40,8 @@ export interface ValidationReportResult {
     ok: boolean;
     steps: RunStep[];
     failedAt: string | null;
+    /** The forms the service would not answer about, so a partial report can say whose findings it is missing. Empty when every form was answered. */
+    refused: string[];
     /**
      * The report, exactly as the service answered, unread here.
      *
@@ -72,17 +74,22 @@ export interface ValidationReportResult {
  * total. Carrying on is the better answer: the main form's findings are worth having even when a
  * subform could not be asked about.
  */
+/** Names joined as a sentence would list them: "A", "A and B", "A, B and C". */
+function listOf(names: string[]): string {
+    return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
 export async function fetchValidationReport(request: ValidationReportRequest, mainFormName = "the form"): Promise<ValidationReportResult> {
     const recorder = new StepRecorder();
 
     if (!config.validationUrl) {
         recorder.note("Prevalidate", "No validation service is configured. Set VALIDATION_URL in server/.env.");
-        return { ok: false, steps: recorder.steps, failedAt: "No validation service is configured.", report: null };
+        return { ok: false, steps: recorder.steps, failedAt: "No validation service is configured.", refused: [], report: null };
     }
 
     const asked = splitSubmission(request, mainFormName);
     const parts: ReportPart[] = [];
-    let refused: string | null = null;
+    const refused: string[] = [];
 
     for (const { formName, main, request: body } of asked) {
         const text = JSON.stringify(body, null, 2);
@@ -98,13 +105,15 @@ export async function fetchValidationReport(request: ValidationReportRequest, ma
         );
 
         if (response.ok) parts.push({ formName, main, report: response.body });
-        else refused ??= `The validation service would not answer about ${formName}.`;
+        else refused.push(formName);
     }
 
     return {
-        ok: refused === null,
+        ok: refused.length === 0,
         steps: recorder.steps,
-        failedAt: refused,
+        // Every form it would not answer about, not only the first, since each is a set of findings missing from the report.
+        failedAt: refused.length > 0 ? `The validation service would not answer about ${listOf(refused)}.` : null,
+        refused,
         // Whatever was answered, even when something else was not: a partial report still names
         // documents you are missing, and the step log says which form is absent from it.
         report: parts.length > 0 ? mergeReports(parts, mainFormName) : null

@@ -192,6 +192,8 @@ export interface ValidationReportResult {
     ok: boolean;
     steps: RunStep[];
     failedAt: string | null;
+    /** The forms the service would not answer about. Empty, or absent from an older server, when every form was answered. */
+    refused?: string[];
     /** The report as the service answered it, parsed by `lib/validationReport.ts` rather than here. */
     report: unknown;
 }

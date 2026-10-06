@@ -140,6 +140,18 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                             its rules ask for, so run it again to be sure.
                         </p>
                     )}
+                    {prevalidation?.superseded && (
+                        <p style={{ margin: "0 0 6px" }}>
+                            <strong>This is from an earlier run.</strong> The last prevalidation got no answer from the service, so this is what it
+                            said before. The run log has what happened.
+                        </p>
+                    )}
+                    {(prevalidation?.refused?.length ?? 0) > 0 && (
+                        <p style={{ margin: "0 0 6px" }}>
+                            <strong>Partial report.</strong> The service would not answer about {prevalidation?.refused?.join(", ")}, so whatever it
+                            would have found there is missing below.
+                        </p>
+                    )}
 
                     {/*
                      * What it found, in the rail's own words, so the two can be read against each

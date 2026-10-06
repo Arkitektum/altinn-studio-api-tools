@@ -46,6 +46,10 @@ export interface PrevalidationSummary {
     run: boolean;
     /** The payload has been edited since, so the answer describes something else now. */
     stale: boolean;
+    /** Some forms were refused, so the findings are missing theirs. Absent means no. */
+    partial?: boolean;
+    /** The last run got no answer, so this is an earlier run's. Absent means no. */
+    superseded?: boolean;
     /** Documents the service asks for that the submission does not have. */
     outstanding: number;
     /**
@@ -151,16 +155,18 @@ export type PrevalidationVerdict = "error" | "warning" | "clean";
  * and one the payload has moved on from describes something other than what is on screen.
  */
 export function verdictOf(prevalidation: PrevalidationSummary): PrevalidationVerdict | null {
-    if (!prevalidation.run || prevalidation.stale) return null;
+    if (!prevalidation.run || prevalidation.stale || prevalidation.superseded) return null;
     if (prevalidation.errors > 0) return "error";
-    if (prevalidation.warnings > 0) return "warning";
+    // A partial report that found nothing has not cleared the forms it never heard about.
+    if (prevalidation.warnings > 0 || prevalidation.partial) return "warning";
     return "clean";
 }
 
 function describePrevalidation(prevalidation: PrevalidationSummary): string {
     if (!prevalidation.run) return "not run";
     if (prevalidation.stale) return "payload has changed";
-    return prevalidationCounts(prevalidation);
+    if (prevalidation.superseded) return "last run got no answer";
+    return prevalidation.partial ? `${prevalidationCounts(prevalidation)}, partial` : prevalidationCounts(prevalidation);
 }
 
 /** Whether there is a pdf, and whether it still describes the instance. */

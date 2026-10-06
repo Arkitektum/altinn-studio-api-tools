@@ -711,6 +711,53 @@ describe("App", () => {
     });
 
     /*
+     * A run that some forms were refused in used to leave the previous report on screen, which
+     * described a payload that had since changed. What this run was told replaces it now, marked
+     * as partial, and only a run told nothing at all leaves the earlier report up, marked as such.
+     */
+    it("shows a partial report in place of the previous one, and keeps the previous one only when nothing answered", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+        const finding = (rule: string) => ({ rule, reference: `Ettrinn.Vedlegg.${rule}`, message: `${rule} mangler`, messagetype: "ERROR" });
+        const answers = [
+            { ok: true, steps: [], failedAt: null, refused: [], report: { soknadtype: "ET", messages: [finding("Situasjonsplan")] } },
+            {
+                ok: false,
+                steps: [],
+                failedAt: "The validation service would not answer about GjennomfoeringsplanDataV7.",
+                refused: ["GjennomfoeringsplanDataV7"],
+                report: { soknadtype: "ET", messages: [finding("Tegning")] }
+            },
+            { ok: false, steps: [], failedAt: "The validation service would not answer about ET.", refused: ["ET"], report: null }
+        ];
+        let call = 0;
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/config": { ...config, validationUrl: "http://localhost:6000/validate" },
+            "POST /api/validation-report": () => answers[call++]
+        });
+        await app.wait(700);
+        const prevalidate = async () => {
+            await click(app, findByText(app, "#panel-prevalidation button", "Prevalidate"));
+            await app.wait(50);
+        };
+        const panel = () => app.container.querySelector("#panel-prevalidation")?.textContent ?? "";
+
+        await prevalidate();
+        assert.match(panel(), /Situasjonsplan/);
+
+        await prevalidate();
+        assert.match(panel(), /Partial report\. The service would not answer about GjennomfoeringsplanDataV7/);
+        assert.match(panel(), /Tegning/, "the partial report should replace the previous one");
+        assert.doesNotMatch(panel(), /Situasjonsplan/);
+        assert.equal(railValue(app, "Prevalidation"), "1 document missing, partial");
+
+        await prevalidate();
+        assert.match(panel(), /This is from an earlier run\./);
+        assert.match(panel(), /Tegning/, "with nothing answered, the earlier report stays up");
+        assert.equal(railValue(app, "Prevalidation"), "last run got no answer");
+    });
+
+    /*
      * The rail and the panel are two views of one report, and they used to be readable as
      * disagreeing. The panel coloured its notice by whether a required document was missing, which
      * is a narrower question than the one the notice looks like it is answering, so a report with an

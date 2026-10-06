@@ -236,4 +236,13 @@ describe("verdictOf", () => {
         assert.equal(verdictOf({ run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 }), null);
         assert.equal(verdictOf({ run: true, stale: true, outstanding: 0, errors: 3, warnings: 2 }), null);
     });
+
+    it("has no verdict on an earlier run's report when the last run got no answer", () => {
+        assert.equal(verdictOf({ run: true, stale: false, superseded: true, outstanding: 0, errors: 3, warnings: 0 }), null);
+    });
+
+    it("does not call a partial report that found nothing clean, since the refused forms were never looked at", () => {
+        assert.equal(verdictOf({ run: true, stale: false, partial: true, outstanding: 0, errors: 0, warnings: 0 }), "warning");
+        assert.equal(verdictOf({ run: true, stale: false, partial: true, outstanding: 1, errors: 1, warnings: 0 }), "error");
+    });
 });

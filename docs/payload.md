@@ -120,7 +120,9 @@ Every request carries the whole attachment list, which was measured rather than 
 
 Each message is tagged with the form it came from, and the panel names it where that is not the main form. Without it a `DS` error out of a subform is indistinguishable from one about the main form, and the panel would be naming a problem in a document it never mentions.
 
-A form the service refuses does not stop the rest. Its step says what happened, the report is short by whatever that form would have said, and the result is not `ok`, so the panel keeps the last report it trusted rather than replacing it with a partial one. The whole fan-out is one run log entry with a step per request, named for the form it asked about.
+A form the service refuses does not stop the rest. Its step says what happened, the report is short by whatever that form would have said, and the result is not `ok`. The panel shows that partial report in place of the last one, since the last one was about a payload that has since changed, and says above it which forms the service would not answer about. The rail adds "partial" to its counts, and a partial report that found nothing is amber rather than green, since the refused forms were never looked at. When the main form is the one refused, the report does not borrow a subform's `soknadtype`, so the panel says "this submission" rather than calling an ET submission a DS one.
+
+Only a run the service answered nothing about leaves the earlier report up, marked as coming from an earlier run, and the rail says the last run got no answer. The whole fan-out is one run log entry with a step per request, named for the form it asked about.
 
 ### What it says is required
 
