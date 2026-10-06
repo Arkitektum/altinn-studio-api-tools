@@ -107,6 +107,6 @@ export async function fetchValidationReport(request: ValidationReportRequest, ma
         failedAt: refused,
         // Whatever was answered, even when something else was not: a partial report still names
         // documents you are missing, and the step log says which form is absent from it.
-        report: parts.length > 0 ? mergeReports(parts) : null
+        report: parts.length > 0 ? mergeReports(parts, mainFormName) : null
     };
 }

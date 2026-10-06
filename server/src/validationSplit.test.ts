@@ -70,10 +70,13 @@ const said = (soknadtype: string, messages: Record<string, unknown>[]): unknown 
 
 describe("mergeReports", () => {
     it("reads as one report, holding every part's messages", () => {
-        const merged = mergeReports([
-            part("ET", true, said("ET", [{ rule: "a", messagetype: "ERROR" }])),
-            part("GjennomfoeringsplanDataV7", false, said("GFP", [{ rule: "b", messagetype: "WARNING" }]))
-        ]);
+        const merged = mergeReports(
+            [
+                part("ET", true, said("ET", [{ rule: "a", messagetype: "ERROR" }])),
+                part("GjennomfoeringsplanDataV7", false, said("GFP", [{ rule: "b", messagetype: "WARNING" }]))
+            ],
+            "ET"
+        );
 
         assert.equal(merged.messages.length, 2);
         assert.equal(merged.errors, 1);
@@ -86,10 +89,10 @@ describe("mergeReports", () => {
      * naming a problem in a document it never mentions.
      */
     it("tags each message with the form it came from, the main one included", () => {
-        const merged = mergeReports([
-            part("ET", true, said("ET", [{ rule: "a" }])),
-            part("DispensasjonssoeknadDataV1", false, said("DS", [{ rule: "b" }]))
-        ]);
+        const merged = mergeReports(
+            [part("ET", true, said("ET", [{ rule: "a" }])), part("DispensasjonssoeknadDataV1", false, said("DS", [{ rule: "b" }]))],
+            "ET"
+        );
 
         assert.deepEqual(
             merged.messages.map((message) => [message["rule"], message["fromForm"]]),
@@ -102,7 +105,7 @@ describe("mergeReports", () => {
 
     /* The submission is an ET submission whatever its subforms come back as. */
     it("keeps the main form's soknadtype", () => {
-        const merged = mergeReports([part("ET", true, said("ET", [])), part("GjennomfoeringsplanDataV7", false, said("GFP", []))]);
+        const merged = mergeReports([part("ET", true, said("ET", [])), part("GjennomfoeringsplanDataV7", false, said("GFP", []))], "ET");
         assert.equal(merged.soknadtype, "ET");
     });
 
@@ -112,13 +115,20 @@ describe("mergeReports", () => {
      * two modules is not a thing to leave a merge depending on.
      */
     it("takes the main form's soknadtype wherever in the list it is", () => {
-        const merged = mergeReports([part("GjennomfoeringsplanDataV7", false, said("GFP", [])), part("ET", true, said("ET", []))]);
+        const merged = mergeReports([part("GjennomfoeringsplanDataV7", false, said("GFP", [])), part("ET", true, said("ET", []))], "ET");
         assert.equal(merged.soknadtype, "ET");
     });
 
-    it("falls back to the first part when the main form is not among them", () => {
-        const merged = mergeReports([part("GjennomfoeringsplanDataV7", false, said("GFP", []))]);
-        assert.equal(merged.soknadtype, "GFP");
+    /*
+     * When the main form was refused. Borrowing the first subform's answer used to have the panel
+     * call an ET submission a GFP one, and named the subform as the main form, so its own findings
+     * lost the badge that says which form they came from.
+     */
+    it("borrows nothing from a subform when the main form is not among them", () => {
+        const merged = mergeReports([part("GjennomfoeringsplanDataV7", false, said("GFP", [{ messagetype: "ERROR" }]))], "ET");
+        assert.equal(merged.soknadtype, "");
+        assert.equal(merged.mainFormName, "ET");
+        assert.equal(merged.messages[0]?.fromForm, "GjennomfoeringsplanDataV7");
     });
 
     /*
@@ -126,9 +136,10 @@ describe("mergeReports", () => {
      * and summing the counts would promise findings that are not in the list.
      */
     it("counts the messages it has rather than what the parts claimed", () => {
-        const merged = mergeReports([
-            part("ET", true, { soknadtype: "ET", errors: 99, warnings: 99, messages: [{ messagetype: "ERROR" }, { messagetype: "WARNING" }] })
-        ]);
+        const merged = mergeReports(
+            [part("ET", true, { soknadtype: "ET", errors: 99, warnings: 99, messages: [{ messagetype: "ERROR" }, { messagetype: "WARNING" }] })],
+            "ET"
+        );
 
         assert.equal(merged.errors, 1);
         assert.equal(merged.warnings, 1);
@@ -136,13 +147,13 @@ describe("mergeReports", () => {
 
     /* Anything that is not an error is the milder one, the same reading the parser uses. */
     it("counts a severity it does not recognise as a warning", () => {
-        const merged = mergeReports([part("ET", true, said("ET", [{ messagetype: "INFO" }, { messagetype: undefined }]))]);
+        const merged = mergeReports([part("ET", true, said("ET", [{ messagetype: "INFO" }, { messagetype: undefined }]))], "ET");
         assert.equal(merged.errors, 0);
         assert.equal(merged.warnings, 2);
     });
 
     it("copes with a part that answered something other than a report", () => {
-        const merged = mergeReports([part("ET", true, null), part("GFP", false, "not json"), part("DS", false, { messages: "nor this" })]);
+        const merged = mergeReports([part("ET", true, null), part("GFP", false, "not json"), part("DS", false, { messages: "nor this" })], "ET");
 
         assert.deepEqual(merged.messages, []);
         assert.equal(merged.errors, 0);

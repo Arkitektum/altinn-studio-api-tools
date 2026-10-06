@@ -88,19 +88,25 @@ function messagesOf(report: unknown): RawMessage[] {
  * that absence means the main one.
  *
  * `soknadtype` is the main form's. The submission is an ET submission whatever its subforms come
- * back as, and the panel says "this ET submission" with it.
+ * back as, and the panel says "this ET submission" with it. When the main form was refused there is
+ * no answer to take it from, so it is left empty rather than borrowed from a subform: a subform's
+ * `DS` would have the panel call the whole submission a DS submission.
+ *
+ * `mainFormName` comes from the caller rather than from the parts for the same reason. It is what
+ * tells a main form finding from a subform's, and a subform standing in for a refused main form
+ * would have its own findings lose their badge.
  *
  * The counts are recounted from the messages rather than summed from the parts. A part that failed
  * contributes no messages, and summing would then promise findings that are not in the list.
  */
-export function mergeReports(parts: ReportPart[]): RawReport & { messages: RawMessage[] } {
-    const main = parts.find((part) => part.main) ?? parts[0];
+export function mergeReports(parts: ReportPart[], mainFormName: string): RawReport & { messages: RawMessage[] } {
+    const main = parts.find((part) => part.main);
     const messages = parts.flatMap((part) => messagesOf(part.report).map((message) => ({ ...message, fromForm: part.formName })));
     const severityOf = (message: RawMessage): string => String(message["messagetype"] ?? "").toUpperCase();
 
     return {
         soknadtype: (main?.report as RawReport | null)?.soknadtype ?? "",
-        mainFormName: main?.formName ?? "",
+        mainFormName,
         errors: messages.filter((message) => severityOf(message) === "ERROR").length,
         warnings: messages.filter((message) => severityOf(message) !== "ERROR").length,
         messages
