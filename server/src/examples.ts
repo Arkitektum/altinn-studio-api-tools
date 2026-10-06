@@ -236,8 +236,8 @@ function subformSourceApp(app: string, dataType: string): string | null {
  *
  * Each is asked for separately, so one that fails costs that subform rather than the rest.
  */
-async function readRemoteSubformGroups(app: string): Promise<{ groups: ExampleGroup[]; errors: string[] }> {
-    const errors: string[] = [];
+async function readRemoteSubformGroups(app: string): Promise<{ groups: ExampleGroup[]; errors: Record<string, string> }> {
+    const errors: Record<string, string> = {};
     const groups = await Promise.all(
         catalogueSubformDataTypes().map(async (dataType): Promise<ExampleGroup | null> => {
             const source = subformSourceApp(app, dataType);
@@ -246,7 +246,7 @@ async function readRemoteSubformGroups(app: string): Promise<{ groups: ExampleGr
                 const files = (await fetchTestmotorSubformXml(source, dataType)).map(describeRemote);
                 return files.length > 0 ? { kind: "subform", key: dataType, files } : null;
             } catch (error) {
-                errors.push(error instanceof Error ? error.message : String(error));
+                errors[dataType] = error instanceof Error ? error.message : String(error);
                 return null;
             }
         })
@@ -267,6 +267,10 @@ export interface RemoteFormSource {
      * that came back, the main form's and the subforms', so a data element left without examples can say why.
      */
     error: string | null;
+    /**
+     * The same reasons, each under the data type it cost, so a data element is only told about a failure that is its own. An attachment with no dummy for its content type has no reason here, since nothing failed.
+     */
+    errors: Record<string, string>;
 }
 
 export interface ExampleCatalogue {
@@ -297,24 +301,28 @@ export async function listExamples(app = ""): Promise<ExampleCatalogue> {
         return { dir: config.exampleDataDir, groups: [...forms, ...attachments], remote: null };
     }
 
-    const errors: string[] = [];
+    const mainFormErrors: Record<string, string> = {};
     const mainForm = (async (): Promise<ExampleGroup | null> => {
+        let dataType: string | null = null;
         try {
-            const dataType = await remoteFormDataType(app);
+            dataType = await remoteFormDataType(app);
             if (!dataType) return null;
             const files = (await fetchTestmotorFormXml(app)).map(describeRemote);
             return files.length > 0 ? { kind: "form", key: dataType, files } : null;
         } catch (error) {
-            errors.push(error instanceof Error ? error.message : String(error));
+            // When the testmotor's own list is what failed, it never said which data type the app's main form is, so the catalogue's is used.
+            const key = dataType ?? appCatalogue.find((entry) => entry.app === app)?.dataType;
+            if (key) mainFormErrors[key] = error instanceof Error ? error.message : String(error);
             return null;
         }
     })();
     const [group, subforms] = await Promise.all([mainForm, readRemoteSubformGroups(app)]);
 
+    const errors = { ...subforms.errors, ...mainFormErrors };
     // The main form's reason first, since it is the one most elements are waiting on. A reason the subforms share with
     // it, which is what a testmotor that cannot be reached at all gives, is said once.
-    const reasons = [...new Set([...errors, ...subforms.errors])];
-    const remote: RemoteFormSource = { url: config.testmotorUrl, app, error: reasons.length > 0 ? reasons.join(" ") : null };
+    const reasons = [...new Set([...Object.values(mainFormErrors), ...Object.values(subforms.errors)])];
+    const remote: RemoteFormSource = { url: config.testmotorUrl, app, error: reasons.length > 0 ? reasons.join(" ") : null, errors };
     const groups = [...(group ? [group] : []), ...forms, ...subforms.groups, ...attachments];
     return { dir: config.exampleDataDir, groups, remote };
 }

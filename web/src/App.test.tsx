@@ -308,6 +308,55 @@ describe("App", () => {
         assert.equal(find<HTMLTextAreaElement>(app, "textarea").value, "");
     });
 
+    /*
+     * The testmotor's failures used to be joined into one app-wide error, and every picker with
+     * nothing to offer showed it, including an attachment whose content type simply has no dummy.
+     */
+    describe("a testmotor failure on the example pickers", () => {
+        const failingRoutes: Routes = {
+            ...boot,
+            "GET /api/app/metadata": {
+                appUrl: "http://local.altinn.cloud:8000/dibk/et-v4",
+                metadata: {
+                    id: "dibk/et-v4",
+                    org: "dibk",
+                    mainFormDataType: "ET",
+                    dataTypes: [
+                        { id: "ET", maxCount: 1, allowedContentTypes: ["application/xml"], appLogic: { classRef: "x" } },
+                        { id: "Tegning", allowedContentTypes: ["image/tiff"] }
+                    ]
+                }
+            },
+            "GET /api/examples": {
+                dir: "/examples",
+                groups: [],
+                remote: {
+                    url: "https://testmotor.example",
+                    app: "et-v4",
+                    error: "the ET download failed",
+                    errors: { ET: "the ET download failed" }
+                }
+            }
+        };
+
+        it("is not shown on a picker whose data type had nothing fail", async (t) => {
+            seed({ org: "dibk", app: "et-v4", dataElements: [{ dataType: "Tegning", content: "" }] });
+            const { app } = await mount(t, failingRoutes);
+            await app.wait(500);
+
+            assert.equal(app.container.textContent?.includes("could not be read"), false);
+            assert.ok(app.container.textContent?.includes("No example data for Tegning"));
+        });
+
+        it("is shown on the picker whose data type it cost", async (t) => {
+            seed({ org: "dibk", app: "et-v4", dataElements: [{ dataType: "ET", content: "" }] });
+            const { app } = await mount(t, failingRoutes);
+            await app.wait(500);
+
+            assert.ok(app.container.textContent?.includes("could not be read. the ET download failed"));
+        });
+    });
+
     it("asks the app once its name stops being typed, not once per character", async (t) => {
         const { app, stub } = await mount(t, boot);
 

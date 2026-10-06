@@ -96,12 +96,15 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
     }
 
     if (options.length === 0) {
-        // The main form examples come from the testmotor, so "there are none" and "it could not be
-        // reached" are different answers and the second one is the one worth reading.
-        if (exampleSource?.error) {
+        // The form and subform examples come from the testmotor, so "there are none" and "it could
+        // not be read" are different answers and the second one is the one worth reading. Only this
+        // data type's own failure is told: an attachment whose content type has no dummy has nothing
+        // to do with a subform that could not be downloaded.
+        const reason = exampleSource?.errors?.[dataType];
+        if (reason) {
             return (
                 <div className="notice notice--bad">
-                    No example data for <strong>{dataType}</strong>: the testmotor at {exampleSource.url} could not be read. {exampleSource.error}
+                    No example data for <strong>{dataType}</strong>: the testmotor at {exampleSource?.url} could not be read. {reason}
                 </div>
             );
         }

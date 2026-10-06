@@ -264,6 +264,8 @@ export interface RemoteFormSource {
     app: string;
     /** Null when the fetch worked, including when the testmotor does not hold this app. */
     error: string | null;
+    /** Why the examples for each data type could not be had, keyed by data type. A data type with no entry had nothing fail. */
+    errors?: Record<string, string>;
 }
 
 export interface ExamplesResponse {

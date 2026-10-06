@@ -218,7 +218,7 @@ export async function planSweep(token: string, request: SweepRequest): Promise<{
         // Per app rather than once for the sweep: the main form examples come from the testmotor,
         // keyed by app id, so what is on offer moves as the sweep walks the catalogue.
         const { groups, remote } = await listExamples(target.app);
-        if (remote?.error) skipped.push(`${label}: main form examples unavailable, ${remote.error}`);
+        if (remote?.error) skipped.push(`${label}: testmotor examples unavailable, ${remote.error}`);
 
         // Only what the app has a model for, since only those go through a model to be mangled.
         for (const dataType of dataTypes.filter((entry) => entry.appLogic)) {

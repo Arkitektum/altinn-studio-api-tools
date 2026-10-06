@@ -67,7 +67,7 @@ describe("main form examples from the testmotor", () => {
         try {
             const { groups, remote } = await listExamples("an-v2");
 
-            assert.deepEqual(remote, { url: "https://app-ftpb-testmotor.azurewebsites.net", app: "an-v2", error: null });
+            assert.deepEqual(remote, { url: "https://app-ftpb-testmotor.azurewebsites.net", app: "an-v2", error: null, errors: {} });
 
             const an = groups.find((group) => group.key === "AN");
             assert.ok(an, "expected an AN group");
@@ -154,6 +154,10 @@ describe("main form examples from the testmotor", () => {
 
             assert.ok(remote?.error, "expected the failure to be reported");
             assert.match(remote.error, /500/);
+            // Every data type failed, each filed under its own name. The testmotor's list is what failed, so it never said
+            // which data type an-v2's main form is, and the catalogue's is used.
+            assert.match(remote.errors.AN ?? "", /\/api\/altinn-app answered 500/);
+            assert.match(remote.errors.DispensasjonssoeknadDataV1 ?? "", /\/api\/altinn-app answered 500/);
             // Every request failed the same way, and saying so once per subform as well would bury it.
             assert.equal(remote.error.split("/api/altinn-app answered 500").length, 2, "expected the reason once");
             // The attachment dummies are still worth having. The subforms came from the testmotor too, so they are gone.
@@ -444,6 +448,9 @@ describe("subform examples from the testmotor", () => {
             );
             assert.ok(groups.some((group) => group.key === "GjennomfoeringsplanDataV7"));
             assert.match(remote?.error ?? "", /\(file Mangler\.xml\) answered 404/);
+            // Filed under the subform it cost. The subform that downloaded has no entry, so its picker is not told about this.
+            assert.match(remote?.errors.DispensasjonssoeknadDataV1 ?? "", /\(file Mangler\.xml\) answered 404/);
+            assert.equal(remote?.errors.GjennomfoeringsplanDataV7, undefined);
         } finally {
             stub.restore();
         }
