@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { postDataToApp } from "./runService.js";
+import { attachmentDisposition, postDataToApp } from "./runService.js";
 
 interface Call {
     method: string;
     url: string;
     body: string | null;
     contentType: string | null;
+    contentDisposition: string | null;
 }
 
 const APP_BASE = "http://local.altinn.cloud:8000/dibk/et-v4";
@@ -28,7 +29,8 @@ function stubAltinn(handlers: [match: string, respond: () => { status?: number; 
             method,
             url,
             body: typeof init?.body === "string" ? init.body : init?.body instanceof Uint8Array ? Buffer.from(init.body).toString("utf8") : null,
-            contentType: headers.get("content-type")
+            contentType: headers.get("content-type"),
+            contentDisposition: headers.get("content-disposition")
         });
 
         assert.equal(headers.get("authorization"), "Bearer test-token", `missing bearer on ${url}`);
@@ -382,6 +384,25 @@ describe("binary data elements", () => {
         assert.equal(step?.requestPreview, "[10 bytes, base64 encoded]");
     });
 
+    it("uploads a file whose name a header cannot carry as it is, instead of failing the run", async () => {
+        const stub = stubAltinn([
+            ["GET applicationmetadata", () => metadata([{ id: "vedlegg", maxCount: 0 }])],
+            ["POST /instances?instanceOwnerPartyId", () => ({ status: 201, json: { id: `510001/${GUID}`, data: [] } })],
+            ["POST /data?dataType=vedlegg", () => ({ status: 201, json: {} })],
+            [`GET /instances/510001/${GUID}`, () => ({ json: { id: `510001/${GUID}` } })]
+        ]);
+        active = stub;
+
+        const result = await postDataToApp("test-token", {
+            ...baseRequest,
+            dataElements: [{ dataType: "vedlegg", content: "%PDF", contentType: "application/pdf", filename: "sør–plan.pdf" }]
+        });
+
+        assert.equal(result.ok, true);
+        const upload = stub.calls.find((call) => call.url.includes("/data?dataType=vedlegg"));
+        assert.equal(upload?.contentDisposition, "attachment; filename=\"s_r_plan.pdf\"; filename*=UTF-8''s%C3%B8r%E2%80%93plan.pdf");
+    });
+
     it("carries decoded bytes into a multipart body", async () => {
         const pdf = Buffer.from("%PDF-1.4 mock\n%%EOF\n");
         const stub = stubAltinn([
@@ -411,5 +432,44 @@ describe("binary data elements", () => {
         assert.match(body, /Content-Type: application\/pdf/);
         assert.ok(body.includes("%PDF-1.4 mock"), "expected the decoded pdf bytes in the part");
         assert.ok(!body.includes(pdf.toString("base64")), "base64 must not be sent verbatim");
+    });
+});
+
+describe("attachmentDisposition", () => {
+    it("leaves a plain ASCII name as it is in both forms", () => {
+        assert.equal(attachmentDisposition("tegning.pdf"), "attachment; filename=\"tegning.pdf\"; filename*=UTF-8''tegning.pdf");
+    });
+
+    it("keeps the full name in filename* and gives filename an ASCII stand-in", () => {
+        // å loses its ring in the stand-in, ø has no ASCII base and becomes an underscore.
+        assert.equal(
+            attachmentDisposition("Gårdskart ø.pdf"),
+            "attachment; filename=\"Gardskart _.pdf\"; filename*=UTF-8''G%C3%A5rdskart%20%C3%B8.pdf"
+        );
+        // The narrow no-break space macOS puts in screenshot names, which the stand-in reads as a plain space.
+        assert.equal(
+            attachmentDisposition("Skjermbilde 10.05\u202fAM.png"),
+            "attachment; filename=\"Skjermbilde 10.05 AM.png\"; filename*=UTF-8''Skjermbilde%2010.05%E2%80%AFAM.png"
+        );
+    });
+
+    it("produces a header Node can send for any name", () => {
+        for (const name of ["sør–plan.pdf", "😀.png", "日本.pdf", 'a"b\\c.pdf']) {
+            assert.doesNotThrow(() => new Headers({ "content-disposition": attachmentDisposition(name) }), name);
+        }
+    });
+
+    it("escapes the characters RFC 5987 does not allow unencoded, which encodeURIComponent leaves alone", () => {
+        assert.match(attachmentDisposition("plan (2)*'.pdf"), /filename\*=UTF-8''plan%20%282%29%2A%27\.pdf$/);
+    });
+
+    it("drops quotes and backslashes from the stand-in so it cannot end the quoted string", () => {
+        assert.match(attachmentDisposition('a"b\\c.pdf'), /^attachment; filename="a_b_c\.pdf";/);
+    });
+
+    it("drops control characters, so a name cannot end the header or start another", () => {
+        const header = attachmentDisposition("a\r\nX-Injected: 1.pdf");
+        assert.doesNotMatch(header, /[\r\n]/);
+        assert.match(header, /filename="aX-Injected: 1\.pdf"/);
     });
 });

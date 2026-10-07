@@ -56,17 +56,19 @@ function reportable(headers: Headers): Record<string, string> {
  * put the failing status into a step log.
  */
 export async function altinnFetch(request: AltinnRequest): Promise<AltinnResponse> {
-    const headers = new Headers(request.headers ?? {});
-    headers.set("accept", request.accept ?? "application/json");
-    if (request.token) headers.set("authorization", `Bearer ${request.token}`);
-    if (request.contentType && request.body !== undefined) {
-        headers.set("content-type", request.contentType);
-    }
-
-    const requestHeaders = reportable(headers);
-
+    let requestHeaders: Record<string, string> = {};
     let response: Response;
     try {
+        // Built inside the try because a header value Node cannot send throws here, and that has to come back as a
+        // failed request like any other rather than escape as an exception.
+        const headers = new Headers(request.headers ?? {});
+        headers.set("accept", request.accept ?? "application/json");
+        if (request.token) headers.set("authorization", `Bearer ${request.token}`);
+        if (request.contentType && request.body !== undefined) {
+            headers.set("content-type", request.contentType);
+        }
+        requestHeaders = reportable(headers);
+
         response = await fetch(request.url, {
             method: request.method ?? "GET",
             headers,

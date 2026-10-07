@@ -244,7 +244,7 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
 
             const headers: Record<string, string> = {};
             if (element.filename) {
-                headers["content-disposition"] = `attachment; filename="${element.filename.replace(/"/g, "")}"`;
+                headers["content-disposition"] = attachmentDisposition(element.filename);
             }
 
             const dataUrl = replacing
@@ -310,6 +310,26 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
         instance,
         failedAt: null
     };
+}
+
+/**
+ * The Content-Disposition header for an uploaded file, per RFC 6266.
+ *
+ * A header can only carry Latin-1, and Node refuses anything above it outright, so a name like "sør–plan.pdf" or a
+ * macOS screenshot name (which has a narrow no-break space in it) would stop the run. The full name goes in
+ * `filename*` as percent-encoded UTF-8, which RFC 6266 has a recipient prefer when it understands it, and `filename`
+ * carries an ASCII stand-in for one that does not. Control characters are dropped from both, so a name cannot end the
+ * header early.
+ */
+export function attachmentDisposition(filename: string): string {
+    // eslint-disable-next-line no-control-regex
+    const name = filename.replace(/[\u0000-\u001f\u007f]/g, "");
+    const fallback = name
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\x20-\x7e]|["\\]/g, "_");
+    const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+    return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }
 
 function failed(

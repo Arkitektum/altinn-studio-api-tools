@@ -30,6 +30,20 @@ describe("altinnFetch request headers", () => {
         assert.equal(response.requestHeaders["accept"], "application/json");
     });
 
+    it("answers a header Node cannot send with a failed request instead of throwing", async () => {
+        stub();
+
+        const response = await altinnFetch({
+            url: "http://localhost:1/data",
+            token: "a-real-token",
+            headers: { "content-disposition": 'filename="sør–plan.pdf"' }
+        });
+
+        assert.equal(response.ok, false);
+        assert.equal(response.status, 502);
+        assert.match(String((response.body as { error: string }).error), /ByteString/);
+    });
+
     it("reports the headers even when the request never got through", async () => {
         globalThis.fetch = (async () => {
             throw new Error("connect ECONNREFUSED");
