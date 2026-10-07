@@ -10,5 +10,5 @@
         "react/set-state-in-effect": "off",
         "react/preserve-manual-memoization": "off"
     },
-    "ignorePatterns": ["**/dist/**", "**/node_modules/**", "temp/**", "examples/**"]
+    "ignorePatterns": ["**/dist/**", "**/node_modules/**", "examples/**"]
 }
