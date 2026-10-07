@@ -13,6 +13,15 @@ export const config = {
      * curl. Set `HOST=0.0.0.0` to reach it from elsewhere, knowing what that hands out.
      */
     host: process.env.HOST ?? "127.0.0.1",
+    /**
+     * Host names the api answers to besides `localhost` and IP addresses, comma-separated. Anything else is refused,
+     * which is what stops a web page from reaching the api by pointing its own domain at this machine. Add a name here
+     * to reach the api by it, for instance a container's name when `API_URL` points the web server at one.
+     */
+    allowedHosts: (process.env.ALLOWED_HOSTS ?? "")
+        .split(",")
+        .map((name) => name.trim().toLowerCase())
+        .filter(Boolean),
     /** Origin allowed through CORS. The Vite dev server proxies /api, so this only matters if you serve the UI elsewhere. */
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
     requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS ?? 30_000),

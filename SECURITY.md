@@ -47,6 +47,8 @@ That is a decision rather than a default. Anyone who can reach port 4000 can use
 
 `HOST=0.0.0.0` opens it to the network, for a container or a colleague's browser. Do that knowing what it hands out, and not on a network you do not trust.
 
+Binding loopback does not keep out a web page in your own browser. A page can point its own domain at 127.0.0.1 after it has loaded and then call the api as if same-origin, which is DNS rebinding, and CORS does nothing about it. Such a request still names the page's domain in its `Host` header, so the api answers only to `localhost`, to IP addresses, and to the names in `ALLOWED_HOSTS`, and refuses anything else with a 403 before any route runs. Add a name there if you reach the api by one, such as a container name in `API_URL`.
+
 `WEB_ORIGIN` controls the single origin allowed through CORS, defaulting to `http://localhost:5173`.
 
 ## Input handling

@@ -17,6 +17,7 @@ Nothing needs configuring if your localtest uses the default ports. Otherwise co
 | `PORT`                    | `4000`                            | The api                                                                                |
 | `HOST`                    | `127.0.0.1`                       | What the api binds to. `0.0.0.0` opens it to the network                               |
 | `WEB_ORIGIN`              | `http://localhost:5173`           | The single origin allowed through CORS                                                 |
+| `ALLOWED_HOSTS`           | none                              | Host names the api answers to besides `localhost` and IP addresses, comma-separated    |
 | `REQUEST_TIMEOUT_MS`      | `30000`                           | How long a call to Altinn may take                                                     |
 
 `API_URL` is read by the Vite dev server if you serve the api somewhere other than `http://127.0.0.1:4000`.

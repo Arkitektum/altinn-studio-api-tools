@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { ZodError } from "zod";
 import { config } from "./config.js";
+import { isAllowedHost } from "./hostCheck.js";
 import { HttpError } from "./httpError.js";
 import { router } from "./routes.js";
 
@@ -39,6 +40,15 @@ function requestBodyErrorStatus(error: unknown): number | null {
  */
 export function createApp() {
     const app = express();
+
+    // First, so a request by a name that is not ours is refused before anything reads its body. See hostCheck.ts.
+    app.use((req, res, next) => {
+        if (!isAllowedHost(req.headers.host, config.allowedHosts)) {
+            res.status(403).json({ error: "Host not allowed. Add it to ALLOWED_HOSTS to reach the api by that name." });
+            return;
+        }
+        next();
+    });
 
     app.use(express.json({ limit: "25mb" }));
 

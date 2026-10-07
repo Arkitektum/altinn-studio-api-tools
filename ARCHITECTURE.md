@@ -81,6 +81,7 @@ server/src
   jwt.ts              claim decoding, never verification
   urls.ts             app url building
   config.ts           env with defaults
+  hostCheck.ts        refuses a request by a name that is not ours, against DNS rebinding
 web/src
   main.tsx            the providers, in the order they depend on each other
   App.tsx             the layout, and the state that is nobody's answer

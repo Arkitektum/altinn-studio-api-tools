@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
-import type { Server } from "node:http";
+import { request as httpRequest, type Server } from "node:http";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createApp } from "./app.js";
 import { config } from "./config.js";
@@ -163,7 +163,34 @@ describe("requests that are turned away", () => {
 
         assert.equal(headers.get("access-control-allow-origin"), config.webOrigin);
     });
+
+    it("refuses a request addressed to a name that is not ours, as a page that rebound its domain would send", async () => {
+        assert.equal(await statusForHost("attacker.example:4000"), 403);
+        // The token list is the thing worth reaching, so check the refusal comes before any route.
+        assert.equal(await statusForHost("attacker.example", "/api/tokens"), 403);
+    });
+
+    it("answers a request addressed to localhost or an IP address", async () => {
+        assert.equal(await statusForHost("localhost:4000"), 200);
+        assert.equal(await statusForHost("127.0.0.1:4000"), 200);
+        assert.equal(await statusForHost("[::1]:4000"), 200);
+    });
 });
+
+/**
+ * The status the api answers a health check with, given a Host header. fetch will not send a Host other than the
+ * URL's, so this goes through node:http.
+ */
+function statusForHost(host: string, path = "/api/health"): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const req = httpRequest(`${base}${path}`, { headers: { host } }, (res) => {
+            res.resume();
+            resolve(res.statusCode ?? 0);
+        });
+        req.on("error", reject);
+        req.end();
+    });
+}
 
 describe("input the schemas reject", () => {
     it("names the field that was missing", async () => {
