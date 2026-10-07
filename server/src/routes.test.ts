@@ -222,6 +222,62 @@ describe("input the schemas reject", () => {
         assert.deepEqual(issuePaths(body), ["app", "org", "tokenId"]);
     });
 
+    it("refuses an org or app that would change the path of the Altinn URL it goes into", async () => {
+        for (const [org, app] of [
+            ["..", "et-v4"],
+            ["dibk/et-v4", "et-v4"],
+            ["dibk", "../../storage/api/v1/instances"],
+            ["dibk", "et-v4?x=1"],
+            ["dibk", "et v4"]
+        ]) {
+            const { status, body } = await call(`/api/app/metadata?tokenId=x&org=${encodeURIComponent(org)}&app=${encodeURIComponent(app)}`);
+
+            assert.equal(status, 400, `${org} ${app}`);
+            assert.deepEqual(issuePaths(body), [org === "dibk" ? "app" : "org"], `${org} ${app}`);
+        }
+    });
+
+    it("refuses a party id that is not a number and an instance id that is not a guid", async () => {
+        const { status, body } = await call(
+            "/api/instances/data-element?tokenId=x&org=dibk&app=et-v4&instanceOwnerPartyId=512345/x&instanceGuid=../abc&dataGuid=abc"
+        );
+
+        assert.equal(status, 400);
+        assert.deepEqual(issuePaths(body), ["dataGuid", "instanceGuid", "instanceOwnerPartyId"]);
+    });
+
+    it("refuses the same in a run's body and a sweep's targets", async () => {
+        const run = await call("/api/runs", {
+            method: "POST",
+            json: {
+                tokenId: "x",
+                org: "dibk",
+                app: "..",
+                instanceOwnerPartyId: "51x",
+                instanceGuid: "nope",
+                dataElements: [{ dataType: "ET", content: "" }]
+            }
+        });
+        assert.equal(run.status, 400);
+        assert.deepEqual(issuePaths(run.body), ["app", "instanceGuid", "instanceOwnerPartyId"]);
+
+        const sweep = await call("/api/sweep", {
+            method: "POST",
+            json: { tokenId: "x", instanceOwnerPartyId: "510001", targets: [{ org: "dibk/x", app: "et-v4" }] }
+        });
+        assert.equal(sweep.status, 400);
+        assert.deepEqual(issuePaths(sweep.body), ["targets.0.org"]);
+    });
+
+    it("lets the shapes Altinn uses through to the next check", async () => {
+        // A well-formed request with an unknown token fails on the token, which is after the schema.
+        const { status } = await call(
+            `/api/instances/data-element?tokenId=does-not-exist&org=dibk&app=et-v4&instanceOwnerPartyId=512345&instanceGuid=99d0632c-5917-448c-8ab6-a5d3b681376b&dataGuid=99D0632C-5917-448C-8AB6-A5D3B681376B`
+        );
+
+        assert.equal(status, 404);
+    });
+
     it("rejects an example file of a kind that does not exist", async () => {
         const { status, body } = await call("/api/examples/file?kind=nonsense&name=x");
 

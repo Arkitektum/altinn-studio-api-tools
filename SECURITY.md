@@ -57,6 +57,7 @@ Binding loopback does not keep out a web page in your own browser. A page can po
 - **Request bodies are bounded.** Express parses up to 25 MB, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
 - **Requests to Altinn time out.** 30 seconds by default, `REQUEST_TIMEOUT_MS` to change it.
 - **Every api input is parsed.** Endpoints validate with zod and answer 400 with the offending path on a mismatch.
+- **What goes into an Altinn URL's path is checked for its shape.** `org` and `app` may only hold letters, digits and hyphens, a party id only digits, and an instance or data element id must be a guid, so none of them can walk a request, bearer token included, to another path on the app host.
 
 ## Destructive operations
 

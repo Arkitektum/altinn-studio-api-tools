@@ -29,6 +29,30 @@ const asyncHandler =
         handler(req, res).catch(next);
     };
 
+/*
+ * The parts of a request that end up in an Altinn URL's path. Each is checked for the shape Altinn gives it rather than
+ * only for being present, since none of them is encoded on the way: a "../" in an org would walk the request, bearer
+ * token and all, to another path on the app host, and "dibk/et-v4" pasted into the org field would quietly address
+ * something else.
+ */
+const orgField = z
+    .string()
+    .trim()
+    .min(1, "org is required")
+    .regex(/^[a-z0-9][a-z0-9-]*$/i, "org may only hold letters, digits and hyphens");
+const appField = z
+    .string()
+    .trim()
+    .min(1, "app is required")
+    .regex(/^[a-z0-9][a-z0-9-]*$/i, "app may only hold letters, digits and hyphens");
+const partyIdField = z.string().trim().min(1, "instanceOwnerPartyId is required").regex(/^\d+$/, "instanceOwnerPartyId must be a number");
+const guid = (name: string) =>
+    z
+        .string()
+        .trim()
+        .min(1, `${name} is required`)
+        .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, `${name} must be a guid`);
+
 const testUserTokenSchema = z.object({
     userId: z.string().trim().min(1, "userId is required"),
     label: z.string().trim().optional()
@@ -41,8 +65,8 @@ const rawTokenSchema = z.object({
 
 const appQuerySchema = z.object({
     tokenId: z.string().min(1),
-    org: z.string().trim().min(1),
-    app: z.string().trim().min(1)
+    org: orgField,
+    app: appField
 });
 
 const dataElementSchema = z.object({
@@ -56,12 +80,12 @@ const dataElementSchema = z.object({
 const runSchema = z
     .object({
         tokenId: z.string().min(1, "tokenId is required"),
-        org: z.string().trim().min(1, "org is required"),
-        app: z.string().trim().min(1, "app is required"),
-        instanceOwnerPartyId: z.string().trim().min(1, "instanceOwnerPartyId is required"),
+        org: orgField,
+        app: appField,
+        instanceOwnerPartyId: partyIdField,
         dataElements: z.array(dataElementSchema).min(1, "at least one data element is required"),
         mode: z.enum(["sequential", "multipart", "existing"]).optional(),
-        instanceGuid: z.string().trim().optional(),
+        instanceGuid: guid("instanceGuid").optional(),
         instanceTemplate: z.record(z.string(), z.unknown()).optional(),
         validate: z.boolean().optional(),
         advanceProcess: z.boolean().optional()
@@ -72,11 +96,11 @@ const runSchema = z
     });
 
 const partyLookupSchema = appQuerySchema.extend({
-    instanceOwnerPartyId: z.string().trim().min(1)
+    instanceOwnerPartyId: partyIdField
 });
 
 const instanceLookupSchema = partyLookupSchema.extend({
-    instanceGuid: z.string().trim().min(1)
+    instanceGuid: guid("instanceGuid")
 });
 
 export const router = Router();
@@ -285,7 +309,7 @@ router.delete(
 );
 
 const readDataElementSchema = instanceLookupSchema.extend({
-    dataGuid: z.string().trim().min(1, "dataGuid is required")
+    dataGuid: guid("dataGuid")
 });
 
 router.get(
@@ -320,7 +344,7 @@ router.get(
  * document, which has no business in a query string.
  */
 const compareSchema = instanceLookupSchema.extend({
-    dataGuid: z.string().trim().min(1, "dataGuid is required"),
+    dataGuid: guid("dataGuid"),
     // Optional: without it the differences come back with no field types, which is a loss and
     // not a failure.
     dataType: z.string().trim().optional(),
@@ -400,9 +424,9 @@ router.put(
 const sweepSchema = z.object({
     tokenId: z.string().trim().min(1),
     /** Where the instances are posted. The token's own party is the one it is certainly allowed. */
-    instanceOwnerPartyId: z.string().trim().min(1),
+    instanceOwnerPartyId: partyIdField,
     /** Empty walks the whole catalogue, which is the usual way to run it. */
-    targets: z.array(z.object({ org: z.string().trim().min(1), app: z.string().trim().min(1) })).default([]),
+    targets: z.array(z.object({ org: orgField, app: appField })).default([]),
     keep: z.boolean().default(false)
 });
 
