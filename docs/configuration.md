@@ -20,6 +20,8 @@ Nothing needs configuring if your localtest uses the default ports. Otherwise co
 | `ALLOWED_HOSTS`           | none                              | Host names the api answers to besides `localhost` and IP addresses, comma-separated    |
 | `REQUEST_TIMEOUT_MS`      | `30000`                           | How long a call to Altinn may take                                                     |
 
+`PORT` and `REQUEST_TIMEOUT_MS` must be whole numbers. Anything else stops the api at startup with a message naming the variable, and an empty value means the default.
+
 `API_URL` is read by the Vite dev server if you serve the api somewhere other than `http://127.0.0.1:4000`.
 
 The resolved `appHost` and `localtestUrl` are shown in the header and available from `GET /api/config`, so you can tell at a glance which Altinn you are pointed at.

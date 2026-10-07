@@ -5,8 +5,35 @@ import { fileURLToPath } from "node:url";
 // server/src (tsx) or server/dist (compiled) → repo root
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
+/**
+ * Reads a whole-number setting from the environment, or its default when it is unset or empty.
+ *
+ * Checked here, at startup, because a bad value used to fail late and confusingly: `REQUEST_TIMEOUT_MS=30s` became
+ * NaN and every Altinn call came back a 502 quoting ERR_OUT_OF_RANGE, and an empty `REQUEST_TIMEOUT_MS=` became 0,
+ * so every request timed out at once.
+ *
+ * @param env - Where to read it, `process.env` unless a test hands in its own.
+ * @param name - The variable's name, used in the error.
+ * @param fallback - The value when the variable is unset or empty.
+ * @param min - The smallest value allowed.
+ * @param max - The largest value allowed.
+ * @returns The setting.
+ * @throws {Error} If the variable is set to anything but a whole number between min and max.
+ */
+export function readWholeNumber(env: Record<string, string | undefined>, name: string, fallback: number, min: number, max: number): number {
+    const raw = env[name]?.trim();
+    if (!raw) {
+        return fallback;
+    }
+    const value = Number(raw);
+    if (!/^\d+$/.test(raw) || value < min || value > max) {
+        throw new Error(`${name} must be a whole number from ${min} to ${max}, but is "${env[name]}".`);
+    }
+    return value;
+}
+
 export const config = {
-    port: Number(process.env.PORT ?? 4000),
+    port: readWholeNumber(process.env, "PORT", 4000, 1, 65_535),
     /**
      * Loopback, so the api answers this machine and nothing else. It holds live test tokens and
      * will post with them for anyone who asks, and CORS does not help: it restrains browsers, not
@@ -24,7 +51,8 @@ export const config = {
         .filter(Boolean),
     /** Origin allowed through CORS. The Vite dev server proxies /api, so this only matters if you serve the UI elsewhere. */
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
-    requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS ?? 30_000),
+    /** How long one request to Altinn may take, in milliseconds. Capped at a day, far beyond any real use. */
+    requestTimeoutMs: readWholeNumber(process.env, "REQUEST_TIMEOUT_MS", 30_000, 1, 86_400_000),
 
     /** Where the locally running Altinn apps are served (Altinn Studio localtest proxy). */
     appHost: (process.env.ALTINN_APP_HOST ?? "http://local.altinn.cloud:8000").replace(/\/+$/, ""),
