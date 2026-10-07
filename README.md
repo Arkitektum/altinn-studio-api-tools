@@ -83,3 +83,7 @@ Main form and subform examples come from the FtPB testmotor, which keeps the mai
 - [ARCHITECTURE.md](ARCHITECTURE.md) for why there is a server at all, how a request flows through it, and where state lives.
 - [CONTRIBUTING.md](CONTRIBUTING.md) for the dev loop, the test approach and the house style.
 - [SECURITY.md](SECURITY.md) for how test tokens are handled and what the browser stores.
+
+## Licence
+
+[MIT](LICENSE)

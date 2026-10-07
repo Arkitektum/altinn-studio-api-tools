@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "description": "Get Altinn test tokens and post test data to Altinn 3 apps",
+    "license": "MIT",
     "workspaces": [
         "server",
         "web"
