@@ -223,13 +223,14 @@ describe("input the schemas reject", () => {
     });
 
     it("refuses an org or app that would change the path of the Altinn URL it goes into", async () => {
-        for (const [org, app] of [
+        const cases: [org: string, app: string][] = [
             ["..", "et-v4"],
             ["dibk/et-v4", "et-v4"],
             ["dibk", "../../storage/api/v1/instances"],
             ["dibk", "et-v4?x=1"],
             ["dibk", "et v4"]
-        ]) {
+        ];
+        for (const [org, app] of cases) {
             const { status, body } = await call(`/api/app/metadata?tokenId=x&org=${encodeURIComponent(org)}&app=${encodeURIComponent(app)}`);
 
             assert.equal(status, 400, `${org} ${app}`);
