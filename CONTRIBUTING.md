@@ -2,7 +2,7 @@
 
 ## Getting set up
 
-You need Node 22.12 or later. The test scripts hand `src/**/*.test.ts`, and in web `src/**/*.test.tsx` as well, to `node --test` and let node expand them, which node has only done since 22, and Vite 8 wants 22.12 as well.
+You need Node 24 or later. It is what CI runs, and the shared `@arkitektum/ftpb-app-catalogue` and `@arkitektum/ftpb-testmotor-client` packages this depends on ask for it. The tests run with `tsx --test`, the server's over `src/**/*.test.ts` and the web's over `.test.ts` and `.test.tsx` as well.
 
 Yarn 4 is used here, managed by [Corepack](https://nodejs.org/api/corepack.html). Enable it once:
 

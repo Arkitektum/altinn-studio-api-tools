@@ -24,8 +24,7 @@ jobs:
 
             - uses: actions/setup-node@v6
               with:
-                  # The test scripts pass `src/**/*.test.ts` and, in web, `.test.tsx` to node --test and let node
-                  # expand them, which needs Node 22 or later. The shell leaves them alone, having nothing to match.
+                  # The version package.json's engines field asks for, and the one the shared packages need.
                   node-version: 24
 
             # setup-node is pinned to v6 and given no cache setting, matching the other repositories. v5 turns

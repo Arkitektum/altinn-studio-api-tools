@@ -7,7 +7,7 @@ nav_order: 2
 
 ## Running it
 
-You need Node 22.12 or later, and Altinn Studio localtest running with apps served on `local.altinn.cloud:8000` and LocalTest itself on `localhost:5101`.
+You need Node 24 or later, and Altinn Studio localtest running with apps served on `local.altinn.cloud:8000` and LocalTest itself on `localhost:5101`.
 
 Yarn 4 is used here, managed by [Corepack](https://nodejs.org/api/corepack.html). Enable it once:
 
