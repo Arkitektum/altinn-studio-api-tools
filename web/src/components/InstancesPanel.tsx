@@ -286,15 +286,15 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                 </div>
             )}
 
-            <div style={{ marginTop: 14 }}>
+            <div className="above-m">
                 <span className="legend">Will call</span>
-                <pre className="dump" style={{ margin: 0 }}>
+                <pre className="dump flush">
                     <span className="method method--post">POST</span> {preview}
                 </pre>
             </div>
 
             {error ? (
-                <div style={{ marginTop: 12 }}>
+                <div className="above-m">
                     <ErrorNotice error={error} />
                 </div>
             ) : null}
@@ -385,7 +385,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                     </button>
                                 )}
                             </div>
-                            <p className="field__hint" style={{ margin: 0 }}>
+                            <p className="field__hint flush">
                                 {clearing
                                     ? `One DELETE each, one after another, and the completed ones are left alone. ${softDeleted.length} of them.`
                                     : "Storage keeps a soft deleted instance forever, so they come back on every listing. This takes them out for good."}

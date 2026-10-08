@@ -108,11 +108,7 @@ export function PayloadPanel({
             }
         >
             {/* What the last load had to say, above the list it loaded. */}
-            {loadNotice && (
-                <div className="notice notice--warn" style={{ marginBottom: 14 }}>
-                    {loadNotice}
-                </div>
-            )}
+            {loadNotice && <div className="notice notice--warn below-m">{loadNotice}</div>}
 
             {dataElements.map((element, index) => (
                 <PayloadElement

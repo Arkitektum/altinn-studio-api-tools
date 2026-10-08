@@ -118,7 +118,7 @@ export function SweepWindow({ onClose }: SweepWindowProps) {
             bodyClassName="modal__stack"
         >
             <Explained
-                style={{ margin: 0 }}
+                className="flush"
                 lead="Posts every example this tool has, one instance per file, and reports what each app's model did to it."
             >
                 A field the model has no place for is dropped on the way in, and a value it formats its own way is rewritten. Neither is reported by
@@ -154,7 +154,7 @@ export function SweepWindow({ onClose }: SweepWindowProps) {
             )}
 
             {running && (
-                <p className="field__hint" style={{ margin: 0 }}>
+                <p className="field__hint flush">
                     <span className="btn__spinner" /> {state?.progress.at ?? "working out what to sweep"}
                 </p>
             )}
@@ -224,7 +224,7 @@ export function SweepWindow({ onClose }: SweepWindowProps) {
             )}
 
             {!running && rows.length === 0 && !state?.error && (
-                <p className="field__hint" style={{ margin: 0 }}>
+                <p className="field__hint flush">
                     {state?.finishedAt
                         ? "Nothing to compare. None of the apps in the catalogue answered with a data type that has both a model and an example."
                         : "Nothing swept yet."}

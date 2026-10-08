@@ -317,9 +317,7 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                         }}
                     />
                     {fileError ? (
-                        <div className="notice notice--bad" style={{ marginTop: 7 }}>
-                            {fileError}
-                        </div>
+                        <div className="notice notice--bad above-s">{fileError}</div>
                     ) : (
                         <p className="field__hint">
                             Read in the browser. Text formats stay editable below, and anything else travels as base64 and is decoded before the

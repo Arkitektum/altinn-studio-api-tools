@@ -43,7 +43,7 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
 
     return (
         <Panel icon="file" id="panel-pdf" notReady={notReady} title="Pdf" tone="pdf">
-            <Explained style={{ marginBottom: 10 }} lead="What the app would archive, rendered from the data as it stands.">
+            <Explained className="below-m" lead="What the app would archive, rendered from the data as it stands.">
                 The quickest way to see what the form turns into without walking the process to the end. It opens in a window over the tool.
             </Explained>
 
@@ -78,7 +78,7 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
                 )}
             </div>
 
-            <p className="field__hint" style={{ marginTop: 8 }}>
+            <p className="field__hint above-s">
                 {current ? (
                     <>
                         Nothing has changed on the instance since this was rendered, so <strong>Show pdf</strong> opens the one in hand and asks the
@@ -96,7 +96,7 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
             </p>
 
             {error ? (
-                <div style={{ marginTop: 10 }}>
+                <div className="above-m">
                     <ErrorNotice error={error} />
                 </div>
             ) : null}

@@ -119,11 +119,7 @@ function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: b
 function Verdict({ result, totalMs, localtestUrl }: { result: LogResult; totalMs: number; localtestUrl: string }) {
     return (
         <div className={`verdict ${result.ok ? "verdict--ok" : "verdict--bad"}`}>
-            {result.failedAt && (
-                <div className="notice notice--bad" style={{ marginBottom: 10 }}>
-                    {result.failedAt}
-                </div>
-            )}
+            {result.failedAt && <div className="notice notice--bad below-m">{result.failedAt}</div>}
 
             <dl className="verdict__rows">
                 {result.rows.map((row) => (
@@ -137,7 +133,7 @@ function Verdict({ result, totalMs, localtestUrl }: { result: LogResult; totalMs
             </dl>
 
             {result.instanceUrl && (
-                <div style={{ marginTop: 10 }}>
+                <div className="above-m">
                     <div className="row" style={{ gap: 12 }}>
                         <a href={result.instanceUrl} target="_blank" rel="noreferrer">
                             Open instance in the app
@@ -152,7 +148,7 @@ function Verdict({ result, totalMs, localtestUrl }: { result: LogResult; totalMs
                      * LocalTest's front page with a goto, and the deep link's fragment is lost on
                      * the way back, so you land on the app rather than on the instance.
                      */}
-                    <p className="field__hint" style={{ marginTop: 6 }}>
+                    <p className="field__hint above-s">
                         The app needs its own LocalTest session. If it bounces to a user picker, log in there once and open the instance again.
                     </p>
                 </div>

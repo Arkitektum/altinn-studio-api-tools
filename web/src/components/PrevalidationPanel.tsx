@@ -114,7 +114,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                 {asking ? <span className="btn__spinner" /> : <Icon name="shield" />}
                 Prevalidate
             </button>
-            <p className="field__hint" style={{ marginBottom: 0 }}>
+            <p className="field__hint below-0">
                 {blockedBy ? (
                     <span style={{ color: "var(--warn)" }}>{blockedBy}</span>
                 ) : (
@@ -133,21 +133,21 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
              * the run log, where the whole report is.
              */}
             {requirements && (
-                <div className={["notice", tone].filter(Boolean).join(" ")} style={{ marginTop: 12 }}>
+                <div className={["notice", tone, "above-m"].filter(Boolean).join(" ")}>
                     {prevalidation?.stale && (
-                        <p style={{ margin: "0 0 6px" }}>
+                        <p className="above-0 below-s">
                             <strong>The payload has changed since it was prevalidated.</strong> The service reads the form to decide which documents
                             its rules ask for, so run it again to be sure.
                         </p>
                     )}
                     {prevalidation?.superseded && (
-                        <p style={{ margin: "0 0 6px" }}>
+                        <p className="above-0 below-s">
                             <strong>This is from an earlier run.</strong> The last prevalidation got no answer from the service, so this is what it
                             said before. The run log has what happened.
                         </p>
                     )}
                     {(prevalidation?.refused?.length ?? 0) > 0 && (
-                        <p style={{ margin: "0 0 6px" }}>
+                        <p className="above-0 below-s">
                             <strong>Partial report.</strong> The service would not answer about {prevalidation?.refused?.join(", ")}, so whatever it
                             would have found there is missing below.
                         </p>
@@ -159,7 +159,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                      * missing, "nothing missing" is the same sentence twice.
                      */}
                     {verdict && verdict !== "clean" && (
-                        <p style={{ margin: "0 0 6px" }}>
+                        <p className="above-0 below-s">
                             <strong>{prevalidationCounts(summary)}</strong>
                         </p>
                     )}
@@ -194,11 +194,11 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                     )}
 
                     {/* Named only, since a recommendation you decide against should be one line. */}
-                    {advised.length > 0 && <p style={{ margin: "6px 0 0" }}>It also recommends {list(advised)}.</p>}
+                    {advised.length > 0 && <p className="above-s below-0">It also recommends {list(advised)}.</p>}
 
                     {contentErrors.length > 0 && (
                         <>
-                            <p style={{ margin: "6px 0 0" }}>
+                            <p className="above-s below-0">
                                 And {contentErrors.length === 1 ? "one error" : `${contentErrors.length} errors`} about the form&rsquo;s own content
                                 rather than about what is attached to it:
                             </p>
@@ -227,7 +227,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                     )}
 
                     {contentWarnings > 0 && (
-                        <p style={{ margin: "6px 0 0" }}>
+                        <p className="above-s below-0">
                             And {contentWarnings === 1 ? "one warning" : `${contentWarnings} warnings`} about the form&rsquo;s own content, which the
                             run log has in full.
                         </p>
@@ -236,7 +236,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
             )}
 
             {error ? (
-                <div style={{ marginTop: 12 }}>
+                <div className="above-m">
                     <ErrorNotice error={error} />
                 </div>
             ) : null}

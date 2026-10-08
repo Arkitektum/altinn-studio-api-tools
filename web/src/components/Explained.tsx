@@ -1,11 +1,12 @@
-import { useId, useState, type CSSProperties, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 interface ExplainedProps {
     /** The one line worth reading every time, which stays on screen. */
     lead: ReactNode;
     /** The rest of the explanation, for the first time or when something surprises you. */
     children: ReactNode;
-    style?: CSSProperties;
+    /** Spacing classes from spacing.css, for where it sits. */
+    className?: string;
 }
 
 /**
@@ -16,12 +17,12 @@ interface ExplainedProps {
  * paragraph, so opening it reads as the hint carrying on rather than as a second block. Hidden
  * rather than unmounted, so the button always has the text it controls.
  */
-export function Explained({ lead, children, style }: ExplainedProps) {
+export function Explained({ lead, children, className }: ExplainedProps) {
     const [open, setOpen] = useState(false);
     const id = useId();
 
     return (
-        <p className="field__hint" style={style}>
+        <p className={className ? `field__hint ${className}` : "field__hint"}>
             {lead}{" "}
             <span id={id} hidden={!open}>
                 {children}{" "}

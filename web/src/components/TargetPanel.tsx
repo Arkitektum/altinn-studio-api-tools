@@ -108,7 +108,7 @@ export function TargetPanel({
                 </select>
 
                 {typing ? (
-                    <div className="grid grid--2" style={{ marginTop: 6 }}>
+                    <div className="grid grid--2 above-s">
                         <input
                             type="text"
                             value={org}
@@ -151,16 +151,16 @@ export function TargetPanel({
             )}
 
             {probeError ? (
-                <div style={{ marginTop: 12 }}>
+                <div className="above-m">
                     <ErrorNotice error={probeError} />
-                    <button type="button" className="btn btn--get" style={{ marginTop: 8 }} onClick={onProbe} disabled={probing}>
+                    <button type="button" className="btn btn--get above-s" onClick={onProbe} disabled={probing}>
                         <Icon name="refresh" />
                         Try again
                     </button>
                 </div>
             ) : null}
 
-            <div className="field" style={{ marginTop: 16 }}>
+            <div className="field above-l">
                 <label htmlFor="party">Instance owner party</label>
                 <select
                     id="party"

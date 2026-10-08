@@ -46,9 +46,7 @@ export function CompareSection({ pairs }: CompareSectionProps) {
     return (
         <div className="apart">
             <div className="row">
-                <span className="legend" style={{ marginBottom: 0 }}>
-                    Compare with stored
-                </span>
+                <span className="legend below-0">Compare with stored</span>
                 <span className="spacer" />
                 {/*
                  * This panel confirms a problem you already suspect. The sweep finds the ones you do
@@ -69,7 +67,7 @@ export function CompareSection({ pairs }: CompareSectionProps) {
             {sweeping && <SweepWindow onClose={() => setSweeping(false)} />}
 
             <Explained
-                style={{ margin: "8px 0 12px" }}
+                className="above-s below-m"
                 lead="The main form and every sub form on the instance, as Altinn stored them, each against the xml it was written from."
             >
                 Each difference carries the field's declared type from the app's schema where there is one, and nothing where there is not, which for
@@ -94,7 +92,7 @@ export function CompareSection({ pairs }: CompareSectionProps) {
                         </span>
                     </label>
 
-                    <p className="field__hint" style={{ marginTop: 12 }}>
+                    <p className="field__hint above-m">
                         Compared again whenever an element or the xml it was written from changes:
                         <br />
                         <span className="method method--get">GET</span> {"{localtest}"}/storage/api/v1/…/data/{"{dataGuid}"}
@@ -156,7 +154,7 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                         </p>
 
                         {result?.diff && differences.length === 0 && (
-                            <p className="field__hint" style={{ marginTop: 8 }}>
+                            <p className="field__hint above-s">
                                 {result.diff.same
                                     ? "The two say the same thing. The model kept everything and changed nothing."
                                     : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
@@ -191,7 +189,7 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                         )}
 
                         {differences.length > 0 && hiddenRowIds > 0 && (
-                            <p className="field__hint" style={{ marginTop: 8 }}>
+                            <p className="field__hint above-s">
                                 {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
                             </p>
                         )}
@@ -199,7 +197,7 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                 )}
 
                 {error ? (
-                    <div style={{ marginTop: 12 }}>
+                    <div className="above-m">
                         <ErrorNotice error={error} />
                     </div>
                 ) : null}

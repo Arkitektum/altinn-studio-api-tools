@@ -150,11 +150,7 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
                     </button>
                 )}
             </div>
-            {error && (
-                <div className="notice notice--bad" style={{ marginTop: 7 }}>
-                    {error}
-                </div>
-            )}
+            {error && <div className="notice notice--bad above-s">{error}</div>}
             {chosen && !error && chosen.kind === "subform" && <p className="field__hint">subform data</p>}
         </div>
     );

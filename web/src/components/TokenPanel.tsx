@@ -145,7 +145,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             }
         >
             {localtest && !localtest.reachable && (
-                <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                <div className="notice notice--warn below-m">
                     LocalTest is not answering at {localtest.url}. Start it, or set ALTINN_LOCALTEST_URL in server/.env.
                 </div>
             )}
@@ -157,7 +157,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                     create.mutate({ userId, label: offered.find((user) => user.userId === userId)?.label });
                 }}
             >
-                <div className="field" style={{ marginBottom: 12 }}>
+                <div className="field below-m">
                     <label htmlFor="userId">Test user</label>
                     <select id="userId" value={picked} onChange={(event) => setPicked(event.target.value)}>
                         {offered.map((user) => (
@@ -170,13 +170,13 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                     </select>
                     {typing && (
                         <input
+                            className="above-s"
                             type="text"
                             value={typedId}
                             onChange={(event) => setTypedId(event.target.value.trim())}
                             placeholder="1001"
                             autoComplete="off"
                             aria-label="Test user id"
-                            style={{ marginTop: 6 }}
                         />
                     )}
                     {/*
@@ -201,13 +201,13 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             </form>
 
             {error ? (
-                <div style={{ marginTop: 12 }}>
+                <div className="above-m">
                     <ErrorNotice error={error} />
                 </div>
             ) : null}
 
             {activeToken && (
-                <div className="token token--active" style={{ marginTop: 14 }}>
+                <div className="token token--active above-m">
                     <div className="token__top">
                         {/* The Expires row below says it in words, so this repeats it in colour. */}
                         <span className={`led ${expired ? "led--bad" : "led--ok"}`} aria-hidden="true" />
@@ -244,7 +244,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
 
                     {/* Only a LocalTest token can be minted again. A pasted one came from elsewhere. */}
                     {activeToken.kind === "test-user" && activeToken.userId && (
-                        <div className="row" style={{ marginTop: 10 }}>
+                        <div className="row above-m">
                             <button
                                 type="button"
                                 // Accented once it has expired, since renewing is then the thing to press.
@@ -255,16 +255,14 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                 {renewing ? <span className="btn__spinner" /> : <Icon name="refresh" />}
                                 {renewing ? "Renewing…" : "Renew"}
                             </button>
-                            <span className="field__hint" style={{ margin: 0 }}>
-                                Another token for user {activeToken.userId}, replacing this one.
-                            </span>
+                            <span className="field__hint flush">Another token for user {activeToken.userId}, replacing this one.</span>
                         </div>
                     )}
                 </div>
             )}
 
             {tokens.length > 1 && (
-                <div style={{ marginTop: 14 }}>
+                <div className="above-m">
                     <span className="legend">Stored tokens</span>
                     <div className="picklist">
                         {tokens.map((token) => (

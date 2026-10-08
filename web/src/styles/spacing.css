@@ -1,0 +1,55 @@
+/*
+ * Vertical spacing between the parts of a panel, in three steps.
+ *
+ * These were inline margins, 62 of them in eight sizes from 6 to 18px, each picked where it was
+ * written. Neighbouring gaps that meant the same thing differed by a pixel or two, which reads as
+ * unevenness rather than as a distinction. Three steps, on the 6px grid the gaps and rules already
+ * use: small between a thing and its own detail, medium between parts of a panel, large where a
+ * panel changes subject.
+ *
+ * Imported last so they win over the rule that styles the element itself, which is what an inline
+ * margin did. A rule with more than one class in it would still beat them, and none that sets a
+ * margin is on an element that carries one of these.
+ */
+:root {
+    --space-s: 6px;
+    --space-m: 12px;
+    --space-l: 18px;
+}
+
+.flush {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.above-0 {
+    margin-top: 0;
+}
+
+.above-s {
+    margin-top: var(--space-s);
+}
+
+.above-m {
+    margin-top: var(--space-m);
+}
+
+.above-l {
+    margin-top: var(--space-l);
+}
+
+.below-0 {
+    margin-bottom: 0;
+}
+
+.below-s {
+    margin-bottom: var(--space-s);
+}
+
+.below-m {
+    margin-bottom: var(--space-m);
+}
+
+.below-l {
+    margin-bottom: var(--space-l);
+}

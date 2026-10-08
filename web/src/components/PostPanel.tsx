@@ -36,9 +36,7 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
 
     return (
         <Panel icon="upload" id="panel-post" notReady={notReady} tone="post" title="Post">
-            <p className="field__hint" style={{ marginBottom: 10 }}>
-                The instance is read back and validated automatically after every post.
-            </p>
+            <p className="field__hint below-m">The instance is read back and validated automatically after every post.</p>
 
             <label className="check">
                 <input type="checkbox" checked={advanceProcess} onChange={(event) => onAdvanceProcessChange(event.target.checked)} />
@@ -55,12 +53,8 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
                 </span>
             </label>
 
-            <div style={{ marginTop: 18 }}>
-                {blockers.length > 0 && (
-                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
-                        Needs {blockers.join(", ")}.
-                    </div>
-                )}
+            <div className="above-l">
+                {blockers.length > 0 && <div className="notice notice--warn below-m">Needs {blockers.join(", ")}.</div>}
 
                 {/*
                  * What the panel above has not been asked, or has been asked about something else.
@@ -68,19 +62,19 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
                  * it would have saved you pressing.
                  */}
                 {prevalidation && !prevalidation.run && (
-                    <div className="notice" style={{ marginBottom: 12 }}>
+                    <div className="notice below-m">
                         Not prevalidated. What <strong>Prevalidate</strong> answers is what a refused submit would have told you, read before the
                         submit rather than after.
                     </div>
                 )}
                 {prevalidation?.stale && (
-                    <div className="notice notice--warn" style={{ marginBottom: 12 }}>
+                    <div className="notice notice--warn below-m">
                         The payload has changed since it was prevalidated, so what the service said describes something else.
                     </div>
                 )}
 
                 {post.error ? (
-                    <div style={{ marginBottom: 12 }}>
+                    <div className="below-m">
                         <ErrorNotice error={post.error} />
                     </div>
                 ) : null}

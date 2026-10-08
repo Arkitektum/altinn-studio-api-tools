@@ -123,7 +123,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
             }
         >
             <Explained
-                style={{ marginBottom: 12 }}
+                className="below-m"
                 lead="The data elements on the instance selected in Instances, listed by the read that happens when you select it."
             >
                 Picking one here reads it and validates it on its own. Every form on the instance is compared at the foot of this panel, whichever is
@@ -133,7 +133,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
             {dataElements.length > 0 ? (
                 <>
-                    <div className="field" style={{ marginTop: 16 }}>
+                    <div className="field above-l">
                         <label htmlFor="dataGuid">Data element</label>
                         <select id="dataGuid" value={dataGuid} onChange={(event) => onDataGuidChange(event.target.value)}>
                             <option value="">Pick one of {dataElements.length}</option>
@@ -147,7 +147,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                     </div>
 
                     {dataGuid && (
-                        <p className="field__hint" style={{ marginTop: 8 }}>
+                        <p className="field__hint above-s">
                             Read and validated on its own when you pick one, the way selecting an instance reads that:
                             <br />
                             <span className="method method--get">GET</span> {instance}/data/{dataGuid}
@@ -170,12 +170,12 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                      */}
                     {fetched && (
                         <>
-                            <div className="row" style={{ marginTop: 12 }}>
+                            <div className="row above-m">
                                 <button type="button" className="btn btn--ghost" onClick={() => setShowing(true)} aria-haspopup="dialog">
                                     <Icon name="eye" />
                                     Show content
                                 </button>
-                                <span className="field__hint" style={{ margin: 0 }}>
+                                <span className="field__hint flush">
                                     {fetched.filename} · {fetched.contentType ?? "unknown type"} · {fetched.size} B
                                 </span>
                             </div>
@@ -223,7 +223,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
             )}
 
             {error ? (
-                <div style={{ marginTop: 12 }}>
+                <div className="above-m">
                     <ErrorNotice error={error} />
                 </div>
             ) : null}

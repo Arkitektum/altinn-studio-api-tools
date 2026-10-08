@@ -81,12 +81,10 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
 
             {/* An ended process has nowhere to go, so the button would only ever 409. */}
             {ended ? (
-                <p className="field__hint" style={{ marginTop: 12 }}>
-                    The process has ended, so there is no next task. Post to a new instance to walk it again.
-                </p>
+                <p className="field__hint above-m">The process has ended, so there is no next task. Post to a new instance to walk it again.</p>
             ) : (
                 <>
-                    <div className="row" style={{ marginTop: 12 }}>
+                    <div className="row above-m">
                         {/*
                          * Named after what it does to the form rather than after what it does to
                          * the process: moving a data task on is how a form is signed and
@@ -103,7 +101,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
                      * what Altinn authorises against, the action for the task type. A task type
                      * this does not recognise sends `{}` and leaves the choice to Altinn.
                      */}
-                    <p className="field__hint" style={{ marginTop: 8 }}>
+                    <p className="field__hint above-s">
                         {inApp ? `This is the same step as ${inApp}. ` : ""}
                         Moves the instance out of {process.currentTask ? <strong>{process.currentTask}</strong> : "the current task"}, and the app
                         validates first, so it fails while validation does not pass.
@@ -116,7 +114,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
             )}
 
             {error ? (
-                <div style={{ marginTop: 12 }}>
+                <div className="above-m">
                     <ErrorNotice error={error} />
                 </div>
             ) : null}
