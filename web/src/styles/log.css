@@ -560,11 +560,31 @@ a.btn {
     margin-top: 0;
 }
 
+/*
+ * The answer to what Altinn does to the xml, and so the one place in the tool that is allowed to
+ * look like more than a list. Each row's values sit in two columns under one pair of headings,
+ * like a table, so you can read down "after Altinn" without reading across.
+ *
+ * A container, so the columns can give way to a stack when the card is narrow, whatever the width
+ * of the window: the card is narrow beside a wide run log as well as on a small screen.
+ */
 .diff {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-top: 12px;
+    container-type: inline-size;
+}
+
+/* Inset by a row's padding and borders, 9px plus 3px of stripe on the left and 1px on the right,
+   so the headings sit over the values they name. */
+.diff__columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 10px 0 12px;
+    font-size: var(--size-meta);
+    color: var(--text-faint);
 }
 
 .diff__row {
@@ -599,10 +619,11 @@ a.btn {
     min-width: 0;
 }
 
+/* Sentence case and bold in the kind's colour. Spaced capitals were louder than the path beside
+   them, which is what you actually read. */
 .diff__kind {
-    font-size: var(--size-meta);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-size: var(--size-label);
+    font-weight: 600;
 }
 
 .diff__kind--missing {
@@ -631,12 +652,32 @@ a.btn {
     white-space: nowrap;
 }
 
+.diff__values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+}
+
 .diff__value {
-    margin-top: 3px;
+    min-width: 0;
     font-family: var(--font-mono);
     font-size: var(--size-label);
     color: var(--text-muted);
     overflow-wrap: anywhere;
+}
+
+/* What a dropped field held, struck through in the colour of the kind: it did not survive. */
+.diff__gone {
+    text-decoration: line-through;
+    text-decoration-color: var(--bad);
+}
+
+/* The side that has nothing, said in words rather than left blank, so an empty cell is not mistaken
+   for an empty value. In the body face, since it is not data. */
+.diff__none {
+    font-family: var(--font);
+    color: var(--text-faint);
 }
 
 /*
@@ -644,12 +685,40 @@ a.btn {
  * that goes in, "after Altinn" is what the model made of it, which is what gets passed on. That is
  * the question the comparison answers. It said "written" and "stored", which named two states of
  * the same file and left which was which to be remembered, and an action such as "sent" does not
- * help, since the app sends data too. Wide enough for the longer of the two, so the values line up.
+ * help, since the app sends data too.
+ *
+ * Read out to assistive tech everywhere, and shown only when the columns stack, since the headings
+ * over the columns say it otherwise.
  */
 .diff__side {
-    display: inline-block;
-    min-width: 84px;
-    color: var(--text-faint);
-    font-family: var(--font);
-    font-size: var(--size-meta);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+@container (max-width: 420px) {
+    .diff__columns {
+        display: none;
+    }
+
+    .diff__values {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    .diff__side {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip-path: none;
+        display: inline-block;
+        min-width: 84px;
+        color: var(--text-faint);
+        font-family: var(--font);
+        font-size: var(--size-meta);
+    }
 }

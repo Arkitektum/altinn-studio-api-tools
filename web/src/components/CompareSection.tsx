@@ -163,6 +163,12 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
 
                         {differences.length > 0 && (
                             <div className="diff">
+                                {/* Named once over the columns rather than on every row. Hidden from
+                                    assistive tech, which reads the label inside each value instead. */}
+                                <div className="diff__columns" aria-hidden="true">
+                                    <span>before Altinn</span>
+                                    <span>after Altinn</span>
+                                </div>
                                 {differences.map((difference) => (
                                     <div key={`${difference.kind}-${difference.path}`} className={`diff__row diff__row--${difference.kind}`}>
                                         <div className="diff__head">
@@ -172,17 +178,28 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                                             is informative for a dropped field: the model has no such field. */}
                                             {difference.type && <span className="diff__type">{difference.type}</span>}
                                         </div>
-                                        {/* A dropped field has no right-hand value, and an added one no left. */}
-                                        {difference.left !== null && (
+                                        {/* Both sides on every row, so each column lines up down the list. A
+                                            dropped field has nothing after, and an added one nothing before. */}
+                                        <div className="diff__values">
                                             <div className="diff__value">
-                                                <span className="diff__side">before Altinn</span> {difference.left}
+                                                <span className="diff__side">before Altinn</span>
+                                                {difference.left === null ? (
+                                                    <span className="diff__none">none</span>
+                                                ) : (
+                                                    <span className={difference.kind === "missing" ? "diff__gone" : undefined}>
+                                                        {difference.left}
+                                                    </span>
+                                                )}
                                             </div>
-                                        )}
-                                        {difference.right !== null && (
                                             <div className="diff__value">
-                                                <span className="diff__side">after Altinn</span> {difference.right}
+                                                <span className="diff__side">after Altinn</span>
+                                                {difference.right === null ? (
+                                                    <span className="diff__none">none</span>
+                                                ) : (
+                                                    <span>{difference.right}</span>
+                                                )}
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
