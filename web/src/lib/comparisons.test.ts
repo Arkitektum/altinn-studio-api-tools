@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { pairComparisons, type FormKind } from "./comparisons";
-import type { DataElementInput, DataElementSummary } from "../types";
+import type { DataElementSummary } from "../types";
 
 function stored(id: string, dataType: string): DataElementSummary {
     return { id, dataType, contentType: "application/xml", filename: null, size: null, lastChanged: null };
