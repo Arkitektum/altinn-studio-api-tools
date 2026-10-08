@@ -525,23 +525,27 @@ a.btn {
 
 .diff__row {
     border: 1px solid var(--border);
-    border-left-width: 2px;
+    border-left-width: 3px;
     border-radius: 4px;
     padding: 7px 9px;
     background: var(--bg-subtle);
 }
 
-/* The three kinds are the point, so they carry the colour: dropped is the one that bites. */
+/*
+ * The three kinds are the point, so they carry the colour: dropped is the one that bites. The
+ * full hue at 3px, the way an issue and a run are marked. The border shades at 2px were close
+ * enough in lightness to read as one muted stripe, so the kind had to be read off the label.
+ */
 .diff__row--missing {
-    border-left-color: var(--bad-border);
+    border-left-color: var(--bad);
 }
 
 .diff__row--added {
-    border-left-color: var(--warn-border);
+    border-left-color: var(--warn);
 }
 
 .diff__row--changed {
-    border-left-color: var(--accent-border);
+    border-left-color: var(--accent);
 }
 
 .diff__head {
