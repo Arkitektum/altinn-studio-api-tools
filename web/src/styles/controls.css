@@ -58,6 +58,8 @@
     margin: 2px 0 0;
     font-size: var(--size-note);
     color: var(--text-faint);
+    /* Sentences, so held to a reading measure. The column is far wider than that on a wide screen. */
+    max-width: var(--measure);
     /* Hints often contain URLs, which must not push past the panel. */
     overflow-wrap: anywhere;
 }
@@ -207,6 +209,7 @@ textarea {
 
 .check__note {
     font-size: var(--size-note);
+    max-width: var(--measure);
     color: var(--text-faint);
 }
 

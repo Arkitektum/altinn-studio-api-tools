@@ -182,6 +182,14 @@
     --size-body: 14px;
     --size-title: 15px;
 
+    /*
+     * The longest line of prose, in the width of a digit. About 80 characters of ordinary text, which
+     * is past the comfortable 65 to 75 only because hints are short and often carry a url. Without
+     * it a hint ran to some 130 characters on a 1920px screen, since the working column takes all
+     * the width the rail and the run log leave.
+     */
+    --measure: 72ch;
+
     --radius: 5px;
     /*
      * Wider than it was twice over: the log carries validation descriptions, and it is where a
