@@ -43,7 +43,7 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
 
     return (
         <Panel icon="file" id="panel-pdf" notReady={notReady} title="Pdf" tone="pdf">
-            <Explained className="below-m" lead="What the app would archive, rendered from the data as it stands.">
+            <Explained className="below-m" lead="The PDF the app would archive, made from the data as it is now.">
                 The quickest way to see what the form turns into without walking the process to the end. It opens in a window over the tool.
             </Explained>
 

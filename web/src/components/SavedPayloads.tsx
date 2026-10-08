@@ -59,7 +59,7 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
 
             {dialog === "open" && (
                 <Modal title="Open a saved payload" className="modal--form" onClose={close} bodyClassName="modal__form">
-                    <Explained lead="Loading one replaces every element in the panel behind this window.">
+                    <Explained lead="Loading a payload replaces everything in the Payload panel.">
                         An element saved as a reference to an example is read from that file as it stands now, so a payload saved before the file was
                         corrected loads the corrected one.
                     </Explained>
@@ -119,7 +119,7 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
 
             {dialog === "save" && (
                 <Modal title="Save this payload" className="modal--form" onClose={close} bodyClassName="modal__form">
-                    <Explained lead="The whole list of elements, under a name, for later.">
+                    <Explained lead="Saves every payload element under a name, so you can load them again later.">
                         An element still holding an unedited example is kept as a reference to that file, so a payload saved today loads the corrected
                         file tomorrow. An element you have edited, typed or picked off disk has no file to point at, so its text is kept instead.
                     </Explained>

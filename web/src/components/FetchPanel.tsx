@@ -122,12 +122,9 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                 ) : undefined
             }
         >
-            <Explained
-                className="below-m"
-                lead="The data elements on the instance selected in Instances, listed by the read that happens when you select it."
-            >
-                Picking one here reads it and validates it on its own. Every form on the instance is compared at the foot of this panel, whichever is
-                picked.
+            <Explained className="below-m" lead="Pick a data element to read and validate it.">
+                The list is the data elements on the instance selected in Instances. Every form on the instance is compared at the foot of this panel,
+                whichever is picked.
             </Explained>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}

@@ -66,10 +66,7 @@ export function CompareSection({ pairs }: CompareSectionProps) {
 
             {sweeping && <SweepWindow onClose={() => setSweeping(false)} />}
 
-            <Explained
-                className="above-s below-m"
-                lead="The main form and every sub form on the instance, as Altinn stored them, each against the xml it was written from."
-            >
+            <Explained className="above-s below-m" lead="What Altinn did to the XML of each form on the instance, the main form and every sub form.">
                 Each difference carries the field's declared type from the app's schema where there is one, and nothing where there is not, which for
                 a dropped field is the reason it was dropped. Reading an element gives you the model as JSON, so this is the only view of what the
                 model did to the file: a field it has no place for is dropped without complaint, and a value it formats its own way is rewritten.
