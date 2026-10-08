@@ -402,6 +402,11 @@ export interface XmlDifference {
     left: string | null;
     right: string | null;
     /**
+     * Set on a missing or added element with no text and no child elements. See `empty` in
+     * server/src/xmlDiff.ts for why this is a flag rather than a match on the word "empty".
+     */
+    empty?: true;
+    /**
      * The field's declared type from the app's json schema, `date` or `decimal` where the XSD
      * kept one. Null when the schema has no entry for the path, which for a dropped field is
      * itself the reason it was dropped.

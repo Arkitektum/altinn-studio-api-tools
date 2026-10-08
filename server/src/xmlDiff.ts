@@ -136,6 +136,14 @@ export interface XmlDifference {
     kind: XmlDifferenceKind;
     left: string | null;
     right: string | null;
+    /**
+     * Set on a missing or added element that holds nothing: no text and no child elements. Its
+     * `left` or `right` reads "empty" too, but so would an element whose text is the word, so the
+     * web app filters on this rather than on the text. The model writes out fields it has no value
+     * for as empty elements, which is most of what a long "added" list is. Attributes do not count,
+     * so an `xsi:nil` element is empty as well. Absent rather than false otherwise.
+     */
+    empty?: true;
 }
 
 /** Repeated siblings are told apart by position, and a lone one needs no index. */
@@ -151,6 +159,15 @@ function groupByName(children: XmlElement[]): Map<string, XmlElement[]> {
         else groups.set(child.name, [child]);
     }
     return groups;
+}
+
+function isEmpty(element: XmlElement): boolean {
+    return element.children.length === 0 && !element.text;
+}
+
+/** The flag for a whole element on one side only, present only when it applies. */
+function emptiness(element: XmlElement): { empty?: true } {
+    return isEmpty(element) ? { empty: true } : {};
 }
 
 function describe(element: XmlElement): string {
@@ -183,8 +200,8 @@ function compare(left: XmlElement, right: XmlElement, path: string, found: XmlDi
             const rightChild = rightChildren[index];
             const here = childPath(path, name, index, total);
             if (leftChild && rightChild) compare(leftChild, rightChild, here, found);
-            else if (leftChild) found.push({ path: here, kind: "missing", left: describe(leftChild), right: null });
-            else if (rightChild) found.push({ path: here, kind: "added", left: null, right: describe(rightChild) });
+            else if (leftChild) found.push({ path: here, kind: "missing", left: describe(leftChild), right: null, ...emptiness(leftChild) });
+            else if (rightChild) found.push({ path: here, kind: "added", left: null, right: describe(rightChild), ...emptiness(rightChild) });
         }
     }
 
@@ -195,7 +212,8 @@ function compare(left: XmlElement, right: XmlElement, path: string, found: XmlDi
                 path: childPath(path, name, index, rightChildren.length),
                 kind: "added",
                 left: null,
-                right: describe(child)
+                right: describe(child),
+                ...emptiness(child)
             });
         });
     }

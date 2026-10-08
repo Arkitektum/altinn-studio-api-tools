@@ -88,6 +88,37 @@ describe("diffXml", () => {
         assert.deepEqual(diff.differences, [{ path: "/ettrinn/erAvlyst", kind: "added", left: null, right: "false" }]);
     });
 
+    it("marks an element the model added with nothing in it", () => {
+        // Both ways an element can be added: under a parent the file has, and as a sibling group
+        // the file has none of. An xsi:nil attribute does not make it any less empty.
+        const left = "<ettrinn><eiendom><gnr>73</gnr></eiendom></ettrinn>";
+        const right =
+            '<ettrinn xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><eiendom><gnr>73</gnr><bnr/></eiendom><kommune xsi:nil="true"/></ettrinn>';
+        const diff = diffXml(left, right);
+        assert.deepEqual(diff.differences, [
+            { path: "/ettrinn/eiendom/bnr", kind: "added", left: null, right: "empty", empty: true },
+            { path: "/ettrinn/kommune", kind: "added", left: null, right: "empty", empty: true }
+        ]);
+    });
+
+    it("marks an empty extra sibling the model added after the ones the file has", () => {
+        const diff = diffXml("<ettrinn><part>a</part></ettrinn>", "<ettrinn><part>a</part><part/></ettrinn>");
+        assert.deepEqual(diff.differences, [{ path: "/ettrinn/part[2]", kind: "added", left: null, right: "empty", empty: true }]);
+    });
+
+    it("does not mark an element whose text is the word empty, or one with children", () => {
+        const diff = diffXml("<ettrinn/>", "<ettrinn><merknad>empty</merknad><part><navn/></part></ettrinn>");
+        assert.deepEqual(diff.differences, [
+            { path: "/ettrinn/merknad", kind: "added", left: null, right: "empty" },
+            { path: "/ettrinn/part", kind: "added", left: null, right: "<part> with 1 child element(s)" }
+        ]);
+    });
+
+    it("marks an empty element the model dropped as well", () => {
+        const diff = diffXml("<ettrinn><gnr>73</gnr><bnr/></ettrinn>", "<ettrinn><gnr>73</gnr></ettrinn>");
+        assert.deepEqual(diff.differences, [{ path: "/ettrinn/bnr", kind: "missing", left: "empty", right: null, empty: true }]);
+    });
+
     it("reports a value the model reformatted", () => {
         const diff = diffXml("<ettrinn><dato>2026-09-09</dato></ettrinn>", "<ettrinn><dato>2026-09-09T00:00:00</dato></ettrinn>");
         assert.deepEqual(diff.differences, [{ path: "/ettrinn/dato", kind: "changed", left: "2026-09-09", right: "2026-09-09T00:00:00" }]);

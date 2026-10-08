@@ -109,6 +109,8 @@ So `/ettrinn/eiendom/festenr dropped` with no type says the model has no such fi
 
 **Hide altinnRowId** is on by default. Altinn stamps every row of a repeating group with an `altinnRowId`, a guid it uses to keep track of rows, so the stored xml has one per row and a file written by hand has none. Left in, they are the majority of the report and bury everything else. The count of what was held back is always shown, so nothing disappears quietly, and the toggle is a view rather than a request: turning it off costs no round trip because the server reports everything it found either way.
 
+**Hide empty elements Altinn added** is off by default. The model writes out fields the file left out as empty elements, so a file that skips optional fields gets an "added" row with nothing in it for each one. Turned on, those rows are held back and counted the same way the row ids are. Only added ones: an empty element the model dropped was in the file, so it stays. The server marks these with an `empty` flag on the difference rather than leaving the web app to match the word "empty", which an element with that text would also show.
+
 The run log names them apart for the same reason, as "1, plus 2 altinnRowId", so the entry does not read as three problems when the panel is showing one.
 
 ### The same thing over everything at once

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCompare } from "../reads";
-import { partitionDifferences } from "../lib/differences";
+import { describeHidden, partitionDifferences } from "../lib/differences";
 import { Icon } from "./Icon";
 import { ErrorNotice } from "./Notice";
 import { Explained } from "./Explained";
@@ -40,6 +40,8 @@ function describeWritten(written: DataElementInput): string {
 export function CompareSection({ pairs }: CompareSectionProps) {
     /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
     const [hideRowIds, setHideRowIds] = useState(true);
+    /** Off by default: an element the model added is still something it did, even with nothing in it. */
+    const [hideEmpty, setHideEmpty] = useState(false);
     /** The same comparison over every example there is, in a window. See SweepWindow.tsx. */
     const [sweeping, setSweeping] = useState(false);
 
@@ -89,6 +91,16 @@ export function CompareSection({ pairs }: CompareSectionProps) {
                         </span>
                     </label>
 
+                    <label className="check">
+                        <input type="checkbox" checked={hideEmpty} onChange={(event) => setHideEmpty(event.target.checked)} />
+                        <span className="check__body">
+                            <span className="check__title">Hide empty elements Altinn added</span>
+                            <span className="check__note">
+                                Altinn writes out fields the file left out as empty elements, so each one shows as added with nothing in it.
+                            </span>
+                        </span>
+                    </label>
+
                     <p className="field__hint above-m">
                         Compared again whenever an element or the xml it was written from changes:
                         <br />
@@ -96,7 +108,7 @@ export function CompareSection({ pairs }: CompareSectionProps) {
                     </p>
 
                     {pairs.map((pair) => (
-                        <ComparedElement key={pair.stored.id} pair={pair} hideRowIds={hideRowIds} />
+                        <ComparedElement key={pair.stored.id} pair={pair} hideRowIds={hideRowIds} hideEmpty={hideEmpty} />
                     ))}
                 </>
             )}
@@ -107,14 +119,17 @@ export function CompareSection({ pairs }: CompareSectionProps) {
 interface ComparedElementProps {
     pair: ComparisonPair;
     hideRowIds: boolean;
+    hideEmpty: boolean;
 }
 
 /** One stored form against the payload element it was written from. Its own component for its own read. */
-function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: ComparedElementProps) {
+function ComparedElement({ pair: { stored, kind, written }, hideRowIds, hideEmpty }: ComparedElementProps) {
     const { dataType } = stored;
     const comparison = useCompare(stored.id, stored.lastChanged, dataType, written?.content ?? null);
     const { result, error } = comparison;
-    const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
+    const partitioned = partitionDifferences(result?.diff?.differences ?? [], hideRowIds, hideEmpty);
+    const differences = partitioned.shown;
+    const hidden = describeHidden(partitioned);
 
     return (
         // A card of its own, in the shape a payload element has, so each form reads as one thing
@@ -154,7 +169,7 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                             <p className="field__hint above-s">
                                 {result.diff.same
                                     ? "The two say the same thing. The model kept everything and changed nothing."
-                                    : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
+                                    : `Nothing left once filtered: ${hidden} hidden, and nothing else.`}
                             </p>
                         )}
 
@@ -202,11 +217,7 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                             </div>
                         )}
 
-                        {differences.length > 0 && hiddenRowIds > 0 && (
-                            <p className="field__hint above-s">
-                                {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
-                            </p>
-                        )}
+                        {differences.length > 0 && hidden && <p className="field__hint above-s">{hidden} hidden.</p>}
                     </>
                 )}
 
