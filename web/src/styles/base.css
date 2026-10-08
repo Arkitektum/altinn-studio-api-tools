@@ -61,8 +61,8 @@
     --border-strong: #4a5057;
 
     --text: #e4e6e9;
-    --text-muted: #a2a9b1;
-    --text-faint: #7d848c;
+    --text-muted: #b8bec5;
+    --text-faint: #9aa1a9;
 
     --accent: #74b4f0;
     --accent-text: #10161c;
@@ -108,8 +108,11 @@
     /*
      * A surface per panel, so a column of them is a column of containers rather than one field.
      * Every one is the same lightness, a step above the page and below anything raised inside it,
-     * and they differ only in hue. The step is about six points of luminance: at two, which is what
-     * these were, the claim above was true of the hex values and not of anything you could see.
+     * and they differ only in hue. The step is three to four points of lightness (L*): at two, which is
+     * what these once were, the claim above was true of the hex values and not of anything you
+     * could see. It was nearer six until the surfaces were taken down a tenth, so the grey text on
+     * them would read: the faint grey fell short of 4.5:1 on Process at 12px, and now clears 6:1 on
+     * all nine.
      *
      * All of them are blue to purple. A first pass walked the whole wheel, and the warm half of it
      * did not work: an amber or olive surface reads as dirty against a blue-grey page, and the one
@@ -126,25 +129,25 @@
      * the panel's own rather than a grey drawn around it. A little more saturation than the
      * surface, because a hairline needs it to read as coloured at all.
      */
-    --panel-user: #1e242a;
+    --panel-user: #1b2026;
     --panel-user-border: #32404c;
-    --panel-target: #23202c;
+    --panel-target: #201d28;
     --panel-target-border: #38344c;
-    --panel-instances: #2a202c;
+    --panel-instances: #261d28;
     --panel-instances-border: #49344c;
-    --panel-payload: #1e222a;
+    --panel-payload: #1b1f26;
     --panel-payload-border: #323b4c;
-    --panel-prevalidation: #251e2a;
+    --panel-prevalidation: #211b26;
     --panel-prevalidation-border: #41324c;
-    --panel-post: #1e1f2a;
+    --panel-post: #1b1c26;
     --panel-post-border: #32344c;
     /* Element and Pdf swapped hues when Prevalidation and Post came between them, to keep the
        neighbours apart: these two now sit either side of the gap the new pair opened. */
-    --panel-element: #2b202b;
+    --panel-element: #271d27;
     --panel-element-border: #4c344b;
-    --panel-pdf: #25202c;
+    --panel-pdf: #211d28;
     --panel-pdf-border: #3e344c;
-    --panel-process: #1e272a;
+    --panel-process: #1b2326;
     --panel-process-border: #32464c;
 
     /*
@@ -159,7 +162,7 @@
 
     /* Chromium ignores padding-right when placing the native select arrow, so the arrow is
        drawn here instead and can be positioned properly. */
-    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a2a9b1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b8bec5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
     /*
      * The type scale, whole pixels and five steps.
