@@ -516,6 +516,50 @@ a.btn {
    see the top of the document. */
 /* ------------------------------------------------------------------ diff */
 
+/*
+ * One stored form in Compare with stored. The shape of a payload element, a hairline box with a
+ * lifted bar, so the stored form reads as the counterpart of the element it was written from, and
+ * a column of them as separate forms rather than one long diff.
+ */
+.compared {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.compared__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-subtle);
+    border-radius: 4px 4px 0 0;
+}
+
+.compared__type {
+    font-size: var(--size-note);
+}
+
+.compared__id {
+    font-family: var(--font-mono);
+    font-size: var(--size-meta);
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.compared__body {
+    padding: 10px;
+}
+
+/* The body's first line sits against the bar's padding, not a margin of its own as well. */
+.compared__body > :first-child {
+    margin-top: 0;
+}
+
 .diff {
     display: flex;
     flex-direction: column;

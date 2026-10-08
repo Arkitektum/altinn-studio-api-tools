@@ -68,11 +68,11 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
     const comparisons = useMemo(() => {
         const appMetadata = metadata?.metadata ?? null;
         const dataTypes = appMetadata?.dataTypes ?? [];
-        const isForm = (dataType: string) => {
+        const kindOf = (dataType: string) => {
             const kind = dataTypeKindOf(dataTypes, appMetadata, dataType);
-            return kind === "main" || kind === "sub";
+            return kind === "main" || kind === "sub" ? kind : null;
         };
-        return pairComparisons(dataElements, payload, isForm);
+        return pairComparisons(dataElements, payload, kindOf);
     }, [metadata, dataElements, payload]);
 
     /** Held so it can be saved as a file rather than read again. */

@@ -111,19 +111,20 @@ interface ComparedElementProps {
 }
 
 /** One stored form against the payload element it was written from. Its own component for its own read. */
-function ComparedElement({ pair: { stored, written }, hideRowIds }: ComparedElementProps) {
+function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: ComparedElementProps) {
     const { dataType } = stored;
     const comparison = useCompare(stored.id, stored.lastChanged, dataType, written?.content ?? null);
     const { result, error } = comparison;
     const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
 
     return (
-        <div style={{ marginTop: 16 }}>
-            <div className="row">
-                <strong>{dataType}</strong>
-                <span className="field__hint" style={{ margin: 0 }}>
-                    {stored.id}
-                </span>
+        // A card of its own, in the shape a payload element has, so each form reads as one thing
+        // and the stored form looks like the element it is compared against.
+        <div className="compared">
+            <div className="compared__bar">
+                <span className={`badge badge--${kind}`}>{kind === "main" ? "main form" : "sub form"}</span>
+                <strong className="compared__type">{dataType}</strong>
+                <span className="compared__id">{stored.id}</span>
                 <span className="spacer" />
                 {comparison.fetching ? <span className="btn__spinner" /> : null}
                 {written && result?.diff && (
@@ -133,70 +134,72 @@ function ComparedElement({ pair: { stored, written }, hideRowIds }: ComparedElem
                 )}
             </div>
 
-            {written === null ? (
-                <p className="field__hint">
-                    Nothing to compare against: the payload has no {dataType} element with content to pair with this one. Load an example file, or one
-                    from disk, into a {dataType} element in the <strong>Payload</strong> panel.
-                </p>
-            ) : !comparison.wellFormed ? (
-                <p className="field__hint">
-                    Waiting: the {dataType} element in the payload is not well formed xml yet. The comparison runs on its own once it parses, so this
-                    is what it looks like half way through an edit.
-                </p>
-            ) : (
-                <>
+            <div className="compared__body">
+                {written === null ? (
                     <p className="field__hint">
-                        Against the payload element: <span style={{ color: "var(--accent)" }}>{describeWritten(written)}</span>
+                        Nothing to compare against: the payload has no {dataType} element with content to pair with this one. Load an example file, or
+                        one from disk, into a {dataType} element in the <strong>Payload</strong> panel.
                     </p>
-
-                    {result?.diff && differences.length === 0 && (
-                        <p className="field__hint" style={{ marginTop: 8 }}>
-                            {result.diff.same
-                                ? "The two say the same thing. The model kept everything and changed nothing."
-                                : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
+                ) : !comparison.wellFormed ? (
+                    <p className="field__hint">
+                        Waiting: the {dataType} element in the payload is not well formed xml yet. The comparison runs on its own once it parses, so
+                        this is what it looks like half way through an edit.
+                    </p>
+                ) : (
+                    <>
+                        <p className="field__hint">
+                            Against the payload element: <span style={{ color: "var(--accent)" }}>{describeWritten(written)}</span>
                         </p>
-                    )}
 
-                    {differences.length > 0 && (
-                        <div className="diff">
-                            {differences.map((difference) => (
-                                <div key={`${difference.kind}-${difference.path}`} className={`diff__row diff__row--${difference.kind}`}>
-                                    <div className="diff__head">
-                                        <span className={`diff__kind diff__kind--${difference.kind}`}>{KIND_LABELS[difference.kind]}</span>
-                                        <span className="diff__path">{difference.path}</span>
-                                        {/* The field's declared type, where the schema had one. A blank
+                        {result?.diff && differences.length === 0 && (
+                            <p className="field__hint" style={{ marginTop: 8 }}>
+                                {result.diff.same
+                                    ? "The two say the same thing. The model kept everything and changed nothing."
+                                    : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
+                            </p>
+                        )}
+
+                        {differences.length > 0 && (
+                            <div className="diff">
+                                {differences.map((difference) => (
+                                    <div key={`${difference.kind}-${difference.path}`} className={`diff__row diff__row--${difference.kind}`}>
+                                        <div className="diff__head">
+                                            <span className={`diff__kind diff__kind--${difference.kind}`}>{KIND_LABELS[difference.kind]}</span>
+                                            <span className="diff__path">{difference.path}</span>
+                                            {/* The field's declared type, where the schema had one. A blank
                                             is informative for a dropped field: the model has no such field. */}
-                                        {difference.type && <span className="diff__type">{difference.type}</span>}
+                                            {difference.type && <span className="diff__type">{difference.type}</span>}
+                                        </div>
+                                        {/* A dropped field has no right-hand value, and an added one no left. */}
+                                        {difference.left !== null && (
+                                            <div className="diff__value">
+                                                <span className="diff__side">written</span> {difference.left}
+                                            </div>
+                                        )}
+                                        {difference.right !== null && (
+                                            <div className="diff__value">
+                                                <span className="diff__side">stored</span> {difference.right}
+                                            </div>
+                                        )}
                                     </div>
-                                    {/* A dropped field has no right-hand value, and an added one no left. */}
-                                    {difference.left !== null && (
-                                        <div className="diff__value">
-                                            <span className="diff__side">written</span> {difference.left}
-                                        </div>
-                                    )}
-                                    {difference.right !== null && (
-                                        <div className="diff__value">
-                                            <span className="diff__side">stored</span> {difference.right}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
 
-                    {differences.length > 0 && hiddenRowIds > 0 && (
-                        <p className="field__hint" style={{ marginTop: 8 }}>
-                            {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
-                        </p>
-                    )}
-                </>
-            )}
+                        {differences.length > 0 && hiddenRowIds > 0 && (
+                            <p className="field__hint" style={{ marginTop: 8 }}>
+                                {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
+                            </p>
+                        )}
+                    </>
+                )}
 
-            {error ? (
-                <div style={{ marginTop: 12 }}>
-                    <ErrorNotice error={error} />
-                </div>
-            ) : null}
+                {error ? (
+                    <div style={{ marginTop: 12 }}>
+                        <ErrorNotice error={error} />
+                    </div>
+                ) : null}
+            </div>
         </div>
     );
 }

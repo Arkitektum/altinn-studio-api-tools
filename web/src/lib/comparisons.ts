@@ -1,8 +1,13 @@
 import type { DataElementInput, DataElementSummary } from "../types";
 
+/** The kinds of data element a comparison is for. An attachment is neither. */
+export type FormKind = "main" | "sub";
+
 export interface ComparisonPair {
     /** The element as Altinn stored it. */
     stored: DataElementSummary;
+    /** Main form or sub form, for the badge that says which. */
+    kind: FormKind;
     /** The payload element it was written from, or null when the payload has none to offer. */
     written: DataElementInput | null;
 }
@@ -15,8 +20,8 @@ function isWrittenXml(element: DataElementInput): boolean {
 /**
  * Every stored element worth comparing, each beside the payload element it was written from.
  *
- * Only form data is compared, which is the main form and the sub forms, since `isForm` says which
- * those are. An attachment goes in as a file and comes back as the same file, so there is nothing
+ * Only form data is compared, which is the main form and the sub forms, since `kindOf` says which
+ * those are, and null for anything else. An attachment goes in as a file and comes back as the same file, so there is nothing
  * for a model to have done to it.
  *
  * Paired in order within a data type: the second stored element of a sub form is the second
@@ -25,14 +30,18 @@ function isWrittenXml(element: DataElementInput): boolean {
  * payload holds is kept with nothing beside it, so the panel can say why it is not compared rather
  * than leaving it out.
  */
-export function pairComparisons(stored: DataElementSummary[], payload: DataElementInput[], isForm: (dataType: string) => boolean): ComparisonPair[] {
+export function pairComparisons(
+    stored: DataElementSummary[],
+    payload: DataElementInput[],
+    kindOf: (dataType: string) => FormKind | null
+): ComparisonPair[] {
     const seen = new Map<string, number>();
-    return stored
-        .filter((element) => isForm(element.dataType))
-        .map((element) => {
-            const index = seen.get(element.dataType) ?? 0;
-            seen.set(element.dataType, index + 1);
-            const written = payload.filter((candidate) => candidate.dataType === element.dataType && isWrittenXml(candidate))[index] ?? null;
-            return { stored: element, written };
-        });
+    return stored.flatMap((element) => {
+        const kind = kindOf(element.dataType);
+        if (!kind) return [];
+        const index = seen.get(element.dataType) ?? 0;
+        seen.set(element.dataType, index + 1);
+        const written = payload.filter((candidate) => candidate.dataType === element.dataType && isWrittenXml(candidate))[index] ?? null;
+        return [{ stored: element, kind, written }];
+    });
 }
