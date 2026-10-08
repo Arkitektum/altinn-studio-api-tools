@@ -6,6 +6,7 @@ import { useSession } from "../session";
 import { Icon } from "./Icon";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
+import { Explained } from "./Explained";
 import type { SweepOutcome, SweepRow, SweepState } from "../types";
 
 /** How often the running sweep is asked how it is going. Each file takes a second or two. */
@@ -116,10 +117,13 @@ export function SweepWindow({ onClose }: SweepWindowProps) {
             onClose={onClose}
             bodyClassName="modal__stack"
         >
-            <p className="field__hint" style={{ margin: 0 }}>
-                Posts every example this tool has, one instance per file, and reports what each app's model did to it. A field the model has no place
-                for is dropped on the way in, and a value it formats its own way is rewritten. Neither is reported by anything else.
-            </p>
+            <Explained
+                style={{ margin: 0 }}
+                lead="Posts every example this tool has, one instance per file, and reports what each app's model did to it."
+            >
+                A field the model has no place for is dropped on the way in, and a value it formats its own way is rewritten. Neither is reported by
+                anything else.
+            </Explained>
 
             {!ready && (
                 <div className="notice notice--warn">Needs a usable token and a party. Both are set at the top of the column behind this window.</div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { payloadNamed } from "../lib/savedPayloads";
 import { Modal } from "./Modal";
+import { Explained } from "./Explained";
 import type { SavedPayload } from "../types";
 import { Icon } from "./Icon";
 
@@ -58,10 +59,10 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
 
             {dialog === "open" && (
                 <Modal title="Open a saved payload" className="modal--form" onClose={close} bodyClassName="modal__form">
-                    <p className="field__hint">
-                        Loading one replaces every element in the panel behind this window. An element saved as a reference to an example is read from
-                        that file as it stands now, so a payload saved before the file was corrected loads the corrected one.
-                    </p>
+                    <Explained lead="Loading one replaces every element in the panel behind this window.">
+                        An element saved as a reference to an example is read from that file as it stands now, so a payload saved before the file was
+                        corrected loads the corrected one.
+                    </Explained>
 
                     <div className="picklist">
                         {payloads.map((payload) => {
@@ -118,11 +119,10 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
 
             {dialog === "save" && (
                 <Modal title="Save this payload" className="modal--form" onClose={close} bodyClassName="modal__form">
-                    <p className="field__hint">
-                        The whole list of elements, under a name, for later. An element still holding an unedited example is kept as a reference to
-                        that file, so a payload saved today loads the corrected file tomorrow. An element you have edited, typed or picked off disk
-                        has no file to point at, so its text is kept instead.
-                    </p>
+                    <Explained lead="The whole list of elements, under a name, for later.">
+                        An element still holding an unedited example is kept as a reference to that file, so a payload saved today loads the corrected
+                        file tomorrow. An element you have edited, typed or picked off disk has no file to point at, so its text is kept instead.
+                    </Explained>
 
                     <form
                         className="row"

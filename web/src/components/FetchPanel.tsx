@@ -12,6 +12,7 @@ import { CompareSection } from "./CompareSection";
 import { Dump } from "./Dump";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
+import { Explained } from "./Explained";
 import { Panel } from "./Panel";
 import type { DataElementInput, DataElementSummary } from "../types";
 import { Icon } from "./Icon";
@@ -121,10 +122,13 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                 ) : undefined
             }
         >
-            <p className="field__hint" style={{ marginBottom: 12 }}>
-                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Picking one here reads it
-                and validates it on its own. Every form on the instance is compared at the foot of this panel, whichever is picked.
-            </p>
+            <Explained
+                style={{ marginBottom: 12 }}
+                lead="The data elements on the instance selected in Instances, listed by the read that happens when you select it."
+            >
+                Picking one here reads it and validates it on its own. Every form on the instance is compared at the foot of this panel, whichever is
+                picked.
+            </Explained>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
             {dataElements.length > 0 ? (

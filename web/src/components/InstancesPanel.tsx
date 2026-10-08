@@ -9,6 +9,7 @@ import { SELECTION_DELAY_MS, useSettled } from "../lib/useDebounced";
 import { instanceLabel } from "../lib/format";
 import { useTarget } from "../session";
 import { Modal } from "./Modal";
+import { Explained } from "./Explained";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DeleteInstanceResult, InstanceState, InstanceSummary, ListInstancesResult } from "../types";
@@ -520,11 +521,18 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                         <span className="method method--get">GET</span> {base}/instances/{party}/{"{instanceGuid}"}/validate
                     </p>
 
-                    <p className="field__hint">
+                    {/* Delete leads, since it is the one that cannot be taken back. */}
+                    <Explained
+                        lead={
+                            <>
+                                <strong>Delete</strong> removes an instance outright, and asks twice first.
+                            </>
+                        }
+                    >
                         <strong>Open in app</strong> is a link into the app, which is a session of its own: the token here lives in server memory, so
                         the browser never gets one. If it bounces to a user picker, <strong>Log in</strong> above is that same picker, and opening the
-                        instance again then works. <strong>Delete</strong> removes an instance outright, and asks twice first.
-                    </p>
+                        instance again then works.
+                    </Explained>
 
                     <p className="field__hint">
                         <span className="method method--get">GET</span> {base}/instances/{party}/active

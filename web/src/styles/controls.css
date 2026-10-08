@@ -56,6 +56,21 @@
     overflow-wrap: anywhere;
 }
 
+/* The "More" on a hint that explains itself further. See Explained.tsx. A link in look, since it
+   sits in a sentence, and a button in fact, since it opens text rather than going anywhere. */
+.explained__toggle {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.explained__toggle:hover {
+    text-decoration: underline;
+}
+
 .grid {
     display: grid;
     gap: 10px;

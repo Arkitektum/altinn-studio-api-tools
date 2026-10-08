@@ -3,6 +3,7 @@ import { useCompare } from "../reads";
 import { partitionDifferences } from "../lib/differences";
 import { Icon } from "./Icon";
 import { ErrorNotice } from "./Notice";
+import { Explained } from "./Explained";
 import { SweepWindow } from "./SweepWindow";
 import type { ComparisonPair } from "../lib/comparisons";
 import type { DataElementInput, XmlDifferenceKind } from "../types";
@@ -67,13 +68,16 @@ export function CompareSection({ pairs }: CompareSectionProps) {
 
             {sweeping && <SweepWindow onClose={() => setSweeping(false)} />}
 
-            <p className="field__hint" style={{ margin: "8px 0 12px" }}>
-                The main form and every sub form on the instance, as Altinn stored them, each against the xml it was written from. Each difference
-                carries the field's declared type from the app's schema where there is one, and nothing where there is not, which for a dropped field
-                is the reason it was dropped. Reading an element gives you the model as JSON, so this is the only view of what the model did to the
-                file: a field it has no place for is dropped without complaint, and a value it formats its own way is rewritten. Formatting, namespace
-                prefixes and attribute order are ignored. Attachments are left out, since a file comes back as the file it went in as.
-            </p>
+            <Explained
+                style={{ margin: "8px 0 12px" }}
+                lead="The main form and every sub form on the instance, as Altinn stored them, each against the xml it was written from."
+            >
+                Each difference carries the field's declared type from the app's schema where there is one, and nothing where there is not, which for
+                a dropped field is the reason it was dropped. Reading an element gives you the model as JSON, so this is the only view of what the
+                model did to the file: a field it has no place for is dropped without complaint, and a value it formats its own way is rewritten.
+                Formatting, namespace prefixes and attribute order are ignored. Attachments are left out, since a file comes back as the file it went
+                in as.
+            </Explained>
 
             {pairs.length === 0 ? (
                 <p className="field__hint">No form data on this instance, so nothing to compare.</p>

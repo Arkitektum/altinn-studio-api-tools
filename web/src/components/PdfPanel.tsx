@@ -1,5 +1,6 @@
 import { useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
+import { Explained } from "./Explained";
 import { Panel } from "./Panel";
 import type { PdfStand } from "../lib/pdfCache";
 import { Icon } from "./Icon";
@@ -42,10 +43,9 @@ export function PdfPanel({ notReady, stand, onRender, onShow, busy, hasToken, er
 
     return (
         <Panel icon="file" id="panel-pdf" notReady={notReady} title="Pdf" tone="pdf">
-            <p className="field__hint" style={{ marginBottom: 10 }}>
-                What the app would archive, rendered from the data as it stands. The quickest way to see what the form turns into without walking the
-                process to the end. It opens in a window over the tool.
-            </p>
+            <Explained style={{ marginBottom: 10 }} lead="What the app would archive, rendered from the data as it stands.">
+                The quickest way to see what the form turns into without walking the process to the end. It opens in a window over the tool.
+            </Explained>
 
             <div className="row">
                 {/*
