@@ -12,70 +12,59 @@
     scroll-margin-top: calc(var(--top-h) + 16px);
 }
 
-/*
- * A panel that cannot be used yet. It keeps its place and its heading, so the order the tool works
- * in is visible from the first screen, and it is quiet enough not to compete with the one panel you
- * can actually act on. Its own surface colour is dropped: a tone says what a panel is for, and a
- * panel that is waiting is not for anything yet.
- */
-.panel--waiting {
-    background: var(--bg);
-    border-style: dashed;
-}
-
-.panel--waiting .panel__head h2 {
-    color: var(--text-muted);
-}
-
-.panel__waiting {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: var(--size-note);
-}
-
+/* Which hue a panel wears. The rules further down decide where it goes. */
 .panel--user {
-    background: var(--panel-user);
-    border-color: var(--panel-user-border);
+    --tone: var(--panel-user);
+    --tone-border: var(--panel-user-border);
 }
 
 .panel--target {
-    background: var(--panel-target);
-    border-color: var(--panel-target-border);
+    --tone: var(--panel-target);
+    --tone-border: var(--panel-target-border);
 }
 
 .panel--instances {
-    background: var(--panel-instances);
-    border-color: var(--panel-instances-border);
+    --tone: var(--panel-instances);
+    --tone-border: var(--panel-instances-border);
 }
 
 .panel--payload {
-    background: var(--panel-payload);
-    border-color: var(--panel-payload-border);
+    --tone: var(--panel-payload);
+    --tone-border: var(--panel-payload-border);
 }
 
 .panel--prevalidation {
-    background: var(--panel-prevalidation);
-    border-color: var(--panel-prevalidation-border);
+    --tone: var(--panel-prevalidation);
+    --tone-border: var(--panel-prevalidation-border);
 }
 
 .panel--post {
-    background: var(--panel-post);
-    border-color: var(--panel-post-border);
+    --tone: var(--panel-post);
+    --tone-border: var(--panel-post-border);
 }
 
 .panel--element {
-    background: var(--panel-element);
-    border-color: var(--panel-element-border);
+    --tone: var(--panel-element);
+    --tone-border: var(--panel-element-border);
 }
 
 .panel--pdf {
-    background: var(--panel-pdf);
-    border-color: var(--panel-pdf-border);
+    --tone: var(--panel-pdf);
+    --tone-border: var(--panel-pdf-border);
 }
 
 .panel--process {
-    background: var(--panel-process);
-    border-color: var(--panel-process-border);
+    --tone: var(--panel-process);
+    --tone-border: var(--panel-process-border);
+}
+
+/*
+ * A panel with a hue: a neutral body, and the hue in its border, its header band and its icon.
+ * See --panel-surface in base.css for why the body is no longer tinted.
+ */
+.panel--toned {
+    background: var(--panel-surface);
+    border-color: var(--tone-border);
 }
 
 /*
@@ -115,9 +104,56 @@
     color: var(--text-faint);
 }
 
-/* A panel that cannot be used yet greys its title, and the mark goes with it. */
-.panel--waiting .panel__icon {
+/*
+ * The header as a band across the top of the panel, out to its edges: the negative margin takes
+ * back the panel's padding, and the band puts it back inside. The radius is the panel's less its
+ * border, so the band's corners sit inside the outline rather than over it.
+ */
+.panel--toned .panel__head {
+    margin: -16px -18px 14px;
+    padding: 10px 18px;
+    background: var(--tone);
+    border-bottom-color: var(--tone-border);
+    border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+/* The mark in the panel's hue, lifted towards the text so a dark hue still reads on the band. */
+.panel--toned .panel__icon {
+    color: color-mix(in srgb, var(--tone-border) 45%, var(--text));
+}
+
+/*
+ * A panel that cannot be used yet. It keeps its place and its heading, so the order the tool works
+ * in is visible from the first screen, and it is quiet enough not to compete with the one panel you
+ * can actually act on. Its hue is dropped: a tone says what a panel is for, and a panel that is
+ * waiting is not for anything yet.
+ *
+ * Last in the file, and doubled up on the class, so it wins over the tone. It came before the tones
+ * once, at the same specificity, and a waiting panel kept its colour as a result.
+ */
+.panel.panel--waiting {
+    background: var(--bg);
+    border-color: var(--border);
+    border-style: dashed;
+}
+
+.panel.panel--waiting .panel__head {
+    background: none;
+    border-bottom-color: var(--border);
+}
+
+.panel--waiting .panel__head h2 {
+    color: var(--text-muted);
+}
+
+.panel.panel--waiting .panel__icon {
     color: var(--border-strong);
+}
+
+.panel__waiting {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--size-note);
 }
 
 .panel__head > :last-child:not(h2) {

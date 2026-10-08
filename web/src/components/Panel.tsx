@@ -2,8 +2,8 @@ import { Icon, type IconName } from "./Icon";
 import type { ReactNode } from "react";
 
 /**
- * Which surface the panel sits on. One per panel in the column you work down, see the `--panel-*`
- * block in styles.css. The two in the sidebar have none: a column of its own is separation enough.
+ * Which hue the panel's header and border wear. One per panel in the column you work down, see the
+ * `--panel-*` block in styles/base.css. The two in the sidebar have none: a column of its own is separation enough.
  */
 export type PanelTone = "user" | "target" | "instances" | "payload" | "prevalidation" | "post" | "element" | "pdf" | "process";
 
@@ -21,8 +21,9 @@ interface PanelProps {
     /** For the chain strip to scroll to, on the panels a chain link is set in. */
     id?: string;
     /**
-     * Its own surface, a hue apart from its neighbours at the same lightness. The panels were the
-     * page colour inside a hairline, which left a column of them reading as one field.
+     * Its own hue, apart from its neighbours at the same lightness, in the header band and the
+     * border. The panels were the page colour inside a hairline, which left a column of them
+     * reading as one field.
      */
     tone?: PanelTone;
     aside?: ReactNode;
@@ -39,7 +40,7 @@ interface PanelProps {
 
 export function Panel({ title, icon, id, tone, aside, notReady, children }: PanelProps) {
     return (
-        <section className={`panel${tone ? ` panel--${tone}` : ""}${notReady ? " panel--waiting" : ""}`} id={id}>
+        <section className={`panel${tone ? ` panel--toned panel--${tone}` : ""}${notReady ? " panel--waiting" : ""}`} id={id}>
             <div className="panel__head">
                 <h2>
                     {icon && <Icon name={icon} className="panel__icon" />}
