@@ -10,13 +10,13 @@
 }
 
 .field > label {
-    font-size: var(--size-label);
+    font-size: var(--size-note);
     color: var(--text-muted);
 }
 
 .legend {
     display: block;
-    font-size: var(--size-label);
+    font-size: var(--size-note);
     font-weight: 600;
     color: var(--text);
     margin-bottom: 8px;
@@ -48,9 +48,15 @@
     border-top: 1px solid var(--border);
 }
 
+/*
+ * Hints are sentences, often several, and at 12px in a faint grey they were the hardest text in the
+ * tool to read. A step up, and the label and legend above them went up with them: a hint larger than
+ * the label it explains reads upside down. The three now share a size and are told apart by weight
+ * and colour, which is what was doing the work anyway.
+ */
 .field__hint {
     margin: 2px 0 0;
-    font-size: var(--size-label);
+    font-size: var(--size-note);
     color: var(--text-faint);
     /* Hints often contain URLs, which must not push past the panel. */
     overflow-wrap: anywhere;
@@ -200,7 +206,7 @@ textarea {
 }
 
 .check__note {
-    font-size: var(--size-label);
+    font-size: var(--size-note);
     color: var(--text-faint);
 }
 
