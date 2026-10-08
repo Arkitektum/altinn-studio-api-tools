@@ -175,12 +175,12 @@ function ComparedElement({ pair: { stored, kind, written }, hideRowIds }: Compar
                                         {/* A dropped field has no right-hand value, and an added one no left. */}
                                         {difference.left !== null && (
                                             <div className="diff__value">
-                                                <span className="diff__side">written</span> {difference.left}
+                                                <span className="diff__side">before Altinn</span> {difference.left}
                                             </div>
                                         )}
                                         {difference.right !== null && (
                                             <div className="diff__value">
-                                                <span className="diff__side">stored</span> {difference.right}
+                                                <span className="diff__side">after Altinn</span> {difference.right}
                                             </div>
                                         )}
                                     </div>

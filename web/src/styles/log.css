@@ -639,9 +639,16 @@ a.btn {
     overflow-wrap: anywhere;
 }
 
+/*
+ * Each value named by where it stands against what Altinn does to it: "before Altinn" is the xml
+ * that goes in, "after Altinn" is what the model made of it, which is what gets passed on. That is
+ * the question the comparison answers. It said "written" and "stored", which named two states of
+ * the same file and left which was which to be remembered, and an action such as "sent" does not
+ * help, since the app sends data too. Wide enough for the longer of the two, so the values line up.
+ */
 .diff__side {
     display: inline-block;
-    min-width: 52px;
+    min-width: 84px;
     color: var(--text-faint);
     font-family: var(--font);
     font-size: var(--size-meta);
