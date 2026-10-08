@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
-import { useAppRead, useCompare, useDataElementRead, useInstanceRead } from "../reads";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../queries";
+import { useAppRead, useDataElementRead, useInstanceRead } from "../reads";
 import { useSession } from "../session";
 import { downloadContent } from "../lib/download";
+import { pairComparisons } from "../lib/comparisons";
+import { dataTypeKindOf } from "../lib/dataTypeGroups";
 import { validationBlockedBy } from "../lib/elementValidation";
 import { heldElement } from "../lib/heldElement";
 import { CompareSection } from "./CompareSection";
@@ -9,7 +13,7 @@ import { Dump } from "./Dump";
 import { Modal } from "./Modal";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
-import type { DataElementSummary } from "../types";
+import type { DataElementInput, DataElementSummary } from "../types";
 import { Icon } from "./Icon";
 
 interface FetchPanelProps {
@@ -20,13 +24,10 @@ interface FetchPanelProps {
     dataGuid: string;
     onDataGuidChange: (next: string) => void;
     /**
-     * The xml as written, which is the other half of the comparison: whatever the payload holds for
-     * the data type selected here. Passed in because it belongs to the payload panel, which is
-     * where it is edited, and null when there is none to compare against.
+     * The payload, which is the other half of the comparison: the xml each form was written from.
+     * Passed in because it belongs to the payload panel, which is where it is edited.
      */
-    written: string | null;
-    /** How much of it there is and where it came from, for the line above the diff. */
-    writtenLabel: string | null;
+    payload: DataElementInput[];
 }
 
 function describeElement(element: DataElementSummary): string {
@@ -39,11 +40,12 @@ function describeElement(element: DataElementSummary): string {
     return bits.join(" · ");
 }
 
-export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, writtenLabel }: FetchPanelProps) {
+export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }: FetchPanelProps) {
     /** Whether the content that came back is open in a window of its own. */
     const [showing, setShowing] = useState(false);
 
-    const { instance, tokenUsable, org, app, partyId, instanceGuid } = useSession();
+    const queryClient = useQueryClient();
+    const { instance, tokenId, tokenUsable, org, app, partyId, instanceGuid } = useSession();
     const { metadata } = useAppRead();
     const { dataElements, process, fetching: readingInstance } = useInstanceRead();
 
@@ -61,7 +63,17 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
     );
 
     const element = useDataElementRead(dataGuid, selected?.lastChanged ?? null, validateBlockedBy);
-    const comparison = useCompare(dataGuid, selected?.lastChanged ?? null, selected?.dataType ?? "", written);
+
+    /** Every form on the instance beside the payload element it was written from, whatever is selected. */
+    const comparisons = useMemo(() => {
+        const appMetadata = metadata?.metadata ?? null;
+        const dataTypes = appMetadata?.dataTypes ?? [];
+        const isForm = (dataType: string) => {
+            const kind = dataTypeKindOf(dataTypes, appMetadata, dataType);
+            return kind === "main" || kind === "sub";
+        };
+        return pairComparisons(dataElements, payload, isForm);
+    }, [metadata, dataElements, payload]);
 
     /** Held so it can be saved as a file rather than read again. */
     const fetched = useMemo(() => (element.read ? heldElement(dataGuid, element.read, selected ?? null) : null), [element.read, dataGuid, selected]);
@@ -70,13 +82,20 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
     const error = element.error;
 
     /**
-     * Reads and compares again for the selection as it stands, since neither waits for a press.
-     * A refetch rather than an invalidation: the keys are already the right ones, and the question
-     * is not whether the answers have gone stale but that they are being asked for again.
+     * Reads the selection and compares every form again as they stand, since neither waits for a
+     * press. A refetch rather than an invalidation: the keys are already the right ones, and the
+     * question is not whether the answers have gone stale but that they are being asked for again.
+     * Active only, so the copies behind superseded edits are left alone, and a comparison with
+     * nothing to compare against is disabled and so skipped.
      */
     function refresh() {
         element.refetch();
-        if (written) comparison.refetch();
+        for (const { stored } of comparisons) {
+            void queryClient.refetchQueries({
+                queryKey: [...queryKeys.dataElement(tokenId ?? "", org, app, partyId, instanceGuid, stored.id, stored.lastChanged), "compare"],
+                type: "active"
+            });
+        }
     }
 
     return (
@@ -103,8 +122,8 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
             }
         >
             <p className="field__hint" style={{ marginBottom: 12 }}>
-                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Picking one here reads
-                it, validates it, and compares it at the foot of this panel, all on their own.
+                The data elements on the instance selected in Instances, listed by the read that happens when you select it. Picking one here reads it
+                and validates it on its own. Every form on the instance is compared at the foot of this panel, whichever is picked.
             </p>
 
             {/* There is nothing to pick from until an instance read has listed its data elements. */}
@@ -205,19 +224,8 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, written, 
                 </div>
             ) : null}
 
-            {/* Inside the panel, because it compares what the select above it is pointing at.
-                Beside it as its own card, that was left to be worked out from the order the two
-                happened to be in. */}
-            {selected && (
-                <CompareSection
-                    dataType={selected.dataType}
-                    payload={writtenLabel}
-                    parses={comparison.wellFormed}
-                    result={comparison.result}
-                    busy={comparison.fetching}
-                    error={comparison.error}
-                />
-            )}
+            {/* Inside the panel, because it compares the elements the select above lists. */}
+            {dataElements.length > 0 && <CompareSection pairs={comparisons} />}
         </Panel>
     );
 }

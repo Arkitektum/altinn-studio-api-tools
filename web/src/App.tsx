@@ -162,35 +162,6 @@ export function App() {
 
     const selectedDataType = selectedElement?.dataType ?? "";
 
-    /**
-     * The payload element the comparison reads, which is the one of the same data type holding
-     * text. Base64 is left out: a comparison is about xml.
-     */
-    const payloadForSelected = useMemo(
-        () =>
-            selectedDataType
-                ? dataElements.find((element) => element.dataType === selectedDataType && element.content.trim() && element.encoding !== "base64")
-                : undefined,
-        [selectedDataType, dataElements]
-    );
-
-    /**
-     * And the text itself. Whether it parses is not asked here: that is a scan of the whole
-     * document, this is recomputed on every keystroke, and the 838-neighbour Nabovarsel in
-     * `examples/forms/NV` is a megabyte. The comparison asks it once, behind the delay below.
-     */
-    const comparable = useMemo(() => {
-        // Only while there is something to compare it against.
-        if (!dataGuid) return null;
-        const text = payloadForSelected?.content ?? "";
-        return text.trim() ? text : null;
-    }, [payloadForSelected, dataGuid]);
-
-    /** How much the payload holds for the selected type and where it came from, for the diff. */
-    const writtenLabel = payloadForSelected
-        ? `${payloadForSelected.content.length.toLocaleString("nb")} characters${payloadForSelected.exampleName ? ` · from ${payloadForSelected.exampleName}` : ""}`
-        : null;
-
     /** Picking another data element is a different key, so nothing here has to be dropped by hand. */
     const changeDataGuid = useCallback((next: string) => setPreferredDataGuid(next), []);
 
@@ -656,8 +627,7 @@ export function App() {
                             id="panel-data-element"
                             dataGuid={dataGuid}
                             onDataGuidChange={changeDataGuid}
-                            written={comparable}
-                            writtenLabel={writtenLabel}
+                            payload={dataElements}
                         />
 
                         {/* After the data element, since it is a different kind of action. */}

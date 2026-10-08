@@ -1,30 +1,15 @@
 import { useState } from "react";
+import { useCompare } from "../reads";
 import { partitionDifferences } from "../lib/differences";
 import { Icon } from "./Icon";
 import { ErrorNotice } from "./Notice";
 import { SweepWindow } from "./SweepWindow";
-import type { CompareResult, XmlDifferenceKind } from "../types";
+import type { ComparisonPair } from "../lib/comparisons";
+import type { DataElementInput, XmlDifferenceKind } from "../types";
 
 interface CompareSectionProps {
-    /** The data type of the selected data element, which is what there is to compare. */
-    dataType: string;
-    /**
-     * What the payload element of that data type holds, or null when there is none to compare
-     * against. The xml as written is always that element: there was a picker offering the example
-     * files too, and it was never used for anything else, since the payload is where the file you
-     * are working on already is.
-     */
-    payload: string | null;
-    /**
-     * Whether that payload parsed as xml, as of the last time the comparison looked. The comparison
-     * runs as the payload is edited, and a half-typed document is not a comparison waiting to
-     * happen, so it says it is waiting rather than asking the server to fail on it. Settles with
-     * the typing rather than tracking it, since the parse is what the comparison's delay defers.
-     */
-    parses: boolean;
-    result: CompareResult | null;
-    busy: boolean;
-    error: unknown;
+    /** Every form data element on the instance, each beside the payload element it was written from. */
+    pairs: ComparisonPair[];
 }
 
 const KIND_LABELS: Record<XmlDifferenceKind, string> = {
@@ -33,6 +18,11 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
     changed: "changed"
 };
 
+/** How much the payload holds for an element and where it came from, for the line above its diff. */
+function describeWritten(written: DataElementInput): string {
+    return `${written.content.length.toLocaleString("nb")} characters${written.exampleName ? ` · from ${written.exampleName}` : ""}`;
+}
+
 /**
  * The xml as written against the xml Altinn stored.
  *
@@ -40,17 +30,17 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
  * model did to the file: a field it has no place for is dropped on the way in, and a value it
  * formats its own way is rewritten. Neither is reported by anything else.
  *
- * A section of the Data element panel rather than a panel of its own. It compares whatever that
- * panel's select is pointing at, and as two cards side by side that was left to be inferred from
- * the order they happened to be in. Inside the same card, under the select it depends on, the
- * relationship is the layout rather than something the prose has to keep claiming.
+ * Every form data element on the instance at once, the main form and each sub form, rather than
+ * whichever one the select above is pointing at. Following the select meant that picking an
+ * attachment, which has nothing to compare, left the last form's diff on screen as if it were the
+ * attachment's. The forms are the only elements a model can have done anything to, and there are
+ * few enough of them to show together.
  */
-export function CompareSection({ dataType, payload, parses, result, busy, error }: CompareSectionProps) {
+export function CompareSection({ pairs }: CompareSectionProps) {
     /** On by default: an altinnRowId per repeating row would otherwise bury everything else. */
     const [hideRowIds, setHideRowIds] = useState(true);
     /** The same comparison over every example there is, in a window. See SweepWindow.tsx. */
     const [sweeping, setSweeping] = useState(false);
-    const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
 
     return (
         <div className="apart">
@@ -59,11 +49,6 @@ export function CompareSection({ dataType, payload, parses, result, busy, error 
                     Compare with stored
                 </span>
                 <span className="spacer" />
-                {result?.diff && (
-                    <span className={`badge ${differences.length === 0 ? "badge--ok" : ""}`}>
-                        {differences.length === 0 ? "identical" : `${differences.length} difference${differences.length === 1 ? "" : "s"}`}
-                    </span>
-                )}
                 {/*
                  * This panel confirms a problem you already suspect. The sweep finds the ones you do
                  * not, which is why it sits beside it rather than anywhere else in the tool.
@@ -73,7 +58,7 @@ export function CompareSection({ dataType, payload, parses, result, busy, error 
                     className="btn btn--ghost"
                     onClick={() => setSweeping(true)}
                     aria-haspopup="dialog"
-                    title="Post every example there is and compare each one, not only this element"
+                    title="Post every example there is and compare each one, not only this instance"
                 >
                     <Icon name="flow" />
                     Sweep every example
@@ -83,30 +68,18 @@ export function CompareSection({ dataType, payload, parses, result, busy, error 
             {sweeping && <SweepWindow onClose={() => setSweeping(false)} />}
 
             <p className="field__hint" style={{ margin: "8px 0 12px" }}>
-                The <strong>{dataType}</strong> selected above, as Altinn stored it, against the xml as written. Each difference carries the field's
-                declared type from the app's schema where there is one, and nothing where there is not, which for a dropped field is the reason it was
-                dropped. Reading the element gives you the model as JSON, so this is the only view of what the model did to the file: a field it has
-                no place for is dropped without complaint, and a value it formats its own way is rewritten. Formatting, namespace prefixes and
-                attribute order are ignored.
+                The main form and every sub form on the instance, as Altinn stored them, each against the xml it was written from. Each difference
+                carries the field's declared type from the app's schema where there is one, and nothing where there is not, which for a dropped field
+                is the reason it was dropped. Reading an element gives you the model as JSON, so this is the only view of what the model did to the
+                file: a field it has no place for is dropped without complaint, and a value it formats its own way is rewritten. Formatting, namespace
+                prefixes and attribute order are ignored. Attachments are left out, since a file comes back as the file it went in as.
             </p>
 
-            {payload === null ? (
-                <p className="field__hint">
-                    Nothing to compare against: the payload has no {dataType} element with content. Load an example file, or one from disk, into a{" "}
-                    {dataType} element in the <strong>Payload</strong> panel.
-                </p>
-            ) : !parses ? (
-                <p className="field__hint">
-                    Waiting: the {dataType} element in the payload is not well formed xml yet. The comparison runs on its own once it parses, so this
-                    is what it looks like half way through an edit.
-                </p>
+            {pairs.length === 0 ? (
+                <p className="field__hint">No form data on this instance, so nothing to compare.</p>
             ) : (
                 <>
-                    <p className="field__hint">
-                        Against the payload element: <span style={{ color: "var(--accent)" }}>{payload}</span>
-                    </p>
-
-                    <label className="check" style={{ marginTop: 12 }}>
+                    <label className="check">
                         <input type="checkbox" checked={hideRowIds} onChange={(event) => setHideRowIds(event.target.checked)} />
                         <span className="check__body">
                             <span className="check__title">Hide altinnRowId</span>
@@ -118,53 +91,105 @@ export function CompareSection({ dataType, payload, parses, result, busy, error 
                     </label>
 
                     <p className="field__hint" style={{ marginTop: 12 }}>
-                        {busy ? <span className="btn__spinner" /> : null}
-                        Compared again whenever the element or the xml above changes:
+                        Compared again whenever an element or the xml it was written from changes:
                         <br />
                         <span className="method method--get">GET</span> {"{localtest}"}/storage/api/v1/…/data/{"{dataGuid}"}
                     </p>
+
+                    {pairs.map((pair) => (
+                        <ComparedElement key={pair.stored.id} pair={pair} hideRowIds={hideRowIds} />
+                    ))}
                 </>
             )}
+        </div>
+    );
+}
 
-            {result?.diff && differences.length === 0 && (
-                <p className="field__hint" style={{ marginTop: 12 }}>
-                    {result.diff.same
-                        ? "The two say the same thing. The model kept everything and changed nothing."
-                        : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
+interface ComparedElementProps {
+    pair: ComparisonPair;
+    hideRowIds: boolean;
+}
+
+/** One stored form against the payload element it was written from. Its own component for its own read. */
+function ComparedElement({ pair: { stored, written }, hideRowIds }: ComparedElementProps) {
+    const { dataType } = stored;
+    const comparison = useCompare(stored.id, stored.lastChanged, dataType, written?.content ?? null);
+    const { result, error } = comparison;
+    const { shown: differences, hiddenRowIds } = partitionDifferences(result?.diff?.differences ?? [], hideRowIds);
+
+    return (
+        <div style={{ marginTop: 16 }}>
+            <div className="row">
+                <strong>{dataType}</strong>
+                <span className="field__hint" style={{ margin: 0 }}>
+                    {stored.id}
+                </span>
+                <span className="spacer" />
+                {comparison.fetching ? <span className="btn__spinner" /> : null}
+                {written && result?.diff && (
+                    <span className={`badge ${differences.length === 0 ? "badge--ok" : ""}`}>
+                        {differences.length === 0 ? "identical" : `${differences.length} difference${differences.length === 1 ? "" : "s"}`}
+                    </span>
+                )}
+            </div>
+
+            {written === null ? (
+                <p className="field__hint">
+                    Nothing to compare against: the payload has no {dataType} element with content to pair with this one. Load an example file, or one
+                    from disk, into a {dataType} element in the <strong>Payload</strong> panel.
                 </p>
-            )}
+            ) : !comparison.wellFormed ? (
+                <p className="field__hint">
+                    Waiting: the {dataType} element in the payload is not well formed xml yet. The comparison runs on its own once it parses, so this
+                    is what it looks like half way through an edit.
+                </p>
+            ) : (
+                <>
+                    <p className="field__hint">
+                        Against the payload element: <span style={{ color: "var(--accent)" }}>{describeWritten(written)}</span>
+                    </p>
 
-            {differences.length > 0 && (
-                <div className="diff">
-                    {differences.map((difference) => (
-                        <div key={`${difference.kind}-${difference.path}`} className={`diff__row diff__row--${difference.kind}`}>
-                            <div className="diff__head">
-                                <span className={`diff__kind diff__kind--${difference.kind}`}>{KIND_LABELS[difference.kind]}</span>
-                                <span className="diff__path">{difference.path}</span>
-                                {/* The field's declared type, where the schema had one. A blank
-                                    is informative for a dropped field: the model has no such field. */}
-                                {difference.type && <span className="diff__type">{difference.type}</span>}
-                            </div>
-                            {/* A dropped field has no right-hand value, and an added one no left. */}
-                            {difference.left !== null && (
-                                <div className="diff__value">
-                                    <span className="diff__side">written</span> {difference.left}
+                    {result?.diff && differences.length === 0 && (
+                        <p className="field__hint" style={{ marginTop: 8 }}>
+                            {result.diff.same
+                                ? "The two say the same thing. The model kept everything and changed nothing."
+                                : `Nothing but row ids: ${hiddenRowIds} altinnRowId difference${hiddenRowIds === 1 ? "" : "s"} hidden, and nothing else.`}
+                        </p>
+                    )}
+
+                    {differences.length > 0 && (
+                        <div className="diff">
+                            {differences.map((difference) => (
+                                <div key={`${difference.kind}-${difference.path}`} className={`diff__row diff__row--${difference.kind}`}>
+                                    <div className="diff__head">
+                                        <span className={`diff__kind diff__kind--${difference.kind}`}>{KIND_LABELS[difference.kind]}</span>
+                                        <span className="diff__path">{difference.path}</span>
+                                        {/* The field's declared type, where the schema had one. A blank
+                                            is informative for a dropped field: the model has no such field. */}
+                                        {difference.type && <span className="diff__type">{difference.type}</span>}
+                                    </div>
+                                    {/* A dropped field has no right-hand value, and an added one no left. */}
+                                    {difference.left !== null && (
+                                        <div className="diff__value">
+                                            <span className="diff__side">written</span> {difference.left}
+                                        </div>
+                                    )}
+                                    {difference.right !== null && (
+                                        <div className="diff__value">
+                                            <span className="diff__side">stored</span> {difference.right}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                            {difference.right !== null && (
-                                <div className="diff__value">
-                                    <span className="diff__side">stored</span> {difference.right}
-                                </div>
-                            )}
+                            ))}
                         </div>
-                    ))}
-                </div>
-            )}
+                    )}
 
-            {differences.length > 0 && hiddenRowIds > 0 && (
-                <p className="field__hint" style={{ marginTop: 8 }}>
-                    {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
-                </p>
+                    {differences.length > 0 && hiddenRowIds > 0 && (
+                        <p className="field__hint" style={{ marginTop: 8 }}>
+                            {hiddenRowIds} altinnRowId difference{hiddenRowIds === 1 ? "" : "s"} hidden.
+                        </p>
+                    )}
+                </>
             )}
 
             {error ? (

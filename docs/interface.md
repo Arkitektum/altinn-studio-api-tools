@@ -50,7 +50,7 @@ Below 1240px the three columns stack and the rail goes back to a strip across th
 
 ## Post, then inspect
 
-The working column is two runs of panels under a quiet heading each. **Post** is Payload, Prevalidation and Post: what to send, what the service makes of it, and the send. **Inspect** is Data element, Pdf and Process: what is there now. Comparing with the stored xml is not a panel of its own but the foot of Data element, since it compares whatever that panel's select is pointing at. Target and Instances sit above both, because they decide what everything else acts on.
+The working column is two runs of panels under a quiet heading each. **Post** is Payload, Prevalidation and Post: what to send, what the service makes of it, and the send. **Inspect** is Data element, Pdf and Process: what is there now. Comparing with the stored xml is not a panel of its own but the foot of Data element, since it compares the forms among the elements that panel lists. Target and Instances sit above both, because they decide what everything else acts on.
 
 Those first three were one panel until recently, set apart by legends inside it. Three things you do in order are three steps, and one panel meant two rail rows pointing at the same place with nothing to say where one ended.
 
