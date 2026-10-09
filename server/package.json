@@ -14,7 +14,7 @@
         "catalogue": "tsx src/catalogueCheck.ts"
     },
     "dependencies": {
-        "@arkitektum/ftpb-app-catalogue": "^1.0.2",
+        "@arkitektum/ftpb-app-catalogue": "^1.0.3",
         "@arkitektum/ftpb-testmotor-client": "^1.2.2",
         "dotenv": "^18.0.6",
         "express": "^5.2.1",
