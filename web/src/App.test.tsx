@@ -173,9 +173,13 @@ function instancePicked(app: Rendered): string {
     return app.container.querySelector("#panel-instances .picked__name")?.textContent ?? "";
 }
 
-/** The classes on a panel's notice, which is how it says what it thinks of what it is reporting. */
+/**
+ * The tone class on a panel's notice, which is how it says what it thinks of what it is reporting.
+ * Only the tone, so a spacing class added to the notice does not read as a change of mind.
+ */
 function noticeTone(app: Rendered, panel: string): string {
-    return app.container.querySelector(`${panel} .notice`)?.className ?? "";
+    const notice = app.container.querySelector(`${panel} .notice`);
+    return [...(notice?.classList ?? [])].find((name) => name.startsWith("notice--")) ?? "";
 }
 
 /** The url the panel says the post will go to. */
@@ -811,7 +815,7 @@ describe("App", () => {
         // No document is required and missing, so nothing is outstanding and the panel used to be
         // green on the strength of that alone.
         assert.equal(railValue(app, "Prevalidation"), "1 error, 7 warnings");
-        assert.equal(noticeTone(app, "#panel-prevalidation"), "notice notice--bad");
+        assert.equal(noticeTone(app, "#panel-prevalidation"), "notice--bad");
 
         const notice = app.container.querySelector("#panel-prevalidation .notice")?.textContent ?? "";
         assert.match(notice, /1 error, 7 warnings/, "the panel leads with what the rail says");
@@ -855,7 +859,8 @@ describe("App", () => {
         await app.wait(700);
 
         const renders = () => stub.calls.filter((made) => made === "GET /api/instances/pdf-preview").length;
-        const pdfButton = () => find(app, "#panel-pdf button");
+        // Past the hint's More, which sits above the button in the panel.
+        const pdfButton = () => find(app, "#panel-pdf button:not(.explained__toggle)");
 
         assert.equal(pdfButton().textContent, "Render pdf");
         await click(app, pdfButton());
