@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { useRunLog } from "../runLog";
-import { useTarget } from "../session";
 import { toCurl } from "../lib/curl";
 import { prettyJson } from "../lib/format";
 import { CopyButton } from "./CopyButton";
@@ -20,7 +19,6 @@ export function RunLog() {
      * is, wherever it was declared.
      */
     const running = useIsFetching() + useIsMutating() > 0;
-    const { localtestUrl } = useTarget();
     // One run open at a time, following whatever ran last. Older runs stay one line each.
     const [openId, setOpenId] = useState<string | null>(null);
     const newestId = entries[0]?.id ?? null;
@@ -68,20 +66,14 @@ export function RunLog() {
 
             <div className="runs">
                 {entries.map((entry) => (
-                    <Run
-                        key={entry.id}
-                        entry={entry}
-                        open={entry.id === openId}
-                        onToggle={() => setOpenId(entry.id === openId ? null : entry.id)}
-                        localtestUrl={localtestUrl}
-                    />
+                    <Run key={entry.id} entry={entry} open={entry.id === openId} onToggle={() => setOpenId(entry.id === openId ? null : entry.id)} />
                 ))}
             </div>
         </Panel>
     );
 }
 
-function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: boolean; onToggle: () => void; localtestUrl: string }) {
+function Run({ entry, open, onToggle }: { entry: LogEntry; open: boolean; onToggle: () => void }) {
     const { result } = entry;
     const totalMs = result.steps.reduce((sum, step) => sum + step.durationMs, 0);
 
@@ -104,7 +96,7 @@ function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: b
 
             {open && (
                 <div className="run__body">
-                    <Verdict result={result} totalMs={totalMs} localtestUrl={localtestUrl} />
+                    <Verdict result={result} totalMs={totalMs} />
                     <div className="tape">
                         {result.steps.map((step, position) => (
                             <Step key={`${position}-${step.name}`} step={step} />
@@ -116,7 +108,7 @@ function Run({ entry, open, onToggle, localtestUrl }: { entry: LogEntry; open: b
     );
 }
 
-function Verdict({ result, totalMs, localtestUrl }: { result: LogResult; totalMs: number; localtestUrl: string }) {
+function Verdict({ result, totalMs }: { result: LogResult; totalMs: number }) {
     return (
         <div className={`verdict ${result.ok ? "verdict--ok" : "verdict--bad"}`}>
             {result.failedAt && <div className="notice notice--bad below-m">{result.failedAt}</div>}
@@ -131,28 +123,6 @@ function Verdict({ result, totalMs, localtestUrl }: { result: LogResult; totalMs
                 <dt>Total</dt>
                 <dd>{totalMs} ms</dd>
             </dl>
-
-            {result.instanceUrl && (
-                <div className="above-m">
-                    <div className="row" style={{ gap: 12 }}>
-                        <a href={result.instanceUrl} target="_blank" rel="noreferrer">
-                            Open instance in the app
-                        </a>
-                        <a href={`${localtestUrl}/`} target="_blank" rel="noreferrer">
-                            Log in to LocalTest
-                        </a>
-                    </div>
-                    {/*
-                     * The token lives in server memory so the browser never holds one, which also
-                     * means opening the app is a separate session. Without it Altinn bounces to
-                     * LocalTest's front page with a goto, and the deep link's fragment is lost on
-                     * the way back, so you land on the app rather than on the instance.
-                     */}
-                    <p className="field__hint above-s">
-                        The app needs its own LocalTest session. If it bounces to a user picker, log in there once and open the instance again.
-                    </p>
-                </div>
-            )}
         </div>
     );
 }

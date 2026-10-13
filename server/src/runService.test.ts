@@ -92,7 +92,6 @@ describe("sequential mode: create then upload", () => {
         assert.equal(result.ok, true);
         assert.equal(result.instanceGuid, GUID);
         assert.equal(result.instanceOwnerPartyId, "510001");
-        assert.equal(result.instanceUrl, `${APP_BASE}/#/instance/510001/${GUID}`);
 
         const upload = stub.calls.find((call) => call.url.includes("/data/data-1"));
         assert.ok(upload, "expected a PUT to the existing data element");

@@ -221,7 +221,6 @@ export interface RunResult {
     steps: RunStep[];
     instanceOwnerPartyId: string | null;
     instanceGuid: string | null;
-    instanceUrl: string | null;
     instance: unknown;
     failedAt: string | null;
 }
@@ -340,7 +339,6 @@ export interface ReadInstanceResult {
     failedAt: string | null;
     instanceOwnerPartyId: string;
     instanceGuid: string;
-    instanceUrl: string;
     instance: unknown;
     dataElements: DataElementSummary[];
     process: ProcessSummary | null;
@@ -448,7 +446,6 @@ export interface LogResult {
     /** Heading shown when the request succeeded. */
     title: string;
     rows: { label: string; value: string; tone?: "ok" | "warn" | "bad" }[];
-    instanceUrl?: string | null;
     /**
      * Present when the run included a validation, even when it found nothing. Absent means no
      * validation ran, which is what keeps earlier results on screen.

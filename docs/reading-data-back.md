@@ -23,9 +23,7 @@ The first row in the window is **New instance**, which is not an instance yet: w
 
 Picking a row closes the window and points the whole tool at that instance: what a post adds data to, and what the panels below it read.
 
-**Open** on a row is a link into the app, which is a session of its own. The token here lives in server memory so the browser never receives one, which means Altinn bounces to LocalTest's user picker until you have logged in there, and the deep link's fragment is dropped on the way back so you land on the app root. **Log in** in the window's header is that same picker, and opening the instance again afterwards works.
-
-An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the panel says otherwise. **Open** is the deep link into the app, which needs a LocalTest session in the browser, see [Validation and the run log](validation-and-log.md#run-log).
+An instance whose process has ended leaves Altinn's active list, so the one being worked on can be absent from it, which happens after a post that advanced the process. It keeps a row of its own, marked "not in the active list", rather than leaving the list with nothing selected while the panel says otherwise.
 
 Altinn lists the instances whose process has not ended, so an archived one is not here. **Other instance** at the bottom of the list is the way to one anyway: it reveals a field that takes a guid, or the whole `510001/99d0632c-…` pair as Altinn writes it, in which case the party comes along too. What you reach that way gets the same row as any other, marked "not in the active list", and is just as readable and deletable.
 

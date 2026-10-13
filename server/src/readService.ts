@@ -1,6 +1,6 @@
 import { altinnFetch, isTextual } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
-import { appBaseUrl, instanceUiUrl, storageInstancesUrl } from "./urls.js";
+import { appBaseUrl, storageInstancesUrl } from "./urls.js";
 import { advanceBody } from "./processAction.js";
 
 export interface ReadRequest {
@@ -78,7 +78,6 @@ export interface ReadInstanceResult {
     failedAt: string | null;
     instanceOwnerPartyId: string;
     instanceGuid: string;
-    instanceUrl: string;
     instance: unknown;
     /** Data elements on the instance, for choosing which one to fetch next. */
     dataElements: DataElementSummary[];
@@ -331,7 +330,6 @@ export async function readInstance(token: string, request: ReadRequest): Promise
         failedAt: response.ok ? null : "Could not read the instance.",
         instanceOwnerPartyId: request.instanceOwnerPartyId,
         instanceGuid: request.instanceGuid,
-        instanceUrl: instanceUiUrl(request.org, request.app, request.instanceOwnerPartyId, request.instanceGuid),
         instance,
         dataElements,
         process: toProcess(instance)

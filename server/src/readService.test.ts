@@ -269,7 +269,6 @@ describe("readInstance", () => {
             lastChanged: "2026-09-03T10:00:00Z"
         });
         assert.equal(result.dataElements[2]?.filename, "kvittering.pdf");
-        assert.equal(result.instanceUrl, `${APP_BASE}/#/instance/510001/${GUID}`);
 
         // Where the instance stands, so the process panel needs no request of its own.
         assert.deepEqual(result.process, {

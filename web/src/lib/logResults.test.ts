@@ -57,7 +57,6 @@ function run(overrides: Partial<RunResult> = {}): RunResult {
         steps: [step("Create instance"), step("Add data element", 2)],
         instanceOwnerPartyId: "510001",
         instanceGuid: GUID,
-        instanceUrl: `http://local/#/instance/510001/${GUID}`,
         instance: null,
         failedAt: null,
         ...overrides
@@ -71,7 +70,6 @@ function instanceRead(overrides: Partial<ReadInstanceResult> = {}): ReadInstance
         failedAt: null,
         instanceOwnerPartyId: "510001",
         instanceGuid: GUID,
-        instanceUrl: `http://local/#/instance/510001/${GUID}`,
         instance: null,
         dataElements: ELEMENTS,
         process: { currentTask: "Task_1", taskType: "data", started: null, ended: null, endEvent: null },
@@ -172,7 +170,7 @@ describe("logFromRun", () => {
     });
 
     it("says only what it knows when the follow-ups did not answer", () => {
-        const entry = logFromRun(run({ ok: false, failedAt: "Instance creation failed.", instanceGuid: null, instanceUrl: null }), {
+        const entry = logFromRun(run({ ok: false, failedAt: "Instance creation failed.", instanceGuid: null }), {
             instance: null,
             validation: null
         });
@@ -321,7 +319,6 @@ describe("logFromRead", () => {
         const entry = logFromRead(instanceRead({ ok: false, failedAt: "Could not read the instance." }), null);
 
         assert.equal(entry.ok, false);
-        assert.equal(entry.instanceUrl, null);
         assert.deepEqual(
             entry.rows.map((row) => row.label),
             ["Party", "Instance"]

@@ -1,7 +1,7 @@
 import { altinnFetch } from "./altinnClient.js";
 import { StepRecorder, type RunStep } from "./stepRecorder.js";
 import { buildMultipart, type MultipartPart } from "./multipart.js";
-import { appBaseUrl, instanceUiUrl } from "./urls.js";
+import { appBaseUrl } from "./urls.js";
 import { advanceBody, taskTypeOf } from "./processAction.js";
 import { fetchApplicationMetadata, resolveContentType, sniffContentType, type AppDataType, type ApplicationMetadata } from "./appService.js";
 
@@ -46,7 +46,6 @@ export interface RunResult {
     steps: RunStep[];
     instanceOwnerPartyId: string | null;
     instanceGuid: string | null;
-    instanceUrl: string | null;
     instance: unknown;
     failedAt: string | null;
 }
@@ -306,7 +305,6 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
         steps: recorder.steps,
         instanceOwnerPartyId: partyId,
         instanceGuid: guid,
-        instanceUrl: instanceUiUrl(request.org, request.app, partyId, guid),
         instance,
         failedAt: null
     };
@@ -350,7 +348,6 @@ function failed(
         steps: recorder.steps,
         instanceOwnerPartyId: at?.partyId ?? null,
         instanceGuid: at?.guid ?? null,
-        instanceUrl: at?.partyId && at.guid ? instanceUiUrl(at.org, at.app, at.partyId, at.guid) : null,
         instance: at?.instance ?? null,
         failedAt: reason
     };

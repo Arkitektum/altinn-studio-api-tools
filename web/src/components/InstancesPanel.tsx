@@ -9,7 +9,6 @@ import { SELECTION_DELAY_MS, useSettled } from "../lib/useDebounced";
 import { instanceLabel } from "../lib/format";
 import { useTarget } from "../session";
 import { Modal } from "./Modal";
-import { Explained } from "./Explained";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DeleteInstanceResult, InstanceState, InstanceSummary, ListInstancesResult } from "../types";
@@ -306,15 +305,10 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                     bodyClassName="modal__form"
                     onClose={close}
                     aside={
-                        <>
-                            <a href={`${localtestUrl}/`} target="_blank" rel="noreferrer" className="btn btn--ghost">
-                                Log in
-                            </a>
-                            <button type="button" className="btn btn--get" onClick={() => void listQuery.refetch()} disabled={busy}>
-                                {busy ? <span className="btn__spinner" /> : <Icon name="refresh" />}
-                                Refresh
-                            </button>
-                        </>
+                        <button type="button" className="btn btn--get" onClick={() => void listQuery.refetch()} disabled={busy}>
+                            {busy ? <span className="btn__spinner" /> : <Icon name="refresh" />}
+                            Refresh
+                        </button>
                     }
                 >
                     {/* Above the list, since what it decides is what the list holds. */}
@@ -422,16 +416,6 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                                         )}
                                     </button>
 
-                                    <a
-                                        href={`${base}/#/instance/${instance.instanceOwnerPartyId}/${instance.instanceGuid}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="btn btn--ghost"
-                                        title="Open it in the app, which needs a LocalTest session in the browser"
-                                    >
-                                        Open in app
-                                    </a>
-
                                     {armed ? (
                                         <>
                                             <button
@@ -521,18 +505,9 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                         <span className="method method--get">GET</span> {base}/instances/{party}/{"{instanceGuid}"}/validate
                     </p>
 
-                    {/* Delete leads, since it is the one that cannot be taken back. */}
-                    <Explained
-                        lead={
-                            <>
-                                <strong>Delete</strong> removes an instance outright, and asks twice first.
-                            </>
-                        }
-                    >
-                        <strong>Open in app</strong> is a link into the app, which is a session of its own: the token here lives in server memory, so
-                        the browser never gets one. If it bounces to a user picker, <strong>Log in</strong> above is that same picker, and opening the
-                        instance again then works.
-                    </Explained>
+                    <p className="field__hint">
+                        <strong>Delete</strong> removes an instance outright, and asks twice first.
+                    </p>
 
                     <p className="field__hint">
                         <span className="method method--get">GET</span> {base}/instances/{party}/active

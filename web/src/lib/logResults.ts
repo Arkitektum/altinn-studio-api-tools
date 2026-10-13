@@ -104,7 +104,6 @@ export function logFromRun(result: RunResult, followUp: { instance: ReadInstance
         failedAt: result.failedAt,
         title: "Posted",
         rows,
-        instanceUrl: result.instanceUrl,
         validation: toValidation(followUp.validation, followUp.instance?.dataElements ?? [])
     };
 }
@@ -131,8 +130,6 @@ export function logFromRead(instance: ReadInstanceResult, validation: ValidateRe
         failedAt: instance.failedAt,
         title: "Read instance",
         rows,
-        // Offering to open an instance that could not be read would just 404 again.
-        instanceUrl: instance.ok ? instance.instanceUrl : null,
         validation: toValidation(validation, instance.dataElements)
     };
 }
@@ -236,8 +233,7 @@ export function logFromAdvance(result: AdvanceProcessResult, read: ReadInstanceR
         steps: renumber([...result.steps, ...(read?.steps ?? [])]),
         failedAt: result.failedAt,
         title: advancedLabel(fromTaskType),
-        rows,
-        instanceUrl: read?.ok ? read.instanceUrl : null
+        rows
     };
 }
 

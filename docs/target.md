@@ -15,7 +15,7 @@ The read is debounced, because org and app are typed a character at a time and `
 
 A result belongs to one org and app, so changing either drops it and reads the new target instead.
 
-There is deliberately no link to the app root here. Altinn instantiates from it, so opening it left a new empty instance behind every time, which is rarely what anyone wanted from a link called "open app". To open an instance you actually have, use **Open** on its row in [Instances](reading-data-back.md#instances), or the link on its run log entry. The api still reports the app's url as `appUrl` on `/api/app/metadata` for a caller that wants it.
+There is deliberately no link to the app root here. Altinn instantiates from it, so opening it left a new empty instance behind every time, which is rarely what anyone wanted from a link called "open app". The api still reports the app's url as `appUrl` on `/api/app/metadata` for a caller that wants it.
 
 ## Application
 

@@ -16,11 +16,6 @@ export function appUiUrl(org: string, app: string): string {
     return `${appBaseUrl(org, app)}/`;
 }
 
-/** Deep link a human can open to inspect the instance in the app frontend. */
-export function instanceUiUrl(org: string, app: string, instanceOwnerPartyId: string | number, instanceGuid: string): string {
-    return `${appBaseUrl(org, app)}/#/instance/${instanceOwnerPartyId}/${instanceGuid}`;
-}
-
 /** The json schema for a data type's model, which the app generates from the same XSD. */
 export function schemaUrl(org: string, app: string, dataType: string): string {
     return `${appBaseUrl(org, app)}/api/jsonschema/${encodeURIComponent(dataType)}`;

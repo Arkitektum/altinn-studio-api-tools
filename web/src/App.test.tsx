@@ -78,7 +78,6 @@ function instanceRead(guid: string, dataType: string) {
         failedAt: null,
         instanceOwnerPartyId: "510001",
         instanceGuid: guid,
-        instanceUrl: `http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/${guid}`,
         instance: {},
         dataElements: [{ id: `${guid}-data`, dataType, contentType: "application/xml", filename: null, size: 10, lastChanged: null }],
         process: { taskId: "Task_1", taskType: "data", ended: null, currentTask: "Task_1" }
@@ -639,7 +638,6 @@ describe("App", () => {
                 steps: [],
                 instanceOwnerPartyId: "510001",
                 instanceGuid: B,
-                instanceUrl: `http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/${B}`,
                 instance: {},
                 failedAt: null
             },
