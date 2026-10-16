@@ -5,10 +5,10 @@ __metadata:
   version: 10
   cacheKey: 10c0
 
-"@arkitektum/ftpb-app-catalogue@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "@arkitektum/ftpb-app-catalogue@npm:1.0.3"
-  checksum: 10c0/135768a9265e8d0ebbe41aa64d7ef98cb6dcb75c35d3be254f1958bb01b5f72a80032a5b586116bf438e061d29d1d40f71cd0e86137c03a329f759735961f4fb
+"@arkitektum/ftpb-app-catalogue@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@arkitektum/ftpb-app-catalogue@npm:1.0.4"
+  checksum: 10c0/58adf1d18ec9b8590a2719f03b68018da4efb8d70fbad0bc614804fefd884fc30315db8d889d79f89bab27d4caf2b6395e77d2621d590a522209fddba74cf44f
   languageName: node
   linkType: hard
 
@@ -2077,7 +2077,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "server@workspace:server"
   dependencies:
-    "@arkitektum/ftpb-app-catalogue": "npm:^1.0.3"
+    "@arkitektum/ftpb-app-catalogue": "npm:^1.0.4"
     "@arkitektum/ftpb-testmotor-client": "npm:^1.2.2"
     "@types/express": "npm:^5.0.6"
     "@types/node": "npm:^26.6.4"
