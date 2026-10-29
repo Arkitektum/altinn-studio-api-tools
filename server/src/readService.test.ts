@@ -619,30 +619,61 @@ describe("readPdfTargets", () => {
             { elementId: "Task_1", altinnTaskType: "data" },
             { elementId: "PdfForm", altinnTaskType: "pdf" },
             { elementId: "PdfSubform", altinnTaskType: "subformPdf" },
-            { elementId: "PdfOtherSubform", altinnTaskType: "subformPdf" },
+            { elementId: "PdfSubform2", altinnTaskType: "subformPdf" },
+            { elementId: "PdfSubform3", altinnTaskType: "subformPdf" },
             { elementId: "Untyped" },
             { altinnTaskType: "pdf" },
             "not-an-object"
         ]
     };
+
+    /*
+     * et-v4's layout sets as they are. The set for PdfSubform is on ET, the main form's data type,
+     * which is what made the set's data type the wrong thing to go by.
+     */
     const layoutSetsBody = {
         sets: [
             { id: "form", dataType: "ET", tasks: ["Task_1"] },
+            { id: "subform-DispensasjonssoeknadDataV1", dataType: "DispensasjonssoeknadDataV1", type: "subform" },
+            { id: "subform-GjenpartNabovarselDataV3", dataType: "GjenpartNabovarselDataV3", type: "subform" },
+            { id: "subform-GjennomfoeringsplanDataV7", dataType: "GjennomfoeringsplanDataV7", type: "subform" },
             { id: "formPdf", dataType: "ET", tasks: ["PdfForm"] },
-            { id: "underskjema", dataType: "GjennomfoeringsplanDataV7" },
-            { id: "underskjemaPdf", dataType: "GjennomfoeringsplanDataV7", tasks: ["PdfSubform"] }
+            { id: "subform-DispensasjonssoeknadDataV1Pdf", dataType: "ET", tasks: ["PdfSubform"] },
+            { id: "subform-GjenpartNabovarselDataV3Pdf", dataType: "GjenpartNabovarselDataV3", tasks: ["PdfSubform2"] },
+            { id: "subform-GjennomfoeringsplanDataV7Pdf", dataType: "GjennomfoeringsplanDataV7", tasks: ["PdfSubform3"] }
         ]
     };
 
-    function respondWith(layoutSets: { status?: number; body: unknown }) {
-        return (url: string) =>
-            url.endsWith("/api/layoutsets")
-                ? { status: layoutSets.status ?? 200, body: JSON.stringify(layoutSets.body), contentType: "application/json" }
-                : { body: JSON.stringify(processBody), contentType: "application/json" };
+    /** A pdf task's layouts, holding the hidden Subform component that names the subform's set. */
+    const serviceTaskLayouts = (subformSet: string) => ({
+        ServiceTask: {
+            $schema: "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/layout/layout.schema.v1.json",
+            data: {
+                layout: [
+                    // Ahead of it, so it is the component's type that picks it and not being first.
+                    { id: "not-it", type: "Paragraph", layoutSet: "form" },
+                    { id: "pdf-subform", type: "Subform", layoutSet: subformSet, hidden: true }
+                ]
+            }
+        }
+    });
+
+    type Answer = { status?: number; body: unknown };
+    function respondWith(answers: { layoutSets?: Answer; layouts?: (set: string) => Answer }) {
+        return (url: string) => {
+            const json = ({ status = 200, body }: Answer) => ({ status, body: JSON.stringify(body), contentType: "application/json" });
+            if (url.endsWith("/api/layoutsets")) return json(answers.layoutSets ?? { body: layoutSetsBody });
+            const layouts = url.match(/\/api\/layouts\/([^/]+)$/);
+            if (layouts) return json(answers.layouts?.(decodeURIComponent(layouts[1] ?? "")) ?? { status: 404, body: {} });
+            return json({ body: processBody });
+        };
     }
 
-    it("finds the pdf tasks, and the subform each subform task renders from the layout sets", async () => {
-        const stub = stubAltinn(respondWith({ body: layoutSetsBody }));
+    /** Each pdf set's Subform component points at the subform it is named after. */
+    const namedAfter = (set: string): Answer => ({ body: serviceTaskLayouts(set.replace(/Pdf$/, "")) });
+
+    it("places each subform task through the Subform component in its layout, not its set's data type", async () => {
+        const stub = stubAltinn(respondWith({ layouts: namedAfter }));
         active = stub;
 
         const result = await readPdfTargets("test-token", target);
@@ -650,18 +681,81 @@ describe("readPdfTargets", () => {
         assert.equal(result.ok, true);
         assert.deepEqual(
             stub.calls.map((call) => call.url),
-            [`${APP_BASE}/instances/510001/${GUID}/process`, `${APP_BASE}/api/layoutsets`]
+            [
+                `${APP_BASE}/instances/510001/${GUID}/process`,
+                `${APP_BASE}/api/layoutsets`,
+                `${APP_BASE}/api/layouts/subform-DispensasjonssoeknadDataV1Pdf`,
+                `${APP_BASE}/api/layouts/subform-GjenpartNabovarselDataV3Pdf`,
+                `${APP_BASE}/api/layouts/subform-GjennomfoeringsplanDataV7Pdf`
+            ]
         );
         assert.deepEqual(
             result.steps.map((step) => step.name),
-            ["Get process tasks", "Get layout sets"]
+            ["Get process tasks", "Get layout sets", "Get layouts for PdfSubform", "Get layouts for PdfSubform2", "Get layouts for PdfSubform3"]
         );
         assert.deepEqual(result.pdfTasks, ["PdfForm"]);
-        // A subform task no layout set names is still offered, with its subform unknown.
         assert.deepEqual(result.subformPdfTasks, [
-            { taskId: "PdfSubform", dataType: "GjennomfoeringsplanDataV7" },
-            { taskId: "PdfOtherSubform", dataType: null }
+            { taskId: "PdfSubform", dataType: "DispensasjonssoeknadDataV1" },
+            { taskId: "PdfSubform2", dataType: "GjenpartNabovarselDataV3" },
+            { taskId: "PdfSubform3", dataType: "GjennomfoeringsplanDataV7" }
         ]);
+    });
+
+    it("goes by the component over the set even where both name a subform", async () => {
+        // PdfSubform3's set says plan, its component says the neighbour notice: the component wins.
+        const stub = stubAltinn(
+            respondWith({
+                layouts: (set) =>
+                    set === "subform-GjennomfoeringsplanDataV7Pdf"
+                        ? { body: serviceTaskLayouts("subform-GjenpartNabovarselDataV3") }
+                        : namedAfter(set)
+            })
+        );
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.subformPdfTasks[2]?.dataType, "GjenpartNabovarselDataV3");
+    });
+
+    it("falls back on the set's data type where the layouts cannot be read, but only a subform's", async () => {
+        const stub = stubAltinn(respondWith({ layouts: () => ({ status: 500, body: { detail: "boom" } }) }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, true);
+        // PdfSubform's set is on ET, the main form, which no subform task renders.
+        assert.deepEqual(result.subformPdfTasks, [
+            { taskId: "PdfSubform", dataType: null },
+            { taskId: "PdfSubform2", dataType: "GjenpartNabovarselDataV3" },
+            { taskId: "PdfSubform3", dataType: "GjennomfoeringsplanDataV7" }
+        ]);
+    });
+
+    it("does not trust a failed layouts read that happens to look right", async () => {
+        const stub = stubAltinn(respondWith({ layouts: () => ({ status: 500, body: serviceTaskLayouts("subform-GjenpartNabovarselDataV3") }) }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.subformPdfTasks[0]?.dataType, null);
+    });
+
+    it("leaves a task no layout set names unplaced, without asking for layouts it has none of", async () => {
+        const stub = stubAltinn(
+            respondWith({
+                layoutSets: { body: { sets: layoutSetsBody.sets.filter((set) => !set.tasks?.includes("PdfSubform")) } },
+                layouts: namedAfter
+            })
+        );
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.subformPdfTasks[0]?.dataType, null);
+        // The process, the layout sets, and the layouts of the two tasks that have a set.
+        assert.equal(stub.calls.length, 4);
     });
 
     it("does not ask for the layout sets when there is no subform task to place", async () => {
@@ -680,17 +774,17 @@ describe("readPdfTargets", () => {
 
     it("keeps the subform tasks when the layout sets cannot be read, unplaced", async () => {
         // A body that would place them, so it is the status that is trusted and not the shape.
-        const stub = stubAltinn(respondWith({ status: 500, body: layoutSetsBody }));
+        const stub = stubAltinn(respondWith({ layoutSets: { status: 500, body: layoutSetsBody }, layouts: namedAfter }));
         active = stub;
 
         const result = await readPdfTargets("test-token", target);
 
         assert.equal(result.ok, true);
         assert.equal(result.steps[1]?.status, 500);
-        assert.deepEqual(result.subformPdfTasks, [
-            { taskId: "PdfSubform", dataType: null },
-            { taskId: "PdfOtherSubform", dataType: null }
-        ]);
+        assert.deepEqual(
+            result.subformPdfTasks.map((task) => task.dataType),
+            [null, null, null]
+        );
     });
 
     it("reads an app that lists no process tasks as having nothing but the whole instance", async () => {

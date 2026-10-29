@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { queryKeys } from "../queries";
-import { useAppRead, useInstanceRead } from "../reads";
+import { useInstanceRead } from "../reads";
 import { useRunLog } from "../runLog";
 import { useSession, useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
 import { Explained } from "./Explained";
 import { Panel } from "./Panel";
 import type { PdfStand } from "../lib/pdfCache";
-import { readSubFormDataTypes } from "../lib/dataTypeGroups";
 import { logFromPdfTargets } from "../lib/logResults";
 import { PDF_LANGUAGES, pdfPreviewQuery, pdfTargetKey, pdfTargetOptions, type PdfLanguage, type PdfTargetOption } from "../lib/pdfTargets";
 import { Icon } from "./Icon";
@@ -65,7 +64,6 @@ export function PdfPanel({ notReady, held, stand, language, onLanguageChange, on
     const { tokenId } = useSession();
     const { append } = useRunLog();
     const { read, dataElements } = useInstanceRead();
-    const { metadata } = useAppRead();
     const ready = hasToken && Boolean(org && app && partyId && instanceGuid);
     const busy = rendering !== null;
 
@@ -81,7 +79,7 @@ export function PdfPanel({ notReady, held, stand, language, onLanguageChange, on
         enabled: ready && read?.ok === true
     });
 
-    const options = pdfTargetOptions(targetsQuery.data ?? null, dataElements, readSubFormDataTypes(metadata?.metadata ?? null));
+    const options = pdfTargetOptions(targetsQuery.data ?? null, dataElements);
     const single = options.length === 1;
     /** The button whose pdf is in hand and still current, if any is on screen. */
     const shownKey = held && stand === "current" ? held.key : null;

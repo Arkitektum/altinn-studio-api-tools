@@ -36,19 +36,17 @@ export function pdfTargetKey(target: PdfTarget, language: PdfLanguage): string {
 /**
  * Every target on offer for the instance, the whole of it first.
  *
- * A subform task the app's layout sets do not place (`dataType` null, the Altinn 9 setup) is offered
- * for every subform element no placed task covers, since the app is the one that knows and it says
- * which data type it wants when it refuses. An element two tasks could render is labelled with the
- * task, so the buttons can be told apart. Subform elements are numbered per data type, in the order
- * the instance lists them.
+ * Each subform task renders the one data type the server placed it on, so each subform element gets
+ * the button of the task for its type and no other. A task that could not be placed (`dataType`
+ * null) gets none: offering it for every subform was a row of buttons the app refused. An element
+ * two tasks could render is labelled with the task, so the buttons can be told apart. Subform
+ * elements are numbered per data type, in the order the instance lists them.
  *
  * @param targets - What the app answered, or null while it has not.
- * @param subFormDataTypes - The app's subform data types, from its metadata.
  */
 export function pdfTargetOptions(
     targets: Pick<PdfTargetsResult, "pdfTasks" | "subformPdfTasks"> | null,
-    dataElements: DataElementSummary[],
-    subFormDataTypes: string[]
+    dataElements: DataElementSummary[]
 ): PdfTargetOption[] {
     if (!targets) return [WHOLE_INSTANCE];
 
@@ -58,9 +56,6 @@ export function pdfTargetOptions(
         label: targets.pdfTasks.length === 1 ? "Main form" : `Main form (${taskId})`
     }));
 
-    const placed = new Set(targets.subformPdfTasks.flatMap((task) => (task.dataType ? [task.dataType] : [])));
-    const unplaced = subFormDataTypes.filter((dataType) => !placed.has(dataType));
-
     const number = new Map<string, number>();
     const counted = dataElements.map((element) => {
         const n = (number.get(element.dataType) ?? 0) + 1;
@@ -69,9 +64,8 @@ export function pdfTargetOptions(
     });
 
     const subforms = targets.subformPdfTasks.flatMap((task) => {
-        const dataTypes = task.dataType ? [task.dataType] : unplaced;
         return counted
-            .filter(({ element }) => dataTypes.includes(element.dataType))
+            .filter(({ element }) => element.dataType === task.dataType)
             .map(({ element, label }) => ({ taskId: task.taskId, dataElementId: element.id, label }));
     });
     const tasksPerElement = new Map<string, number>();

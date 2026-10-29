@@ -133,9 +133,10 @@ export interface PdfPreviewRequest extends ReadRequest {
 export interface SubformPdfTask {
     taskId: string;
     /**
-     * Read from the layout set that names the task. Null when no layout set does, which is how an
-     * app set up for Altinn 9 (`subformUiFolder`) looks from outside: the task is real, but which
-     * subform it renders is only in the process definition, which the app does not serve.
+     * Followed from the task's layout to the subform's own layout set, see readPdfTargets. Null when
+     * that cannot be done, which is also how an app set up for Altinn 9 (`subformUiFolder`) looks
+     * from outside: the task is real, but which subform it renders is only in the process
+     * definition, which the app does not serve.
      */
     dataType: string | null;
 }
@@ -503,32 +504,72 @@ function processTasksOf(body: unknown): { taskId: string; taskType: string | nul
     });
 }
 
-/** Task id to data type, from the layout sets that name a task. */
-function layoutSetDataTypes(body: unknown): Map<string, string> {
+interface LayoutSet {
+    id: string;
+    dataType: string | null;
+    tasks: string[];
+    type: string | null;
+}
+
+function layoutSetsOf(body: unknown): LayoutSet[] {
     const sets = body && typeof body === "object" ? (body as Record<string, unknown>)["sets"] : undefined;
-    const byTask = new Map<string, string>();
-    if (!Array.isArray(sets)) return byTask;
-    for (const set of sets) {
-        if (!set || typeof set !== "object") continue;
+    if (!Array.isArray(sets)) return [];
+    return sets.flatMap((set) => {
+        if (!set || typeof set !== "object") return [];
         const record = set as Record<string, unknown>;
-        if (typeof record["dataType"] !== "string" || !Array.isArray(record["tasks"])) continue;
-        for (const task of record["tasks"]) {
-            if (typeof task === "string") byTask.set(task, record["dataType"]);
-        }
-    }
-    return byTask;
+        if (typeof record["id"] !== "string") return [];
+        return [
+            {
+                id: record["id"],
+                dataType: typeof record["dataType"] === "string" ? record["dataType"] : null,
+                tasks: Array.isArray(record["tasks"]) ? record["tasks"].filter((task): task is string => typeof task === "string") : [],
+                type: typeof record["type"] === "string" ? record["type"] : null
+            }
+        ];
+    });
 }
 
 /**
- * GET {app}/instances/{party}/{guid}/process, then GET {app}/api/layoutsets
+ * The layout set a `Subform` component points at, found anywhere in a set's layouts.
+ *
+ * Searched for rather than read from a known path, because the app answers with its layout files as
+ * they are, keyed by page, and nothing here needs to depend on how they nest.
+ */
+function subformLayoutSetIn(value: unknown): string | null {
+    if (Array.isArray(value)) {
+        for (const entry of value) {
+            const found = subformLayoutSetIn(entry);
+            if (found) return found;
+        }
+        return null;
+    }
+    if (!value || typeof value !== "object") return null;
+    const record = value as Record<string, unknown>;
+    if (record["type"] === "Subform" && typeof record["layoutSet"] === "string") return record["layoutSet"];
+    for (const child of Object.values(record)) {
+        const found = subformLayoutSetIn(child);
+        if (found) return found;
+    }
+    return null;
+}
+
+/**
+ * GET {app}/instances/{party}/{guid}/process, then GET {app}/api/layoutsets, then
+ * GET {app}/api/layouts/{set} for each subform pdf task
  *
  * What the pdf preview can be pointed at besides the instance as a whole. The process state lists
  * every task with its type, which is where the `pdf` and `subformPdf` service tasks are found. It
- * does not say which subform a `subformPdf` task renders, so the layout sets are read for that:
- * each such task has a layout set of its own, on the subform's data type.
+ * does not say which subform a `subformPdf` task renders, and the task's own layout set does not
+ * reliably say either: et-v4 has one on its main form's data type. What does say is the hidden
+ * `Subform` component Altinn 8 requires in that task's layout, whose `layoutSet` names the subform's
+ * own set, and that set's data type is the answer.
  *
- * The layout sets are only asked for when there is a subform task to place, and a failure there
- * leaves the tasks unplaced rather than failing the read, since the tasks themselves still stand.
+ * Where those layouts cannot be read, the task's set is believed only when its data type is one a
+ * subform set has. A task that cannot be placed is returned with its data type unknown, and gets no
+ * buttons: a button that sends the wrong data element to a task is one the app refuses.
+ *
+ * Only asked for when there is a subform task to place, and a failure past the process read leaves
+ * the tasks unplaced rather than failing the read, since the tasks themselves still stand.
  */
 export async function readPdfTargets(token: string, request: ReadRequest): Promise<PdfTargetsResult> {
     const recorder = new StepRecorder();
@@ -539,11 +580,25 @@ export async function readPdfTargets(token: string, request: ReadRequest): Promi
     const tasks = process.ok ? processTasksOf(process.body) : [];
     const subformTaskIds = tasks.filter((task) => task.taskType === "subformPdf").map((task) => task.taskId);
 
-    let dataTypes = new Map<string, string>();
+    const placed = new Map<string, string>();
     if (subformTaskIds.length > 0) {
         const layoutSetsUrl = `${base}/api/layoutsets`;
         const layoutSets = await recorder.run("Get layout sets", "GET", layoutSetsUrl, () => altinnFetch({ url: layoutSetsUrl, token }));
-        if (layoutSets.ok) dataTypes = layoutSetDataTypes(layoutSets.body);
+        const sets = layoutSets.ok ? layoutSetsOf(layoutSets.body) : [];
+        const subformDataTypes = new Set(sets.flatMap((set) => (set.type === "subform" && set.dataType ? [set.dataType] : [])));
+
+        for (const taskId of subformTaskIds) {
+            const set = sets.find((candidate) => candidate.tasks.includes(taskId));
+            if (!set) continue;
+
+            const layoutsUrl = `${base}/api/layouts/${encodeURIComponent(set.id)}`;
+            const layouts = await recorder.run(`Get layouts for ${taskId}`, "GET", layoutsUrl, () => altinnFetch({ url: layoutsUrl, token }));
+            const subformSet = layouts.ok ? subformLayoutSetIn(layouts.body) : null;
+            const viaComponent = subformSet ? sets.find((candidate) => candidate.id === subformSet)?.dataType : null;
+            const viaSet = set.dataType && subformDataTypes.has(set.dataType) ? set.dataType : null;
+            const dataType = viaComponent ?? viaSet;
+            if (dataType) placed.set(taskId, dataType);
+        }
     }
 
     return {
@@ -551,7 +606,7 @@ export async function readPdfTargets(token: string, request: ReadRequest): Promi
         steps: recorder.steps,
         failedAt: process.ok ? null : "Could not read the process tasks.",
         pdfTasks: tasks.filter((task) => task.taskType === "pdf").map((task) => task.taskId),
-        subformPdfTasks: subformTaskIds.map((taskId) => ({ taskId, dataType: dataTypes.get(taskId) ?? null }))
+        subformPdfTasks: subformTaskIds.map((taskId) => ({ taskId, dataType: placed.get(taskId) ?? null }))
     };
 }
 

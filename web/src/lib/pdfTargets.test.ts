@@ -24,14 +24,13 @@ const labels = (options: { label: string }[]) => options.map((option) => option.
 
 describe("pdfTargetOptions", () => {
     it("offers only the whole instance until the app has said what else it can render", () => {
-        assert.deepEqual(pdfTargetOptions(null, elements, ["GjennomfoeringsplanDataV7"]), [WHOLE_INSTANCE]);
+        assert.deepEqual(pdfTargetOptions(null, elements), [WHOLE_INSTANCE]);
     });
 
     it("offers the main form and each subform element its task renders, numbered per data type", () => {
         const options = pdfTargetOptions(
             { pdfTasks: ["PdfForm"], subformPdfTasks: [{ taskId: "PdfSubform", dataType: "GjennomfoeringsplanDataV7" }] },
-            elements,
-            ["GjennomfoeringsplanDataV7", "DispensasjonsvarselDataV1"]
+            elements
         );
 
         assert.deepEqual(options, [
@@ -43,28 +42,34 @@ describe("pdfTargetOptions", () => {
     });
 
     it("names the task when there is more than one main form task", () => {
-        const options = pdfTargetOptions({ pdfTasks: ["PdfForm", "PdfReceipt"], subformPdfTasks: [] }, elements, []);
+        const options = pdfTargetOptions({ pdfTasks: ["PdfForm", "PdfReceipt"], subformPdfTasks: [] }, elements);
 
         assert.deepEqual(labels(options), ["Whole instance", "Main form (PdfForm)", "Main form (PdfReceipt)"]);
     });
 
-    it("offers a task the layout sets do not place for the subforms no other task covers", () => {
+    /* et-v4 had three subform tasks and got a button for every element under each of them. */
+    it("gives each subform element the task for its own type and no other", () => {
         const options = pdfTargetOptions(
             {
                 pdfTasks: [],
                 subformPdfTasks: [
-                    { taskId: "PdfPlan", dataType: "GjennomfoeringsplanDataV7" },
-                    { taskId: "PdfUnplaced", dataType: null }
+                    { taskId: "PdfSubform", dataType: "DispensasjonsvarselDataV1" },
+                    { taskId: "PdfSubform3", dataType: "GjennomfoeringsplanDataV7" }
                 ]
             },
-            elements,
-            ["GjennomfoeringsplanDataV7", "DispensasjonsvarselDataV1"]
+            elements
         );
 
         assert.deepEqual(
-            options.filter((option) => option.taskId === "PdfUnplaced").map((option) => option.dataElementId),
-            ["varsel-1"]
+            options.slice(1).map((option) => `${option.taskId} ${option.dataElementId}`),
+            ["PdfSubform varsel-1", "PdfSubform3 plan-1", "PdfSubform3 plan-2"]
         );
+    });
+
+    it("offers nothing for a task the app could not place, rather than a button it would refuse", () => {
+        const options = pdfTargetOptions({ pdfTasks: ["PdfForm"], subformPdfTasks: [{ taskId: "PdfUnplaced", dataType: null }] }, elements);
+
+        assert.deepEqual(labels(options), ["Whole instance", "Main form"]);
     });
 
     it("labels an element two tasks could render with the task, so the buttons differ", () => {
@@ -72,12 +77,11 @@ describe("pdfTargetOptions", () => {
             {
                 pdfTasks: [],
                 subformPdfTasks: [
-                    { taskId: "PdfA", dataType: null },
-                    { taskId: "PdfB", dataType: null }
+                    { taskId: "PdfA", dataType: "DispensasjonsvarselDataV1" },
+                    { taskId: "PdfB", dataType: "DispensasjonsvarselDataV1" }
                 ]
             },
-            elements,
-            ["DispensasjonsvarselDataV1"]
+            elements
         );
 
         assert.deepEqual(labels(options), ["Whole instance", "DispensasjonsvarselDataV1 1 (PdfA)", "DispensasjonsvarselDataV1 1 (PdfB)"]);
