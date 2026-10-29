@@ -41,6 +41,16 @@ const MAX_LOGGED_BODY = 200_000;
  */
 const TOKEN_PLACEHOLDER = "Bearer $TOKEN";
 
+/**
+ * An error message with the token taken out. Node's own error for a header value it cannot send quotes the whole value,
+ * so a token pasted with a line break inside it would otherwise come back in full in the failure, and from there in the
+ * run log. The token is replaced as it is and as JSON would escape it, since either way it is the token.
+ */
+function withoutToken(message: string, token: string | undefined): string {
+    if (!token) return message;
+    return [token, JSON.stringify(token).slice(1, -1)].reduce((text, form) => text.replaceAll(form, "$TOKEN"), message);
+}
+
 /** The headers as sent, with the token replaced. */
 function reportable(headers: Headers): Record<string, string> {
     const reported: Record<string, string> = {};
@@ -76,7 +86,7 @@ export async function altinnFetch(request: AltinnRequest): Promise<AltinnRespons
             signal: AbortSignal.timeout(config.requestTimeoutMs)
         });
     } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
+        const reason = withoutToken(error instanceof Error ? error.message : String(error), request.token);
         const timedOut = error instanceof Error && error.name === "TimeoutError";
         return {
             ok: false,

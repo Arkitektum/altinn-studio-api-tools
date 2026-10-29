@@ -44,6 +44,34 @@ describe("altinnFetch request headers", () => {
         assert.match(String((response.body as { error: string }).error), /ByteString/);
     });
 
+    // Node's error for a header value it cannot send quotes the value, and here the value is the bearer token.
+    for (const [label, token] of [
+        ["a line break", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.SECRETSIG-part1\nSECRETSIG-part2"],
+        ["a carriage return", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.SECRETSIG-part1\rSECRETSIG-part2"]
+    ] as [string, string][]) {
+        it(`keeps a token with ${label} in it out of the failure`, async () => {
+            stub();
+
+            const response = await altinnFetch({ url: "http://localhost:1/data", token });
+
+            assert.equal(response.ok, false);
+            const error = String((response.body as { error: string }).error);
+            assert.equal(error.includes("SECRETSIG"), false, error);
+            assert.match(error, /\$TOKEN/);
+        });
+    }
+
+    it("keeps the token out of a failure that quotes it JSON-escaped", async () => {
+        const token = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.SECRET\tSIG";
+        globalThis.fetch = (async () => {
+            throw new Error(`refused ${JSON.stringify(token)}`);
+        }) as typeof fetch;
+
+        const response = await altinnFetch({ url: "http://localhost:1/data", token });
+
+        assert.equal(String((response.body as { error: string }).error).includes("SECRET"), false);
+    });
+
     it("reports the headers even when the request never got through", async () => {
         globalThis.fetch = (async () => {
             throw new Error("connect ECONNREFUSED");
