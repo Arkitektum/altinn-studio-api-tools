@@ -4,8 +4,10 @@ import {
     advanceProcess,
     deleteInstance,
     listInstances,
+    previewPdf,
     readDataElement,
     readInstance,
+    readPdfTargets,
     validateDataElement,
     validateInstance
 } from "./readService.js";
@@ -556,5 +558,161 @@ describe("validateDataElement", () => {
         const result = await validateDataElement("test-token", { ...target, dataGuid: "nope" });
         assert.equal(result.ok, false);
         assert.equal(result.failedAt, "Could not validate the data element.");
+    });
+});
+
+describe("previewPdf", () => {
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 test");
+
+    it("asks for the instance as a whole when no task is named, as it always did", async () => {
+        const stub = stubAltinn(() => ({ body: pdfBytes, contentType: "application/pdf" }));
+        active = stub;
+
+        const result = await previewPdf("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/pdf/preview`);
+        assert.equal(stub.calls[0]?.accept, "application/pdf");
+        assert.equal(result.size, pdfBytes.byteLength);
+        assert.equal(Buffer.from(result.content ?? "", "base64").toString(), "%PDF-1.7 test");
+    });
+
+    it("names the task, the subform element and the language in the query", async () => {
+        const stub = stubAltinn(() => ({ body: pdfBytes, contentType: "application/pdf" }));
+        active = stub;
+
+        await previewPdf("test-token", { ...target, taskId: "PdfSubform", dataElementId: DATA_GUID, language: "nn" });
+
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/pdf/preview?taskId=PdfSubform&dataElementId=${DATA_GUID}&language=nn`);
+    });
+
+    it("sends only what was given, so a language alone renders the whole instance in it", async () => {
+        const stub = stubAltinn(() => ({ body: pdfBytes, contentType: "application/pdf" }));
+        active = stub;
+
+        await previewPdf("test-token", { ...target, language: "en" });
+
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/pdf/preview?language=en`);
+    });
+
+    it("reports a refusal without throwing, and without content", async () => {
+        const stub = stubAltinn(() => ({
+            status: 400,
+            body: JSON.stringify({ detail: "taskId must identify a PDF or subform PDF service task" }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await previewPdf("test-token", { ...target, taskId: "Task_1" });
+
+        assert.equal(result.ok, false);
+        assert.equal(result.failedAt, "Could not render the pdf preview.");
+        assert.equal(result.content, null);
+        assert.equal(result.size, 0);
+    });
+});
+
+describe("readPdfTargets", () => {
+    const processBody = {
+        currentTask: { elementId: "Task_1", altinnTaskType: "data" },
+        processTasks: [
+            { elementId: "Task_1", altinnTaskType: "data" },
+            { elementId: "PdfForm", altinnTaskType: "pdf" },
+            { elementId: "PdfSubform", altinnTaskType: "subformPdf" },
+            { elementId: "PdfOtherSubform", altinnTaskType: "subformPdf" },
+            { elementId: "Untyped" },
+            { altinnTaskType: "pdf" },
+            "not-an-object"
+        ]
+    };
+    const layoutSetsBody = {
+        sets: [
+            { id: "form", dataType: "ET", tasks: ["Task_1"] },
+            { id: "formPdf", dataType: "ET", tasks: ["PdfForm"] },
+            { id: "underskjema", dataType: "GjennomfoeringsplanDataV7" },
+            { id: "underskjemaPdf", dataType: "GjennomfoeringsplanDataV7", tasks: ["PdfSubform"] }
+        ]
+    };
+
+    function respondWith(layoutSets: { status?: number; body: unknown }) {
+        return (url: string) =>
+            url.endsWith("/api/layoutsets")
+                ? { status: layoutSets.status ?? 200, body: JSON.stringify(layoutSets.body), contentType: "application/json" }
+                : { body: JSON.stringify(processBody), contentType: "application/json" };
+    }
+
+    it("finds the pdf tasks, and the subform each subform task renders from the layout sets", async () => {
+        const stub = stubAltinn(respondWith({ body: layoutSetsBody }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.deepEqual(
+            stub.calls.map((call) => call.url),
+            [`${APP_BASE}/instances/510001/${GUID}/process`, `${APP_BASE}/api/layoutsets`]
+        );
+        assert.deepEqual(
+            result.steps.map((step) => step.name),
+            ["Get process tasks", "Get layout sets"]
+        );
+        assert.deepEqual(result.pdfTasks, ["PdfForm"]);
+        // A subform task no layout set names is still offered, with its subform unknown.
+        assert.deepEqual(result.subformPdfTasks, [
+            { taskId: "PdfSubform", dataType: "GjennomfoeringsplanDataV7" },
+            { taskId: "PdfOtherSubform", dataType: null }
+        ]);
+    });
+
+    it("does not ask for the layout sets when there is no subform task to place", async () => {
+        const stub = stubAltinn(() => ({
+            body: JSON.stringify({ processTasks: [{ elementId: "PdfForm", altinnTaskType: "pdf" }] }),
+            contentType: "application/json"
+        }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(stub.calls.length, 1);
+        assert.deepEqual(result.pdfTasks, ["PdfForm"]);
+        assert.deepEqual(result.subformPdfTasks, []);
+    });
+
+    it("keeps the subform tasks when the layout sets cannot be read, unplaced", async () => {
+        // A body that would place them, so it is the status that is trusted and not the shape.
+        const stub = stubAltinn(respondWith({ status: 500, body: layoutSetsBody }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.equal(result.steps[1]?.status, 500);
+        assert.deepEqual(result.subformPdfTasks, [
+            { taskId: "PdfSubform", dataType: null },
+            { taskId: "PdfOtherSubform", dataType: null }
+        ]);
+    });
+
+    it("reads an app that lists no process tasks as having nothing but the whole instance", async () => {
+        const stub = stubAltinn(() => ({ body: JSON.stringify({ currentTask: { elementId: "Task_1" } }), contentType: "application/json" }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.deepEqual(result.pdfTasks, []);
+        assert.deepEqual(result.subformPdfTasks, []);
+    });
+
+    it("reports a process it could not read without throwing", async () => {
+        const stub = stubAltinn(() => ({ status: 403, body: JSON.stringify({ detail: "Forbidden" }), contentType: "application/json" }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, false);
+        assert.equal(result.failedAt, "Could not read the process tasks.");
+        assert.equal(stub.calls.length, 1);
+        assert.deepEqual(result.pdfTasks, []);
     });
 });

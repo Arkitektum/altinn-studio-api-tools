@@ -14,6 +14,7 @@ import {
     listInstances,
     previewPdf,
     readDataElement,
+    readPdfTargets,
     readInstance,
     validateDataElement,
     validateInstance
@@ -389,12 +390,35 @@ router.post(
     })
 );
 
+/**
+ * A task id goes into the app's query string rather than its path, so it cannot move the request,
+ * but it is still held to the shape BPMN element ids take so a typo is refused here with a reason.
+ */
+const pdfPreviewSchema = instanceLookupSchema.extend({
+    taskId: z
+        .string()
+        .trim()
+        .regex(/^[A-Za-z_][\w.-]*$/, "taskId must be a process task id")
+        .optional(),
+    dataElementId: guid("dataElementId").optional(),
+    language: z.enum(["nb", "nn", "en"]).optional()
+});
+
 router.get(
     "/instances/pdf-preview",
     asyncHandler(async (req, res) => {
-        const query = instanceLookupSchema.parse(req.query);
+        const query = pdfPreviewSchema.parse(req.query);
         const token = requireToken(query.tokenId);
         res.json(await previewPdf(token.token, query));
+    })
+);
+
+router.get(
+    "/instances/pdf-targets",
+    asyncHandler(async (req, res) => {
+        const query = instanceLookupSchema.parse(req.query);
+        const token = requireToken(query.tokenId);
+        res.json(await readPdfTargets(token.token, query));
     })
 );
 

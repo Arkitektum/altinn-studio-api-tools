@@ -270,6 +270,20 @@ describe("input the schemas reject", () => {
         assert.deepEqual(issuePaths(sweep.body), ["targets.0.org"]);
     });
 
+    it("refuses a pdf preview task, subform element or language that is not one", async () => {
+        const instance = "tokenId=x&org=dibk&app=et-v4&instanceOwnerPartyId=512345&instanceGuid=99d0632c-5917-448c-8ab6-a5d3b681376b";
+        const { status, body } = await call(`/api/instances/pdf-preview?${instance}&taskId=Pdf%26x%3D1&dataElementId=abc&language=se`);
+
+        assert.equal(status, 400);
+        assert.deepEqual(issuePaths(body), ["dataElementId", "language", "taskId"]);
+
+        // The same request well formed fails on the token instead, which comes after the schema.
+        const good = await call(
+            `/api/instances/pdf-preview?${instance}&taskId=PdfSubform&dataElementId=e5f46d2e-44d1-4a56-a90d-e98104fd1b81&language=nn`
+        );
+        assert.equal(good.status, 404);
+    });
+
     it("lets the shapes Altinn uses through to the next check", async () => {
         // A well-formed request with an unknown token fails on the token, which is after the schema.
         const { status } = await call(

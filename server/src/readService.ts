@@ -117,6 +117,38 @@ export interface ReadDataElementResult {
     content: string | null;
 }
 
+/**
+ * What to render, beyond the instance. Without a task the app renders the task the instance is in,
+ * which in these apps is the main form with every subform after it.
+ */
+export interface PdfPreviewRequest extends ReadRequest {
+    /** A service task of type `pdf` or `subformPdf`. See readPdfTargets. */
+    taskId?: string;
+    /** The subform data element a `subformPdf` task renders. The app ignores it for any other task. */
+    dataElementId?: string;
+    language?: string;
+}
+
+/** A `subformPdf` task, and the subform data type it renders. */
+export interface SubformPdfTask {
+    taskId: string;
+    /**
+     * Read from the layout set that names the task. Null when no layout set does, which is how an
+     * app set up for Altinn 9 (`subformUiFolder`) looks from outside: the task is real, but which
+     * subform it renders is only in the process definition, which the app does not serve.
+     */
+    dataType: string | null;
+}
+
+export interface PdfTargetsResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    /** Tasks of type `pdf`, which render the main form on its own. */
+    pdfTasks: string[];
+    subformPdfTasks: SubformPdfTask[];
+}
+
 export interface PdfPreviewResult {
     ok: boolean;
     steps: RunStep[];
@@ -430,11 +462,19 @@ export async function readDataElement(token: string, request: ReadRequest & { da
  * GET {app}/instances/{party}/{guid}/pdf/preview
  *
  * The app renders the pdf it would archive, which is the quickest way to see what the
- * form data turns into without walking the process to the end.
+ * form data turns into without walking the process to the end. Named a task, it renders that task
+ * instead: the main form alone for a `pdf` task, one subform for a `subformPdf` task and the data
+ * element it is given. Only what was asked for goes in the query, so a plain preview is the same
+ * request it always was.
  */
-export async function previewPdf(token: string, request: ReadRequest): Promise<PdfPreviewResult> {
+export async function previewPdf(token: string, request: PdfPreviewRequest): Promise<PdfPreviewResult> {
     const recorder = new StepRecorder();
-    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/pdf/preview`;
+    const query = new URLSearchParams();
+    if (request.taskId) query.set("taskId", request.taskId);
+    if (request.dataElementId) query.set("dataElementId", request.dataElementId);
+    if (request.language) query.set("language", request.language);
+    const search = query.size > 0 ? `?${query}` : "";
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/pdf/preview${search}`;
 
     const response = await recorder.run("Preview pdf", "GET", url, () =>
         altinnFetch({ url, token, accept: "application/pdf", binaryResponse: true })
@@ -448,6 +488,70 @@ export async function previewPdf(token: string, request: ReadRequest): Promise<P
         contentType: response.contentType,
         content: bytes ? bytes.toString("base64") : null,
         size: bytes?.byteLength ?? 0
+    };
+}
+
+/** The `processTasks` of an app's process state, as element id and task type. */
+function processTasksOf(body: unknown): { taskId: string; taskType: string | null }[] {
+    const raw = body && typeof body === "object" ? (body as Record<string, unknown>)["processTasks"] : undefined;
+    if (!Array.isArray(raw)) return [];
+    return raw.flatMap((entry) => {
+        if (!entry || typeof entry !== "object") return [];
+        const record = entry as Record<string, unknown>;
+        if (typeof record["elementId"] !== "string") return [];
+        return [{ taskId: record["elementId"], taskType: typeof record["altinnTaskType"] === "string" ? record["altinnTaskType"] : null }];
+    });
+}
+
+/** Task id to data type, from the layout sets that name a task. */
+function layoutSetDataTypes(body: unknown): Map<string, string> {
+    const sets = body && typeof body === "object" ? (body as Record<string, unknown>)["sets"] : undefined;
+    const byTask = new Map<string, string>();
+    if (!Array.isArray(sets)) return byTask;
+    for (const set of sets) {
+        if (!set || typeof set !== "object") continue;
+        const record = set as Record<string, unknown>;
+        if (typeof record["dataType"] !== "string" || !Array.isArray(record["tasks"])) continue;
+        for (const task of record["tasks"]) {
+            if (typeof task === "string") byTask.set(task, record["dataType"]);
+        }
+    }
+    return byTask;
+}
+
+/**
+ * GET {app}/instances/{party}/{guid}/process, then GET {app}/api/layoutsets
+ *
+ * What the pdf preview can be pointed at besides the instance as a whole. The process state lists
+ * every task with its type, which is where the `pdf` and `subformPdf` service tasks are found. It
+ * does not say which subform a `subformPdf` task renders, so the layout sets are read for that:
+ * each such task has a layout set of its own, on the subform's data type.
+ *
+ * The layout sets are only asked for when there is a subform task to place, and a failure there
+ * leaves the tasks unplaced rather than failing the read, since the tasks themselves still stand.
+ */
+export async function readPdfTargets(token: string, request: ReadRequest): Promise<PdfTargetsResult> {
+    const recorder = new StepRecorder();
+    const base = appBaseUrl(request.org, request.app);
+    const processUrl = `${base}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/process`;
+
+    const process = await recorder.run("Get process tasks", "GET", processUrl, () => altinnFetch({ url: processUrl, token }));
+    const tasks = process.ok ? processTasksOf(process.body) : [];
+    const subformTaskIds = tasks.filter((task) => task.taskType === "subformPdf").map((task) => task.taskId);
+
+    let dataTypes = new Map<string, string>();
+    if (subformTaskIds.length > 0) {
+        const layoutSetsUrl = `${base}/api/layoutsets`;
+        const layoutSets = await recorder.run("Get layout sets", "GET", layoutSetsUrl, () => altinnFetch({ url: layoutSetsUrl, token }));
+        if (layoutSets.ok) dataTypes = layoutSetDataTypes(layoutSets.body);
+    }
+
+    return {
+        ok: process.ok,
+        steps: recorder.steps,
+        failedAt: process.ok ? null : "Could not read the process tasks.",
+        pdfTasks: tasks.filter((task) => task.taskType === "pdf").map((task) => task.taskId),
+        subformPdfTasks: subformTaskIds.map((taskId) => ({ taskId, dataType: dataTypes.get(taskId) ?? null }))
     };
 }
 
