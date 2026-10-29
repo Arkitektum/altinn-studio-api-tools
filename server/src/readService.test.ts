@@ -659,13 +659,18 @@ describe("readPdfTargets", () => {
     });
 
     type Answer = { status?: number; body: unknown };
-    function respondWith(answers: { layoutSets?: Answer; layouts?: (set: string) => Answer }) {
+    /**
+     * `contentType` is what the layout sets and layouts come back labelled as. The app serves them
+     * as the files' text, not as `application/json`, which is what a stub answering json hid.
+     */
+    function respondWith(answers: { layoutSets?: Answer; layouts?: (set: string) => Answer; contentType?: string }) {
+        const files = answers.contentType ?? "text/plain; charset=utf-8";
         return (url: string) => {
-            const json = ({ status = 200, body }: Answer) => ({ status, body: JSON.stringify(body), contentType: "application/json" });
-            if (url.endsWith("/api/layoutsets")) return json(answers.layoutSets ?? { body: layoutSetsBody });
+            const answer = ({ status = 200, body }: Answer, contentType: string) => ({ status, body: JSON.stringify(body), contentType });
+            if (url.endsWith("/api/layoutsets")) return answer(answers.layoutSets ?? { body: layoutSetsBody }, files);
             const layouts = url.match(/\/api\/layouts\/([^/]+)$/);
-            if (layouts) return json(answers.layouts?.(decodeURIComponent(layouts[1] ?? "")) ?? { status: 404, body: {} });
-            return json({ body: processBody });
+            if (layouts) return answer(answers.layouts?.(decodeURIComponent(layouts[1] ?? "")) ?? { status: 404, body: {} }, files);
+            return answer({ body: processBody }, "application/json");
         };
     }
 
@@ -699,6 +704,18 @@ describe("readPdfTargets", () => {
             { taskId: "PdfSubform2", dataType: "GjenpartNabovarselDataV3" },
             { taskId: "PdfSubform3", dataType: "GjennomfoeringsplanDataV7" }
         ]);
+    });
+
+    it("reads them the same where the app does label them json", async () => {
+        const stub = stubAltinn(respondWith({ layouts: namedAfter, contentType: "application/json" }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.deepEqual(
+            result.subformPdfTasks.map((task) => task.dataType),
+            ["DispensasjonssoeknadDataV1", "GjenpartNabovarselDataV3", "GjennomfoeringsplanDataV7"]
+        );
     });
 
     it("goes by the component over the set even where both name a subform", async () => {

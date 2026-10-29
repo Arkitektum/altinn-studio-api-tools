@@ -504,6 +504,20 @@ function processTasksOf(body: unknown): { taskId: string; taskType: string | nul
     });
 }
 
+/**
+ * A body as JSON whatever it was labelled. The app serves its layout sets and layouts as the files'
+ * text, and not as `application/json`, so `altinnFetch` hands them over unparsed. A text that is not
+ * JSON stays as it was, and reads as having nothing in it.
+ */
+function asJson(body: unknown): unknown {
+    if (typeof body !== "string") return body;
+    try {
+        return JSON.parse(body);
+    } catch {
+        return body;
+    }
+}
+
 interface LayoutSet {
     id: string;
     dataType: string | null;
@@ -584,7 +598,7 @@ export async function readPdfTargets(token: string, request: ReadRequest): Promi
     if (subformTaskIds.length > 0) {
         const layoutSetsUrl = `${base}/api/layoutsets`;
         const layoutSets = await recorder.run("Get layout sets", "GET", layoutSetsUrl, () => altinnFetch({ url: layoutSetsUrl, token }));
-        const sets = layoutSets.ok ? layoutSetsOf(layoutSets.body) : [];
+        const sets = layoutSets.ok ? layoutSetsOf(asJson(layoutSets.body)) : [];
         const subformDataTypes = new Set(sets.flatMap((set) => (set.type === "subform" && set.dataType ? [set.dataType] : [])));
 
         for (const taskId of subformTaskIds) {
@@ -593,7 +607,7 @@ export async function readPdfTargets(token: string, request: ReadRequest): Promi
 
             const layoutsUrl = `${base}/api/layouts/${encodeURIComponent(set.id)}`;
             const layouts = await recorder.run(`Get layouts for ${taskId}`, "GET", layoutsUrl, () => altinnFetch({ url: layoutsUrl, token }));
-            const subformSet = layouts.ok ? subformLayoutSetIn(layouts.body) : null;
+            const subformSet = layouts.ok ? subformLayoutSetIn(asJson(layouts.body)) : null;
             const viaComponent = subformSet ? sets.find((candidate) => candidate.id === subformSet)?.dataType : null;
             const viaSet = set.dataType && subformDataTypes.has(set.dataType) ? set.dataType : null;
             const dataType = viaComponent ?? viaSet;
