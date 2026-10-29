@@ -12,10 +12,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@arkitektum/ftpb-testmotor-client@npm:^1.2.2":
-  version: 1.2.2
-  resolution: "@arkitektum/ftpb-testmotor-client@npm:1.2.2"
-  checksum: 10c0/72a6cb13b963b920734165d8f8504ccb066b0a338b5ec55605b69ba5567782a18038c0e52cd001cdccf6c9a980dd8ab622515747d40338e8534f13f6c38425c4
+"@arkitektum/ftpb-testmotor-client@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "@arkitektum/ftpb-testmotor-client@npm:1.3.0"
+  checksum: 10c0/01fc92d69a8a3d72e89bf4d3f81b46aca08d1ca7027861577881e9c9f750d112d5463713ad4741b2f42121bb4dacf1c6252285c87742c9a875bcde362dab4879
   languageName: node
   linkType: hard
 
@@ -2082,7 +2082,7 @@ __metadata:
   resolution: "server@workspace:server"
   dependencies:
     "@arkitektum/ftpb-app-catalogue": "npm:^1.0.5"
-    "@arkitektum/ftpb-testmotor-client": "npm:^1.2.2"
+    "@arkitektum/ftpb-testmotor-client": "npm:^1.3.0"
     "@types/express": "npm:^5.0.6"
     "@types/node": "npm:^26.6.5"
     dotenv: "npm:^18.0.9"
@@ -2220,9 +2220,9 @@ __metadata:
   linkType: hard
 
 "tldts-core@npm:^7.4.19":
-  version: 7.4.19
-  resolution: "tldts-core@npm:7.4.19"
-  checksum: 10c0/fd43d3d590e9a04c57035dc25aea992a5b33e593f4b0d80a08f57cbbb7964f9b7b4b7db212d0408142671a7715f49e8a6eed27ab5b28343ecec8e0383b6e9d98
+  version: 7.4.20
+  resolution: "tldts-core@npm:7.4.20"
+  checksum: 10c0/9bde91dee3e24543ddb0c1418ed8ae3b7bf14e889c67bfadf24dfffa638dde73c168312696a4f2b8e5f3fe6b7c612f9c22325cfff80ca7edd2cfe9768edf954a
   languageName: node
   linkType: hard
 
