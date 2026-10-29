@@ -1,4 +1,5 @@
 import { Modal } from "./Modal";
+import type { HeldPdf } from "./PdfPanel";
 
 export interface PdfPreview {
     /** Blob url of the rendered pdf, for the iframe and the new tab link. */
@@ -8,6 +9,8 @@ export interface PdfPreview {
     at: string;
     /** The instance as it was when this was rendered. See lib/pdfCache.ts. */
     fingerprint: string | null;
+    /** What it is a render of, so the panel knows which button it belongs to and the window can say. */
+    held: HeldPdf;
 }
 
 interface PdfModalProps {
@@ -30,7 +33,7 @@ function describeSize(bytes: number): string {
 export function PdfModal({ preview, onClose }: PdfModalProps) {
     return (
         <Modal
-            title="Pdf"
+            title={`Pdf: ${preview.held.label}`}
             aside={
                 <>
                     <span className="badge">

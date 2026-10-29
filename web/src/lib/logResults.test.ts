@@ -8,6 +8,8 @@ import {
     logFromCleanup,
     logFromDelete,
     logFromInstances,
+    logFromPdf,
+    logFromPdfTargets,
     logFromRead,
     logFromRun,
     logFromValidation,
@@ -450,5 +452,50 @@ describe("logFromAdvance", () => {
     it("reports where the instance ended up", () => {
         const entry = logFromAdvance(advanced, null, "data");
         assert.equal(entry.rows.find((row) => row.label === "Task")?.value, "ended · EndEvent_1");
+    });
+});
+
+describe("logFromPdf", () => {
+    const rendered = { ok: true, steps: [], failedAt: null, contentType: "application/pdf", content: "", size: 8 };
+
+    it("names what was rendered and in which language, when told", () => {
+        const entry = logFromPdf(rendered, 8, { label: "Main form", language: "nn" });
+
+        assert.deepEqual(
+            entry.rows.map((row) => `${row.label}: ${row.value}`),
+            ["Of: Main form", "Language: nn", "Content type: application/pdf", "Bytes: 8"]
+        );
+    });
+});
+
+describe("logFromPdfTargets", () => {
+    it("lists the tasks, and says which subform each renders where the app said", () => {
+        const entry = logFromPdfTargets({
+            ok: true,
+            steps: [],
+            failedAt: null,
+            pdfTasks: ["PdfForm"],
+            subformPdfTasks: [
+                { taskId: "PdfSubform", dataType: "Plan" },
+                { taskId: "PdfOther", dataType: null }
+            ]
+        });
+
+        assert.equal(entry.title, "Read pdf tasks");
+        assert.deepEqual(
+            entry.rows.map((row) => row.value),
+            ["PdfForm", "PdfSubform (Plan), PdfOther (subform not named)"]
+        );
+    });
+
+    it("says none rather than nothing, and nothing at all when the read failed", () => {
+        const empty = logFromPdfTargets({ ok: true, steps: [], failedAt: null, pdfTasks: [], subformPdfTasks: [] });
+        assert.deepEqual(
+            empty.rows.map((row) => row.value),
+            ["none", "none"]
+        );
+
+        const failed = logFromPdfTargets({ ok: false, steps: [], failedAt: "Could not read the process tasks.", pdfTasks: [], subformPdfTasks: [] });
+        assert.deepEqual(failed.rows, []);
     });
 });

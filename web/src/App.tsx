@@ -15,6 +15,7 @@ import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
 import { processLabel } from "./lib/format";
 import { fingerprintInstance, pdfStand } from "./lib/pdfCache";
+import { pdfTargetKey, type PdfLanguage, type PdfTargetOption } from "./lib/pdfTargets";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
@@ -108,6 +109,8 @@ export function App() {
      */
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
     const [pdfOpen, setPdfOpen] = useState(false);
+    /** Which language the pdf is asked for in. Kept, since it is a preference rather than a view. */
+    const [pdfLanguage, setPdfLanguage] = useLocalStorage<PdfLanguage>("pdfLanguage", "nb");
 
     /** And which instance has already been read, so it is read once per selection. */
 
@@ -380,15 +383,18 @@ export function App() {
      * as it was when the render was asked for, not as it is when the bytes arrive.
      */
     const renderPdf = useMutation({
-        mutationFn: async (asked: { requested: string; fingerprint: string | null }) => {
+        mutationFn: async (asked: { requested: string; fingerprint: string | null; target: PdfTargetOption; language: PdfLanguage }) => {
             const result = await api.previewPdf({
                 tokenId: activeTokenId ?? "",
                 org,
                 app,
                 instanceOwnerPartyId,
-                instanceGuid: asked.requested
+                instanceGuid: asked.requested,
+                taskId: asked.target.taskId,
+                dataElementId: asked.target.dataElementId,
+                language: asked.language
             });
-            appendLog(logFromPdf(result, result.size));
+            appendLog(logFromPdf(result, result.size, { label: asked.target.label, language: asked.language }));
             return { result, asked };
         },
         onSuccess: ({ result, asked }) => {
@@ -403,7 +409,8 @@ export function App() {
                 url: URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })),
                 size: result.size,
                 at: new Date().toLocaleTimeString("nb"),
-                fingerprint: asked.fingerprint
+                fingerprint: asked.fingerprint,
+                held: { key: pdfTargetKey(asked.target, asked.language), label: asked.target.label, language: asked.language }
             });
         }
     });
@@ -633,10 +640,19 @@ export function App() {
                         {/* After the data element, since it is a different kind of action. */}
                         <PdfPanel
                             notReady={waiting.process}
+                            held={pdfPreview?.held ?? null}
                             stand={pdfHeld}
-                            onRender={() => renderPdf.mutate({ requested: instanceGuid, fingerprint: pdfFingerprint })}
+                            language={pdfLanguage}
+                            onLanguageChange={setPdfLanguage}
+                            onRender={(target) =>
+                                renderPdf.mutate({ requested: instanceGuid, fingerprint: pdfFingerprint, target, language: pdfLanguage })
+                            }
                             onShow={() => setPdfOpen(true)}
-                            busy={renderPdf.isPending}
+                            rendering={
+                                renderPdf.isPending && renderPdf.variables
+                                    ? pdfTargetKey(renderPdf.variables.target, renderPdf.variables.language)
+                                    : null
+                            }
                             hasToken={tokenUsable}
                             error={renderPdf.error}
                         />

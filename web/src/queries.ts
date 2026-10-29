@@ -101,6 +101,13 @@ export const queryKeys = {
     appMetadata: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "metadata"] as const,
     appParties: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "parties"] as const,
 
+    /**
+     * The pdf and subform pdf tasks the app has. Asked through an instance, because the app only
+     * lists its tasks in an instance's process state, but keyed on the app: every instance of it
+     * answers the same, an ended one included, so selecting another is not a reason to ask again.
+     */
+    pdfTargets: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "pdf-targets"] as const,
+
     /** Every listing of this app, for invalidating them all after something changed one. */
     allInstances: (tokenId: string, org: string, app: string) => ["app", tokenId, org, app, "instances"] as const,
 

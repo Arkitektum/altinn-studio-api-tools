@@ -46,6 +46,8 @@ const boot: Routes = {
         metadata: { id: "dibk/et-v4", org: "dibk", mainFormDataType: "ET", dataTypes: [{ id: "ET", maxCount: 1, appLogic: { classRef: "x" } }] }
     },
     "GET /api/app/parties": [],
+    // An app with no pdf service tasks, so the panel offers the whole instance and nothing else.
+    "GET /api/instances/pdf-targets": { ok: true, steps: [], failedAt: null, pdfTasks: [], subformPdfTasks: [] },
     "GET /api/instances/active": {
         ok: true,
         steps: [],
@@ -879,6 +881,127 @@ describe("App", () => {
         await app.wait(50);
         assert.equal(renders(), 1, "the pdf in hand should be shown rather than asked for again");
         assert.ok(app.container.querySelector("dialog"), "and the window should be open on it");
+    });
+
+    /*
+     * Besides the whole instance, the app can render the main form alone and each subform element on
+     * its own. Which of those it has is asked of the app, and each is a target of its own in the
+     * cache: holding the main form says nothing about the whole instance, or about the main form in
+     * another language.
+     */
+    it("renders the main form or one subform on its own, in the language picked", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+        const withSubforms = instanceRead(A, "ET");
+        withSubforms.dataElements.push(
+            { id: "plan-1", dataType: "Plan", contentType: "application/xml", filename: null, size: 10, lastChanged: null },
+            { id: "plan-2", dataType: "Plan", contentType: "application/xml", filename: null, size: 10, lastChanged: null }
+        );
+
+        let moved = false;
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => (moved ? { ...withSubforms, process: { ...withSubforms.process, currentTask: "Task_2" } } : withSubforms),
+            "PUT /api/instances/process/next": () => ({
+                ok: true,
+                steps: [],
+                failedAt: null,
+                instanceOwnerPartyId: "510001",
+                instanceGuid: A,
+                process: { currentTask: "Task_2", taskType: "data", started: null, ended: null, endEvent: null }
+            }),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation,
+            "GET /api/instances/pdf-targets": {
+                ok: true,
+                steps: [],
+                failedAt: null,
+                pdfTasks: ["PdfForm"],
+                subformPdfTasks: [{ taskId: "PdfSubform", dataType: "Plan" }]
+            },
+            "GET /api/instances/pdf-preview": {
+                ok: true,
+                steps: [],
+                failedAt: null,
+                contentType: "application/pdf",
+                content: btoa("%PDF-1.4"),
+                size: 8
+            }
+        });
+        await app.wait(700);
+
+        const buttons = () => [...app.container.querySelectorAll("#panel-pdf .row button")];
+        const labels = () => buttons().map((button) => button.textContent);
+        const renders = () => stub.calls.flatMap((made, index) => (made === "GET /api/instances/pdf-preview" ? [stub.url(index).searchParams] : []));
+
+        assert.deepEqual(labels(), ["Whole instance", "Main form", "Plan 1", "Plan 2"]);
+        assert.equal(stub.calls.filter((made) => made === "GET /api/instances/pdf-targets").length, 1, "the app should be asked once");
+
+        await click(app, findByText(app, "#panel-pdf button", "Plan 2"));
+        await app.wait(50);
+        assert.equal(renders().length, 1);
+        assert.equal(renders()[0]?.get("taskId"), "PdfSubform");
+        assert.equal(renders()[0]?.get("dataElementId"), "plan-2");
+        assert.equal(renders()[0]?.get("language"), "nb");
+        await click(app, findByText(app, "dialog button", "Close"));
+
+        // The held one is grey, and only that one: the others would still ask.
+        const grey = buttons().filter((button) => button.classList.contains("btn--ghost"));
+        assert.deepEqual(
+            grey.map((button) => button.textContent),
+            ["Plan 2"]
+        );
+        assert.ok(labels().includes("Render again"));
+
+        // Another language is another document, so nothing on offer is the one in hand any more.
+        await choose(app, find(app, "#pdfLanguage") as HTMLSelectElement, "nn");
+        assert.equal(
+            buttons().some((button) => button.textContent === "Plan 2" && button.classList.contains("btn--ghost")),
+            false
+        );
+        assert.ok(labels().includes("Show the last one"));
+
+        await click(app, findByText(app, "#panel-pdf button", "Main form"));
+        await app.wait(50);
+        assert.equal(renders().length, 2);
+        assert.equal(renders()[1]?.get("taskId"), "PdfForm");
+        assert.equal(renders()[1]?.has("dataElementId"), false);
+        assert.equal(renders()[1]?.get("language"), "nn");
+        await click(app, findByText(app, "dialog button", "Close"));
+        assert.equal(
+            findByText(app, "#panel-pdf button", "Main form").classList.contains("btn--ghost"),
+            true,
+            "held in the language it was asked in"
+        );
+
+        // Moving the instance on makes the one in hand a picture of what it was.
+        moved = true;
+        await click(app, find(app, "#panel-process .btn--put"));
+        await app.wait(50);
+        assert.equal(findByText(app, "#panel-pdf button", "Main form").classList.contains("btn--ghost"), false);
+        assert.ok(labels().includes("Show the last one"));
+        assert.equal(labels().includes("Render again"), false);
+    });
+
+    /* Asked through an instance the app knows, so a refused read is not followed by a second refusal. */
+    it("does not ask for the pdf tasks through an instance the app would not read", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => ({
+                ...instanceRead(A, "ET"),
+                ok: false,
+                failedAt: "Could not read the instance.",
+                dataElements: [],
+                process: null
+            }),
+            "GET /api/instances/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        assert.ok(stub.calls.includes("GET /api/instances"), "the read should have gone out");
+        assert.equal(stub.calls.includes("GET /api/instances/pdf-targets"), false);
     });
 
     /*

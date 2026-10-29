@@ -496,6 +496,22 @@ export interface ValidationCounts {
     other: number;
 }
 
+/** A `subformPdf` task, and the subform data type it renders. Null when the app's layout sets do not say. */
+export interface SubformPdfTask {
+    taskId: string;
+    dataType: string | null;
+}
+
+/** What the pdf preview can be pointed at besides the whole instance. See lib/pdfTargets.ts. */
+export interface PdfTargetsResult {
+    ok: boolean;
+    steps: RunStep[];
+    failedAt: string | null;
+    /** Tasks of type `pdf`, which render the main form on its own. */
+    pdfTasks: string[];
+    subformPdfTasks: SubformPdfTask[];
+}
+
 export interface PdfPreviewResult {
     ok: boolean;
     steps: RunStep[];

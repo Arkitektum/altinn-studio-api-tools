@@ -12,6 +12,7 @@ import type {
     LocaltestStatus,
     LocaltestUsers,
     PdfPreviewResult,
+    PdfTargetsResult,
     PublicToken,
     ReadDataElementResult,
     ReadInstanceResult,
@@ -140,8 +141,31 @@ export const api = {
         instanceGuid: string;
         dataGuid: string;
     }) => request<ValidateResult>(`/instances/data-element/validate?${new URLSearchParams(params)}`),
-    previewPdf: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
-        request<PdfPreviewResult>(`/instances/pdf-preview?${new URLSearchParams(params)}`),
+    /** The task, element and language only when given, so a plain preview is the request it always was. */
+    previewPdf: ({
+        taskId,
+        dataElementId,
+        language,
+        ...params
+    }: {
+        tokenId: string;
+        org: string;
+        app: string;
+        instanceOwnerPartyId: string;
+        instanceGuid: string;
+        taskId?: string | null;
+        dataElementId?: string | null;
+        language?: string;
+    }) => {
+        const query = new URLSearchParams(params);
+        if (taskId) query.set("taskId", taskId);
+        if (dataElementId) query.set("dataElementId", dataElementId);
+        if (language) query.set("language", language);
+        return request<PdfPreviewResult>(`/instances/pdf-preview?${query}`);
+    },
+
+    getPdfTargets: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
+        request<PdfTargetsResult>(`/instances/pdf-targets?${new URLSearchParams(params)}`),
 
     /** No tokenId: the validation service is not Altinn, and no token is sent to it. */
     validationReport: (input: ValidationReportRequest) => request<ValidationReportResult>("/validation-report", jsonBody(input)),

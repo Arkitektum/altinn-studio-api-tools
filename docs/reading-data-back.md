@@ -151,6 +151,16 @@ It has a panel of its own, last, because it is a different kind of action: every
 
 The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: it is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
 
+### The main form, a subform, and the language
+
+Without a task the app renders the task the instance is in, which in these apps is the main form with every subform after it. The app can also render the main form alone, through a service task of type `pdf`, and one subform data element, through a service task of type `subformPdf` and `dataElementId`. So besides **Whole instance** the panel has a **Main form** button and one per subform element, numbered per data type in the order the instance lists them:
+
+`GET /{org}/{app}/instances/{party}/{guid}/pdf/preview?taskId=PdfSubform&dataElementId={element}&language=nn`
+
+Which tasks there are is asked of the app, not kept in the catalogue. `GET /{org}/{app}/instances/{party}/{guid}/process` lists every task with its type, and `GET /{org}/{app}/api/layoutsets` says which subform a `subformPdf` task renders, since Altinn 8 gives each such task a layout set on the subform's data type. It is asked once per app, through the first instance that reads, because every instance of an app answers the same. An app set up the Altinn 9 way (`subformUiFolder`) has no such layout set, and its subform task is offered for every subform element no other task covers. Until the app has answered, or where it has no such tasks, the panel is the single button it always was.
+
+**Language** is Bokmål, Nynorsk or English, sent on every render, the whole instance included, and kept between sessions. Each button's url is its title, so hovering one shows the query it sends.
+
 One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and selecting another instance clears it along with that instance's validation results.
 
 ### It is only rendered again when it would differ
@@ -158,6 +168,8 @@ One preview is held at a time. Rendering again replaces it and revokes the previ
 A render is the most expensive read this tool makes, at both ends: the app lays the whole form out, and what comes back is megabytes of base64. So the pdf is kept with a fingerprint of the instance it came from, and closing the window puts it away rather than throwing it out, which is what used to make a second render necessary to look at the same document twice.
 
 The fingerprint is the data elements, by id, last change and size, and where the process stands. That is everything a render reads: the form and its attachments are the elements, and the task decides which layout the app uses. The ids are sorted, because the order storage lists them in is not a change to the instance.
+
+A render is of one target in one language, so the cache is too: holding **Main form** in Nynorsk says nothing about the whole instance, or about the main form in Bokmål. Only the button for the one in hand turns grey, and where none on screen is that one, because the language changed or the instance moved on, **Show the last one** opens it and the line under the buttons says what it is.
 
 What the buttons offer is the whole of that, said out loud:
 

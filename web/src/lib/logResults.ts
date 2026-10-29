@@ -9,6 +9,7 @@ import type {
     ListInstancesResult,
     LogResult,
     PdfPreviewResult,
+    PdfTargetsResult,
     ReadDataElementResult,
     ReadInstanceResult,
     RunResult,
@@ -318,14 +319,36 @@ export function logFromCleanup(results: DeleteInstanceResult[]): LogResult {
     };
 }
 
-export function logFromPdf(result: PdfPreviewResult, bytes: number): LogResult {
+/** `what` is the target as its button reads, and the language it was asked in. */
+export function logFromPdf(result: PdfPreviewResult, bytes: number, what?: { label: string; language: string }): LogResult {
     return {
         ok: result.ok,
         steps: result.steps,
         failedAt: result.failedAt,
         title: "Rendered pdf",
-        rows: [...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []), { label: "Bytes", value: String(bytes) }]
+        rows: [
+            ...(what
+                ? [
+                      { label: "Of", value: what.label },
+                      { label: "Language", value: what.language }
+                  ]
+                : []),
+            ...(result.contentType ? [{ label: "Content type", value: result.contentType }] : []),
+            { label: "Bytes", value: String(bytes) }
+        ]
     };
+}
+
+export function logFromPdfTargets(result: PdfTargetsResult): LogResult {
+    const rows: LogResult["rows"] = [];
+    if (result.ok) {
+        rows.push({ label: "Pdf tasks", value: result.pdfTasks.join(", ") || "none" });
+        rows.push({
+            label: "Subform pdf tasks",
+            value: result.subformPdfTasks.map((task) => `${task.taskId} (${task.dataType ?? "subform not named"})`).join(", ") || "none"
+        });
+    }
+    return { ok: result.ok, steps: result.steps, failedAt: result.failedAt, title: "Read pdf tasks", rows };
 }
 
 export function logFromValidation(result: ValidateResult, dataElements: DataElementSummary[]): LogResult {
