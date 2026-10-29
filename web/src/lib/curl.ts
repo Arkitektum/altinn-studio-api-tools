@@ -6,6 +6,12 @@ function quote(value: string): string {
 }
 
 /**
+ * The authorization value the server logs in place of the bearer token. It is the one header bash is meant to expand, so
+ * it goes in double quotes: in single quotes `$TOKEN` would be sent as the literal text.
+ */
+const TOKEN_HEADER_VALUE = "Bearer $TOKEN";
+
+/**
  * Turns a logged step into a curl command, for handing a surprising request to someone else.
  *
  * The authorization header carries the `$TOKEN` placeholder the server logged rather than a real
@@ -19,7 +25,9 @@ export function toCurl(step: RunStep): string {
 
     const lines = [`curl -i -X ${step.method} ${quote(step.url)}`];
     for (const [name, value] of Object.entries(step.requestHeaders ?? {})) {
-        lines.push(`  -H ${quote(`${name}: ${value}`)}`);
+        lines.push(
+            name === "authorization" && value === TOKEN_HEADER_VALUE ? '  -H "authorization: Bearer $TOKEN"' : `  -H ${quote(`${name}: ${value}`)}`
+        );
     }
     if (step.requestPreview !== undefined) {
         lines.push(step.requestVerbatim ? `  --data-binary ${quote(step.requestPreview)}` : "  --data-binary @body");

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { describe, it } from "node:test";
 import { toCurl } from "./curl";
 import type { RunStep } from "../types";
@@ -28,7 +29,7 @@ describe("toCurl", () => {
             [
                 `curl -i -X POST '${URL}'`,
                 `  -H 'accept: application/json'`,
-                `  -H 'authorization: Bearer $TOKEN'`,
+                `  -H "authorization: Bearer $TOKEN"`,
                 `  -H 'content-type: application/xml'`,
                 `  --data-binary '<ET><a>1</a></ET>'`
             ].join(" \\\n")
@@ -57,6 +58,21 @@ describe("toCurl", () => {
         const command = toCurl(step({ method: "GET", requestPreview: undefined }));
         assert.equal(command.includes("--data-binary"), false);
         assert.equal(command.startsWith(`curl -i -X GET '${URL}'`), true);
+    });
+
+    // Run through bash itself, with curl replaced by a function that prints what it was given: that is the only way to
+    // see what the shell makes of the quoting.
+    it("is one TOKEN=… away from sending the token", () => {
+        const command = toCurl(step({ requestPreview: "<ET/>", requestVerbatim: true }));
+        const args = execFileSync("bash", ["-c", `curl() { printf '%s\\n' "$@"; }\nTOKEN=abc.def.ghi\n${command}`], { encoding: "utf8" }).split("\n");
+
+        assert.equal(args.includes("authorization: Bearer abc.def.ghi"), true, args.join("\n"));
+        assert.equal(args.includes("accept: application/json"), true);
+    });
+
+    it("leaves any other header that mentions $TOKEN alone", () => {
+        const command = toCurl(step({ requestHeaders: { "x-note": "Bearer $TOKEN" } }));
+        assert.equal(command.includes(`-H 'x-note: Bearer $TOKEN'`), true);
     });
 
     it("gives nothing for a step that made no request", () => {
