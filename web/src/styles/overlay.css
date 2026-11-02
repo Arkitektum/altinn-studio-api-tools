@@ -34,6 +34,14 @@
     font-weight: 600;
 }
 
+/*
+ * Wide enough for an A4 page at 100% beside the thumbnails Chrome's viewer shows in a wide frame,
+ * without a sideways scrollbar. 1100px opened it at 97% fitted, and with a scrollbar at 100%.
+ */
+.modal--pdf {
+    width: min(1240px, 96vw);
+}
+
 /* A pdf fills the window as an iframe. */
 .modal__frame {
     flex: 1;

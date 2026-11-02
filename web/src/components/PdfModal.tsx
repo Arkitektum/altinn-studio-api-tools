@@ -34,6 +34,7 @@ export function PdfModal({ preview, onClose }: PdfModalProps) {
     return (
         <Modal
             title={`Pdf: ${preview.held.label}`}
+            className="modal--pdf"
             aside={
                 <>
                     <span className="badge">
@@ -47,8 +48,17 @@ export function PdfModal({ preview, onClose }: PdfModalProps) {
             bodyClassName="modal__frame"
             onClose={onClose}
         >
-            {/* The browser's own pdf viewer, pointed at the blob. Nothing is written to disk. */}
-            <iframe src={preview.url} title="Pdf" />
+            {/*
+             * The browser's own pdf viewer, pointed at the blob. Nothing is written to disk.
+             *
+             * At 100% rather than the viewer's own choice, which is to fit the page to the frame's
+             * width and so depends on the screen: an A4 page opened at 97% in a window that was
+             * nearly wide enough. `zoom` is one of the pdf open parameters Chrome's and Firefox's
+             * viewers both read from the fragment. The new tab keeps the viewer's choice, since it
+             * has the whole window. The window is wider than the code one so the page fits at 100%,
+             * see `.modal--pdf`.
+             */}
+            <iframe src={`${preview.url}#zoom=100`} title="Pdf" />
         </Modal>
     );
 }

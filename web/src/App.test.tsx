@@ -869,6 +869,10 @@ describe("App", () => {
         await app.wait(50);
         assert.equal(renders(), 1, "the first press should have asked the app");
         assert.ok(app.container.querySelector("dialog"), "and opened the window");
+        // At 100%, so an A4 page is not opened a few percent short of its size.
+        assert.match(find(app, "dialog iframe").getAttribute("src") ?? "", /^blob:.*#zoom=100$/);
+        // In the wider window, so the page fits at that size without a sideways scrollbar.
+        assert.ok(find(app, "dialog").classList.contains("modal--pdf"));
 
         // Closing puts the pdf away rather than throwing it out.
         await click(app, findByText(app, "dialog button", "Close"));

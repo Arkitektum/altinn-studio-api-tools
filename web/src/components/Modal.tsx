@@ -3,7 +3,7 @@ import { Icon } from "./Icon";
 
 interface ModalProps {
     title: string;
-    /** A modifier on the window itself, for one that holds a form rather than a document. */
+    /** A modifier on the window itself, for one that holds a form, or a pdf that needs more width. */
     className?: string;
     /** Between the title and Close: a size, a time, a copy button. */
     aside?: ReactNode;
