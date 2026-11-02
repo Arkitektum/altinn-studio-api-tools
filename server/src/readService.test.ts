@@ -663,10 +663,22 @@ describe("readPdfTargets", () => {
      * `contentType` is what the layout sets and layouts come back labelled as. The app serves them
      * as the files' text, not as `application/json`, which is what a stub answering json hid.
      */
-    function respondWith(answers: { layoutSets?: Answer; layouts?: (set: string) => Answer; contentType?: string }) {
+    type Probe = { status: number; body: string; contentType: string };
+    /** `probe` answers a preview asked of a task without a subform element, as the raw body. */
+    function respondWith(answers: {
+        layoutSets?: Answer;
+        layouts?: (set: string) => Answer;
+        contentType?: string;
+        probe?: (taskId: string) => Probe;
+    }) {
         const files = answers.contentType ?? "text/plain; charset=utf-8";
         return (url: string) => {
             const answer = ({ status = 200, body }: Answer, contentType: string) => ({ status, body: JSON.stringify(body), contentType });
+            const probed = url.match(/\/pdf\/preview\?taskId=([^&]+)$/);
+            if (probed)
+                return (answers.probe ?? (() => ({ status: 404, body: "Did not find task", contentType: "text/plain" })))(
+                    decodeURIComponent(probed[1] ?? "")
+                );
             if (url.endsWith("/api/layoutsets")) return answer(answers.layoutSets ?? { body: layoutSetsBody }, files);
             const layouts = url.match(/\/api\/layouts\/([^/]+)$/);
             if (layouts) return answer(answers.layouts?.(decodeURIComponent(layouts[1] ?? "")) ?? { status: 404, body: {} }, files);
@@ -771,8 +783,10 @@ describe("readPdfTargets", () => {
         const result = await readPdfTargets("test-token", target);
 
         assert.equal(result.subformPdfTasks[0]?.dataType, null);
-        // The process, the layout sets, and the layouts of the two tasks that have a set.
-        assert.equal(stub.calls.length, 4);
+        // The process, the layout sets, the layouts of the two tasks that have a set, and the one
+        // left over asked for itself.
+        assert.equal(stub.calls.length, 5);
+        assert.equal(stub.calls[4]?.url, `${APP_BASE}/instances/510001/${GUID}/pdf/preview?taskId=PdfSubform`);
     });
 
     it("does not ask for the layout sets when there is no subform task to place", async () => {
@@ -802,6 +816,104 @@ describe("readPdfTargets", () => {
             result.subformPdfTasks.map((task) => task.dataType),
             [null, null, null]
         );
+    });
+
+    /*
+     * An app set up the Altinn 9 way: the subform pdf tasks have no layout set, so the only way left
+     * is to ask each task, and read which data type its refusal names.
+     */
+    const v9LayoutSets = { body: { sets: layoutSetsBody.sets.filter((set) => !set.id.endsWith("Pdf")) } };
+    const refusalFor: Record<string, string> = {
+        PdfSubform: "DispensasjonssoeknadDataV1",
+        PdfSubform2: "GjenpartNabovarselDataV3",
+        PdfSubform3: "GjennomfoeringsplanDataV7"
+    };
+    const refusal = (taskId: string): Probe => ({
+        status: 400,
+        body: `dataElementId must be the id of a data element of type ${refusalFor[taskId] ?? "?"}`,
+        contentType: "text/plain; charset=utf-8"
+    });
+
+    it("asks each task it could not place which subform it renders, and reads the refusal", async () => {
+        const stub = stubAltinn(respondWith({ layoutSets: v9LayoutSets, probe: refusal }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.deepEqual(
+            stub.calls.slice(2).map((call) => call.url),
+            ["PdfSubform", "PdfSubform2", "PdfSubform3"].map((task) => `${APP_BASE}/instances/510001/${GUID}/pdf/preview?taskId=${task}`)
+        );
+        assert.deepEqual(
+            result.steps.slice(2).map((step) => step.name),
+            ["Ask PdfSubform which subform it renders", "Ask PdfSubform2 which subform it renders", "Ask PdfSubform3 which subform it renders"]
+        );
+        assert.match(result.steps[2]?.error ?? "", /^Refused as intended: .*DispensasjonssoeknadDataV1/);
+        assert.deepEqual(result.subformPdfTasks, [
+            { taskId: "PdfSubform", dataType: "DispensasjonssoeknadDataV1" },
+            { taskId: "PdfSubform2", dataType: "GjenpartNabovarselDataV3" },
+            { taskId: "PdfSubform3", dataType: "GjennomfoeringsplanDataV7" }
+        ]);
+    });
+
+    it("reads the refusal the same where it comes as a json string", async () => {
+        const stub = stubAltinn(
+            respondWith({
+                layoutSets: v9LayoutSets,
+                probe: (taskId) => ({ ...refusal(taskId), body: JSON.stringify(refusal(taskId).body), contentType: "application/json" })
+            })
+        );
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.subformPdfTasks[1]?.dataType, "GjenpartNabovarselDataV3");
+    });
+
+    it("asks only the tasks the layouts left unplaced", async () => {
+        // PdfSubform's layouts cannot be read and its set is on ET, so it alone is asked.
+        const stub = stubAltinn(
+            respondWith({
+                layouts: (set) => (set === "subform-DispensasjonssoeknadDataV1Pdf" ? { status: 500, body: {} } : namedAfter(set)),
+                probe: refusal
+            })
+        );
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.deepEqual(
+            stub.calls.filter((call) => call.url.includes("/pdf/preview")).map((call) => call.url),
+            [`${APP_BASE}/instances/510001/${GUID}/pdf/preview?taskId=PdfSubform`]
+        );
+        assert.equal(result.subformPdfTasks[0]?.dataType, "DispensasjonssoeknadDataV1");
+        // Only the refusal asked for is marked as such, and the failed layouts read keeps its own.
+        assert.match(result.steps[5]?.error ?? "", /^Refused as intended/);
+        assert.doesNotMatch(result.steps[2]?.error ?? "", /Refused as intended/);
+    });
+
+    it("leaves a task unplaced where the answer is not that refusal", async () => {
+        const answers: Record<string, Probe> = {
+            // The wording, from anything but a 400.
+            PdfSubform: { ...refusal("PdfSubform"), status: 429 },
+            // A 400, but another one.
+            PdfSubform2: { status: 400, body: "taskId must identify a PDF or subform PDF service task", contentType: "text/plain" },
+            // An app that ignores taskId and renders the whole instance.
+            PdfSubform3: { status: 200, body: "%PDF-1.7 type GjennomfoeringsplanDataV7", contentType: "application/pdf" }
+        };
+        const stub = stubAltinn(respondWith({ layoutSets: v9LayoutSets, probe: (taskId) => answers[taskId] ?? refusal(taskId) }));
+        active = stub;
+
+        const result = await readPdfTargets("test-token", target);
+
+        assert.equal(result.ok, true);
+        assert.deepEqual(
+            result.subformPdfTasks.map((task) => task.dataType),
+            [null, null, null]
+        );
+        // The pdf is logged as a size, not as its text.
+        assert.deepEqual(result.steps[4]?.response, { bytes: 39, contentType: "application/pdf" });
     });
 
     it("reads an app that lists no process tasks as having nothing but the whole instance", async () => {

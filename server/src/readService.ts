@@ -133,10 +133,8 @@ export interface PdfPreviewRequest extends ReadRequest {
 export interface SubformPdfTask {
     taskId: string;
     /**
-     * Followed from the task's layout to the subform's own layout set, see readPdfTargets. Null when
-     * that cannot be done, which is also how an app set up for Altinn 9 (`subformUiFolder`) looks
-     * from outside: the task is real, but which subform it renders is only in the process
-     * definition, which the app does not serve.
+     * Followed from the task's layout to the subform's own layout set, or else read from the app's
+     * refusal of a preview without a subform element, see readPdfTargets. Null when neither says.
      */
     dataType: string | null;
 }
@@ -568,8 +566,21 @@ function subformLayoutSetIn(value: unknown): string | null {
 }
 
 /**
+ * What the app's pdf preview answers a `subformPdf` task asked for without a subform element. It is
+ * turned down before anything is rendered, and the refusal names the data type the task renders,
+ * which is the one place an Altinn 9 app says it from outside. See readPdfTargets.
+ */
+const REFUSAL_NAMING_DATA_TYPE = /must be the id of a data element of type ([\w.-]+)/;
+
+/** The data type a refusal names. Text either way, since a json string is parsed into one. */
+function dataTypeInRefusal(body: unknown): string | null {
+    return typeof body === "string" ? (REFUSAL_NAMING_DATA_TYPE.exec(body)?.[1] ?? null) : null;
+}
+
+/**
  * GET {app}/instances/{party}/{guid}/process, then GET {app}/api/layoutsets, then
- * GET {app}/api/layouts/{set} for each subform pdf task
+ * GET {app}/api/layouts/{set} for each subform pdf task, then
+ * GET {app}/instances/{party}/{guid}/pdf/preview?taskId={task} for each one still not placed
  *
  * What the pdf preview can be pointed at besides the instance as a whole. The process state lists
  * every task with its type, which is where the `pdf` and `subformPdf` service tasks are found. It
@@ -579,7 +590,18 @@ function subformLayoutSetIn(value: unknown): string | null {
  * own set, and that set's data type is the answer.
  *
  * Where those layouts cannot be read, the task's set is believed only when its data type is one a
- * subform set has. A task that cannot be placed is returned with its data type unknown, and gets no
+ * subform set has.
+ *
+ * An app set up the Altinn 9 way (`subformUiFolder`) has neither: the task has no layout set, and
+ * which subform it renders is only in the process definition, which the app does not serve. What
+ * the app does do is refuse a preview of the task without a subform element, before rendering
+ * anything, with a message naming the data type it wants. So a task still unplaced is asked that,
+ * once, and the refusal is read. It goes by the wording of a message, so a change to it leaves the
+ * task unplaced rather than misplaced. These requests count against the app's preview rate limit,
+ * 20 a minute by default. An app on a version that ignores `taskId` renders the whole instance
+ * instead, which is read as bytes so the log shows a size rather than the pdf.
+ *
+ * A task that cannot be placed any of these ways is returned with its data type unknown, and gets no
  * buttons: a button that sends the wrong data element to a task is one the app refuses.
  *
  * Only asked for when there is a subform task to place, and a failure past the process read leaves
@@ -612,6 +634,20 @@ export async function readPdfTargets(token: string, request: ReadRequest): Promi
             const viaSet = set.dataType && subformDataTypes.has(set.dataType) ? set.dataType : null;
             const dataType = viaComponent ?? viaSet;
             if (dataType) placed.set(taskId, dataType);
+        }
+
+        const previewUrl = `${base}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/pdf/preview`;
+        for (const taskId of subformTaskIds.filter((id) => !placed.has(id))) {
+            const url = `${previewUrl}?taskId=${encodeURIComponent(taskId)}`;
+            const refusal = await recorder.run(`Ask ${taskId} which subform it renders`, "GET", url, () =>
+                altinnFetch({ url, token, binaryResponse: true })
+            );
+            const dataType = refusal.status === 400 ? dataTypeInRefusal(refusal.body) : null;
+            if (!dataType) continue;
+            placed.set(taskId, dataType);
+            // A refusal asked for, so the log says what it was for rather than only that it failed.
+            const step = recorder.steps[recorder.steps.length - 1];
+            if (step) step.error = `Refused as intended: the refusal names ${dataType} as the subform this task renders.`;
         }
     }
 
