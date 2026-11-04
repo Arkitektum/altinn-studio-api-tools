@@ -28,6 +28,21 @@ describe("identityFor", () => {
         assert.deepEqual(identityFor([], "510001", token), { kind: "person", number: "14026319852", name: "Sophie Salt" });
     });
 
+    /* Newer apps mask a person's number in their party list. LocalTest serves the token's whole. */
+    it("fills in a number the app masked from the token's, where the token's fits it", () => {
+        const masked: AppParty[] = [{ partyId: 510004, name: "Sophie Salt", orgNumber: null, ssn: "140263*****" }];
+
+        assert.deepEqual(identityFor(masked, "510004", token), { kind: "person", number: "14026319852", name: "Sophie Salt" });
+    });
+
+    it("is nothing for a masked number the token's does not fit, rather than the stars", () => {
+        const someoneElse: AppParty[] = [{ partyId: 510005, name: "Kari Nordvik", orgNumber: null, ssn: "018996*****" }];
+
+        assert.equal(identityFor(someoneElse, "510005", token), null);
+        assert.equal(identityFor(someoneElse, "510005", { ...token, ssn: "0189969" } as PublicToken), null, "too short to be it");
+        assert.equal(identityFor(someoneElse, "510005", null), null);
+    });
+
     it("is nothing when nothing knows, rather than a guess", () => {
         assert.equal(identityFor([], "510001", null), null);
         assert.equal(identityFor([], "510001", { label: "Raw", ssn: null } as PublicToken), null);

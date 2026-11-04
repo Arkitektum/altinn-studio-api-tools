@@ -47,7 +47,7 @@ In that one party, five values are set: `navn`, the number in the field for its 
 | A company | `HoeringOgOffentligEttersyn` | `Offentlig myndighet` |
 | A company | anything else                | `Organisasjon`        |
 
-Who you are is the party the instance is for, read from the app's own party list, falling back to the token's own claim before the app has been read. It is the same identity prevalidation is sent with, so the two agree by construction rather than by luck.
+Who you are is the party the instance is for, read from the app's own party list, falling back to the token's own claim before the app has been read. It is the same identity prevalidation is sent with, so the two agree by construction rather than by luck. Newer apps mask a person's number in that list (`123456*****`), so a masked number is filled in from the token's, which LocalTest serves whole, where the token's fits every digit the app left. Where it does not, the party is someone other than the person behind the token, and nothing is written rather than the stars.
 
 Four things are worth knowing about how it is written, all in `lib/formIdentity.ts`:
 
