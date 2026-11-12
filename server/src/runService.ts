@@ -3,7 +3,7 @@ import { StepRecorder, type RunStep } from "./stepRecorder.js";
 import { buildMultipart, type MultipartPart } from "./multipart.js";
 import { appBaseUrl } from "./urls.js";
 import { advanceBody, taskTypeOf } from "./processAction.js";
-import { fetchApplicationMetadata, resolveContentType, sniffContentType, type AppDataType, type ApplicationMetadata } from "./appService.js";
+import { fetchApplicationMetadata, resolveContentType, type AppDataType, type ApplicationMetadata } from "./appService.js";
 
 export type { RunStep };
 
@@ -352,5 +352,3 @@ function failed(
         failedAt: reason
     };
 }
-
-export { sniffContentType };

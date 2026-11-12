@@ -225,10 +225,6 @@
     background: var(--bg-inset);
 }
 
-.step__dot {
-    display: none;
-}
-
 .step__head {
     display: flex;
     align-items: baseline;
@@ -304,10 +300,6 @@
 
 .method--put {
     color: var(--warn);
-}
-
-.method--delete {
-    color: var(--bad);
 }
 
 .step__method--get {

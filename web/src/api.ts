@@ -106,7 +106,6 @@ export const api = {
 
     listTokens: () => request<PublicToken[]>("/tokens"),
     createTestUserToken: (input: { userId: string; label?: string }) => request<PublicToken>("/tokens/test-user", jsonBody(input)),
-    createRawToken: (input: { token: string }) => request<PublicToken>("/tokens/raw", jsonBody(input)),
     deleteToken: (id: string) => request<void>(`/tokens/${id}`, { method: "DELETE" }),
 
     getAppMetadata: (params: { tokenId: string; org: string; app: string }) =>

@@ -63,13 +63,6 @@
     color: var(--warn);
 }
 
-.badge--signal,
-.badge--info {
-    border-color: var(--accent-border);
-    background: var(--accent-bg);
-    color: var(--accent);
-}
-
 /* Payload element groups, so a collapsed list can be scanned by kind. A type the app has not
    been read for yet is none of them, and stays grey: that is not knowing rather than a fourth kind. */
 .badge--main {

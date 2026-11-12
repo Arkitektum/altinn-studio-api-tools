@@ -41,13 +41,6 @@
     border-bottom: 1px solid var(--border);
 }
 
-/* Set apart by a rule rather than by colour, so it is separate without shouting. */
-.danger {
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-}
-
 /*
  * Hints are sentences, often several, so they are a step above the smallest size, and the label and
  * legend above them are the same size: a hint larger than the label it explains reads upside down.

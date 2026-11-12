@@ -37,14 +37,3 @@ export const appCatalogue: CatalogueApp[] = sharedCatalogue.map((entry) => ({
     dataType: entry.dataType,
     subForms: entry.subForms
 }));
-
-/**
- * Finds a catalogue app by its org and name.
- *
- * @param org - The organisation that owns the app.
- * @param app - The app's name within that organisation.
- * @returns The app, or undefined when the catalogue does not name it.
- */
-export function findCatalogueApp(org: string, app: string): CatalogueApp | undefined {
-    return appCatalogue.find((entry) => entry.org === org && entry.app === app);
-}

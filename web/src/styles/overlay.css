@@ -109,19 +109,6 @@
     word-break: break-all;
 }
 
-/* Code fills it too, but scrolls inside itself rather than being handed to a plugin. */
-.modal__code {
-    flex: 1;
-    display: flex;
-    min-height: 0;
-    padding: 12px;
-}
-
-.modal__code > * {
-    flex: 1;
-    min-width: 0;
-}
-
 /*
  * Syntax colour.
  *

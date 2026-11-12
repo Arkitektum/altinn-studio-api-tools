@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { appCatalogue, findCatalogueApp } from "./appCatalogue.js";
+import { appCatalogue } from "./appCatalogue.js";
 
 /**
  * The catalogue is hand-maintained data, and the mistakes it invites are the ones a reviewer's eye slides over:
@@ -22,8 +22,8 @@ describe("the app catalogue", () => {
     });
 
     it("lets no two entries claim the same org and app", () => {
-        // findCatalogueApp answers the first match, so a second entry for the same app would never be reached and
-        // whichever data type it carries would silently never be used.
+        // A lookup by org and app answers the first match, so a second entry for the same app would never be reached
+        // and whichever data type it carries would silently never be used.
         const keys = appCatalogue.map(appKey);
         const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
 
@@ -56,23 +56,5 @@ describe("the app catalogue", () => {
         const selfReferencing = appCatalogue.filter((entry) => entry.subForms.some((subForm) => appKey(subForm) === appKey(entry))).map(appKey);
 
         assert.deepEqual(selfReferencing, []);
-    });
-});
-
-describe("findCatalogueApp", () => {
-    it("finds an app by its org and name", () => {
-        const found = findCatalogueApp("dibk", "an-v2");
-
-        assert.equal(found?.dataType, "AN");
-    });
-
-    it("does not find an app that is not in the catalogue", () => {
-        assert.equal(findCatalogueApp("dibk", "not-an-app"), undefined);
-    });
-
-    it("will not match an app name under the wrong org", () => {
-        // Both halves of the key are checked: an app name alone does not identify an app.
-        assert.equal(findCatalogueApp("dibk", "an-v2")?.app, "an-v2");
-        assert.equal(findCatalogueApp("dat", "an-v2"), undefined);
     });
 });
