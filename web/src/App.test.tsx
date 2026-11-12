@@ -205,14 +205,13 @@ describe("App", () => {
 
     /*
      * Every panel is on screen from the first render, and the ones you cannot use yet say what they
-     * are waiting for. The order the tool works in is then visible on the page, which is what the
-     * chain strip above the panels used to have to explain.
+     * are waiting for. The order the tool works in is then visible on the page.
      */
     it("shows every panel from the start, waiting where it cannot be used yet", async (t) => {
         const { app } = await mount(t, boot);
 
         // A token and nothing else. The panel you pick an application in is ready; the ones below it
-        // are on screen and waiting, which is what a first screen of one panel used to hide.
+        // are on screen and waiting.
         // Prevalidation is not among them: this boot has no validation service, so there is no such
         // step to be waiting on.
         assert.deepEqual(waitingPanels(app), ["Instances", "Payload", "Post", "Data element", "Pdf", "Process"]);
@@ -314,8 +313,8 @@ describe("App", () => {
     });
 
     /*
-     * The testmotor's failures used to be joined into one app-wide error, and every picker with
-     * nothing to offer showed it, including an attachment whose content type simply has no dummy.
+     * A testmotor failure is shown on the picker whose data type it cost, not on every picker with
+     * nothing to offer, which would include an attachment whose content type simply has no dummy.
      */
     describe("a testmotor failure on the example pickers", () => {
         const failingRoutes: Routes = {
@@ -422,8 +421,8 @@ describe("App", () => {
         assert.equal(find<HTMLTextAreaElement>(app, "#content-0").value, "typed while the probe was out");
         assert.equal(storedElements()[0]?.content, "typed while the probe was out");
         // And the probe did write, so the test is not passing because nothing happened: the content
-        // type the app declared is what it went in to fill, and that is what used to carry the
-        // stale payload back with it.
+        // type the app declared is what it went in to fill, and the write that could carry a stale
+        // payload back with it.
         assert.equal(storedElements()[0]?.contentType, "application/xml");
     });
 
@@ -455,10 +454,8 @@ describe("App", () => {
     });
 
     /*
-     * Creating an instance and adding to one are two answers to the same question, and the panel
-     * used to carry the difference between them in nothing but the words in a row: "New instance"
-     * against a guid, both drawn the way the window behind it draws its list. Which one is in force
-     * is now the control, so it can be read and changed without opening anything.
+     * Creating an instance and adding to one are two answers to the same question, and which one is
+     * in force is a control of its own, so it can be read and changed without opening anything.
      */
     it("says whether a post creates an instance or adds to one, and changes which without the window", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
@@ -554,9 +551,8 @@ describe("App", () => {
     });
 
     /*
-     * The window is now only ever about which existing instance, so picking one out of it is the
-     * whole of what it does, and nothing was covering that at all: every other test here reaches an
-     * instance by typing its guid.
+     * The window is only ever about which existing instance, so picking one out of it is the whole
+     * of what it does. Every other test here reaches an instance by typing its guid.
      */
     it("takes the instance picked in the window as the one to add to", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001" });
@@ -780,9 +776,9 @@ describe("App", () => {
     });
 
     /*
-     * A run that some forms were refused in used to leave the previous report on screen, which
-     * described a payload that had since changed. What this run was told replaces it now, marked
-     * as partial, and only a run told nothing at all leaves the earlier report up, marked as such.
+     * A run that some forms were refused in replaces the previous report with what it was told,
+     * marked as partial, since the previous one described a payload that has since changed. Only a
+     * run told nothing at all leaves the earlier report up, marked as such.
      */
     it("shows a partial report in place of the previous one, and keeps the previous one only when nothing answered", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
@@ -827,12 +823,11 @@ describe("App", () => {
     });
 
     /*
-     * The rail and the panel are two views of one report, and they used to be readable as
-     * disagreeing. The panel coloured its notice by whether a required document was missing, which
-     * is a narrower question than the one the notice looks like it is answering, so a report with an
-     * error inside the form and four documents it only recommends was green there and red on the
-     * rail. The counts were never wrong: 1 error and 7 warnings is the same eight findings as four
-     * recommendations and four rules about the form's own content.
+     * The rail and the panel are two views of one report, and must not read as disagreeing. Whether
+     * a required document is missing is a narrower question than the one the notice looks like it
+     * is answering: a report with an error inside the form and four documents it only recommends
+     * has nothing required missing, and is still red. 1 error and 7 warnings is the same eight
+     * findings as four recommendations and four rules about the form's own content.
      */
     it("colours the prevalidation notice by the whole report, the way the rail is", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
@@ -879,8 +874,8 @@ describe("App", () => {
         await click(app, findByText(app, "#panel-prevalidation button", "Prevalidate"));
         await app.wait(50);
 
-        // No document is required and missing, so nothing is outstanding and the panel used to be
-        // green on the strength of that alone.
+        // No document is required and missing, so nothing is outstanding, and that alone must not
+        // make the panel green.
         assert.equal(railValue(app, "Prevalidation"), "1 error, 7 warnings");
         assert.equal(noticeTone(app, "#panel-prevalidation"), "notice--bad");
 
@@ -902,8 +897,8 @@ describe("App", () => {
     /*
      * A render is the most expensive read the tool makes: the app lays the whole form out and what
      * comes back is the pdf as base64. Pressing the button twice without having changed anything in
-     * between used to do all of that twice for the same document, because closing the window threw
-     * the pdf away. It is kept now, with a fingerprint of what it was rendered from.
+     * between must not do all of that twice, so the pdf is kept after the window closes, with a
+     * fingerprint of what it was rendered from.
      */
     it("shows the pdf it already has rather than rendering it again", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });

@@ -91,7 +91,7 @@ export interface InstanceRead {
 /**
  * The selected instance, read back and validated as one thing.
  *
- * Two requests and one answer, which is why the `queryFn` makes both: the log has always shown them
+ * Two requests and one answer, which is why the `queryFn` makes both: the log shows them
  * as one entry, and the panels below describe one moment rather than two. Validating an instance
  * that could not be read would fail the same way, so it is only asked after a read that worked, and
  * a validation that fails leaves the read standing with its own step in the log.

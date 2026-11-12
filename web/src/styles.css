@@ -4,10 +4,9 @@
    Plain by intent: system fonts, one accent colour, hairline borders, no
    decoration. Dark only.
 
-   Split by what it styles rather than by anything cleverer, and imported in the
-   order the one file used to be written in. That order is load-bearing: rules of
-   equal specificity are decided by which comes last, so these are the same file
-   in a different number of pieces.
+   Split by what it styles rather than by anything cleverer, and imported in an
+   order that is load-bearing: rules of equal specificity are decided by which
+   comes last.
    ========================================================================== */
 
 @import "./styles/base.css";

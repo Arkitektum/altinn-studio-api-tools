@@ -92,38 +92,19 @@ export function App() {
     const parties = appRead.parties;
 
     /**
-     * Every run that has happened this session, newest first. Posting used to wipe whatever a
-     * fetch had left behind, and vice versa, so they are kept instead.
-     */
-    /**
-     * The latest validation per target, so an instance result and several data element results can
-     * be on screen together. Kept apart from the run history: a fetch should not blank the issues.
-     */
-
-    /**
      * The rendered pdf, held as a blob url. Only one at a time: rendering again replaces it, and
      * the old url is revoked so the blob can be collected.
      *
-     * Kept after the window is closed, which is why the window has a flag of its own. It used to be
-     * thrown away on close, so looking at the same document twice meant rendering it twice.
+     * Kept after the window is closed, which is why the window has a flag of its own, so looking at
+     * the same document twice does not mean rendering it twice.
      */
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
     const [pdfOpen, setPdfOpen] = useState(false);
     /** Which language the pdf is asked for in. Kept, since it is a preference rather than a view. */
     const [pdfLanguage, setPdfLanguage] = useLocalStorage<PdfLanguage>("pdfLanguage", "nb");
 
-    /** And which instance has already been read, so it is read once per selection. */
-
     /** Which data element the operator picked. Empty means whichever the instance lists first. */
     const [preferredDataGuid, setPreferredDataGuid] = useState("");
-
-    /*
-     * One flag per action rather than one for all of them. They run at different times and belong
-     * to different panels: the instance read starts on its own when a selection changes, and it
-     * used to grey out Render pdf and Advance while it ran, neither of which it has anything to do
-     * with. The errors are split for the same reason. A read that failed without being asked for
-     * has no business appearing under the buttons in Data element.
-     */
 
     /**
      * The instance on screen, for the pdf render to compare against. A callback closes over the
@@ -156,9 +137,8 @@ export function App() {
     /**
      * The data element the Inspect column is about: the one picked, or the first the instance has.
      *
-     * Derived the way the token in use is, and it replaces the same repair in two places. Reading an
-     * instance used to preselect the first element, and advancing the process used to check whether
-     * the selected one had survived the move and fall back if it had not. Both are this.
+     * Derived the way the token in use is, so a newly read instance shows its first element, and an
+     * element that did not survive a process move falls back to the first without anything checking.
      */
     const selectedElement = instanceDataElements.find((element) => element.id === preferredDataGuid) ?? instanceDataElements[0] ?? null;
     const dataGuid = selectedElement?.id ?? "";
@@ -183,10 +163,10 @@ export function App() {
     /**
      * Points the tool at an instance, or at none.
      *
-     * The data element list, the process and which element is selected used to be cleared here, and
-     * are not any more: they are the instance query and a preference read against it, both keyed on
-     * the guid this is setting. What is left is the state that is nobody's answer, the issues and
-     * the pdf, which nothing would drop on its own.
+     * The data element list, the process and which element is selected follow on their own: they
+     * are the instance query and a preference read against it, both keyed on the guid this is
+     * setting. What is cleared here is the state that is nobody's answer, the issues and the pdf,
+     * which nothing would drop on its own.
      */
     const selectInstance = useCallback(
         (instance: InstanceSummary | null) => {
@@ -315,9 +295,8 @@ export function App() {
      * And what the app declares, filled into the payload: its form data type where nothing has been
      * chosen, and a content type on any element without one.
      *
-     * On the answer rather than on the way out of the request that fetched it. There is no longer a
-     * call holding a payload from an earlier render to write back over this one, which is exactly
-     * what this got wrong before. `withAppDefaults` returns the list it was given when there is
+     * On the answer rather than on the way out of the request that fetched it, so no call holds a
+     * payload from an earlier render to write back over this one. `withAppDefaults` returns the list it was given when there is
      * nothing to add, so running again on every answer costs nothing and settles after one pass.
      */
     useEffect(() => {

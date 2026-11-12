@@ -119,7 +119,7 @@ function count(n: number, noun: string): string {
  * Documents lead because they are the part you can act on from the panel this row scrolls to, and
  * the rest of the report is counted rather than named: a rule about what is inside the form names
  * no payload element, and the whole report is in the run log. The counts have to be here at all
- * because the row is coloured by them now, and a red row reading "nothing missing" would be a row
+ * because the row is coloured by them, and a red row reading "nothing missing" would be a row
  * arguing with itself.
  */
 /**

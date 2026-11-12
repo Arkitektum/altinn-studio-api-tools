@@ -27,7 +27,7 @@ describe("summariseClaims", () => {
     });
 
     it("keeps a falsy value that still means something", () => {
-        // Authentication level 0 is a real level — the lowest one — and dropping it would say the token has none.
+        // Authentication level 0 is a real level (the lowest one), and dropping it would say the token has none.
         const rows = summariseClaims({ "urn:altinn:authenticatelevel": 0 });
 
         assert.deepEqual(rows, [{ label: "Auth level", value: "0" }]);

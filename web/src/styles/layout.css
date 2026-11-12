@@ -67,9 +67,8 @@
 /*
  * The chain down the left, which is the tool's own shape: each step needs the one before it.
  *
- * A rail rather than the strip it was. A strip could show the order and not the progress, and it
- * had one line to say a label, a value and a position in. Down the side each row has room for all
- * three, and the column it costs is the one the test user panel used to hold.
+ * A rail rather than a strip, because a strip can show the order and not the progress, and has one
+ * line to say a label, a value and a position in. Down the side each row has room for all three.
  */
 .rail {
     position: sticky;

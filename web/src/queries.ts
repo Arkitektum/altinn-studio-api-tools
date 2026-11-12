@@ -16,9 +16,8 @@ import { QueryClient } from "@tanstack/react-query";
  * - **Never stale.** An answer stands until its key moves or something invalidates it, because the
  *   key already names everything the answer depends on.
  *
- * What the library is here for is the one thing that was hand-written and kept going wrong: an
- * answer whose key has moved on is dropped rather than written over the newer one. That was
- * `selectionKeys`, the `aim` ref, `movedOn` and five `*Attempted` markers, and it is now the cache.
+ * What the library is here for is the one thing that is easy to get wrong by hand: an answer whose
+ * key has moved on is dropped rather than written over the newer one.
  *
  * A function rather than one client, because a test wants its own: a client shared between tests
  * carries the answers of the last one into the next, which is a test passing for the wrong reason.
@@ -29,7 +28,7 @@ import { QueryClient } from "@tanstack/react-query";
  * record of requests that were made, and the `queryFn` is the request: it runs once per fetch and
  * not at all when an answer comes from the cache, which is exactly the distinction the log draws.
  * It also leaves room for the reads that are two requests and one entry, an instance read and its
- * validation being the pair the log has always shown together.
+ * validation being the pair the log shows together.
  */
 export function makeQueryClient(): QueryClient {
     return new QueryClient({
@@ -80,7 +79,7 @@ export const queryKeys = {
     /**
      * What the validation service last said, and the submission it said it about.
      *
-     * In the cache rather than in the hook's own state, because two things read it now: the payload
+     * In the cache rather than in the hook's own state, because two things read it: the payload
      * panel lists the documents it asks for, and the rail says whether it has been run at all. A
      * `useState` gives each caller its own empty copy, so the rail would say "not prevalidated"
      * however many times you had pressed the button.

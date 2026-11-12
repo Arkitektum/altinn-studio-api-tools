@@ -68,11 +68,9 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
     /**
      * The whole report, which is what the notice below is coloured by and what it leads with.
      *
-     * The same summary the rail is built from, through the same two functions. This used to ask
-     * `outstanding.length > 0`, so the notice answered "is a required document missing" while
-     * looking like it answered "what did the service make of this submission": a report with an
-     * error inside the form and four documents it recommends came out green here and red on the
-     * rail. Reading it twice costs nothing, since the report is in the cache.
+     * The same summary the rail is built from, through the same two functions, so the notice and the
+     * rail cannot disagree about a report. Reading it twice costs nothing, since the report is in the
+     * cache.
      */
     const summary = summarisePrevalidation(prevalidation);
     const verdict = verdictOf(summary);
@@ -204,7 +202,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                             </p>
                             <ul>
                                 {contentErrors.map((issue) => (
-                                    // The form is part of the key as well now. Each form is asked about separately
+                                    // The form is part of the key. Each form is asked about separately
                                     // and the answers merged, so two of them can report the very same rule.
                                     <li key={`${issue.fromForm}|${issue.rule}|${issue.reference}|${issue.message}`}>
                                         {/* The sentence leads, where a document's own name leads above: there is no

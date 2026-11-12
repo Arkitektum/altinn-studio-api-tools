@@ -108,11 +108,10 @@
     /*
      * What a panel is drawn on, one neutral surface for all of them, a step above the page.
      *
-     * Each panel used to sit on a surface of its own hue. That told the panels apart, and it also
-     * put a tint under every word, card and field in them, and since the cards and fields are
-     * translucent they took it on as well. A panel with a lot in it read as a lot of slightly
-     * different colours. The hue now lives in the header band, the border and the icon, where it
-     * is seen while scrolling past, and the part you read is the same on every panel.
+     * A surface of each panel's own hue would put a tint under every word, card and field in it, and
+     * since the cards and fields are translucent they would take it on as well. So the hue lives in
+     * the header band, the border and the icon, where it is seen while scrolling past, and the part
+     * you read is the same on every panel.
      */
     --panel-surface: #1b1d21;
 
@@ -172,9 +171,8 @@
     /*
      * The type scale, whole pixels and five steps.
      *
-     * There were eight sizes before this, and five of them spanned two pixels: 11, 11.5, 12, 12.5
-     * and 13. Half a pixel apart is not a distinction anyone can see, so those five levels were
-     * encoding nothing while looking like they meant something. Anything new picks one of these.
+     * Half a pixel apart is not a distinction anyone can see, so sizes are whole pixels and few.
+     * Anything new picks one of these.
      */
     --size-meta: 11px;
     --size-label: 12px;

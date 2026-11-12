@@ -32,9 +32,8 @@ export interface RunLog {
  * The record of what the tool has asked for, held where the things that ask for it can reach.
  *
  * A context rather than a callback threaded down, because every read and every write records itself
- * and there is no part of the tool that does not. It used to be passed from `App` into the `queryFn`
- * of each query, which worked only while all of them were declared in `App`: a panel that owns its
- * own read has no such thread to follow.
+ * and there is no part of the tool that does not. A panel that owns its own read has no callback
+ * from `App` to follow.
  *
  * Nested inside the session provider, which is where it reads the instance on screen from.
  */

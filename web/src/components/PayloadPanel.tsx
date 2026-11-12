@@ -29,10 +29,8 @@ interface PayloadPanelProps {
 /**
  * What you are about to send: the data elements, and nothing that acts on them.
  *
- * It used to be all three steps in one panel, the payload then the prevalidation then the post, set
- * apart by legends inside it. Three things you do in order are three steps, and a rail that points
- * at them had two rows going to the same place. They are three panels now, and the legends are gone
- * with the split: a heading does the same work and the rail can name it.
+ * The payload, the prevalidation and the post are three panels, since three things you do in order
+ * are three steps, and the rail can name each one by its heading.
  */
 export function PayloadPanel({
     notReady,

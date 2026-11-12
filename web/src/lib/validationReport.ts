@@ -35,7 +35,7 @@ export interface ReportMessage {
      * The service ignores `subForms`, so each form is asked about separately and the answers come
      * back together. A message out of a subform is about a document the main form never mentions,
      * and without this it would read as a problem with the main form. Empty for a report that was
-     * never split, which is one the server answered before this existed.
+     * not split.
      */
     fromForm: string;
 }

@@ -463,9 +463,9 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                      * Altinn's active list leaves out an instance whose process has ended, and this is
                      * the way back to one: its guid, or the whole "510001/guid" pair.
                      *
-                     * A disclosure rather than a row in the list above, which is what it used to be.
-                     * Nothing is selected by pressing it, so it had no business sitting among the
-                     * things that are, wearing their styling and their keyboard behaviour.
+                     * A disclosure rather than a row in the list above. Nothing is selected by pressing
+                     * it, so it does not sit among the things that are, with their styling and their
+                     * keyboard behaviour.
                      */}
                     <div className="row">
                         <button

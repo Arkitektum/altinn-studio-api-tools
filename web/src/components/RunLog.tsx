@@ -13,9 +13,8 @@ import type { LogEntry, LogResult, RunStep } from "../types";
 export function RunLog() {
     const { entries, clearEntries } = useRunLog();
     /*
-     * Whether anything at all is in flight, asked of the cache rather than counted by a caller.
-     * App used to add up one flag per action and pass the total down, which meant a read moving into
-     * a panel silently dropped out of the count. These two see every query and every mutation there
+     * Whether anything at all is in flight, asked of the cache rather than counted by a caller, so a
+     * read that lives in a panel is counted too. These two see every query and every mutation there
      * is, wherever it was declared.
      */
     const running = useIsFetching() + useIsMutating() > 0;
@@ -138,10 +137,9 @@ function statusTone(status: number): "ok" | "info" | "warn" | "bad" {
 /**
  * One request, as a block you can open.
  *
- * The block itself is the button. It used to carry two of its own, a fold for the bodies and a
- * copy for the curl, which put controls inside a list whose rows are already a fold inside a fold.
- * Now the whole thing is one target and everything it holds is in the window it opens, at the size
- * a request body actually needs.
+ * The block itself is the button, with no controls of its own inside a list whose rows are already a
+ * fold inside a fold. Everything it holds is in the window it opens, at the size a request body
+ * actually needs.
  */
 function Step({ step }: { step: RunStep }) {
     const [open, setOpen] = useState(false);

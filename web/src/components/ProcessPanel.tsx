@@ -96,7 +96,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
                         </button>
                     </div>
                     {/*
-                     * The request is still spelled out underneath, because the button now says
+                     * The request is spelled out underneath, because the button says
                      * what it means rather than what it sends. The body is part of that: it is
                      * what Altinn authorises against, the action for the task type. A task type
                      * this does not recognise sends `{}` and leaves the choice to Altinn.

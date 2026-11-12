@@ -4,12 +4,11 @@ import type { DataElementSummary, ProcessSummary } from "../types";
  * Whether the pdf in hand still describes the instance in front of you.
  *
  * A render is the one read in this tool that is expensive at both ends: the app lays the whole form
- * out, and what comes back is megabytes of base64 that become a blob url. Pressing the button twice
- * without having changed anything in between used to do all of that twice for the same document.
+ * out, and what comes back is megabytes of base64 that become a blob url.
  *
  * So the pdf is kept, with a fingerprint of the instance it was rendered from, and the button only
- * asks again when that fingerprint has moved. The window closing no longer throws the pdf away,
- * which is what made a second render necessary to look at the same document again.
+ * asks again when that fingerprint has moved. Closing the window keeps the pdf, so looking at the
+ * same document again needs no second render.
  */
 
 /** none: nothing rendered yet. current: what is held still describes the instance. stale: it does not. */

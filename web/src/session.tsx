@@ -105,10 +105,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     /*
      * Whether the token has expired, on a timer that fires when it does.
      *
-     * This used to be a tick every second, compared against the expiry on each one. That re-rendered
-     * the whole tool sixty times a minute to answer a question whose answer changes once an hour.
-     * The countdown someone is actually watching is a line in the test user panel, and it ticks
-     * there, where a re-render is one panel.
+     * A timer rather than a tick every second, which would re-render the whole tool sixty times a
+     * minute to answer a question whose answer changes once an hour. The countdown someone is
+     * actually watching is a line in the test user panel, and it ticks there, where a re-render is
+     * one panel.
      */
     const expiresAt = activeToken?.expiresAt ?? null;
     const [expired, setExpired] = useState(() => isExpired(expiresAt, Date.now()));
@@ -130,8 +130,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const instanceSettled = useSettled(instanceGuid, SELECTION_DELAY_MS);
 
     /*
-     * What there is to load into a data element, which is no longer a fixture: the attachment
-     * dummies are still files on the server, but the main form and subform examples come from
+     * What there is to load into a data element: the attachment dummies are files on the server, but the main form and subform examples come from
      * the testmotor, keyed by app id. So this is keyed on the app as typed and gated on the typing
      * having stopped, the same as the app probe above it, and for the same reason.
      *

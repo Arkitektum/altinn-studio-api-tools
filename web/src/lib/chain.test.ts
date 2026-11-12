@@ -198,7 +198,7 @@ describe("requestChain", () => {
         assert.equal(step(done, "Process")?.state, "done");
     });
 
-    /* Three steps in a row that used to be one panel, so each has to lead somewhere of its own. */
+    /* Three steps in a row, each a panel of its own, so each has to lead somewhere of its own. */
     it("carries the panel each row scrolls to", () => {
         assert.deepEqual(
             requestChain(nothing).map((each) => each.anchor),
@@ -220,9 +220,8 @@ describe("requestChain", () => {
 
 /*
  * The rail row and the prevalidation panel's notice are coloured by this one function, which is the
- * whole reason it exists. They used to decide separately, and the panel asked only whether a
- * required document was missing, so a report with an error inside the form and four documents it
- * recommends was a green notice under a red rail row.
+ * whole reason it exists: deciding separately, a report with an error inside the form and four
+ * documents it recommends could be a green notice under a red rail row.
  */
 describe("verdictOf", () => {
     it("takes the worst of everything the report found, not only the documents", () => {

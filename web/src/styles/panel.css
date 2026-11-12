@@ -60,7 +60,7 @@
 
 /*
  * A panel with a hue: a neutral body, and the hue in its border, its header band and its icon.
- * See --panel-surface in base.css for why the body is no longer tinted.
+ * See --panel-surface in base.css for why the body is not tinted.
  */
 .panel--toned {
     background: var(--panel-surface);

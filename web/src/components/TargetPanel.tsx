@@ -74,7 +74,7 @@ export function TargetPanel({
      * What the party select offers. The parties the app says this token may instantiate for,
      * plus the current value when it is not among them, which happens with a party prefilled
      * from the token claim before the app has been read, or one the app does not list. Without
-     * that the select would show no selection and there is no longer a field to type in.
+     * that the select would show no selection, and there is no field to type it in.
      */
     const partyOptions: { value: string; label: string }[] = flatParties.map((entry) => ({
         value: String(entry.partyId),

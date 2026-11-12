@@ -15,9 +15,8 @@ export interface ReadinessInputs {
  * Why each panel cannot be used yet, or null when it can.
  *
  * Every panel is on screen from the start, and one you cannot act on yet says what it is waiting
- * for. It used to be left out instead, which read as a cleaner first screen and cost more than it
- * saved: the order the tool wants things done in was invisible, so a strip above the panels had to
- * name it, and a panel appearing as you typed moved everything under it.
+ * for. That shows the order the tool wants things done in, and no panel appears as you type and
+ * moves everything under it.
  *
  * The reason is written as the thing that is missing rather than as an instruction. "Needs a test
  * user" sits under the heading of the panel that is waiting, and the panel above it is where you

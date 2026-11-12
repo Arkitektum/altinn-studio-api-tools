@@ -43,9 +43,9 @@ interface TokenPanelProps {
 
 export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, onActivate }: TokenPanelProps) {
     /*
-     * The expiry counts down here, on a tick of its own. It used to tick in App, where every second
-     * re-rendered the whole tool to move one line of text; the question everything else asks, whether
-     * the token is still usable, is answered in session.tsx by a timer that fires when it expires.
+     * The expiry counts down here, on a tick of its own, so a second re-renders this panel rather than
+     * the whole tool. The question everything else asks, whether the token is still usable, is
+     * answered in session.tsx by a timer that fires when it expires.
      */
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
@@ -125,7 +125,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
         }
     });
 
-    /* Whichever of the three last went wrong. Only one of them can be in flight at a time. */
+    /* The error of the first of the three that holds one. Only one of them can be in flight at a time. */
     const error = create.error ?? renew.error ?? remove.error;
     const busy = create.isPending;
     const renewing = renew.isPending;
