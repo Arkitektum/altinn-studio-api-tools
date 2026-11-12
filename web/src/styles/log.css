@@ -290,26 +290,17 @@
     font-weight: 600;
 }
 
-.method--get {
-    color: var(--accent);
-}
-
-.method--post {
-    color: var(--ok);
-}
-
-.method--put {
-    color: var(--warn);
-}
-
+.method--get,
 .step__method--get {
     color: var(--accent);
 }
 
+.method--post,
 .step__method--post {
     color: var(--ok);
 }
 
+.method--put,
 .step__method--put {
     color: var(--warn);
 }
