@@ -269,6 +269,30 @@ describe("App", () => {
         assert.match(app.container.textContent ?? "", /Beta Testperson/, "and the tool should be using the one still there");
     });
 
+    it("shows the error of the token action that ran last, not an older one of another kind", async (t) => {
+        // Two tokens, since the list with its delete buttons only shows once there is more than one.
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/tokens": [token, { ...token, id: "t2", label: "Beta Testperson" }],
+            "POST /api/tokens/test-user": () => {
+                throw new Error("renew refused");
+            },
+            "DELETE /api/tokens/t1": () => {
+                throw new Error("delete refused");
+            }
+        });
+        const notice = () => app.container.querySelector("#panel-test-user .notice--bad")?.textContent ?? "";
+
+        await click(app, findByText(app, "#panel-test-user button", "Renew"));
+        await app.wait(50);
+        assert.match(notice(), /renew refused/);
+
+        await click(app, find(app, "button[aria-label='Delete token Sophie Salt']"));
+        await app.wait(50);
+        assert.match(notice(), /delete refused/);
+        assert.doesNotMatch(notice(), /renew refused/);
+    });
+
     /*
      * The app name is typed a character at a time, and every intermediate value is an app that does
      * not exist. The query is keyed on the settled name rather than the typed one, so the cache is

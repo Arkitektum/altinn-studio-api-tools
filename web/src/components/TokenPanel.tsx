@@ -90,7 +90,15 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
     /** Minting, renewing and deleting all change the list App is showing, so all three invalidate it. */
     const invalidateTokens = () => client.invalidateQueries({ queryKey: queryKeys.tokens() });
 
+    /*
+     * Each of the three keeps its error until it runs again, so starting one clears the other two. Otherwise an old
+     * failure of one would go on showing over a newer failure of another.
+     */
     const create = useMutation({
+        onMutate: () => {
+            renew.reset();
+            remove.reset();
+        },
         mutationFn: (input: { userId: string; label?: string }) => api.createTestUserToken(input),
         onSuccess: async (token) => {
             onActivate(token.id);
@@ -99,6 +107,10 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
     });
 
     const remove = useMutation({
+        onMutate: () => {
+            create.reset();
+            renew.reset();
+        },
         mutationFn: (tokenId: string) => api.deleteToken(tokenId),
         onSuccess: invalidateTokens
     });
@@ -108,6 +120,10 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
      * click rather than a trip back through the picker.
      */
     const renew = useMutation({
+        onMutate: () => {
+            create.reset();
+            remove.reset();
+        },
         mutationFn: async (token: PublicToken) => {
             const fresh = await api.createTestUserToken({ userId: token.userId ?? "", label: token.label });
             try {
@@ -125,7 +141,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
         }
     });
 
-    /* The error of the first of the three that holds one. Only one of them can be in flight at a time. */
+    /* The error of the one that ran last, the only one of the three that can still hold one. */
     const error = create.error ?? renew.error ?? remove.error;
     const busy = create.isPending;
     const renewing = renew.isPending;
