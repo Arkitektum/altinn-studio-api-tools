@@ -5,7 +5,7 @@ import type { AppDataType, DataElementInput } from "../types";
  * The payload with what the app has declared filled into it.
  *
  * Two things, both of which only an answer from the app can supply. The form data type, when the
- * payload is still the one empty element it starts as, so posting is one field closer to ready. And
+ * payload is one element with no data type, keeping whatever content is already in it. And
  * a content type on any element that has a data type but no content type, which covers a type
  * chosen from the catalogue before the app was ever read.
  *
@@ -21,7 +21,7 @@ export function withAppDefaults(elements: DataElementInput[], dataTypes: AppData
 
     const formType = dataTypes.find((type) => type.appLogic);
     if (formType && next.length === 1 && !next[0]?.dataType) {
-        next = [{ dataType: formType.id, content: "" }];
+        next = [{ ...next[0]!, dataType: formType.id }];
     }
 
     next = next.map((element) => {

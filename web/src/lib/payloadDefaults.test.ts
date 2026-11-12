@@ -17,6 +17,18 @@ describe("withAppDefaults", () => {
         assert.equal(element?.contentType, "application/xml");
     });
 
+    it("keeps what was pasted into the one element while it points it at the form data type", () => {
+        const [element] = withAppDefaults([{ dataType: "", content: "<ettrinn />" }], dataTypes);
+        assert.equal(element?.dataType, "ET");
+        assert.equal(element?.content, "<ettrinn />");
+        assert.equal(element?.contentType, "application/xml");
+    });
+
+    it("keeps a file picked into the one element, with the type it came with", () => {
+        const picked: DataElementInput[] = [{ dataType: "", content: "AAAA", encoding: "base64", filename: "kart.png", contentType: "image/png" }];
+        assert.deepEqual(withAppDefaults(picked, dataTypes), [{ ...picked[0], dataType: "ET" }]);
+    });
+
     it("fills in the content type of a data type chosen before the app was read", () => {
         const [element] = withAppDefaults([{ dataType: "vedlegg", content: "AAAA" }], dataTypes);
         assert.equal(element?.contentType, "application/pdf");
