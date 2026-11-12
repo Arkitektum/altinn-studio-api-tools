@@ -57,7 +57,7 @@ oxlint, configured in `.oxlintrc.json`. One binary, no config to speak of, and i
 
 It is here for one rule. `react-hooks/exhaustive-deps` keeps the dependency lists honest: a list that leaves something out is a build failure rather than a judgement call someone has to make again. A list that leaves something out on purpose says so in a disable comment with the reason, as the one in `ExamplePicker.tsx` does.
 
-`react/set-state-in-effect` is off. The effects that set state are each dropping state that described something you have moved away from, which is what the comment above each says, and turning it on would mean a disable on every one of them saying the same thing. `react/preserve-manual-memoization` is off as well.
+`react/set-state-in-effect` is off. The effects that set state are each dropping state that described something you have moved away from, which is what the comment above each says, and turning it on would mean a disable on every one of them saying the same thing. `react/preserve-manual-memoization` is off as well. It checks that the React Compiler can keep each `useMemo` and `useCallback` as written, and this project does not use the React Compiler.
 
 ## Tests
 
