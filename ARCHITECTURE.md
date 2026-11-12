@@ -54,7 +54,8 @@ The reason is that the step log is the product. Collapsing a refused process adv
 ```
 examples/             dummy attachments, and the forms the testmotor has none of
 server/src
-  index.ts            express app, CORS, body limit, error middleware
+  index.ts            starts the server
+  app.ts              express app, CORS, body limit, error middleware
   routes.ts           endpoints and zod schemas
   runService.ts       orchestrates create, upload, validate, advance
   readService.ts      instance operations: list, get, validate, process, delete
@@ -102,13 +103,13 @@ web/src
 ## Where state lives
 
 - **Tokens: server memory.** A `Map` in `tokenStore.ts`, pruned when expired. Never written to disk, never sent to the browser.
-- **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid, the payload elements, the payloads saved by name and the two markers that go with them, under the `altinn-api-tools:` prefix by `useLocalStorage`. [SECURITY.md](SECURITY.md) lists all eight. Not the destination, which is derived from whether an instance is selected rather than stored. A refresh does not lose your work.
+- **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid, the payload elements, the payloads saved by name and the two markers that go with them, under the `altinn-api-tools:` prefix by `useLocalStorage`. [SECURITY.md](SECURITY.md) lists all nine. Not the destination, which is derived from whether an instance is selected rather than stored. A refresh does not lose your work.
 - **Everything read back: the query cache.** The instance listing, the instance and its validation, the fetched data element, the comparison with the stored xml and the last prevalidation report are answers in a TanStack Query cache, keyed on what they are about. Reloading drops them, which is correct: they describe a moment.
 - **What is nobody's answer: React state.** The run log, the validation results gathered across several reads, and the pdf blob. None of them is the answer to one request: the log is a history, the results are one per target, and the blob is a rendered document rather than a response.
 
 ### Why a query cache
 
-The hand-written version of this was the tool's main source of bugs. A read answers after the selection it was aimed at has moved, and the answer has to be dropped rather than written over the newer one. That was `selectionKeys.ts`, an `aim` ref, a `movedOn` check and five `*Attempted` markers, and it is now a key: an answer whose key has moved on is not the answer anyone is looking at.
+A read can answer after the selection it was aimed at has moved, and the answer has to be dropped rather than written over the newer one. Keying the answer on what it is about does that: an answer whose key has moved on is not the answer anyone is looking at.
 
 The library's defaults are inverted in `queries.ts`, because they are written for an application showing a user their own data and none of that holds here. Nothing is retried, since a refusal is the answer and asking twice puts the same refusal in the log twice. Nothing refetches on its own, since a request nobody asked for appearing in the log would make the log a worse record of what you did. Nothing goes stale, since the key already names everything the answer depends on.
 
@@ -120,7 +121,7 @@ Two rules go with keying on a value you are typing. The key is the **settled** v
 
 **Every panel is on screen, and one you cannot use yet says what it is waiting for.** `lib/readiness.ts` decides the reason, written as the thing that is missing rather than as an instruction: "Needs an application." sits under the heading of the panel that is waiting, and the panel above it is where you get one.
 
-They used to be left out until they became usable, which read as a cleaner first screen and cost more than it saved. The order the tool wants things done in was invisible, so a strip above the panels had to name it, and a panel appearing as you typed moved everything under it. `Panel` renders the reason in place of the controls rather than beside them, so a panel that is waiting cannot be half operated.
+That shows the order the tool wants things done in, and no panel appears as you type and moves everything under it. `Panel` renders the reason in place of the controls rather than beside them, so a panel that is waiting cannot be half operated.
 
 **The dependencies are stated, not left to be inferred.** `lib/chain.ts` turns the current state into the chain the tool hangs off and marks each step done, next or waiting. Ten steps, one per panel in the column you work down: test user, application, party, instance, payload, prevalidation, post, data element, pdf, process. The rail down the left renders it, and each row says what its step holds as well as where it stands.
 
@@ -162,7 +163,7 @@ The report is a fixed answer about the payload as it was sent, and the list is c
 
 **The rendered pdf is kept, and only rendered again when it would differ.** A render is the most expensive read the tool makes: the app lays the whole form out and what comes back is the pdf as base64. It is held with a fingerprint of the instance it came from, the data elements and where the process stands, which between them are everything a render reads. `lib/pdfCache.ts` compares that against the instance now and answers `none`, `current` or `stale`, and both the button and the rail read the same answer.
 
-Closing the window puts the pdf away rather than throwing it out, which is what used to make a second render necessary to look at the same document twice. The buttons say which case they are in rather than quietly skipping a request: a tool whose point is the run log should not have an action that sometimes logs nothing without explaining itself. Not being able to tell counts as stale, because showing someone a pdf of something they have since changed is the worse mistake.
+Closing the window puts the pdf away rather than throwing it out, so looking at the same document twice needs one render. The buttons say which case they are in rather than quietly skipping a request: a tool whose point is the run log should not have an action that sometimes logs nothing without explaining itself. Not being able to tell counts as stale, because showing someone a pdf of something they have since changed is the worse mistake.
 
 **A `maxCount: 1` form data type is replaced, not added.** Altinn creates that element itself when the instance is created, so a second POST fails on max count. `runService` notices the existing element and sends `PUT …/data/{id}` instead. The log says "Replace" rather than "Add".
 

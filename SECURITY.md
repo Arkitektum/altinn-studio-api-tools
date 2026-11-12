@@ -4,7 +4,7 @@
 
 A development tool that runs on your own machine and talks to an Altinn Studio localtest instance on the same machine. Every Altinn call it makes is relative to `ALTINN_APP_HOST`, which defaults to `http://local.altinn.cloud:8000`, so it has no knowledge of tt02 or production and no way to reach them without being reconfigured to.
 
-One request is not local, and it is worth knowing about: **Prevalidate** posts the payload to the DIBK validation service at `VALIDATION_URL`, hosted, because that service knows what a submission requires and the app's own metadata does not. It goes out when you press that button and at no other time, it carries no token, and the form data you are testing with goes with it. Empty `VALIDATION_URL` to switch it off.
+Two kinds of request are not local. The example data is read from the FtPB testmotor at `TESTMOTOR_URL`, over open endpoints and with no token, and nothing of yours goes with it. The one worth knowing about is **Prevalidate**, which posts the payload to the DIBK validation service at `VALIDATION_URL`, hosted, because that service knows what a submission requires and the app's own metadata does not. It goes out when you press that button and at no other time, it carries no token, and the form data you are testing with goes with it. Empty `VALIDATION_URL` to switch it off.
 
 It is not built to be deployed, exposed, or shared. The considerations below are about keeping a local tool from becoming a liability, not about hardening a service.
 
@@ -21,7 +21,7 @@ Claims are decoded, never verified. `jwt.ts` says so at the top. The signature i
 
 ## What the browser stores
 
-`localStorage`, under the `altinn-api-tools:` prefix. Eight keys, all written by `useLocalStorage`:
+`localStorage`, under the `altinn-api-tools:` prefix. Nine keys, all written by `useLocalStorage`:
 
 | Key                   |                                                                                 |
 | --------------------- | ------------------------------------------------------------------------------- |
@@ -30,6 +30,7 @@ Claims are decoded, never verified. `jwt.ts` says so at the top. The signature i
 | `partyAutoFilledFrom` | Which party the tool filled in from a token claim, so a typed one is not undone |
 | `instanceGuid`        | The selected instance                                                           |
 | `advanceProcess`      | Whether a post also advances the process                                        |
+| `pdfLanguage`         | Which language the pdf is rendered in                                           |
 | `dataElements`        | **The payload elements including their content**                                |
 | `savedPayloads`       | **Payloads kept for later, by name**                                            |
 
@@ -61,7 +62,7 @@ Binding loopback does not keep out a web page in your own browser. A page can po
 
 ## Destructive operations
 
-The tool can delete instances, and it deletes them outright: **the instance is removed and it cannot be undone**. Soft deletion, which marks an instance and leaves it in storage, was a checkbox once and is now only on the api. What made the choice pointless is what the tool can reach, which is local test data on your own machine, and what soft deletion left behind, which is a row the completed listing keeps finding. Delete asks twice, with the instance named in the confirmation.
+The tool can delete instances, and it deletes them outright: **the instance is removed and it cannot be undone**. Soft deletion, which marks an instance and leaves it in storage, is only on the api. What made the choice pointless is what the tool can reach, which is local test data on your own machine, and what soft deletion left behind, which is a row the completed listing keeps finding. Delete asks twice, with the instance named in the confirmation.
 
 Advancing a process is not reversible either. It submits the current task.
 

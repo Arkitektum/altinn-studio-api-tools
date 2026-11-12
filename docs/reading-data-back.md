@@ -83,7 +83,7 @@ A data type the app declares with no `taskId` is never blocked. Nothing was said
 
 ## Comparing with the stored xml
 
-Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. **Compare with stored** puts the two side by side and reports only the differences that mean something. It sits at the foot of the Data element panel and compares every form data element on the instance at once, the main form and each sub form, whichever element the select above is pointing at. It used to follow the select, and picking an attachment, which has nothing to compare, left the last form's diff on screen as if it were the attachment's. Attachments are left out, since a file comes back as the file it went in as.
+Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. **Compare with stored** puts the two side by side and reports only the differences that mean something. It sits at the foot of the Data element panel and compares every form data element on the instance at once, the main form and each sub form, whichever element the select above is pointing at. Following the select instead would leave the last form's diff on screen when an attachment, which has nothing to compare, was picked. Attachments are left out, since a file comes back as the file it went in as.
 
 The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
 
@@ -165,7 +165,7 @@ One preview is held at a time. Rendering again replaces it and revokes the previ
 
 ### It is only rendered again when it would differ
 
-A render is the most expensive read this tool makes, at both ends: the app lays the whole form out, and what comes back is megabytes of base64. So the pdf is kept with a fingerprint of the instance it came from, and closing the window puts it away rather than throwing it out, which is what used to make a second render necessary to look at the same document twice.
+A render is the most expensive read this tool makes, at both ends: the app lays the whole form out, and what comes back is megabytes of base64. So the pdf is kept with a fingerprint of the instance it came from, and closing the window puts it away rather than throwing it out, so looking at the same document twice needs one render.
 
 The fingerprint is the data elements, by id, last change and size, and where the process stands. That is everything a render reads: the form and its attachments are the elements, and the task decides which layout the app uses. The ids are sorted, because the order storage lists them in is not a change to the instance.
 

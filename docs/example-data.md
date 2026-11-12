@@ -20,9 +20,9 @@ Changing the data type clears the content and loads the new type's first example
 
 ## The main forms, and why they are not files here
 
-They used to be. The problem with a committed copy is dates: a ferdigattest example is only valid while its `bekreftelseInnen` and `utfoertInnen` fall inside the next fortnight, so a file is right on the day it is committed and stale a couple of weeks later. Several form types have a rule of that shape.
+The problem with a committed copy is dates: a ferdigattest example is only valid while its `bekreftelseInnen` and `utfoertInnen` fall inside the next fortnight, so a file is right on the day it is committed and stale a couple of weeks later. Several form types have a rule of that shape.
 
-The testmotor at `TESTMOTOR_URL` serves the copy the DIBK test team maintains, out of an Azure file share, and stamps those date fields with a date ten days out on every request. So the tool reads the examples from there instead and the dates are always inside the window. It is the same data the testmotor's own interface offers, and it is where the examples that used to be in this repo were copied from by hand.
+The testmotor at `TESTMOTOR_URL` serves the copy the DIBK test team maintains, out of an Azure file share, and stamps those date fields with a date ten days out on every request. So the tool reads the examples from there instead and the dates are always inside the window. It is the same data the testmotor's own interface offers.
 
 Four of its endpoints are used, all open and none carrying a token:
 

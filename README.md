@@ -48,18 +48,18 @@ For an app the catalogue does not list, pick **Other application** and type the 
 
 ## What it can do
 
-|                                                                                                                              |                                                                                      |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                                                 | Tokens from LocalTest's own user list, any user id by hand, and renew in place       |
-| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                                       | 26 applications to pick from or one you type, read for its data types and parties    |
-| [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                                                     | One card per data element, from a shipped example, a file off disk, or by hand       |
-| [Prevalidation](https://arkitektum.github.io/altinn-studio-api-tools/payload/#prevalidate)                                   | What a refused submit would have said, asked before you send it                      |
-| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                                                     | A new instance or an existing one, read back and validated after every post          |
-| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, load into the payload, delete |
-| [Compare with stored](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/#comparing-with-the-stored-xml) | What the model dropped, added or rewrote when it stored your xml                     |
-| [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                                                     | Where the instance stands, and advancing it                                          |
-| [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                 |
-| [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                                             | The backend on its own, for scripting a data load                                    |
+|                                                                                                                              |                                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [Test user](https://arkitektum.github.io/altinn-studio-api-tools/test-user/)                                                 | Tokens from LocalTest's own user list, any user id by hand, and renew in place                         |
+| [Target](https://arkitektum.github.io/altinn-studio-api-tools/target/)                                                       | The shared catalogue's applications to pick from, or one you type, read for its data types and parties |
+| [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                                                     | One card per data element, from a shipped example, a file off disk, or by hand                         |
+| [Prevalidation](https://arkitektum.github.io/altinn-studio-api-tools/payload/#prevalidate)                                   | What a refused submit would have said, asked before you send it                                        |
+| [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                                                     | A new instance or an existing one, read back and validated after every post                            |
+| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, load into the payload, delete                   |
+| [Compare with stored](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/#comparing-with-the-stored-xml) | What the model dropped, added or rewrote when it stored your xml                                       |
+| [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                                                     | Where the instance stands, and advancing it                                                            |
+| [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                                   |
+| [API](https://arkitektum.github.io/altinn-studio-api-tools/api/)                                                             | The backend on its own, for scripting a data load                                                      |
 
 Main form and subform examples come from the FtPB testmotor, which keeps the main forms current and re-dates them per request. 23 dummy attachments ship in `examples/`, or point `ALTINN_EXAMPLE_DATA_DIR` at your own. See [Example data](https://arkitektum.github.io/altinn-studio-api-tools/example-data/).
 

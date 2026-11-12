@@ -55,9 +55,9 @@ The root holds only the scripts that drive both workspaces, plus the tools that 
 
 oxlint, configured in `.oxlintrc.json`. One binary, no config to speak of, and it runs in under a second, which is why it is here rather than ESLint and its plugins.
 
-It is here for one rule. `react-hooks/exhaustive-deps` is what keeps the dependency lists in `App.tsx` honest, and several of them leave things out on purpose: the five auto-run effects take only their key, since the key is the whole of what a scheduled run is about, and the `keys` memo takes the fields of the selection rather than the object, which is rebuilt every render. Those are marked with `oxlint-disable` and a reason. A list that leaves something out and says nothing about it is now a build failure rather than a judgement call someone has to make again.
+It is here for one rule. `react-hooks/exhaustive-deps` keeps the dependency lists honest: a list that leaves something out is a build failure rather than a judgement call someone has to make again. A list that leaves something out on purpose says so in a disable comment with the reason, as the one in `ExamplePicker.tsx` does.
 
-`react/set-state-in-effect` is off. It fires on seven effects here, and each of them is dropping state that described something you have moved away from, which is what the comment above it says. Turning it on would mean seven more disables saying the same thing seven times.
+`react/set-state-in-effect` is off. The effects that set state are each dropping state that described something you have moved away from, which is what the comment above each says, and turning it on would mean a disable on every one of them saying the same thing. `react/preserve-manual-memoization` is off as well.
 
 ## Tests
 
@@ -77,7 +77,7 @@ yarn workspace server exec tsx --test src/readService.test.ts
 
 What is worth a test:
 
-- Anything in `web/src/lib/`. That is what the directory is for, and everything in it is already covered.
+- Anything in `web/src/lib/`. That is what the directory is for, and every pure module in it has a test.
 - Every guard in `App.tsx` that drops an answer or clears state. Each of them exists because something arrived late or outlived what it described, and none of them show up as a failure when they stop working. Assert against the panel rather than the page: the run log keeps what was asked on purpose, so it is the wrong place to ask whether the tool has moved on.
 - Every branch of a service that talks to Altinn: the happy path, the refusal, and the malformed response. The stub makes all three cheap, and the refusal paths are where the behaviour is subtle, since a failure has to come back as a result with a step log rather than as an exception.
 - Anything you had to reason about twice. If a comment explains why the code is not the obvious thing, a test should hold it there.
@@ -90,7 +90,7 @@ Prettier owns it, configured in `.prettierrc`: four space indent, double quotes,
 
 `.prettierignore` keeps Prettier away from `examples/`. Those files are fixtures posted byte for byte, and reformatting the JSON and GeoJSON dummies would change the very bytes the tests assert on.
 
-`server/src/appCatalogue.ts` holds no data of its own any more: it narrows `@arkitektum/ftpb-app-catalogue` to the fields this server serves.
+`server/src/appCatalogue.ts` holds no data of its own: it narrows `@arkitektum/ftpb-app-catalogue` to the fields this server serves.
 
 ## House style
 
@@ -120,8 +120,6 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 **A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `yarn workspace server run gaps` tells you which content types your apps declare that no dummy covers.
 
 **A known app.** Not here. The list lives in `@arkitektum/ftpb-app-catalogue`, shared with `altinn-studio-custom-components-api`; add the app there, publish, and bump the dependency. `server/src/appCatalogue.ts` only narrows the shared list to the fields this server serves. The catalogue is a convenience either way: once an app is probed, its own `applicationmetadata` takes over.
-
-The file used to say it was generated from the components API's registry, and nothing generated it. The two lists drifted by an app before they were shared, which is what the package exists to prevent.
 
 `yarn workspace server run catalogue` says when the shared list needs an app added to it. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
 
