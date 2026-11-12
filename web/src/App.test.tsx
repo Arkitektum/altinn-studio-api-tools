@@ -488,6 +488,48 @@ describe("App", () => {
         assert.match(willCall(app), /\/instances {2}\(multipart/);
     });
 
+    it("drops the instance when the target moves to another app", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": (url) => instanceRead(url.searchParams.get("instanceGuid") ?? "", "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+        assert.match(postingTo(app), /^Existing instance/, "the seeded instance is the one a post would add to");
+
+        await choose(app, find<HTMLSelectElement>(app, "#application"), "other");
+        await type(app, find<HTMLInputElement>(app, "#panel-target input[aria-label='App']"), "et-v5");
+        await app.wait(20);
+
+        assert.equal(postingTo(app), "New instance", "an instance of et-v4 is not one a post to et-v5 can add to");
+        assert.equal(instancePicked(app), "");
+    });
+
+    it("keeps the instance when what is typed still names the same app", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": (url) => instanceRead(url.searchParams.get("instanceGuid") ?? "", "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        // The fields trim what is typed, so this hands the same app back to the tool.
+        await choose(app, find<HTMLSelectElement>(app, "#application"), "other");
+        await type(app, find<HTMLInputElement>(app, "#panel-target input[aria-label='App']"), "et-v4 ");
+        await app.wait(20);
+
+        assert.match(postingTo(app), /^Existing instance/);
+        assert.match(instancePicked(app), new RegExp(A.slice(0, 8)));
+    });
+
     /*
      * The window is now only ever about which existing instance, so picking one out of it is the
      * whole of what it does, and nothing was covering that at all: every other test here reaches an

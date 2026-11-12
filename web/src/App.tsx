@@ -236,6 +236,16 @@ export function App() {
         [instanceOwnerPartyId, setInstanceOwnerPartyId, selectInstance]
     );
 
+    /** Another app, by org and app, which drops the instance that belonged to the last one. */
+    const changeTarget = useCallback(
+        (nextOrg: string, nextApp: string) => {
+            setOrg(nextOrg);
+            setApp(nextApp);
+            if (nextOrg !== org || nextApp !== app) selectInstance(null);
+        },
+        [org, app, setOrg, setApp, selectInstance]
+    );
+
     /*
      * Held rather than spelled out again each render, because the fallback is a fresh empty array
      * every time and several memos below list this in their dependencies. One of them would never
@@ -565,14 +575,13 @@ export function App() {
                         id="panel-target"
                         org={org}
                         app={app}
-                        onOrgChange={setOrg}
-                        onAppChange={setApp}
+                        onOrgChange={(next) => changeTarget(next, app)}
+                        onAppChange={(next) => changeTarget(org, next)}
                         instanceOwnerPartyId={instanceOwnerPartyId}
                         onPartyChange={changeParty}
                         catalogue={catalogue}
                         onPickCatalogueApp={(entry) => {
-                            setOrg(entry.org);
-                            setApp(entry.app);
+                            changeTarget(entry.org, entry.app);
                             // Point the first element at this app's form data type unless the operator
                             // has already put something there.
                             if (dataElements.length === 1 && !dataElements[0]?.content.trim()) {
