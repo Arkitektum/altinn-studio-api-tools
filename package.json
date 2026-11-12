@@ -26,7 +26,7 @@
     "devDependencies": {
         "concurrently": "^10.0.7",
         "oxlint": "^1.93.0",
-        "prettier": "^3.9.10"
+        "prettier": "^3.10.0"
     },
     "packageManager": "yarn@4.15.0"
 }
