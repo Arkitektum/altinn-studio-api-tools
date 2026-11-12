@@ -79,9 +79,9 @@ export function startSweep(request: StartSweep, run: SweepRunner = runSweep): Sw
 
     /*
      * Every handler writes to `mine` rather than to `job`, which is the whole of what keeps one
-     * sweep out of another's state. A cancelled sweep goes on running until it notices, so its
-     * handlers fire after the next one has started, and they land in the object nobody is reading
-     * any more. Reaching for `job` in here instead would be the bug.
+     * sweep out of another's state. A sweep replaced by `resetSweep`, or a runner that calls a
+     * handler after it has settled, can then only write to the object it started with. Reaching for
+     * `job` in here instead would be the bug.
      */
     void run(request, {
         onPlanned: (total, skipped) => {

@@ -6,7 +6,7 @@ import { config } from "./config.js";
 /**
  * The FtPB testmotor, which is where the main form and subform examples come from.
  *
- * The client itself lives in `@arkitektum/ftpb-testmotor-client`, shared with altinn-studio-custom-components-api, which reads the same endpoints and used to carry its own copy of this. See that package for which entries it drops, why the files are not sorted, and how long an answer is reused.
+ * The client itself lives in `@arkitektum/ftpb-testmotor-client`, shared with altinn-studio-custom-components-api, which reads the same endpoints. See that package for which entries it drops, why the files are not sorted, and how long an answer is reused.
  *
  * What is left here is the part that is this tool's own: the requests go through `altinnFetch`, so the testmotor gets the same request timeout as everything else and a request that never lands arrives as the 502 or 504 envelope the rest of the code already understands, rather than as a thrown error.
  *

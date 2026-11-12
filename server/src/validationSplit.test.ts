@@ -120,9 +120,9 @@ describe("mergeReports", () => {
     });
 
     /*
-     * When the main form was refused. Borrowing the first subform's answer used to have the panel
-     * call an ET submission a GFP one, and named the subform as the main form, so its own findings
-     * lost the badge that says which form they came from.
+     * When the main form was refused. Borrowing the first subform's answer would have the panel
+     * call an ET submission a GFP one, and name the subform as the main form, so its own findings
+     * would lose the badge that says which form they came from.
      */
     it("borrows nothing from a subform when the main form is not among them", () => {
         const merged = mergeReports([part("GjennomfoeringsplanDataV7", false, said("GFP", [{ messagetype: "ERROR" }]))], "ET");

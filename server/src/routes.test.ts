@@ -35,7 +35,7 @@ afterEach(() => {
 
 /**
  * A token shaped like the ones LocalTest mints: three dot-separated segments, claims in the middle one. Nothing
- * verifies the signature — see jwt.ts — so "sig" is as good a signature as any.
+ * verifies the signature (see jwt.ts), so "sig" is as good a signature as any.
  */
 function jwt(claims: Record<string, unknown>): string {
     const segment = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -53,8 +53,8 @@ function stubProfile(identity: unknown = { party: { person: { ssn: "01017012345"
 interface Answer {
     status: number;
     /**
-     * The parsed JSON, deliberately loose. Every assertion below reaches into a different shape — issues, claims,
-     * an error string — and typing each one would describe the responses twice over, in the place least likely to
+     * The parsed JSON, deliberately loose. Every assertion below reaches into a different shape (issues, claims,
+     * an error string), and typing each one would describe the responses twice over, in the place least likely to
      * be kept honest. The assertions are the description.
      */
     body: any;
@@ -359,7 +359,7 @@ describe("what the token store refuses", () => {
 
 describe("a token's round trip", () => {
     it("stores a pasted token and never hands the bearer back", async (t) => {
-        // The browser is meant to hold an opaque id and nothing else — the whole reason tokens live on the server.
+        // The browser is meant to hold an opaque id and nothing else, which is the whole reason tokens live on the server.
         stubProfile();
         const token = jwt({ "urn:altinn:userid": "1337", "urn:altinn:partyid": "510001", exp: inAnHour, scope: "altinn:instances.read" });
 

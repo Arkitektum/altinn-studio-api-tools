@@ -8,9 +8,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 /**
  * Reads a whole-number setting from the environment, or its default when it is unset or empty.
  *
- * Checked here, at startup, because a bad value used to fail late and confusingly: `REQUEST_TIMEOUT_MS=30s` became
- * NaN and every Altinn call came back a 502 quoting ERR_OUT_OF_RANGE, and an empty `REQUEST_TIMEOUT_MS=` became 0,
- * so every request timed out at once.
+ * Checked here, at startup, because a bad value would otherwise fail late and confusingly: `REQUEST_TIMEOUT_MS=30s`
+ * would be NaN and every Altinn call a 502 quoting ERR_OUT_OF_RANGE, and an empty `REQUEST_TIMEOUT_MS=` would be 0,
+ * so every request would time out at once.
  *
  * @param env - Where to read it, `process.env` unless a test hands in its own.
  * @param name - The variable's name, used in the error.

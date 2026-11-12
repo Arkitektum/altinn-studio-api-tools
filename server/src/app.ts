@@ -8,7 +8,7 @@ import { router } from "./routes.js";
 /**
  * The status an error thrown by `express.json()` deserves, or null if it came from somewhere else.
  *
- * These are raised before any handler runs — a body that is not JSON, or one past the 25mb limit — and they are
+ * These are raised before any handler runs (a body that is not JSON, or one past the 25mb limit), and they are
  * `http-errors`, carrying both a `type` naming what went wrong and the status that goes with it: 400 for a parse
  * failure, 413 for an oversized one. They are the client's mistakes, not the server's, so they are told apart from
  * the errors that really are ours.
@@ -33,7 +33,7 @@ function requestBodyErrorStatus(error: unknown): number | null {
  *
  * Kept apart from starting the process so the whole surface can be exercised without binding a
  * port: the routes, the body limit, the CORS preflight, and the error mapping below. That mapping
- * is the part most worth having under test — it is what decides whether a request with a missing
+ * is the part most worth having under test: it is what decides whether a request with a missing
  * field reads as a 400 naming the field, or as an opaque 500.
  *
  * @returns The configured Express application.

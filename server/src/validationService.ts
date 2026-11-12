@@ -58,13 +58,17 @@ export interface ValidationReportResult {
     report: unknown;
 }
 
+/** Names joined as a sentence would list them: "A", "A and B", "A, B and C". */
+function listOf(names: string[]): string {
+    return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
 /**
  * One submission, asked as however many requests the service needs to be asked.
  *
- * It ignores `subForms`, so a submission with three of them was one question about the main form
- * and the subforms were never looked at. Each form goes up on its own now, and what comes back is
- * merged into one report. See validationSplit.ts for the splitting and the merging, and for why
- * every request carries the whole attachment list.
+ * The service ignores `subForms`, so each form goes up on its own, and what comes back is merged
+ * into one report. See validationSplit.ts for the splitting and the merging, and for why every
+ * request carries the whole attachment list.
  *
  * One at a time. This is a hosted service shared with whoever else is pointed at it, and five
  * concurrent requests to answer one button press is not a reasonable way to use it.
@@ -74,11 +78,6 @@ export interface ValidationReportResult {
  * total. Carrying on is the better answer: the main form's findings are worth having even when a
  * subform could not be asked about.
  */
-/** Names joined as a sentence would list them: "A", "A and B", "A, B and C". */
-function listOf(names: string[]): string {
-    return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
-}
-
 export async function fetchValidationReport(request: ValidationReportRequest, mainFormName = "the form"): Promise<ValidationReportResult> {
     const recorder = new StepRecorder();
 

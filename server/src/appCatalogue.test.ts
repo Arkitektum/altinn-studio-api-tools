@@ -5,7 +5,7 @@ import { appCatalogue, findCatalogueApp } from "./appCatalogue.js";
 /**
  * The catalogue is hand-maintained data, and the mistakes it invites are the ones a reviewer's eye slides over:
  * a pasted entry that kept the org it was copied from, a subform listed twice, a field left empty. None of them
- * announce themselves — a shadowed entry simply never gets picked, and an empty data type only surfaces when a
+ * announce themselves: a shadowed entry simply never gets picked, and an empty data type only surfaces when a
  * request built from it comes back puzzling.
  *
  * Note that a data type is *not* unique across the catalogue: several apps are filed under the same one, which is

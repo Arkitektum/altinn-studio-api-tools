@@ -14,8 +14,8 @@ import {
 export type ExampleKind = "form" | "subform" | "attachment";
 
 /**
- * Directory name on disk for each kind. Subforms are no longer kept on disk, since they come from the
- * testmotor, but the kind is still listed so a request naming it is told that rather than refused.
+ * Directory name on disk for each kind. Subforms come from the testmotor rather than from disk, but the kind is
+ * listed so a request naming it is told that rather than refused.
  */
 const KIND_DIRS: Record<ExampleKind, string> = {
     form: "forms",

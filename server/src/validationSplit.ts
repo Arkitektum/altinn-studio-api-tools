@@ -3,10 +3,9 @@ import type { ValidationReportRequest } from "./validationService.js";
 /**
  * Turning one submission into the requests the validation service can actually answer.
  *
- * The service takes `formData` and ignores `subForms` entirely. Sending a submission with three
- * subforms got back a report about the main form alone, and the subforms were never looked at: the
- * `soknadtype` that came back named whatever was in `formData`, whatever `subForms` held. So the
- * panel has been showing a report about one form while saying it was about the submission.
+ * The service takes `formData` and ignores `subForms` entirely. A submission with three subforms
+ * gets back a report about the main form alone, and the `soknadtype` that comes back names whatever
+ * is in `formData`, whatever `subForms` holds.
  *
  * Each form therefore goes up as a submission of its own. The service recognises them: a
  * gjennomføringsplan comes back as `GFP`, a dispensasjonssøknad as `DS`, so these are real
@@ -32,14 +31,14 @@ export interface SplitRequest {
  * `mainFormName` is only a label for the answers. The service works out what it has been given
  * from the form itself, so nothing about the request depends on getting this right.
  *
- * A submission with no subforms splits into one request identical to what was sent before, which
- * is what keeps this from being a change to the common case.
+ * A submission with no subforms splits into one request, the submission itself with `subForms`
+ * emptied.
  */
 export function splitSubmission(submission: ValidationReportRequest, mainFormName: string): SplitRequest[] {
     const shared = {
         authenticatedSubmitter: submission.authenticatedSubmitter,
-        // Never populated again. It is the property the service ignores, and leaving it set would
-        // be leaving the thing that caused this in the request.
+        // Always empty: it is the property the service ignores, and each subform goes up as a request
+        // of its own instead.
         subForms: [],
         attachments: submission.attachments
     };

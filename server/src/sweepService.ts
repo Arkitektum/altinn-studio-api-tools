@@ -13,7 +13,7 @@ import { partitionRowIds } from "./xmlDiff.js";
  * already suspect; this finds the ones you do not know about, which is why it is worth the hundred
  * or so posts it makes.
  *
- * Here rather than in the script that used to hold it, because two front ends now run it: the
+ * Here rather than in a script, because two front ends run it: the
  * script and the window in the UI. A sweep that walked the catalogue twice, once per caller, would
  * be two things to keep in step and the UI would be the copy that drifted.
  *
