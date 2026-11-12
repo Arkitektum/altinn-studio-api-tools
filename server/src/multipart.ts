@@ -23,10 +23,13 @@ export function buildMultipart(parts: MultipartPart[]): { body: Buffer; contentT
 
     for (const part of parts) {
         const disposition = part.filename
-            ? `form-data; name="${escapeQuotes(part.name)}"; filename="${escapeQuotes(part.filename)}"`
-            : `form-data; name="${escapeQuotes(part.name)}"`;
+            ? `form-data; name="${quotedValue(part.name)}"; filename="${quotedValue(part.filename)}"`
+            : `form-data; name="${quotedValue(part.name)}"`;
         chunks.push(
-            Buffer.from(`--${boundary}\r\n` + `Content-Disposition: ${disposition}\r\n` + `Content-Type: ${part.contentType}\r\n\r\n`, "utf8"),
+            Buffer.from(
+                `--${boundary}\r\n` + `Content-Disposition: ${disposition}\r\n` + `Content-Type: ${headerValue(part.contentType)}\r\n\r\n`,
+                "utf8"
+            ),
             Buffer.isBuffer(part.content) ? part.content : Buffer.from(part.content, "utf8"),
             Buffer.from("\r\n", "utf8")
         );
@@ -49,6 +52,13 @@ function pickBoundary(parts: MultipartPart[]): string {
     throw new Error("Could not find a multipart boundary absent from the payload.");
 }
 
-function escapeQuotes(value: string): string {
-    return value.replace(/"/g, "");
+/** A header value with the control characters taken out, so a line break cannot start a header of its own. */
+function headerValue(value: string): string {
+    // eslint-disable-next-line no-control-regex
+    return value.replace(/[\u0000-\u001f\u007f]/g, "");
+}
+
+/** A value for inside a quoted parameter, which a quote would also end. */
+function quotedValue(value: string): string {
+    return headerValue(value).replace(/"/g, "");
 }

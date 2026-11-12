@@ -116,6 +116,30 @@ describe("buildMultipart", () => {
         assert.ok(text(body).includes('name="ETx"; filename="ab.xml"'));
     });
 
+    it("drops line breaks from a filename, which would otherwise start a header of their own", () => {
+        const { body } = buildMultipart([
+            { name: "Vedlegg", content: "y", contentType: "application/pdf", filename: "kart.pdf\r\nContent-Type: text/html" }
+        ]);
+
+        assert.ok(text(body).includes('filename="kart.pdfContent-Type: text/html"\r\n'));
+        assert.equal(
+            text(body)
+                .split("\r\n")
+                .filter((line) => line.startsWith("Content-Type:")).length,
+            1,
+            "one Content-Type header, the part's own"
+        );
+    });
+
+    it("drops line breaks from a part name and from its content type", () => {
+        const { body } = buildMultipart([{ name: "ET\nX-Injected: 1", content: "y", contentType: "application/xml\r\nX-Other: 2" }]);
+
+        const lines = text(body).split("\r\n");
+        assert.ok(lines.includes('Content-Disposition: form-data; name="ETX-Injected: 1"'));
+        assert.ok(lines.includes("Content-Type: application/xmlX-Other: 2"));
+        assert.equal(text(body).includes("\n" + "X-"), false);
+    });
+
     it("builds an empty body with nothing but the closing boundary", () => {
         const { body, contentType } = buildMultipart([]);
         assert.equal(text(body), `--${boundaryOf(contentType)}--\r\n`);
