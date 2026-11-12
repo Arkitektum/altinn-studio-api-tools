@@ -45,6 +45,7 @@ async function main(): Promise<void> {
     console.log(`posting as party ${party}${keep ? ", keeping the instances" : ""}\n`);
 
     let total = 0;
+    let done = 0;
     const { rows, skipped } = await runSweep(
         { token: token.token, party, targets, keep },
         {
@@ -53,7 +54,7 @@ async function main(): Promise<void> {
                 console.log(`${planned} file(s) to compare\n`);
             },
             onRow: (row, at) => {
-                const counted = `${PAD(String(rows.length + 1), String(total).length)}/${total}`;
+                const counted = `${PAD(String(++done), String(total).length)}/${total}`;
                 const said = row.outcome === "differs" ? `${row.differences} difference(s)` : row.outcome;
                 console.log(`  ${counted}  ${at}… ${said}`);
             }
