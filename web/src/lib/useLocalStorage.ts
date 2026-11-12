@@ -21,6 +21,20 @@ export function clearStored(): void {
 }
 
 /**
+ * Stores a value under one of the tool's keys.
+ *
+ * @returns false when the browser refused it, which is private mode or a full quota.
+ */
+export function writeStored(key: string, value: unknown): boolean {
+    try {
+        window.localStorage.setItem(`${NAMESPACE}:${key}`, JSON.stringify(value));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Persist form state across reloads. Keeps the tool usable as a scratchpad: the payload you
  * were editing survives a refresh. Token ids are not stored here. They live in server memory
  * and are listed again when the page loads.
@@ -50,15 +64,12 @@ export function useLocalStorage<T>(key: string, initial: T): [T, Dispatch<SetSta
         (next) => {
             setValue((current) => {
                 const resolved = typeof next === "function" ? (next as (value: T) => T)(current) : next;
-                try {
-                    window.localStorage.setItem(storageKey, JSON.stringify(resolved));
-                } catch {
-                    /* private mode or quota exceeded, in-memory state still works */
-                }
+                // Refused in private mode or past the quota, and the state in memory still works.
+                writeStored(key, resolved);
                 return resolved;
             });
         },
-        [storageKey]
+        [key]
     );
 
     return [value, update];

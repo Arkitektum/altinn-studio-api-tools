@@ -17,7 +17,7 @@ import { processLabel } from "./lib/format";
 import { fingerprintInstance, pdfStand } from "./lib/pdfCache";
 import { pdfTargetKey, type PdfLanguage, type PdfTargetOption } from "./lib/pdfTargets";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
-import { useLocalStorage } from "./lib/useLocalStorage";
+import { useLocalStorage, writeStored } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
 import type { PrevalidationSummary } from "./lib/chain";
 import { Chain } from "./components/Chain";
@@ -341,15 +341,17 @@ export function App() {
             app,
             elements: dataElements
         });
-        try {
-            setSavedPayloads(upsertPayload(savedPayloads, payload));
-            setPayloadLoadNotice(null);
-        } catch {
+        const next = upsertPayload(savedPayloads, payload);
+        // Written here first rather than left to the setter, which cannot report a refusal back.
+        if (!writeStored("savedPayloads", next)) {
             setPayloadLoadNotice(
                 "The browser would not store that payload. An element holding a file picked off disk is usually why: its bytes are kept in full, " +
                     "where an example is only a reference. Remove it, or load it from disk again after loading the payload."
             );
+            return;
         }
+        setSavedPayloads(next);
+        setPayloadLoadNotice(null);
     }
 
     /**

@@ -488,6 +488,29 @@ describe("App", () => {
         assert.match(willCall(app), /\/instances {2}\(multipart/);
     });
 
+    it("says so when the browser will not store a payload, and lists nothing it did not keep", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+        const setItem = window.Storage.prototype.setItem;
+        window.Storage.prototype.setItem = function (key: string, value: string) {
+            if (key === "altinn-api-tools:savedPayloads") throw new window.DOMException("The quota has been exceeded.", "QuotaExceededError");
+            setItem.call(this, key, value);
+        };
+        t.after(() => {
+            window.Storage.prototype.setItem = setItem;
+        });
+
+        const { app } = await mount(t, boot);
+        await app.wait(700);
+
+        await click(app, findByText(app, "#panel-payload button", "Save"));
+        await type(app, find<HTMLInputElement>(app, "dialog input[aria-label='Name for the saved payload']"), "Too big");
+        await click(app, find(app, "dialog button[type='submit']"));
+        await app.wait(20);
+
+        assert.match(app.container.querySelector("#panel-payload .notice--warn")?.textContent ?? "", /would not store that payload/);
+        assert.equal(findByText(app, "#panel-payload button", "Open").textContent, "Open", "nothing saved, so nothing to open");
+    });
+
     it("drops the instance when the target moves to another app", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
 
