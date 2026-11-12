@@ -62,10 +62,22 @@ export async function fetchInstantiableParties(token: string, org: string, app: 
     return Array.isArray(response.body) ? (response.body as AppParty[]) : [];
 }
 
+/**
+ * Whether a content type is JSON or XML, which is what form data is posted as.
+ *
+ * Matched on the subtype rather than by substring, because "xml" is also in the office package types (docx and
+ * the like), which are zips. Mirrors isStructuredData in the web workspace.
+ */
+export function isStructuredData(contentType: string): boolean {
+    const type = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+    if (type === "application/json" || type === "application/xml" || type === "text/xml") return true;
+    return type.endsWith("+json") || type.endsWith("+xml");
+}
+
 /** Best default content type for a data type: what the app allows, else sniffed from the payload. */
 export function resolveContentType(dataType: AppDataType | undefined, content: string): string {
     const allowed = dataType?.allowedContentTypes ?? [];
-    const preferred = allowed.find((type) => type.includes("json") || type.includes("xml"));
+    const preferred = allowed.find(isStructuredData);
     if (preferred) return preferred;
     if (allowed.length === 1 && allowed[0]) return allowed[0];
     return sniffContentType(content);

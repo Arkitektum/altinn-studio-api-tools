@@ -7,7 +7,17 @@ export const COMMON_CONTENT_TYPES = ["application/xml", "application/json", "app
  * when the app declares nothing, which leaves the choice to the server.
  */
 export function preferredContentType(declared: string[]): string | undefined {
-    return declared.find((type) => type.includes("json") || type.includes("xml")) ?? declared[0];
+    return declared.find(isStructuredData) ?? declared[0];
+}
+
+/**
+ * Whether a content type is JSON or XML, which is what form data is posted as. Mirrors isStructuredData on the
+ * server, and is matched on the subtype for the same reason isTextual below is.
+ */
+export function isStructuredData(contentType: string): boolean {
+    const type = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+    if (type === "application/json" || type === "application/xml" || type === "text/xml") return true;
+    return type.endsWith("+json") || type.endsWith("+xml");
 }
 
 /**
