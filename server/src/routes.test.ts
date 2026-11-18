@@ -284,7 +284,7 @@ describe("input the schemas reject", () => {
         assert.equal(good.status, 404);
     });
 
-    it("refuses a language that is not one on process/next and on the validation report", async () => {
+    it("refuses a language that is not one on process/next, the validation report and a run", async () => {
         const instance = {
             tokenId: "x",
             org: "dibk",
@@ -303,6 +303,13 @@ describe("input the schemas reject", () => {
         const report = await call("/api/validation-report", { method: "POST", json: { formData: "<a/>", language: "se" } });
         assert.equal(report.status, 400);
         assert.deepEqual(issuePaths(report.body), ["language"]);
+
+        const run = await call("/api/runs", {
+            method: "POST",
+            json: { ...instance, dataElements: [{ dataType: "ET", content: "" }], language: "se" }
+        });
+        assert.equal(run.status, 400);
+        assert.deepEqual(issuePaths(run.body), ["language"]);
     });
 
     it("lets the shapes Altinn uses through to the next check", async () => {

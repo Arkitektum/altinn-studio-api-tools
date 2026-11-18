@@ -89,7 +89,9 @@ const runSchema = z
         instanceGuid: guid("instanceGuid").optional(),
         instanceTemplate: z.record(z.string(), z.unknown()).optional(),
         validate: z.boolean().optional(),
-        advanceProcess: z.boolean().optional()
+        advanceProcess: z.boolean().optional(),
+        // Sent with process/next as `lang`, the same as on /instances/process/next.
+        language: z.enum(["nb", "nn", "en"]).optional()
     })
     .refine((value) => value.mode !== "existing" || Boolean(value.instanceGuid), {
         message: 'instanceGuid is required when mode is "existing"',

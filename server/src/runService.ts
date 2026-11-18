@@ -38,6 +38,8 @@ export interface RunRequest {
     validate?: boolean;
     /** Move the process to the next task/step after upload (submits the form). */
     advanceProcess?: boolean;
+    /** Sent with `process/next` as `lang`, so the pdf the task may end in is in it rather than the profile's language. */
+    language?: string;
 }
 
 export interface RunResult {
@@ -278,7 +280,8 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
     }
 
     if (request.advanceProcess) {
-        const url = `${base}/instances/${partyId}/${guid}/process/next`;
+        const search = request.language ? `?${new URLSearchParams({ lang: request.language })}` : "";
+        const url = `${base}/instances/${partyId}/${guid}/process/next${search}`;
         // The action goes with the task the instance is in, and the instance says which that is,
         // so posting and advancing in one run costs no extra request to find out.
         const body = advanceBody(taskTypeOf(instance));

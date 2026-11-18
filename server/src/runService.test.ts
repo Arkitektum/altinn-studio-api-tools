@@ -189,6 +189,28 @@ describe("sequential mode: create then upload", () => {
         );
     });
 
+    it("advances with the language given as lang, and with none when not given", async () => {
+        const advanced: string[] = [];
+        const routes = (): Parameters<typeof stubAltinn>[0] => [
+            ["GET applicationmetadata", () => metadata(ET_FORM)],
+            [
+                "POST /instances?instanceOwnerPartyId",
+                () => ({ status: 201, json: { id: `510001/${GUID}`, data: [{ id: "data-1", dataType: "ET" }] } })
+            ],
+            ["PUT /data/data-1", () => ({ json: {} })],
+            ["PUT /process/next", () => ({ json: { currentTask: null } })],
+            [`GET /instances/510001/${GUID}`, () => ({ json: { id: `510001/${GUID}` } })]
+        ];
+        for (const language of ["nn", undefined]) {
+            const stub = stubAltinn(routes());
+            active = stub;
+            await postDataToApp("test-token", { ...baseRequest, dataElements: [{ dataType: "ET", content: "{}" }], advanceProcess: true, language });
+            advanced.push(...stub.calls.filter((call) => call.url.includes("/process/next")).map((call) => call.url.replace(APP_BASE, "")));
+        }
+
+        assert.deepEqual(advanced, [`/instances/510001/${GUID}/process/next?lang=nn`, `/instances/510001/${GUID}/process/next`]);
+    });
+
     it("still posts when application metadata cannot be read", async () => {
         const stub = stubAltinn([
             ["GET applicationmetadata", () => ({ status: 401, json: { detail: "nope" } })],
