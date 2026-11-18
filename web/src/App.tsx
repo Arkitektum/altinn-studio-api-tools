@@ -509,21 +509,21 @@ export function App() {
                         <span className={`gauge__mark gauge__mark--${serverConfig ? "ok" : "bad"}`}>
                             <Icon name={serverConfig ? "check" : "cross"} />
                         </span>
-                        {appHost.replace(/^https?:\/\//, "")}
+                        <span className="gauge__text">{appHost.replace(/^https?:\/\//, "")}</span>
                         <span className="sr-only">{serverConfig ? " api answering" : " api not answering"}</span>
                     </span>
-                    <span className="gauge" title={localtest?.error ?? localtest?.url}>
+                    <span className="gauge gauge--whole" title={localtest?.error ?? localtest?.url}>
                         <span className={`gauge__mark gauge__mark--${localtest?.reachable ? "ok" : "bad"}`}>
                             <Icon name={localtest?.reachable ? "check" : "cross"} />
                         </span>
-                        LocalTest
+                        <span className="gauge__text">LocalTest</span>
                         <span className="sr-only">{localtest?.reachable ? " answering" : " not answering"}</span>
                     </span>
                     <span className="gauge">
                         <span className={`gauge__mark gauge__mark--${tokenUsable ? "ok" : "bad"}`}>
                             <Icon name={tokenUsable ? "check" : "cross"} />
                         </span>
-                        {activeToken ? activeToken.label : "No token"}
+                        <span className="gauge__text">{activeToken ? activeToken.label : "No token"}</span>
                         <span className="sr-only">{tokenUsable ? " token valid" : " no usable token"}</span>
                     </span>
                 </div>

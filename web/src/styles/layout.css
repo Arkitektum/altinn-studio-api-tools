@@ -40,6 +40,11 @@
     gap: 6px;
     font-size: var(--size-label);
     color: var(--text-muted);
+    min-width: 0;
+}
+
+/* On its own element, because the ellipsis is not drawn for bare text in a flex container. */
+.gauge__text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -60,6 +65,32 @@
 
 .gauge__mark--bad {
     color: var(--bad);
+}
+
+/* A gauge short enough never to need cutting, so the host and the user name give up the room when it runs out. */
+.gauge--whole {
+    flex: none;
+}
+
+/*
+ * On a phone the name and the three gauges do not fit on one line, so the gauges go on a second one, words and all.
+ * The header grows to hold both, and --header-h with it, since the panels' scroll margin is measured from it.
+ */
+@media (max-width: 620px) {
+    :root {
+        --header-h: 58px;
+    }
+    .masthead {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 2px;
+    }
+    .masthead__meta {
+        margin-left: 0;
+        max-width: 100%;
+        gap: 12px;
+    }
 }
 
 /* ------------------------------------------------------------------- rail */
