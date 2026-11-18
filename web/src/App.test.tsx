@@ -1075,6 +1075,25 @@ describe("App", () => {
     });
 
     /*
+     * An open element says how much it holds once, under the editor, and what its data type is once, in the select. The
+     * bar under it only carries those while it is collapsed, or empty, which is a warning either way.
+     */
+    it("says the size and the data type of a payload element once", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+        const { app } = await mount(t, boot);
+        await app.wait(700);
+
+        const element = () => find(app, "#panel-payload .element");
+        assert.equal(element().querySelector(".element__summary"), null, "open, the bar leaves the size to the note");
+        assert.match(element().textContent ?? "", /11 characters/, "which says it");
+        assert.equal(element().querySelector(".element__meta")?.textContent, "x", "the model class alone under it");
+        assert.match(find<HTMLSelectElement>(app, `#panel-payload select`).textContent ?? "", /form data · max 1/, "the select says the rest");
+
+        await click(app, find(app, "#panel-payload .element__toggle"));
+        assert.equal(element().querySelector(".element__summary")?.textContent, "11 characters", "collapsed, the bar says it");
+    });
+
+    /*
      * A pdf data element opens in the browser's viewer rather than as a line saying it is a file, and is known by its
      * first bytes as well as its content type, since an attachment can be stored as octet-stream. Anything else that
      * is not text still says so.

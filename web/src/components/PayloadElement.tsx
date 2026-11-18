@@ -23,7 +23,7 @@ interface PayloadElementProps {
     suggestedDataTypes: string[];
 }
 
-/** What the app says about a data type, for the line under the select. */
+/** What the app says about a data type, for its option in the select. */
 function describeDataType(dataType: AppDataType): string {
     const bits: string[] = [];
     if (dataType.appLogic) bits.push("form data");
@@ -161,15 +161,18 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                     </span>
                     <span className="element__ord">{index + 1}</span>
                     {element.dataType && <span className={badgeClass}>{element.dataType}</span>}
-                    <span className={`element__summary${element.content ? "" : " element__summary--empty"}`}>
-                        {summary.size}
-                        {summary.source && (
-                            <>
-                                {" \u00b7 "}
-                                <span className="element__source">{summary.source}</span>
-                            </>
-                        )}
-                    </span>
+                    {/* Collapsed, or empty, since open the note under the editor says the same and "no content" is a warning either way. */}
+                    {(element.collapsed || !element.content) && (
+                        <span className={`element__summary${element.content ? "" : " element__summary--empty"}`}>
+                            {summary.size}
+                            {summary.source && (
+                                <>
+                                    {" \u00b7 "}
+                                    <span className="element__source">{summary.source}</span>
+                                </>
+                            )}
+                        </span>
+                    )}
                 </button>
                 <span className="spacer" />
                 {/* Only useful for JSON payloads, since the shipped examples are all XML. */}
@@ -366,15 +369,12 @@ export function PayloadElement({ index, element, onPatch, onRemove, canRemove, s
                     {element.encoding === "base64" && <p className="field__hint">{note}</p>}
                 </div>
 
-                {known && (
+                {/* The model class alone: what the data type is and how many it takes are in the select above. */}
+                {known?.appLogic?.classRef && (
                     <div className="element__meta">
-                        {known.appLogic?.classRef && (
-                            <span className="badge" title={known.appLogic.classRef}>
-                                {known.appLogic.classRef.split(".").pop()}
-                            </span>
-                        )}
-                        {/* The allowed content types are the options in the select above. */}
-                        <span>{describeDataType(known)}</span>
+                        <span className="badge" title={known.appLogic.classRef}>
+                            {known.appLogic.classRef.split(".").pop()}
+                        </span>
                     </div>
                 )}
             </div>
