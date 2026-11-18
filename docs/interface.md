@@ -108,12 +108,12 @@ Colour is never the only carrier. A method is named next to its colour, a status
 
 Buttons come in four kinds, all the same height, since height is not a thing worth encoding:
 
-| Kind                    | Looks like                    | Means                                                                                                                                                              |
-| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The primary action      | Filled accent                 | The main thing to press here: **Prevalidate**, **Post**, **Get token**, a **Renew** on a token that has expired                                                    |
-| Sends a request         | Outlined in its method colour | **Refresh** and **Render pdf** are GET blue, **Sign and submit** is PUT amber, **Start** on a sweep and a **Renew** on a token that has not expired are POST green |
-| Throws something away   | Outlined red                  | **Delete**, **Remove**, **Clear**, **Clear history**, **Clear results**, whether or not a request leaves the machine                                               |
-| Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Show pdf**, **Full size**, **Collapse all**, **Open**, **Save**, **Close**, **Cancel**                                 |
+| Kind                    | Looks like                    | Means                                                                                                                                                                                                     |
+| ----------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The primary action      | Filled accent                 | The main thing to press here: **Prevalidate**, **Post**, **Get token** while the picked user has no token, a **Renew** on a token that has expired                                                        |
+| Sends a request         | Outlined in its method colour | **Refresh** and **Render pdf** are GET blue, **Sign and submit** is PUT amber, **Start** on a sweep, **Get token** for a user who has one, and a **Renew** on a token that has not expired are POST green |
+| Throws something away   | Outlined red                  | **Delete**, **Remove**, **Clear**, **Clear history**, **Clear results**, whether or not a request leaves the machine                                                                                      |
+| Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Show pdf**, **Full size**, **Collapse all**, **Open**, **Save**, **Close**, **Cancel**                                                                        |
 
 So the colour answers "will this talk to Altinn, and how", which is the question worth answering before clicking in a tool whose whole purpose is making requests. Primacy wins where the two disagree: **Post** and **Prevalidate** are filled rather than green, because being the one action a panel is for says more than being a POST.
 

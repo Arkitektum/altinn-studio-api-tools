@@ -147,6 +147,11 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
     const renewing = renew.isPending;
 
     const expired = activeToken ? isExpired(activeToken.expiresAt, now) : false;
+    /*
+     * Getting a token is the thing to press until the active one is for the user in the picker. From then on it sends a
+     * request like any other, and Renew below carries the accent when that token has expired.
+     */
+    const haveThisUser = activeToken?.kind === "test-user" && activeToken.userId === userId;
 
     return (
         <Panel
@@ -210,7 +215,12 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                     </p>
                 </div>
 
-                <button type="submit" className="btn btn--primary" style={{ width: "100%" }} disabled={busy || !userId}>
+                <button
+                    type="submit"
+                    className={`btn ${haveThisUser ? "btn--post" : "btn--primary"}`}
+                    style={{ width: "100%" }}
+                    disabled={busy || !userId}
+                >
                     {busy ? <span className="btn__spinner" /> : <Icon name="key" />}
                     Get token
                 </button>

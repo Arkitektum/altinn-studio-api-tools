@@ -204,6 +204,32 @@ describe("App", () => {
     });
 
     /*
+     * One filled button per panel. Get token is it until the active token is for the user in the picker, and from then on
+     * Renew is when that token has expired.
+     */
+    it("accents Get token only while the picked user has no token", async (t) => {
+        const { app } = await mount(t, boot);
+        const getToken = () => findByText(app, "#panel-test-user button", "Get token");
+        const renew = () => findByText(app, "#panel-test-user button", "Renew");
+
+        // The fallback list starts on 1001, which the active token was minted for.
+        assert.equal(find<HTMLSelectElement>(app, "#userId").value, "1001");
+        assert.ok(getToken().classList.contains("btn--post"), "a token for this user is already there");
+        assert.ok(!renew().classList.contains("btn--primary"), "and it has not expired");
+
+        await choose(app, find<HTMLSelectElement>(app, "#userId"), "1337");
+        assert.ok(getToken().classList.contains("btn--primary"), "another user has no token yet");
+    });
+
+    it("leaves the accent to Renew when the picked user's token has expired", async (t) => {
+        const expired = { ...token, expiresAt: new Date(Date.now() - 60_000).toISOString() };
+        const { app } = await mount(t, { ...boot, "GET /api/tokens": [expired] });
+
+        assert.ok(findByText(app, "#panel-test-user button", "Renew").classList.contains("btn--primary"));
+        assert.ok(findByText(app, "#panel-test-user button", "Get token").classList.contains("btn--post"));
+    });
+
+    /*
      * Every panel is on screen from the first render, and the ones you cannot use yet say what they
      * are waiting for. The order the tool works in is then visible on the page.
      */
