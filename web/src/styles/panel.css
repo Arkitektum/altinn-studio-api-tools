@@ -58,14 +58,14 @@
     --tone-border: var(--panel-process-border);
 }
 
-/* Validation and the run log: the band and the border of the others, in the masthead's grey rather than a hue. */
+/* Validation and the run log: the band and the border of the others, in the masthead's ink rather than a hue. */
 .panel--side {
     --tone: var(--bg-header);
     --tone-border: var(--border);
 }
 
 /*
- * A panel with a hue: a neutral body, and the hue in its border, its header band and its icon.
+ * A panel with a hue: the shared body, and the hue in its border, its header band and its icon.
  * See --panel-surface in base.css for why the body is not tinted.
  */
 .panel--toned {

@@ -16,7 +16,7 @@
 }
 
 .modal::backdrop {
-    background: rgb(10 12 14 / 70%);
+    background: rgb(8 12 22 / 70%);
 }
 
 .modal__head {

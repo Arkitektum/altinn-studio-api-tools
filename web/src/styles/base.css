@@ -12,7 +12,12 @@
      scrollbars) dark, so they match the rest without restyling. */
     color-scheme: dark;
 
-    --bg: #16181b;
+    /*
+     * The page, the masthead, the panel surface and the borders are one deep blue ink at different lightnesses rather
+     * than greys. The palette is blue to purple throughout, and a grey page left the panel hues looking faded against it.
+     * The text colours keep their lightness, so their contrast is the same as on the greys they replaced.
+     */
+    --bg: #101827;
     /*
      * A step up and a step down from whatever is behind, rather than two particular greys.
      *
@@ -56,18 +61,18 @@
      * The one place that has to be opaque: the masthead is sticky and the page scrolls under it.
      * Matched to --bg-subtle over the page, which is where it sits.
      */
-    --bg-header: #22262c;
-    --border: #34383d;
-    --border-strong: #4a5057;
+    --bg-header: #1d2636;
+    --border: #2b384f;
+    --border-strong: #425068;
 
-    --text: #e4e6e9;
-    --text-muted: #b8bec5;
-    --text-faint: #9aa1a9;
+    --text: #e2e6ee;
+    --text-muted: #b9bec5;
+    --text-faint: #9ca0a8;
 
-    --accent: #74b4f0;
+    --accent: #67b4fb;
     --accent-text: #10161c;
-    --accent-bg: #222f3c;
-    --accent-border: #38587a;
+    --accent-bg: #1a2f44;
+    --accent-border: #1e588f;
 
     /*
      * The `-sunk` of each is what a button wearing that colour sits on, so the tint under a POST is
@@ -75,19 +80,19 @@
      * accent-sunk, because --bg-sunk is already that blue: a GET button takes the default and is
      * right for the same reason everything else taking it is.
      */
-    --ok: #56d28c;
-    --ok-bg: #1d2c24;
-    --ok-border: #2f4a3a;
+    --ok: #14d880;
+    --ok-bg: #172e22;
+    --ok-border: #234d36;
     --ok-sunk: rgb(14 40 26 / 38%);
 
-    --bad: #ef8b83;
-    --bad-bg: #2f2020;
-    --bad-border: #573331;
+    --bad: #fd8178;
+    --bad-bg: #331e1e;
+    --bad-border: #602c2b;
     --bad-sunk: rgb(48 18 16 / 38%);
 
-    --warn: #ddb264;
-    --warn-bg: #2b2519;
-    --warn-border: #4d422a;
+    --warn: #ecad1a;
+    --warn-bg: #2d2412;
+    --warn-border: #51411b;
     --warn-sunk: rgb(46 34 12 / 38%);
 
     /*
@@ -97,30 +102,31 @@
      * further from the red than it looks, since these three never share a surface with it. The
      * blue is --accent.
      */
-    --violet: #b49ae2;
-    --violet-bg: #2a2437;
-    --violet-border: #453a5c;
+    --violet: #b991fa;
+    --violet-bg: #2b223e;
+    --violet-border: #473668;
 
-    --pink: #ea90bd;
-    --pink-bg: #39232e;
-    --pink-border: #5f3a4d;
+    --pink: #fc80c2;
+    --pink-bg: #3f1f2f;
+    --pink-border: #68324f;
 
     /*
-     * What a panel is drawn on, one neutral surface for all of them, a step above the page.
+     * What a panel is drawn on, one surface for all of them, the page's ink a step lighter.
      *
      * A surface of each panel's own hue would put a tint under every word, card and field in it, and
      * since the cards and fields are translucent they would take it on as well. So the hue lives in
      * the header band, the border and the icon, where it is seen while scrolling past, and the part
      * you read is the same on every panel.
      */
-    --panel-surface: #1b1d21;
+    --panel-surface: #151d2c;
 
     /*
      * A hue per panel, for its header band, with a border in the same hue. Every one is the same
-     * lightness, a step above the panel surface, and they differ only in hue.
+     * lightness, a step above the panel surface, and they differ only in hue. They are saturated enough that each panel's
+     * colour reads at a glance rather than as a tint of the surface.
      *
      * All of them are blue to purple. A first pass walked the whole wheel, and the warm half of it
-     * did not work: an amber or olive surface reads as dirty against a blue-grey page, and the one
+     * did not work: an amber or olive surface reads as dirty against a blue page, and the one
      * near the red reads as a warning. That leaves about a hundred degrees, which the nine panels
      * sit in on a 13-degree grid, taken in an order that puts 35 degrees or more between any two
      * panels that are next to each other. Adding Prevalidation and Post kept that by swapping the
@@ -129,30 +135,30 @@
      * Nine and not eleven: Validation and the run log are in the sidebar, where a column of their
      * own already says they are not part of the one you work down.
      *
-     * The border takes the same hue at the lightness of the plain one, so the outline is the
+     * The border takes the same hue a little lighter than the plain one, so the outline is the
      * panel's own rather than a grey drawn around it. A little more saturation than the band,
      * because a hairline needs it to read as coloured at all.
      */
-    --panel-user: #1e242a;
-    --panel-user-border: #32404c;
-    --panel-target: #23202c;
-    --panel-target-border: #38344c;
-    --panel-instances: #2a202c;
-    --panel-instances-border: #49344c;
-    --panel-payload: #1e222a;
-    --panel-payload-border: #323b4c;
-    --panel-prevalidation: #251e2a;
-    --panel-prevalidation-border: #41324c;
-    --panel-post: #1e1f2a;
-    --panel-post-border: #32344c;
+    --panel-user: #152e44;
+    --panel-user-border: #254b69;
+    --panel-target: #2f204e;
+    --panel-target-border: #433571;
+    --panel-instances: #411949;
+    --panel-instances-border: #622c6a;
+    --panel-payload: #1b2947;
+    --panel-payload-border: #2e436d;
+    --panel-prevalidation: #371a49;
+    --panel-prevalidation-border: #552c6f;
+    --panel-post: #23224c;
+    --panel-post-border: #373773;
     /* Element and Pdf swapped hues when Prevalidation and Post came between them, to keep the
        neighbours apart: these two now sit either side of the gap the new pair opened. */
-    --panel-element: #2b202b;
-    --panel-element-border: #4c344b;
-    --panel-pdf: #25202c;
-    --panel-pdf-border: #3e344c;
-    --panel-process: #1e272a;
-    --panel-process-border: #32464c;
+    --panel-element: #431845;
+    --panel-element-border: #682a67;
+    --panel-pdf: #341e4d;
+    --panel-pdf-border: #4e326f;
+    --panel-process: #07333f;
+    --panel-process-border: #175463;
 
     /*
      * Marked text. Neutral and translucent, and it has to be both. Every hue in here already means
