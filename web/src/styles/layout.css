@@ -370,4 +370,14 @@
         max-height: none;
         overflow-y: visible;
     }
+    /*
+     * The room below the last panel goes at the end of the page, below the run log, which comes last once the columns
+     * stack. On the panel column it would be an empty screenful between Process and Validation.
+     */
+    .column:not(.column--log) {
+        padding-bottom: 16px;
+    }
+    .column--log {
+        padding-bottom: max(16px, calc(100vh - 460px));
+    }
 }
