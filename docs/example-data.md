@@ -43,7 +43,7 @@ The testmotor holds subform examples too, as predefined attachments filed per ap
 
 So the selected app's subforms are read through that app. A subform the selected app does not declare, which is every subform when the app is a subform app opened on its own or one the catalogue does not name, is read through the first catalogue app that declares it, so every subform still has examples whatever is selected.
 
-If the testmotor cannot be reached, the picker says so rather than showing an empty list. There is no on-disk fallback for the main forms or the subforms, because the whole point was to stop keeping a second copy. `TESTMOTOR_URL=` switches the whole thing off.
+If the testmotor cannot be reached, the picker says so rather than showing an empty list, in one line with the reason behind **More**: the url, the status and whatever body came back. There is no on-disk fallback for the main forms or the subforms, because the whole point was to stop keeping a second copy. `TESTMOTOR_URL=` switches the whole thing off.
 
 ## Pointing at your own directory
 

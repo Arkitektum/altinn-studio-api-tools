@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import { useSession } from "../session";
 import type { ExampleContent, ExampleGroup } from "../types";
@@ -37,6 +37,37 @@ function describe(option: ExampleOption): string {
     // apart. Form examples have meaningful names already.
     const parts = option.kind === "attachment" ? [option.contentType] : [option.label, option.contentType];
     return `${parts.join(" · ")} · ${formatSize(option.sizeBytes)}`;
+}
+
+/**
+ * The testmotor could not be read for this data type, said in one line, with the reason behind a "More".
+ *
+ * The reason is the testmotor client's own message, which names the url and quotes up to 200 characters of what came
+ * back, often an error body in JSON. That is worth having when you go looking and in the way the rest of the time, so
+ * it opens in place as it was written, in the code face. The url is put in front when the reason does not name it.
+ */
+function SourceFailure({ dataType, url, reason }: { dataType: string; url: string; reason: string }) {
+    const [open, setOpen] = useState(false);
+    const id = useId();
+    const detail = !url || reason.includes(url) ? reason : `${url}: ${reason}`;
+
+    return (
+        <div className="notice notice--bad">
+            No example data for <strong>{dataType}</strong>: the testmotor could not be read.{" "}
+            <button
+                type="button"
+                className="explained__toggle"
+                aria-expanded={open}
+                aria-controls={id}
+                onClick={() => setOpen((current) => !current)}
+            >
+                {open ? "Less" : "More"}
+            </button>
+            <div id={id} className="notice__detail" hidden={!open}>
+                {detail}
+            </div>
+        </div>
+    );
 }
 
 /**
@@ -102,11 +133,7 @@ export function ExamplePicker({ dataType, options, hasContent, autoLoad, onLoad 
         // to do with a subform that could not be downloaded.
         const reason = exampleSource?.errors?.[dataType];
         if (reason) {
-            return (
-                <div className="notice notice--bad">
-                    No example data for <strong>{dataType}</strong>: the testmotor at {exampleSource?.url} could not be read. {reason}
-                </div>
-            );
+            return <SourceFailure dataType={dataType} url={exampleSource?.url ?? ""} reason={reason} />;
         }
         return (
             <p className="field__hint">

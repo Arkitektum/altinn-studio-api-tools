@@ -440,7 +440,14 @@ describe("App", () => {
             const { app } = await mount(t, failingRoutes);
             await app.wait(500);
 
-            assert.ok(app.container.textContent?.includes("could not be read. the ET download failed"));
+            assert.ok(app.container.textContent?.includes("No example data for ET: the testmotor could not be read."));
+
+            // The reason waits behind More, with the url in front since this one does not name it.
+            const detail = find(app, ".notice--bad .notice__detail");
+            assert.equal(detail.textContent, "https://testmotor.example: the ET download failed");
+            assert.equal(detail.hasAttribute("hidden"), true);
+            await click(app, findByText(app, ".notice--bad button", "More"));
+            assert.equal(detail.hasAttribute("hidden"), false);
         });
     });
 

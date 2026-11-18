@@ -170,3 +170,14 @@
     display: block;
     color: var(--text-muted);
 }
+
+/*
+ * The technical reason behind a notice's "More": a url, a status and whatever body came back. In the code face and out
+ * of the notice's colour, since it is quoted rather than said. No display of its own, so `hidden` still hides it.
+ */
+.notice__detail {
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: var(--size-label);
+    color: var(--text-muted);
+}
