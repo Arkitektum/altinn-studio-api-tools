@@ -15,7 +15,8 @@ import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
 import { processLabel } from "./lib/format";
 import { fingerprintInstance, pdfStand } from "./lib/pdfCache";
-import { pdfTargetKey, type PdfLanguage, type PdfTargetOption } from "./lib/pdfTargets";
+import { pdfTargetKey, type PdfTargetOption } from "./lib/pdfTargets";
+import type { RequestLanguage } from "./lib/requestLanguage";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage, writeStored } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
@@ -100,8 +101,13 @@ export function App() {
      */
     const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
     const [pdfOpen, setPdfOpen] = useState(false);
-    /** Which language the pdf is asked for in. Kept, since it is a preference rather than a view. */
-    const [pdfLanguage, setPdfLanguage] = useLocalStorage<PdfLanguage>("pdfLanguage", "nb");
+    /**
+     * Which language the app and the validation service are asked to answer in: the pdf preview,
+     * process/next in the Process panel and in a run, and prevalidation. One choice for all of them,
+     * shown by a picker in each. Kept, since it is a preference rather than a view, and under the key
+     * it had when only the pdf used it, so a choice made then still stands.
+     */
+    const [language, setLanguage] = useLocalStorage<RequestLanguage>("pdfLanguage", "nb");
 
     /** Which data element the operator picked. Empty means whichever the instance lists first. */
     const [preferredDataGuid, setPreferredDataGuid] = useState("");
@@ -374,7 +380,7 @@ export function App() {
      * as it was when the render was asked for, not as it is when the bytes arrive.
      */
     const renderPdf = useMutation({
-        mutationFn: async (asked: { requested: string; fingerprint: string | null; target: PdfTargetOption; language: PdfLanguage }) => {
+        mutationFn: async (asked: { requested: string; fingerprint: string | null; target: PdfTargetOption; language: RequestLanguage }) => {
             const result = await api.previewPdf({
                 tokenId: activeTokenId ?? "",
                 org,
@@ -407,12 +413,12 @@ export function App() {
     });
 
     const advance = useMutation({
-        mutationFn: async () => {
+        mutationFn: async (asked: RequestLanguage) => {
             const params = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid };
             // The task the instance is in, which is what names the action. Already read, so this
             // costs no extra request.
             const from = instanceProcess?.taskType ?? null;
-            const result = await api.advanceProcess({ ...params, taskType: from });
+            const result = await api.advanceProcess({ ...params, taskType: from, language: asked });
 
             // Read the instance afterwards, because advancing can change more than the task: the
             // app may add data elements on the way out of one, a generated pdf among them, and the
@@ -606,7 +612,13 @@ export function App() {
                          * for ever. The rail leaves the step out on the same condition.
                          */}
                         {prevalidationSummary && (
-                            <PrevalidationPanel notReady={waiting.requests} dataElements={dataElements} onChange={setDataElements} />
+                            <PrevalidationPanel
+                                notReady={waiting.requests}
+                                dataElements={dataElements}
+                                onChange={setDataElements}
+                                language={language}
+                                onLanguageChange={setLanguage}
+                            />
                         )}
 
                         <PostPanel
@@ -614,6 +626,8 @@ export function App() {
                             dataElements={dataElements}
                             advanceProcess={advanceProcess}
                             onAdvanceProcessChange={setAdvanceProcess}
+                            language={language}
+                            onLanguageChange={setLanguage}
                             prevalidation={prevalidationSummary}
                         />
 
@@ -632,11 +646,9 @@ export function App() {
                             notReady={waiting.process}
                             held={pdfPreview?.held ?? null}
                             stand={pdfHeld}
-                            language={pdfLanguage}
-                            onLanguageChange={setPdfLanguage}
-                            onRender={(target) =>
-                                renderPdf.mutate({ requested: instanceGuid, fingerprint: pdfFingerprint, target, language: pdfLanguage })
-                            }
+                            language={language}
+                            onLanguageChange={setLanguage}
+                            onRender={(target) => renderPdf.mutate({ requested: instanceGuid, fingerprint: pdfFingerprint, target, language })}
                             onShow={() => setPdfOpen(true)}
                             rendering={
                                 renderPdf.isPending && renderPdf.variables
@@ -651,7 +663,9 @@ export function App() {
                         <ProcessPanel
                             notReady={waiting.process ?? (instanceProcess ? null : "Reading the instance…")}
                             process={instanceProcess}
-                            onAdvance={() => advance.mutate()}
+                            onAdvance={() => advance.mutate(language)}
+                            language={language}
+                            onLanguageChange={setLanguage}
                             busy={advance.isPending}
                             hasToken={tokenUsable}
                             error={advance.error}

@@ -8,6 +8,7 @@ import { useSession } from "./session";
 import { logFromRun, logFromValidationReport } from "./lib/logResults";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
+import type { RequestLanguage } from "./lib/requestLanguage";
 import type { AppDataType, DataElementInput, ReadInstanceResult, RunMode, RunResult, ValidateResult, ValidationReportRequest } from "./types";
 
 /**
@@ -73,7 +74,7 @@ export function usePostRun() {
     }
 
     return useMutation({
-        mutationFn: async (input: { dataElements: DataElementInput[]; advanceProcess: boolean }) => {
+        mutationFn: async (input: { dataElements: DataElementInput[]; advanceProcess: boolean; language?: RequestLanguage }) => {
             const payload = await api.postRun({
                 tokenId: tokenId ?? "",
                 org,
@@ -91,7 +92,9 @@ export function usePostRun() {
                 })),
                 // Validation runs as a follow-up request instead of a step inside the run.
                 validate: false,
-                advanceProcess: input.advanceProcess
+                advanceProcess: input.advanceProcess,
+                // Only process/next reads it, so it goes along only when the run advances.
+                ...(input.advanceProcess && input.language ? { language: input.language } : {})
             });
 
             /*
@@ -143,7 +146,7 @@ export interface PrevalidationState {
  * `minCount` is what the app declares and not what the validation insists on. The whole report goes
  * to the run log as well, since only the part of it about documents is read here.
  */
-export function usePrevalidation(elements: DataElementInput[]): PrevalidationState {
+export function usePrevalidation(elements: DataElementInput[], language?: RequestLanguage): PrevalidationState {
     const { partyId, activeToken, serverConfig } = useSession();
     const { append } = useRunLog();
     const { dataElements: onInstance } = useInstanceRead();
@@ -180,8 +183,10 @@ export function usePrevalidation(elements: DataElementInput[]): PrevalidationSta
     });
 
     const mutation = useMutation({
-        mutationFn: async (sent: ValidationReportRequest) => {
-            const result = await api.validationReport(sent);
+        // The language goes with the request and not into `sent`: it changes the words of the
+        // report, not what the submission needs, so a report is not stale for being in another one.
+        mutationFn: async ({ sent, language }: { sent: ValidationReportRequest; language?: RequestLanguage }) => {
+            const result = await api.validationReport(sent, language);
             append(logFromValidationReport(result, sent));
             return { result, sent };
         },
@@ -226,6 +231,6 @@ export function usePrevalidation(elements: DataElementInput[]): PrevalidationSta
         url: serverConfig?.validationUrl ?? "",
         asking: mutation.isPending,
         error: mutation.error,
-        ask: () => request.request && mutation.mutate(request.request)
+        ask: () => request.request && mutation.mutate({ sent: request.request, language })
     };
 }

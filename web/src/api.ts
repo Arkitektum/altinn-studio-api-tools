@@ -166,8 +166,9 @@ export const api = {
     getPdfTargets: (params: { tokenId: string; org: string; app: string; instanceOwnerPartyId: string; instanceGuid: string }) =>
         request<PdfTargetsResult>(`/instances/pdf-targets?${new URLSearchParams(params)}`),
 
-    /** No tokenId: the validation service is not Altinn, and no token is sent to it. */
-    validationReport: (input: ValidationReportRequest) => request<ValidationReportResult>("/validation-report", jsonBody(input)),
+    /** No tokenId: the validation service is not Altinn, and no token is sent to it. The language goes to it as `spraak`. */
+    validationReport: (input: ValidationReportRequest, language?: string) =>
+        request<ValidationReportResult>("/validation-report", jsonBody(language ? { ...input, language } : input)),
 
     compareStored: (input: {
         tokenId: string;
@@ -188,6 +189,8 @@ export const api = {
         instanceGuid: string;
         /** Task the instance sits in, which decides the action the request names. */
         taskType?: string | null;
+        /** Sent to the app as `lang`, for the pdf the task may end in. */
+        language?: string;
     }) => request<AdvanceProcessResult>("/instances/process/next", { method: "PUT", body: JSON.stringify(params) }),
 
     deleteInstance: (params: {

@@ -1,4 +1,5 @@
 import type { DataElementSummary, PdfTargetsResult } from "../types";
+import type { RequestLanguage } from "./requestLanguage";
 
 /**
  * What the pdf preview can be pointed at, as the buttons the Pdf panel offers.
@@ -8,14 +9,6 @@ import type { DataElementSummary, PdfTargetsResult } from "../types";
  * task renders one subform data element. Which tasks an app has is read from the app itself, see
  * `readPdfTargets` on the server.
  */
-
-export type PdfLanguage = "nb" | "nn" | "en";
-
-export const PDF_LANGUAGES: { value: PdfLanguage; label: string }[] = [
-    { value: "nb", label: "Bokmål" },
-    { value: "nn", label: "Nynorsk" },
-    { value: "en", label: "English" }
-];
 
 export interface PdfTarget {
     taskId: string | null;
@@ -29,7 +22,7 @@ export interface PdfTargetOption extends PdfTarget {
 export const WHOLE_INSTANCE: PdfTargetOption = { taskId: null, dataElementId: null, label: "Whole instance" };
 
 /** One string per render that would come back different, which is the target and the language. */
-export function pdfTargetKey(target: PdfTarget, language: PdfLanguage): string {
+export function pdfTargetKey(target: PdfTarget, language: RequestLanguage): string {
     return `${target.taskId ?? ""}/${target.dataElementId ?? ""}/${language}`;
 }
 
@@ -78,7 +71,7 @@ export function pdfTargetOptions(
 }
 
 /** Where the request goes, as the panel prints it: the url with the query it will carry. */
-export function pdfPreviewQuery(target: PdfTarget, language: PdfLanguage): string {
+export function pdfPreviewQuery(target: PdfTarget, language: RequestLanguage): string {
     const query = new URLSearchParams();
     if (target.taskId) query.set("taskId", target.taskId);
     if (target.dataElementId) query.set("dataElementId", target.dataElementId);

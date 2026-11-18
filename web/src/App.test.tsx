@@ -800,6 +800,78 @@ describe("App", () => {
     });
 
     /*
+     * One language for every request that takes one, with a picker in each panel that sends one.
+     * Changing it in one panel changes it in all of them, and each request carries it under the
+     * name its server route reads: prevalidation, process/next and a run that advances. A run that
+     * does not advance has no process/next for it to go to, so it sends none.
+     */
+    it("asks in the language picked in any panel, prevalidation, process/next and an advancing run alike", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A, dataElements: [{ dataType: "ET", content: "<ettrinn />" }] });
+        const sent: Record<string, unknown[]> = { report: [], next: [], run: [] };
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/config": { ...config, validationUrl: "http://localhost:6000/validate" },
+            "GET /api/instances": () => instanceRead(A, "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation,
+            "POST /api/validation-report": (_url, body) => {
+                sent.report!.push(body);
+                return { ok: true, steps: [], failedAt: null, report: { soknadtype: "ET", messages: [] } };
+            },
+            "PUT /api/instances/process/next": (_url, body) => {
+                sent.next!.push(body);
+                return {
+                    ok: false,
+                    steps: [],
+                    failedAt: "Could not advance the process.",
+                    instanceOwnerPartyId: "510001",
+                    instanceGuid: A,
+                    process: null
+                };
+            },
+            "POST /api/runs": (_url, body) => {
+                sent.run!.push(body);
+                return { ok: true, mode: "existing", steps: [], instanceOwnerPartyId: "510001", instanceGuid: A, instance: {}, failedAt: null };
+            }
+        });
+        await app.wait(700);
+
+        const pickers = ["#pdfLanguage", "#prevalidationLanguage", "#processLanguage", "#postLanguage"];
+        const picked = () => pickers.map((id) => (find(app, id) as HTMLSelectElement).value);
+        assert.deepEqual(picked(), ["nb", "nb", "nb", "nb"]);
+
+        await choose(app, find(app, "#prevalidationLanguage") as HTMLSelectElement, "nn");
+        assert.deepEqual(picked(), ["nn", "nn", "nn", "nn"], "one choice, shown by every picker");
+        assert.match(find(app, "#panel-prevalidation").textContent ?? "", /validate\?spraak=nn/, "the prevalidation url says what is sent");
+        assert.match(find(app, "#panel-process").textContent ?? "", /process\/next\?lang=nn/, "and so does the process panel's");
+
+        await click(app, findByText(app, "#panel-prevalidation button", "Prevalidate"));
+        await app.wait(50);
+        assert.equal((sent.report![0] as { language?: string }).language, "nn");
+
+        await click(app, find(app, "#panel-process .btn--put"));
+        await app.wait(50);
+        assert.equal((sent.next![0] as { language?: string }).language, "nn");
+
+        // Not advancing: the picker is there but off, and the run carries no language.
+        assert.equal((find(app, "#postLanguage") as HTMLSelectElement).disabled, true);
+        await click(app, findByText(app, "#panel-post button", "Add data"));
+        await app.wait(900);
+        assert.equal("language" in (sent.run![0] as object), false);
+
+        await click(app, find(app, "#panel-post input[type=checkbox]"));
+        assert.equal((find(app, "#postLanguage") as HTMLSelectElement).disabled, false);
+        assert.match(find(app, "#panel-post").textContent ?? "", /process\/next\?lang=nn/, "the post panel's note says what is sent");
+        await choose(app, find(app, "#postLanguage") as HTMLSelectElement, "en");
+        assert.deepEqual(picked(), ["en", "en", "en", "en"]);
+        await click(app, findByText(app, "#panel-post button", "Add data"));
+        await app.wait(900);
+        assert.equal((sent.run![1] as { language?: string; advanceProcess?: boolean }).language, "en");
+    });
+
+    /*
      * A run that some forms were refused in replaces the previous report with what it was told,
      * marked as partial, since the previous one described a payload that has since changed. Only a
      * run told nothing at all leaves the earlier report up, marked as such.

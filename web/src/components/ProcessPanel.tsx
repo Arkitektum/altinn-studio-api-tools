@@ -5,6 +5,8 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
 import { Icon } from "./Icon";
+import { LanguagePicker } from "./LanguagePicker";
+import { withLanguage, type RequestLanguage } from "../lib/requestLanguage";
 
 interface ProcessPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -12,6 +14,9 @@ interface ProcessPanelProps {
     /** Null until the instance has been read, which the panel says it is waiting for. */
     process: ProcessSummary | null;
     onAdvance: () => void;
+    /** Sent as `lang`, so the pdf the task may end in is in it rather than the profile's language. */
+    language: RequestLanguage;
+    onLanguageChange: (language: RequestLanguage) => void;
     busy: boolean;
     hasToken: boolean;
     error: unknown;
@@ -24,7 +29,7 @@ function describeMoment(value: string | null): string {
     return Number.isNaN(parsed) ? value : new Date(parsed).toLocaleString("nb");
 }
 
-export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, error }: ProcessPanelProps) {
+export function ProcessPanel({ notReady, process, onAdvance, language, onLanguageChange, busy, hasToken, error }: ProcessPanelProps) {
     const { instance, org, app, partyId, instanceGuid } = useTarget();
     /*
      * Where the instance stands is the instance read's to say, so until it has there is nothing to
@@ -84,6 +89,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
                 <p className="field__hint above-m">The process has ended, so there is no next task. Post to a new instance to walk it again.</p>
             ) : (
                 <>
+                    <LanguagePicker id="processLanguage" className="above-m" value={language} onChange={onLanguageChange} />
                     <div className="row above-m">
                         {/*
                          * Named after what it does to the form rather than after what it does to
@@ -106,7 +112,7 @@ export function ProcessPanel({ notReady, process, onAdvance, busy, hasToken, err
                         Moves the instance out of {process.currentTask ? <strong>{process.currentTask}</strong> : "the current task"}, and the app
                         validates first, so it fails while validation does not pass.
                         <br />
-                        <span className="method method--put">PUT</span> {instance}/process/next
+                        <span className="method method--put">PUT</span> {withLanguage(`${instance}/process/next`, "lang", language)}
                         <br />
                         {advanceBody(process.taskType)}
                     </p>

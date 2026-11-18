@@ -9,14 +9,16 @@ import { Explained } from "./Explained";
 import { Panel } from "./Panel";
 import type { PdfStand } from "../lib/pdfCache";
 import { logFromPdfTargets } from "../lib/logResults";
-import { PDF_LANGUAGES, pdfPreviewQuery, pdfTargetKey, pdfTargetOptions, type PdfLanguage, type PdfTargetOption } from "../lib/pdfTargets";
+import { pdfPreviewQuery, pdfTargetKey, pdfTargetOptions, type PdfTargetOption } from "../lib/pdfTargets";
+import { languageName, type RequestLanguage } from "../lib/requestLanguage";
+import { LanguagePicker } from "./LanguagePicker";
 import { Icon } from "./Icon";
 
 /** The pdf in hand: which target it is of, by key and by name, and in which language. */
 export interface HeldPdf {
     key: string;
     label: string;
-    language: PdfLanguage;
+    language: RequestLanguage;
 }
 
 interface PdfPanelProps {
@@ -26,8 +28,8 @@ interface PdfPanelProps {
     held: HeldPdf | null;
     /** Where the pdf in hand stands against the instance. See lib/pdfCache.ts. */
     stand: PdfStand;
-    language: PdfLanguage;
-    onLanguageChange: (language: PdfLanguage) => void;
+    language: RequestLanguage;
+    onLanguageChange: (language: RequestLanguage) => void;
     /** Ask the app to render this target, whatever is held. */
     onRender: (target: PdfTargetOption) => void;
     /** Open the pdf already in hand, without asking again. */
@@ -84,7 +86,6 @@ export function PdfPanel({ notReady, held, stand, language, onLanguageChange, on
     /** The button whose pdf is in hand and still current, if any is on screen. */
     const shownKey = held && stand === "current" ? held.key : null;
     const shownOption = options.find((option) => pdfTargetKey(option, language) === shownKey) ?? null;
-    const languageName = (value: PdfLanguage) => PDF_LANGUAGES.find((entry) => entry.value === value)?.label ?? value;
 
     return (
         <Panel icon="file" id="panel-pdf" notReady={notReady} title="Pdf" tone="pdf">
@@ -93,16 +94,7 @@ export function PdfPanel({ notReady, held, stand, language, onLanguageChange, on
                 app has the service tasks for it, the main form and each subform can be rendered on their own as well.
             </Explained>
 
-            <div className="field below-m">
-                <label htmlFor="pdfLanguage">Language</label>
-                <select id="pdfLanguage" value={language} onChange={(event) => onLanguageChange(event.target.value as PdfLanguage)}>
-                    {PDF_LANGUAGES.map((entry) => (
-                        <option key={entry.value} value={entry.value}>
-                            {entry.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <LanguagePicker id="pdfLanguage" className="below-m" value={language} onChange={onLanguageChange} />
 
             <div className="row">
                 {options.map((option) => {

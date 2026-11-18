@@ -8,6 +8,8 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DataElementInput } from "../types";
 import { Icon } from "./Icon";
+import { LanguagePicker } from "./LanguagePicker";
+import { withLanguage, type RequestLanguage } from "../lib/requestLanguage";
 
 interface PrevalidationPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -15,6 +17,9 @@ interface PrevalidationPanelProps {
     dataElements: DataElementInput[];
     /** For Add them, which appends one element per document the service still wants. */
     onChange: Dispatch<SetStateAction<DataElementInput[]>>;
+    /** Sent to the service as `spraak`, the language its messages come back in. */
+    language: RequestLanguage;
+    onLanguageChange: (language: RequestLanguage) => void;
 }
 
 /** Names in a sentence: "a", "a and b", "a, b and c". */
@@ -36,11 +41,11 @@ function list(names: string[]): string {
  * Rendered only where a service is configured. Switched off is not a step you skipped, so there is
  * nothing to show rather than a panel permanently waiting. See App.tsx.
  */
-export function PrevalidationPanel({ notReady, dataElements, onChange }: PrevalidationPanelProps) {
+export function PrevalidationPanel({ notReady, dataElements, onChange, language, onLanguageChange }: PrevalidationPanelProps) {
     const { metadata: appMetadata } = useAppRead();
     const dataTypes = appMetadata?.metadata.dataTypes ?? [];
 
-    const { prevalidation, blockedBy, url, asking, error, ask: onValidationReport } = usePrevalidation(dataElements);
+    const { prevalidation, blockedBy, url, asking, error, ask: onValidationReport } = usePrevalidation(dataElements, language);
 
     /**
      * Which documents this submission needs, as the validation service answered it. Nothing here
@@ -95,6 +100,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
 
     return (
         <Panel icon="shield" id="panel-prevalidation" notReady={notReady} tone="prevalidation" title="Prevalidation">
+            <LanguagePicker id="prevalidationLanguage" className="below-m" value={language} onChange={onLanguageChange} />
             {/*
              * The shape of the post button below it, because it is the step before it and the main
              * thing to press in this panel. It was outlined in the POST green it sends, which is the
@@ -122,7 +128,7 @@ export function PrevalidationPanel({ notReady, dataElements, onChange }: Prevali
                     </>
                 )}
                 <br />
-                <span className="method method--post">POST</span> {url}
+                <span className="method method--post">POST</span> {url ? withLanguage(url, "spraak", language) : url}
             </p>
 
             {/*

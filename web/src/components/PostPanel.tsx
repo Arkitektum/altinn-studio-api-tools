@@ -6,6 +6,8 @@ import { Panel } from "./Panel";
 import type { PrevalidationSummary } from "../lib/chain";
 import type { DataElementInput } from "../types";
 import { Icon } from "./Icon";
+import { LanguagePicker } from "./LanguagePicker";
+import { withLanguage, type RequestLanguage } from "../lib/requestLanguage";
 
 interface PostPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -13,6 +15,9 @@ interface PostPanelProps {
     dataElements: DataElementInput[];
     advanceProcess: boolean;
     onAdvanceProcessChange: (next: boolean) => void;
+    /** Sent with process/next as `lang`, so only used when the run advances. */
+    language: RequestLanguage;
+    onLanguageChange: (language: RequestLanguage) => void;
     /** What the service last said, or null when it is switched off. Only for the note above the button. */
     prevalidation: PrevalidationSummary | null;
 }
@@ -27,7 +32,15 @@ interface PostPanelProps {
  * Its own panel rather than the foot of Payload, because it is the step everything above it leads
  * to and the rail points at it.
  */
-export function PostPanel({ notReady, dataElements, advanceProcess, onAdvanceProcessChange, prevalidation }: PostPanelProps) {
+export function PostPanel({
+    notReady,
+    dataElements,
+    advanceProcess,
+    onAdvanceProcessChange,
+    language,
+    onLanguageChange,
+    prevalidation
+}: PostPanelProps) {
     const { org, app, tokenUsable, partyId, instanceGuid } = useSession();
     const post = usePostRun();
 
@@ -47,11 +60,14 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
                      * what the step is rather than naming an action it cannot know yet.
                      */}
                     <span className="check__note">
-                        PUT /process/next straight after the upload, the same step as pressing send in the app. The app validates first, so it fails
-                        while validation does not pass, and the data stays posted either way.
+                        PUT {withLanguage("/process/next", "lang", language)} straight after the upload, the same step as pressing send in the app.
+                        The app validates first, so it fails while validation does not pass, and the data stays posted either way.
                     </span>
                 </span>
             </label>
+
+            {/* Disabled rather than hidden while the box is unticked, so the panel does not jump when it is ticked. */}
+            <LanguagePicker id="postLanguage" className="above-m" value={language} onChange={onLanguageChange} disabled={!advanceProcess} />
 
             <div className="above-l">
                 {blockers.length > 0 && <div className="notice notice--warn below-m">Needs {blockers.join(", ")}.</div>}
@@ -82,7 +98,7 @@ export function PostPanel({ notReady, dataElements, advanceProcess, onAdvancePro
                 <button
                     type="button"
                     className="btn btn--primary btn--fire"
-                    onClick={() => post.mutate({ dataElements, advanceProcess })}
+                    onClick={() => post.mutate({ dataElements, advanceProcess, language })}
                     disabled={post.isPending || blockers.length > 0}
                 >
                     {post.isPending ? <span className="btn__spinner" /> : <Icon name="upload" />}
