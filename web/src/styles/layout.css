@@ -253,6 +253,11 @@
     color: var(--text-faint);
 }
 
+/* Nothing chosen yet, said in words and kept quiet, so it does not read as a value. */
+.rail__value--empty {
+    color: var(--text-faint);
+}
+
 /* The one to fill in next, which is the only row that names an action. */
 .rail__step--next .rail__label {
     color: var(--accent);

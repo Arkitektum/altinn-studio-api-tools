@@ -111,7 +111,7 @@ export function Chain(inputs: ChainInputs) {
                                 {STEP_ICON[step.anchor] && <Icon name={STEP_ICON[step.anchor]!} />}
                                 {step.label}
                             </span>
-                            <span className="rail__value">{step.value ?? "-"}</span>
+                            <span className={`rail__value${step.value === null ? " rail__value--empty" : ""}`}>{step.value ?? "not set"}</span>
                         </span>
                         <span className="sr-only">{SAID[step.state]}</span>
                     </>
