@@ -13,6 +13,7 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { DeleteInstanceResult, InstanceState, InstanceSummary, ListInstancesResult } from "../types";
 import { Icon } from "./Icon";
+import { CallUrl } from "./CallUrl";
 
 /**
  * What a row says it is, where that is not the same as what Altinn calls it.
@@ -288,7 +289,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
             <div className="above-m">
                 <span className="legend">Will call</span>
                 <pre className="dump flush">
-                    <span className="method method--post">POST</span> {preview}
+                    <CallUrl method="POST" url={preview} />
                 </pre>
             </div>
 
@@ -322,10 +323,10 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                         <span className="check__body">
                             <span className="check__title">Include completed</span>
                             <span className="check__note">
-                                A second read, of <span className="method method--get">GET</span> {localtestUrl}
-                                /storage/api/v1/instances, which is the only place an instance whose process has ended is still listed. Soft deleted
-                                ones come with it, marked as such, since Altinn keeps them: this is where you clear those out for good. Off by
-                                default, since it is a request that often has nothing to add.
+                                A second read, of <CallUrl method="GET" url={`${localtestUrl}/storage/api/v1/instances`} />, which is the only place
+                                an instance whose process has ended is still listed. Soft deleted ones come with it, marked as such, since Altinn
+                                keeps them: this is where you clear those out for good. Off by default, since it is a request that often has nothing
+                                to add.
                             </span>
                         </span>
                     </label>
@@ -500,9 +501,9 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                     <p className="field__hint">
                         Picking one closes this window, reads it and validates it, and fills the data element panel:
                         <br />
-                        <span className="method method--get">GET</span> {base}/instances/{party}/{"{instanceGuid}"}
+                        <CallUrl method="GET" url={`${base}/instances/${party}/{instanceGuid}`} />
                         <br />
-                        <span className="method method--get">GET</span> {base}/instances/{party}/{"{instanceGuid}"}/validate
+                        <CallUrl method="GET" url={`${base}/instances/${party}/{instanceGuid}/validate`} />
                     </p>
 
                     <p className="field__hint">
@@ -510,7 +511,7 @@ export function InstancesPanel({ notReady, id, elementCount, onSelect, onSelectT
                     </p>
 
                     <p className="field__hint">
-                        <span className="method method--get">GET</span> {base}/instances/{party}/active
+                        <CallUrl method="GET" url={`${base}/instances/${party}/active`} />
                         <br />
                         Listed on its own for the party in Target. Altinn returns the instances whose process has not ended, so an archived one is not
                         here.

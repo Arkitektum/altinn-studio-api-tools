@@ -34,3 +34,17 @@ export function targetUrls(appHost: string, org: string, app: string, party: str
         instance: `${base}/instances/${shownParty}/${shownGuid}`
     };
 }
+
+const GUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+/**
+ * A url as a panel shows it before the call: without the app host, which the masthead names, with LocalTest as
+ * `{localtest}`, and with every guid cut to its first eight characters, the way the rail and the badges show them.
+ * The full url goes on hover, and the run log prints it whole.
+ */
+export function shortUrl(url: string, appHost: string, localtestUrl: string): string {
+    let shown = url;
+    if (appHost && shown.startsWith(appHost)) shown = shown.slice(appHost.length);
+    else if (localtestUrl && shown.startsWith(localtestUrl)) shown = `{localtest}${shown.slice(localtestUrl.length)}`;
+    return shown.replace(GUID, (guid) => `${guid.slice(0, 8)}…`);
+}

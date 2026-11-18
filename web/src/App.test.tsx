@@ -564,7 +564,7 @@ describe("App", () => {
         // What the listing holds, which is none of them: an instance reached by its guid is a row in
         // the window but is not one the listing offered, and it is already the one in force.
         assert.equal(app.container.querySelector("#panel-instances .modes__count")?.textContent, "0");
-        assert.match(willCall(app), new RegExp(`/instances/510001/${A}/data`));
+        assert.ok(willCall(app).includes(`/instances/510001/${A.slice(0, 8)}…/data`));
 
         // Back to creating one, from the panel rather than from the window.
         await click(app, findByText(app, "#panel-instances .modes__choice", "New instance"));
@@ -772,11 +772,19 @@ describe("App", () => {
         });
         await app.wait(700);
 
+        // Short on screen, without the host and with the guid cut, and whole on hover.
         const shown = app.container.textContent ?? "";
+        const hovered = [...app.container.querySelectorAll("[title]")].map((element) => element.getAttribute("title"));
         const instance = `http://local.altinn.cloud:8000/dibk/et-v4/instances/510001/${A}`;
-        assert.ok(shown.includes(`${instance}/pdf/preview`), "the pdf panel's url");
-        assert.ok(shown.includes(`${instance}/process/next`), "the process panel's url");
-        assert.ok(shown.includes(`${instance}/data/${A}-data`), "the data element panel's url");
+        const short = `/dibk/et-v4/instances/510001/${A.slice(0, 8)}…`;
+        for (const [path, what] of [
+            ["/pdf/preview?language=nb", "the pdf panel's url"],
+            ["/process/next?lang=nb", "the process panel's url"],
+            [`/data/${A}-data`, "the data element panel's url"]
+        ] as const) {
+            assert.ok(hovered.includes(`${instance}${path}`), `${what}, whole on hover`);
+            assert.ok(shown.includes(`${short}${path.replace(A, `${A.slice(0, 8)}…`)}`), `${what}, short on screen`);
+        }
     });
 
     /*

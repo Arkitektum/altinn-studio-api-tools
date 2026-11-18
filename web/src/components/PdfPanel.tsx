@@ -13,6 +13,7 @@ import { pdfPreviewQuery, pdfTargetKey, pdfTargetOptions, type PdfTargetOption }
 import { languageName, type RequestLanguage } from "../lib/requestLanguage";
 import { LanguagePicker } from "./LanguagePicker";
 import { Icon } from "./Icon";
+import { CallUrl } from "./CallUrl";
 
 /** The pdf in hand: which target it is of, by key and by name, and in which language. */
 export interface HeldPdf {
@@ -156,7 +157,7 @@ export function PdfPanel({ notReady, held, stand, language, onLanguageChange, on
                         <br />
                     </>
                 ) : null}
-                <span className="method method--get">GET</span> {instance}/pdf/preview?language={language}
+                <CallUrl method="GET" url={`${instance}/pdf/preview?language=${language}`} />
                 {single ? null : (
                     <>
                         <br />

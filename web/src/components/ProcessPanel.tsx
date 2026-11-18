@@ -5,6 +5,7 @@ import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { ProcessSummary } from "../types";
 import { Icon } from "./Icon";
+import { CallUrl } from "./CallUrl";
 import { LanguagePicker } from "./LanguagePicker";
 import { withLanguage, type RequestLanguage } from "../lib/requestLanguage";
 
@@ -112,7 +113,7 @@ export function ProcessPanel({ notReady, process, onAdvance, language, onLanguag
                         Moves the instance out of {process.currentTask ? <strong>{process.currentTask}</strong> : "the current task"}, and the app
                         validates first, so it fails while validation does not pass.
                         <br />
-                        <span className="method method--put">PUT</span> {withLanguage(`${instance}/process/next`, "lang", language)}
+                        <CallUrl method="PUT" url={withLanguage(`${instance}/process/next`, "lang", language)} />
                         <br />
                         {advanceBody(process.taskType)}
                     </p>

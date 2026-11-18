@@ -18,6 +18,7 @@ import { Explained } from "./Explained";
 import { Panel } from "./Panel";
 import type { DataElementInput, DataElementSummary } from "../types";
 import { Icon } from "./Icon";
+import { CallUrl } from "./CallUrl";
 
 interface FetchPanelProps {
     /** Why the panel cannot be used yet, or null when it can. See lib/readiness.ts. */
@@ -174,14 +175,14 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                         <p className="field__hint above-s">
                             Read and validated on its own when you pick one, the way selecting an instance reads that:
                             <br />
-                            <span className="method method--get">GET</span> {instance}/data/{dataGuid}
+                            <CallUrl method="GET" url={`${instance}/data/${dataGuid}`} />
                             <br />
                             {/* The second line is not a call to make while the first is, so it says so. */}
                             {validateBlockedBy ? (
                                 <span style={{ color: "var(--warn)" }}>{validateBlockedBy}</span>
                             ) : (
                                 <>
-                                    <span className="method method--get">GET</span> {instance}/data/{dataGuid}/validate
+                                    <CallUrl method="GET" url={`${instance}/data/${dataGuid}/validate`} />
                                 </>
                             )}
                         </p>
