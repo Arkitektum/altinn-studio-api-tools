@@ -342,12 +342,12 @@
         overflow-y: visible;
         flex-direction: row;
         padding: 10px 16px 0;
-        gap: 4px;
+        gap: 12px;
     }
     /* The thread between steps runs across rather than down, and only where there is room. */
     .rail__step:not(:last-child)::before {
         left: auto;
-        right: -2px;
+        right: -10px;
         top: 50%;
         bottom: auto;
         width: 8px;
@@ -364,6 +364,18 @@
     }
     .rail__row {
         padding: 6px 8px;
+    }
+    /*
+     * Each step keeps its own width, up to a cap, and the strip scrolls when they do not all fit. Squeezed to share the
+     * width, they would break inside words: "nothin g…", "1 elemen…". The cap lets a long value wrap between words onto
+     * the second line it has.
+     */
+    .rail__step {
+        flex: none;
+        max-width: 180px;
+    }
+    .rail__label {
+        white-space: nowrap;
     }
     .column--log {
         position: static;
