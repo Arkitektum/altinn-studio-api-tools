@@ -5,7 +5,7 @@ nav_order: 4
 
 # Test user
 
-Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The stored token is named after the person rather than the id. That is the only way in: nothing else in the interface works without a token, so this is the one panel a cold start shows.
+Pick a test user and the tool calls `GET {localtest}/Home/GetTestUserToken/{userId}`. The stored token is named after the person rather than the id. Getting a token for a user who already has one replaces it, since a second LocalTest token for the same user carries the same claims and would only add a row that differs by the time. A pasted token is never replaced. Each row in the stored list shows the user id beside the name, because LocalTest has people with the same name. That is the only way in: nothing else in the interface works without a token, so this is the one panel a cold start shows.
 
 The party id is read from the `urn:altinn:partyid` claim and prefilled as the instance owner, and it follows the active token when you switch user. A party you typed yourself is left alone, since acting on behalf of another party is a real case.
 
@@ -35,7 +35,7 @@ Where LocalTest offers nothing, the two we work with are offered instead, Pengel
 
 The remaining validity counts down live. **Renew** on the token card fetches another token for the same user and activates it, so an expiry mid-session costs a click rather than a trip back through the picker. It takes the accent colour once the token has expired, since that is then the thing to press.
 
-The spent token is deleted rather than left to fill the list with dead tokens for the same person, and a token the server has already pruned is treated as the same outcome. Only a LocalTest token offers this, since a pasted one cannot be minted again.
+The spent token is deleted rather than left to fill the list with dead tokens for the same person, the same replacing that Get token does, and a token the server has already pruned is treated as the same outcome. Only a LocalTest token offers this, since a pasted one cannot be minted again.
 
 ## Pasting a token
 

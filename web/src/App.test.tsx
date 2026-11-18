@@ -295,6 +295,39 @@ describe("App", () => {
         assert.match(app.container.textContent ?? "", /Beta Testperson/, "and the tool should be using the one still there");
     });
 
+    /*
+     * A second LocalTest token for the same user has the same claims, so Get token replaces the first rather than adding a
+     * row that only differs by the time. Another user's token and a pasted one for the same user are left alone.
+     */
+    it("replaces the picked user's older LocalTest token on Get token", async (t) => {
+        const other: PublicToken = { ...token, id: "t2", label: "Beta Testperson", userId: "1337" };
+        const pasted: PublicToken = { ...token, id: "t3", kind: "raw", label: "Pasted" };
+        const fresh: PublicToken = { ...token, id: "t4" };
+        let held = [token, other, pasted];
+
+        const { app, stub } = await mount(t, {
+            ...boot,
+            "GET /api/tokens": () => held,
+            "POST /api/tokens/test-user": () => {
+                held = [...held, fresh];
+                return fresh;
+            },
+            "DELETE /api/tokens/t1": () => {
+                held = held.filter((stored) => stored.id !== "t1");
+                return null;
+            }
+        });
+
+        await click(app, findByText(app, "#panel-test-user button", "Get token"));
+        await app.wait(50);
+
+        const deletes = stub.calls.filter((made) => made.startsWith("DELETE"));
+        assert.deepEqual(deletes, ["DELETE /api/tokens/t1"], "only the older LocalTest token for 1001 goes");
+        const rows = [...app.container.querySelectorAll("#panel-test-user .picklist__item")].map((row) => row.textContent ?? "");
+        assert.equal(rows.length, 3);
+        assert.match(rows.join("\n"), /Beta Testperson \(1337\) · /, "a row names its user id");
+    });
+
     it("shows the error of the token action that ran last, not an older one of another kind", async (t) => {
         // Two tokens, since the list with its delete buttons only shows once there is more than one.
         const { app } = await mount(t, {

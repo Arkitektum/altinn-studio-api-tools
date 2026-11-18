@@ -90,6 +90,26 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
     /** Minting, renewing and deleting all change the list App is showing, so all three invalidate it. */
     const invalidateTokens = () => client.invalidateQueries({ queryKey: queryKeys.tokens() });
 
+    /**
+     * A new LocalTest token for a user, replacing the ones already stored for that user. Their claims are the same, so the
+     * older ones only add rows that differ by the time. A pasted token is never replaced, since it came from elsewhere.
+     */
+    const mintReplacing = async (input: { userId: string; label?: string }): Promise<PublicToken> => {
+        const fresh = await api.createTestUserToken(input);
+        const older =
+            fresh.userId === null
+                ? []
+                : tokens.filter((token) => token.kind === "test-user" && token.userId === fresh.userId && token.id !== fresh.id);
+        for (const token of older) {
+            try {
+                await api.deleteToken(token.id);
+            } catch {
+                /* already pruned by the server, which is the same outcome */
+            }
+        }
+        return fresh;
+    };
+
     /*
      * Each of the three keeps its error until it runs again, so starting one clears the other two. Otherwise an old
      * failure of one would go on showing over a newer failure of another.
@@ -99,7 +119,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             renew.reset();
             remove.reset();
         },
-        mutationFn: (input: { userId: string; label?: string }) => api.createTestUserToken(input),
+        mutationFn: mintReplacing,
         onSuccess: async (token) => {
             onActivate(token.id);
             await invalidateTokens();
@@ -124,17 +144,7 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
             create.reset();
             remove.reset();
         },
-        mutationFn: async (token: PublicToken) => {
-            const fresh = await api.createTestUserToken({ userId: token.userId ?? "", label: token.label });
-            try {
-                // The old one is spent, and keeping it would fill the list with dead tokens for
-                // the same person. It may already be gone: the server prunes expired tokens.
-                await api.deleteToken(token.id);
-            } catch {
-                /* already pruned, which is the same outcome */
-            }
-            return fresh;
-        },
+        mutationFn: (token: PublicToken) => mintReplacing({ userId: token.userId ?? "", label: token.label }),
         onSuccess: async (fresh) => {
             onActivate(fresh.id);
             await invalidateTokens();
@@ -301,9 +311,10 @@ export function TokenPanel({ id, serverConfig, localtest, tokens, activeToken, o
                                     onClick={() => onActivate(token.id)}
                                 >
                                     <span className={`led ${isExpired(token.expiresAt, now) ? "led--bad" : "led--ok"}`} aria-hidden="true" />
-                                    {/* Same user fetched twice gives identical labels, so the time disambiguates. */}
+                                    {/* LocalTest has people with the same name, so the id tells them apart. The time says how old the token is. */}
                                     <span>
-                                        {token.label} · {new Date(token.createdAt).toLocaleTimeString("nb")}
+                                        {token.label}
+                                        {token.userId ? ` (${token.userId})` : ""} · {new Date(token.createdAt).toLocaleTimeString("nb")}
                                         {/* Nothing in this row says it otherwise. The dot is the only sign. */}
                                         {isExpired(token.expiresAt, now) && <span className="sr-only"> expired</span>}
                                     </span>
