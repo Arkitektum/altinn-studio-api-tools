@@ -1075,6 +1075,35 @@ describe("App", () => {
     });
 
     /*
+     * The two comparison filters keep their titles on screen and their reasons behind More. Opening a reason must not
+     * tick the box, which is why the toggle sits beside the label rather than inside it.
+     */
+    it("keeps the comparison filters' reasons behind More, without ticking the box", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => instanceRead(A, "ET"),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        const option = () => findByText(app, "#panel-data-element .check--option", "Hide altinnRowId");
+        const box = () => option().querySelector<HTMLInputElement>("input[type='checkbox']");
+        const note = () => option().querySelector(".check__note");
+        assert.equal(box()?.checked, true, "on by default");
+        assert.equal(note()?.hasAttribute("hidden"), true, "the reason waits behind More");
+
+        await click(app, findByText(app, "#panel-data-element .check--option button", "More"));
+        assert.equal(note()?.hasAttribute("hidden"), false);
+        assert.equal(box()?.checked, true, "and opening it left the box alone");
+
+        await click(app, find(app, "#panel-data-element .check--option label"));
+        assert.equal(box()?.checked, false, "the title still ticks it");
+    });
+
+    /*
      * An open element says how much it holds once, under the editor, and what its data type is once, in the select. The
      * bar under it only carries those while it is collapsed, or empty, which is a warning either way.
      */

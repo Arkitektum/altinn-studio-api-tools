@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useCompare } from "../reads";
 import { describeHidden, partitionDifferences } from "../lib/differences";
 import { Icon } from "./Icon";
@@ -22,6 +22,38 @@ const KIND_LABELS: Record<XmlDifferenceKind, string> = {
 /** How much the payload holds for an element and where it came from, for the line above its diff. */
 function describeWritten(written: DataElementInput): string {
     return `${written.content.length.toLocaleString("nb")} characters${written.exampleName ? ` · from ${written.exampleName}` : ""}`;
+}
+
+/**
+ * A filter on the comparison: a checkbox and its title, with why you would want it behind a "More". The reason is worth
+ * reading once and in the way after that. The title is the label, and the toggle sits beside it rather than in it, so
+ * opening the reason never ticks the box.
+ */
+function CheckOption({ title, note, checked, onChange }: { title: string; note: string; checked: boolean; onChange: (checked: boolean) => void }) {
+    const [open, setOpen] = useState(false);
+    const id = useId();
+    return (
+        <div className="check check--option">
+            <input id={`${id}-box`} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+            <span className="check__body">
+                <span className="check__title">
+                    <label htmlFor={`${id}-box`}>{title}</label>{" "}
+                    <button
+                        type="button"
+                        className="explained__toggle"
+                        aria-expanded={open}
+                        aria-controls={`${id}-note`}
+                        onClick={() => setOpen((current) => !current)}
+                    >
+                        {open ? "Less" : "More"}
+                    </button>
+                </span>
+                <span id={`${id}-note`} className="check__note" hidden={!open}>
+                    {note}
+                </span>
+            </span>
+        </div>
+    );
 }
 
 /**
@@ -80,26 +112,18 @@ export function CompareSection({ pairs }: CompareSectionProps) {
                 <p className="field__hint">No form data on this instance, so nothing to compare.</p>
             ) : (
                 <>
-                    <label className="check">
-                        <input type="checkbox" checked={hideRowIds} onChange={(event) => setHideRowIds(event.target.checked)} />
-                        <span className="check__body">
-                            <span className="check__title">Hide altinnRowId</span>
-                            <span className="check__note">
-                                Altinn stamps one on every row of a repeating group, so the stored xml has them and a file written by hand never does.
-                                Left in, they bury everything else.
-                            </span>
-                        </span>
-                    </label>
-
-                    <label className="check">
-                        <input type="checkbox" checked={hideEmpty} onChange={(event) => setHideEmpty(event.target.checked)} />
-                        <span className="check__body">
-                            <span className="check__title">Hide empty elements Altinn added</span>
-                            <span className="check__note">
-                                Altinn writes out fields the file left out as empty elements, so each one shows as added with nothing in it.
-                            </span>
-                        </span>
-                    </label>
+                    <CheckOption
+                        title="Hide altinnRowId"
+                        checked={hideRowIds}
+                        onChange={setHideRowIds}
+                        note="Altinn stamps one on every row of a repeating group, so the stored xml has them and a file written by hand never does. Left in, they bury everything else."
+                    />
+                    <CheckOption
+                        title="Hide empty elements Altinn added"
+                        checked={hideEmpty}
+                        onChange={setHideEmpty}
+                        note="Altinn writes out fields the file left out as empty elements, so each one shows as added with nothing in it."
+                    />
 
                     <p className="field__hint above-m">
                         Compared again whenever an element or the xml it was written from changes:

@@ -110,6 +110,8 @@ So `/ettrinn/eiendom/festenr dropped` with no type says the model has no such fi
 
 **Hide empty elements Altinn added** is off by default. The model writes out fields the file left out as empty elements, so a file that skips optional fields gets an "added" row with nothing in it for each one. Turned on, those rows are held back and counted the same way the row ids are. Only added ones: an empty element the model dropped was in the file, so it stays. The server marks these with an `empty` flag on the difference rather than leaving the web app to match the word "empty", which an element with that text would also show.
 
+Both keep their title on screen and the reason for them behind **More**, beside the title rather than in it, so opening the reason never ticks the box.
+
 The run log names them apart for the same reason, as "1, plus 2 altinnRowId", so the entry does not read as three problems when the panel is showing one.
 
 ### The same thing over everything at once

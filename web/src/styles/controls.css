@@ -205,6 +205,15 @@ textarea {
     color: var(--text-faint);
 }
 
+/* A check whose reason opens behind More: only the title is the label, so only it takes the pointer. */
+.check--option {
+    cursor: auto;
+}
+
+.check--option label {
+    cursor: pointer;
+}
+
 /*
  * A choice between two answers that decide what the panel under them means, so both are readable at
  * rest. A select would put the alternative behind a click, and a pair of radios would spend the
