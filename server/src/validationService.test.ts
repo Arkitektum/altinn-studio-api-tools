@@ -57,6 +57,23 @@ describe("fetchValidationReport", () => {
         });
     });
 
+    it("asks every form in the language given, as spraak, and in none when not given", async () => {
+        const urls: string[] = [];
+        globalThis.fetch = (async (input: string | URL | Request) => {
+            urls.push(String(input));
+            return new Response(JSON.stringify(said("ET")), { status: 200, headers: { "Content-Type": "application/json" } });
+        }) as typeof fetch;
+
+        await fetchValidationReport(submission("Gjennomfoeringsplan"), "ET", "nn");
+        await fetchValidationReport(submission(), "ET");
+
+        assert.deepEqual(urls, [
+            "https://validering.ft-test.dibk.no/api/validationReport?spraak=nn",
+            "https://validering.ft-test.dibk.no/api/validationReport?spraak=nn",
+            "https://validering.ft-test.dibk.no/api/validationReport"
+        ]);
+    });
+
     it("carries on past a refused subform, and says which one it was", async () => {
         stubService({ ET: said("ET", "ERROR") });
 

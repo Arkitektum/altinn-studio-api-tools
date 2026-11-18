@@ -64,6 +64,17 @@ function listOf(names: string[]): string {
 }
 
 /**
+ * The service url with `spraak` set on whatever query it already has. Without a language, or with a
+ * url that does not parse, it is left as configured, so a bad VALIDATION_URL still fails as a step.
+ */
+function withLanguage(validationUrl: string, language: string | undefined): string {
+    if (!language || !URL.canParse(validationUrl)) return validationUrl;
+    const url = new URL(validationUrl);
+    url.searchParams.set("spraak", language);
+    return url.toString();
+}
+
+/**
  * One submission, asked as however many requests the service needs to be asked.
  *
  * The service ignores `subForms`, so each form goes up on its own, and what comes back is merged
@@ -77,14 +88,22 @@ function listOf(names: string[]): string {
  * by whatever that form would have said, and `ok` is false so the caller knows not to trust the
  * total. Carrying on is the better answer: the main form's findings are worth having even when a
  * subform could not be asked about.
+ *
+ * A language, when given, is sent as `spraak`, so the messages come back in it.
  */
-export async function fetchValidationReport(request: ValidationReportRequest, mainFormName = "the form"): Promise<ValidationReportResult> {
+export async function fetchValidationReport(
+    request: ValidationReportRequest,
+    mainFormName = "the form",
+    language?: string
+): Promise<ValidationReportResult> {
     const recorder = new StepRecorder();
 
     if (!config.validationUrl) {
         recorder.note("Prevalidate", "No validation service is configured. Set VALIDATION_URL in server/.env.");
         return { ok: false, steps: recorder.steps, failedAt: "No validation service is configured.", refused: [], report: null };
     }
+
+    const url = withLanguage(config.validationUrl, language);
 
     const asked = splitSubmission(request, mainFormName);
     const parts: ReportPart[] = [];
@@ -96,8 +115,8 @@ export async function fetchValidationReport(request: ValidationReportRequest, ma
             // Named for the form, since a run log holding five of these has to say which is which.
             asked.length === 1 ? "Prevalidate" : `Prevalidate ${formName}`,
             "POST",
-            config.validationUrl,
-            () => altinnFetch({ url: config.validationUrl, method: "POST", body: text, contentType: "application/json" }),
+            url,
+            () => altinnFetch({ url, method: "POST", body: text, contentType: "application/json" }),
             // Verbatim, since what is sent is the question you are asking the service, and being
             // able to copy it as curl is how you find out whether the tool asked it properly.
             { preview: text, verbatim: true }

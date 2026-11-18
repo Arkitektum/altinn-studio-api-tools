@@ -378,15 +378,17 @@ const validationReportSchema = z.object({
     subForms: z.array(z.object({ formName: z.string().trim().min(1), subFormData: z.string() })).default([]),
     attachments: z
         .array(z.object({ attachmentTypeName: z.string().trim().min(1), filename: z.string(), fileSize: z.number().int().nonnegative() }))
-        .default([])
+        .default([]),
+    /** Sent to the service as `spraak`. Not part of the submission, so it is taken off before the split. */
+    language: z.enum(["nb", "nn", "en"]).optional()
 });
 
 router.post(
     "/validation-report",
     asyncHandler(async (req, res) => {
-        const { mainFormName, ...submission } = validationReportSchema.parse(req.body);
+        const { mainFormName, language, ...submission } = validationReportSchema.parse(req.body);
         // 200 with ok:false when the service refuses, matching every other call that got an answer.
-        res.json(await fetchValidationReport(submission, mainFormName));
+        res.json(await fetchValidationReport(submission, mainFormName, language));
     })
 );
 
@@ -425,7 +427,9 @@ router.get(
 const advanceSchema = instanceLookupSchema.extend({
     // The task the instance sits in, which decides the action the request is authorised against.
     // Optional, and an absent one sends no action, leaving the choice to Altinn.
-    taskType: z.string().trim().nullish()
+    taskType: z.string().trim().nullish(),
+    // Sent to the app as `lang`, in place of the profile's language.
+    language: z.enum(["nb", "nn", "en"]).optional()
 });
 
 router.put(

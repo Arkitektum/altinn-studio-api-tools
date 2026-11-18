@@ -397,6 +397,15 @@ describe("advanceProcess", () => {
         assert.equal(result.process?.taskType, "confirmation");
     });
 
+    it("asks for the pdf the task may end in in the language given, as lang", async () => {
+        const stub = stubAltinn(() => ({ body: JSON.stringify({ currentTask: null }), contentType: "application/json" }));
+        active = stub;
+
+        await advanceProcess("test-token", { ...target, language: "nn" });
+
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/process/next?lang=nn`);
+    });
+
     it("reports a refusal without throwing, since it is usually validation talking", async () => {
         const stub = stubAltinn(() => ({
             status: 409,

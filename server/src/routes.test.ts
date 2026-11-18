@@ -284,6 +284,27 @@ describe("input the schemas reject", () => {
         assert.equal(good.status, 404);
     });
 
+    it("refuses a language that is not one on process/next and on the validation report", async () => {
+        const instance = {
+            tokenId: "x",
+            org: "dibk",
+            app: "et-v4",
+            instanceOwnerPartyId: "512345",
+            instanceGuid: "99d0632c-5917-448c-8ab6-a5d3b681376b"
+        };
+        const next = await call("/api/instances/process/next", { method: "PUT", json: { ...instance, language: "se" } });
+        assert.equal(next.status, 400);
+        assert.deepEqual(issuePaths(next.body), ["language"]);
+
+        // The same request well formed fails on the token instead, which comes after the schema.
+        const good = await call("/api/instances/process/next", { method: "PUT", json: { ...instance, language: "nn" } });
+        assert.equal(good.status, 404);
+
+        const report = await call("/api/validation-report", { method: "POST", json: { formData: "<a/>", language: "se" } });
+        assert.equal(report.status, 400);
+        assert.deepEqual(issuePaths(report.body), ["language"]);
+    });
+
     it("lets the shapes Altinn uses through to the next check", async () => {
         // A well-formed request with an unknown token fails on the token, which is after the schema.
         const { status } = await call(
@@ -394,5 +415,48 @@ describe("a token's round trip", () => {
         assert.equal(again.status, 404);
 
         assert.deepEqual((await call("/api/tokens")).body, []);
+    });
+});
+
+describe("the language a request asks for", () => {
+    /** Records what the server sends upstream, answering each with an empty JSON object. */
+    function recordUpstream() {
+        const sent: { url: string; body: string }[] = [];
+        globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+            sent.push({ url: String(input), body: String(init?.body ?? "") });
+            return new Response("{}", { headers: { "content-type": "application/json" } });
+        }) as typeof fetch;
+        return sent;
+    }
+
+    it("reaches the app as lang on process/next", async (t) => {
+        const id = await storeToken(t, { "urn:altinn:userid": "1337", exp: inAnHour });
+        const sent = recordUpstream();
+
+        const { status } = await call("/api/instances/process/next", {
+            method: "PUT",
+            json: {
+                tokenId: id,
+                org: "dibk",
+                app: "et-v4",
+                instanceOwnerPartyId: "512345",
+                instanceGuid: "99d0632c-5917-448c-8ab6-a5d3b681376b",
+                language: "nn"
+            }
+        });
+
+        assert.equal(status, 200);
+        assert.match(sent[0]?.url ?? "", /\/instances\/512345\/99d0632c-5917-448c-8ab6-a5d3b681376b\/process\/next\?lang=nn$/);
+    });
+
+    it("reaches the validation service as spraak, and stays out of the submission", async () => {
+        const sent = recordUpstream();
+
+        const { status } = await call("/api/validation-report", { method: "POST", json: { formData: "<a/>", language: "nn" } });
+
+        assert.equal(status, 200);
+        assert.equal(sent.length, 1);
+        assert.equal(new URL(sent[0]!.url).searchParams.get("spraak"), "nn");
+        assert.equal("language" in JSON.parse(sent[0]!.body), false);
     });
 });

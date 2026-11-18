@@ -402,10 +402,17 @@ export async function deleteInstance(token: string, request: ReadRequest & { har
  * The body names the action for the task type the caller is looking at, `{"action":"sign"}` on a
  * signing task. The task type comes from the process this tool has already read, so no extra
  * request is needed to learn it.
+ *
+ * A language goes along as `lang`, which the app uses in place of the profile's for the pdf the
+ * task may end in. Without one the request is the same as it always was.
  */
-export async function advanceProcess(token: string, request: ReadRequest & { taskType?: string | null }): Promise<AdvanceProcessResult> {
+export async function advanceProcess(
+    token: string,
+    request: ReadRequest & { taskType?: string | null; language?: string }
+): Promise<AdvanceProcessResult> {
     const recorder = new StepRecorder();
-    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/process/next`;
+    const search = request.language ? `?${new URLSearchParams({ lang: request.language })}` : "";
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/process/next${search}`;
     const body = advanceBody(request.taskType);
 
     const response = await recorder.run(
