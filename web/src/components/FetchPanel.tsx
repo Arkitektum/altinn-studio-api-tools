@@ -160,7 +160,8 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                 <>
                     <div className="field above-l">
                         <label htmlFor="dataGuid">Data element</label>
-                        <select id="dataGuid" value={dataGuid} onChange={(event) => onDataGuidChange(event.target.value)}>
+                        {/* The guid on hover rather than on a line of its own: the urls below carry it too, and the run log in full. */}
+                        <select id="dataGuid" value={dataGuid} title={selected?.id} onChange={(event) => onDataGuidChange(event.target.value)}>
                             <option value="">Pick one of {dataElements.length}</option>
                             {dataElements.map((element) => (
                                 <option key={element.id} value={element.id}>
@@ -168,7 +169,6 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                                 </option>
                             ))}
                         </select>
-                        {selected && <p className="field__hint">{selected.id}</p>}
                     </div>
 
                     {dataGuid && (

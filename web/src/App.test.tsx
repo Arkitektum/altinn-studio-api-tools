@@ -785,6 +785,11 @@ describe("App", () => {
             assert.ok(hovered.includes(`${instance}${path}`), `${what}, whole on hover`);
             assert.ok(shown.includes(`${short}${path.replace(A, `${A.slice(0, 8)}…`)}`), `${what}, short on screen`);
         }
+
+        // The picked data element's guid is on the select's hover, not on a line of its own under it.
+        assert.equal(find(app, "#dataGuid").getAttribute("title"), `${A}-data`);
+        const hints = [...app.container.querySelectorAll("#panel-data-element .field__hint")].map((hint) => hint.textContent);
+        assert.ok(!hints.includes(`${A}-data`), "no hint line holding the guid alone");
     });
 
     /*
