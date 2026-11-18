@@ -29,6 +29,7 @@ export function RunLog() {
         <Panel
             title="Run log"
             icon="terminal"
+            tone="side"
             aside={
                 // A request starting or a run landing is worth hearing about, and this is the terse
                 // version of it. The runs themselves are not a live region: each one is a wall of

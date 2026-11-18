@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 
 /**
  * Which hue the panel's header and border wear. One per panel in the column you work down, see the
- * `--panel-*` block in styles/base.css. The two in the sidebar have none: a column of its own is separation enough.
+ * `--panel-*` block in styles/base.css. The two in the sidebar take `side`, which is the same band and border in the
+ * masthead's grey: a column of their own is separation enough, so they have the shape without a hue.
  */
-export type PanelTone = "user" | "target" | "instances" | "payload" | "prevalidation" | "post" | "element" | "pdf" | "process";
+export type PanelTone = "user" | "target" | "instances" | "payload" | "prevalidation" | "post" | "element" | "pdf" | "process" | "side";
 
 interface PanelProps {
     title: string;

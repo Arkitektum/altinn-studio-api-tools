@@ -58,6 +58,7 @@ export function ValidationPanel() {
         <Panel
             title="Validation"
             icon="clipboard"
+            tone="side"
             aside={
                 validations.length > 0 ? (
                     <span className="row" style={{ gap: 6 }}>
