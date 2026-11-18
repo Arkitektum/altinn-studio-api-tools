@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
 import { useAppRead, useDataElementRead, useInstanceRead } from "../reads";
 import { useSession } from "../session";
 import { downloadContent } from "../lib/download";
+import { isPdf } from "../lib/contentType";
+import { bytesFromBase64 } from "../lib/formats";
 import { pairComparisons } from "../lib/comparisons";
 import { dataTypeKindOf } from "../lib/dataTypeGroups";
 import { validationBlockedBy } from "../lib/elementValidation";
@@ -78,6 +80,31 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
 
     /** Held so it can be saved as a file rather than read again. */
     const fetched = useMemo(() => (element.read ? heldElement(dataGuid, element.read, selected ?? null) : null), [element.read, dataGuid, selected]);
+
+    /**
+     * A blob url for the content while it is open as a pdf, and null otherwise. Made on opening, since the window is
+     * modal and the content cannot change under it, and revoked when it closes or the panel goes.
+     */
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    useEffect(
+        () => () => {
+            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        },
+        [pdfUrl]
+    );
+
+    function showContent() {
+        if (fetched?.encoding === "base64" && isPdf(fetched.contentType, fetched.content)) {
+            // Typed as a pdf whatever it was stored as, so the browser opens its viewer rather than offering a download.
+            setPdfUrl(URL.createObjectURL(new Blob([bytesFromBase64(fetched.content)], { type: "application/pdf" })));
+        }
+        setShowing(true);
+    }
+
+    function closeContent() {
+        setPdfUrl(null);
+        setShowing(false);
+    }
 
     const busy = element.fetching || readingInstance;
     const error = element.error;
@@ -168,7 +195,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                     {fetched && (
                         <>
                             <div className="row above-m">
-                                <button type="button" className="btn btn--ghost" onClick={() => setShowing(true)} aria-haspopup="dialog">
+                                <button type="button" className="btn btn--ghost" onClick={showContent} aria-haspopup="dialog">
                                     <Icon name="eye" />
                                     Show content
                                 </button>
@@ -180,22 +207,34 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                             {showing && (
                                 <Modal
                                     title={fetched.filename}
+                                    className={pdfUrl ? "modal--pdf" : undefined}
                                     aside={
-                                        <button
-                                            type="button"
-                                            className="btn btn--ghost"
-                                            onClick={() =>
-                                                fetched && downloadContent(fetched.filename, fetched.content, fetched.encoding, fetched.contentType)
-                                            }
-                                        >
-                                            <Icon name="download" />
-                                            Download
-                                        </button>
+                                        <>
+                                            {pdfUrl && (
+                                                <a href={pdfUrl} target="_blank" rel="noreferrer" className="btn btn--ghost">
+                                                    Open in new tab
+                                                </a>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="btn btn--ghost"
+                                                onClick={() =>
+                                                    fetched &&
+                                                    downloadContent(fetched.filename, fetched.content, fetched.encoding, fetched.contentType)
+                                                }
+                                            >
+                                                <Icon name="download" />
+                                                Download
+                                            </button>
+                                        </>
                                     }
-                                    bodyClassName="modal__stack"
-                                    onClose={() => setShowing(false)}
+                                    bodyClassName={pdfUrl ? "modal__frame" : "modal__stack"}
+                                    onClose={closeContent}
                                 >
-                                    {fetched.encoding === "utf8" ? (
+                                    {pdfUrl ? (
+                                        // The browser's own viewer at 100%, the way the Pdf panel shows a render. See PdfModal.
+                                        <iframe src={`${pdfUrl}#zoom=100`} title={fetched.filename} />
+                                    ) : fetched.encoding === "utf8" ? (
                                         // The label carries what it is, since the title carries what it is called.
                                         <Dump
                                             label={`${fetched.contentType ?? "unknown type"} · ${fetched.size} B`}

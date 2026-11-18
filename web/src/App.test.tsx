@@ -1062,6 +1062,64 @@ describe("App", () => {
     });
 
     /*
+     * A pdf data element opens in the browser's viewer rather than as a line saying it is a file, and is known by its
+     * first bytes as well as its content type, since an attachment can be stored as octet-stream. Anything else that
+     * is not text still says so.
+     */
+    describe("Show content on a data element", () => {
+        const routesFor = (contentType: string, content: string): Routes => ({
+            ...boot,
+            "GET /api/instances": () => ({
+                ...instanceRead(A, "ET"),
+                dataElements: [{ id: `${A}-data`, dataType: "Vedlegg", contentType, filename: "plan.pdf", size: 9, lastChanged: null }]
+            }),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": { ...elementRead, contentType, encoding: "base64", content, size: 9 },
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+
+        async function open(t: TestContext, routes: Routes): Promise<Rendered> {
+            seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+            const { app } = await mount(t, routes);
+            await app.wait(700);
+            await choose(app, find<HTMLSelectElement>(app, "#dataGuid"), `${A}-data`);
+            await app.wait(50);
+            await click(app, findByText(app, "#panel-data-element button", "Show content"));
+            return app;
+        }
+
+        it("shows a pdf in the viewer, at 100%, in the wide window", async (t) => {
+            const app = await open(t, routesFor("application/pdf", btoa("%PDF-1.7\n")));
+
+            assert.match(find(app, "dialog iframe").getAttribute("src") ?? "", /^blob:.*#zoom=100$/);
+            assert.ok(find(app, "dialog").classList.contains("modal--pdf"));
+            assert.ok(findByText(app, "dialog a", "Open in new tab"));
+
+            // And the url goes with the window, rather than holding the file in memory until the tab closes.
+            const url = findByText(app, "dialog a", "Open in new tab").getAttribute("href");
+            const revoked = t.mock.method(URL, "revokeObjectURL");
+            await click(app, findByText(app, "dialog button", "Close"));
+            assert.deepEqual(
+                revoked.mock.calls.map((call) => call.arguments[0]),
+                [url]
+            );
+        });
+
+        it("knows a pdf stored as octet-stream by its first bytes", async (t) => {
+            const app = await open(t, routesFor("application/octet-stream", btoa("%PDF-1.7\n")));
+            assert.ok(app.container.querySelector("dialog iframe"));
+        });
+
+        it("still only offers the download for a file that is not a pdf", async (t) => {
+            const app = await open(t, routesFor("image/png", btoa("\x89PNG\r\n\x1a\n")));
+
+            assert.equal(app.container.querySelector("dialog iframe"), null);
+            assert.equal(find(app, "dialog").classList.contains("modal--pdf"), false);
+            assert.match(find(app, "dialog").textContent ?? "", /which is a file rather than text/);
+        });
+    });
+
+    /*
      * A render is the most expensive read the tool makes: the app lays the whole form out and what
      * comes back is the pdf as base64. Pressing the button twice without having changed anything in
      * between must not do all of that twice, so the pdf is kept after the window closes, with a

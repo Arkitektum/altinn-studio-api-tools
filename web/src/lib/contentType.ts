@@ -42,3 +42,18 @@ export function contentTypeOptions(declared: string[], current: string | undefin
     const base = declared.length > 0 ? declared : COMMON_CONTENT_TYPES;
     return current && !base.includes(current) ? [...base, current] : base;
 }
+
+/**
+ * Whether base64 content is a pdf, for the browser's own viewer to show. Declared as one, or starting with the `%PDF-`
+ * every pdf opens with, since an attachment uploaded as `application/octet-stream` is still a pdf to look at.
+ */
+export function isPdf(contentType: string | null, base64: string): boolean {
+    const type = contentType?.split(";")[0]?.trim().toLowerCase() ?? "";
+    if (type === "application/pdf") return true;
+    try {
+        // Eight characters of base64 are six bytes, enough for the five the marker takes.
+        return atob(base64.slice(0, 8)).startsWith("%PDF-");
+    } catch {
+        return false;
+    }
+}
