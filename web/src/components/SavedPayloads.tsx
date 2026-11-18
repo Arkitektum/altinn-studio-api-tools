@@ -84,12 +84,12 @@ export function SavedPayloads({ payloads, org, app, overwrites, canSave, onSave,
                                             onLoad(payload);
                                             close();
                                         }}
-                                        title={`${payload.elements.length} element(s), saved for ${payload.org}/${payload.app}`}
+                                        title={`${payload.elements.length} element${payload.elements.length === 1 ? "" : "s"}, saved for ${payload.org}/${payload.app}`}
                                     >
                                         <span>
                                             {armed && confirming?.action === "load" ? `Replace the payload with "${payload.name}"?` : payload.name}
                                             {" · "}
-                                            {payload.elements.length} element(s)
+                                            {payload.elements.length} element{payload.elements.length === 1 ? "" : "s"}
                                             {elsewhere ? ` · for ${payload.org}/${payload.app}` : ""}
                                             {" · "}
                                             {new Date(payload.savedAt).toLocaleString("nb")}

@@ -789,6 +789,11 @@ describe("App", () => {
         await app.wait(700);
 
         assert.equal(railValue(app, "Payload"), "1 element", "the payload has a type and something in it");
+        assert.equal(
+            app.container.querySelector("#panel-payload .panel__head .badge")?.textContent,
+            "1 element",
+            "and the panel counts it the same way"
+        );
         assert.equal(railValue(app, "Prevalidation"), "not run");
 
         await click(app, findByText(app, "#panel-prevalidation button", "Prevalidate"));

@@ -101,7 +101,9 @@ export function PayloadPanel({
                             {allCollapsed ? "Expand all" : "Collapse all"}
                         </button>
                     )}
-                    <span className="badge">{dataElements.length} element(s)</span>
+                    <span className="badge">
+                        {dataElements.length} element{dataElements.length === 1 ? "" : "s"}
+                    </span>
                 </span>
             }
         >
