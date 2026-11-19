@@ -1190,6 +1190,65 @@ describe("App", () => {
     });
 
     /*
+     * A refused move is an answer rather than a thrown request, so the panel has to say it itself. It
+     * used to stop spinning and show nothing, with the reason only in the run log.
+     */
+    it("says why the app refused a move, until a move goes through", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+        let refuse = true;
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => instanceRead(A, "ET"),
+            "PUT /api/instances/process/next": () =>
+                refuse
+                    ? {
+                          ok: false,
+                          steps: [
+                              {
+                                  index: 1,
+                                  name: "Advance process to next task",
+                                  method: "PUT",
+                                  url: "x",
+                                  status: 500,
+                                  ok: false,
+                                  durationMs: 1,
+                                  error: "Failed to add tiltakshaver fnr to instance: Connection refused (local.altinn.cloud:80)"
+                              }
+                          ],
+                          failedAt: "Could not advance the process.",
+                          instanceOwnerPartyId: "510001",
+                          instanceGuid: A,
+                          process: null
+                      }
+                    : {
+                          ok: true,
+                          steps: [],
+                          failedAt: null,
+                          instanceOwnerPartyId: "510001",
+                          instanceGuid: A,
+                          process: { currentTask: "Task_2", taskType: "data", started: null, ended: null, endEvent: null }
+                      },
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        const refusal = () => app.container.querySelector("#panel-process .notice--bad");
+        assert.equal(refusal(), null, "nothing to say before a move");
+
+        await click(app, find(app, "#panel-process .btn--put"));
+        await app.wait(100);
+        assert.match(refusal()?.textContent ?? "", /Could not move out of Task_1 \(500\)/);
+        assert.match(refusal()?.querySelector(".notice__detail")?.textContent ?? "", /Connection refused \(local\.altinn\.cloud:80\)/);
+
+        refuse = false;
+        await click(app, find(app, "#panel-process .btn--put"));
+        await app.wait(100);
+        assert.equal(refusal(), null, "a move that went through takes the refusal away");
+    });
+
+    /*
      * A pdf data element opens in the browser's viewer rather than as a line saying it is a file, and is known by its
      * first bytes as well as its content type, since an attachment can be stored as octet-stream. Anything else that
      * is not text still says so.

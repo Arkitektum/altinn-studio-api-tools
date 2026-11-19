@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { actionForTaskType, advanceBody, advanceInApp, advanceLabel, advancedLabel } from "./processAction.js";
+import { actionForTaskType, advanceBody, advanceFailure, advanceInApp, advanceLabel, advancedLabel } from "./processAction.js";
 
 describe("actionForTaskType", () => {
     it("maps each task type to the action it is advanced with", () => {
@@ -58,5 +58,40 @@ describe("advanceInApp", () => {
         // A feedback task is advanced by the app, so there is no button in it to compare with.
         assert.equal(advanceInApp("feedback"), null);
         assert.equal(advanceInApp(null), null);
+    });
+});
+
+describe("advanceFailure", () => {
+    const failed = (steps: { ok: boolean; status: number | null; error?: string }[]) => ({
+        ok: false,
+        steps,
+        failedAt: "Could not advance the process."
+    });
+
+    it("says nothing about a move that went through", () => {
+        assert.equal(advanceFailure({ ok: true, steps: [{ ok: true, status: 200 }], failedAt: null }), null);
+    });
+
+    it("carries the app's own words and status, from the step that failed", () => {
+        const failure = advanceFailure(
+            failed([
+                { ok: true, status: 200 },
+                { ok: false, status: 500, error: "Failed to add tiltakshaver fnr to instance: Connection refused (local.altinn.cloud:80)" }
+            ])
+        );
+        assert.deepEqual(failure, {
+            status: 500,
+            message: "Failed to add tiltakshaver fnr to instance: Connection refused (local.altinn.cloud:80)",
+            hint: null
+        });
+    });
+
+    it("explains a refusal and a forbidden action, which the status says more about than the message", () => {
+        assert.match(advanceFailure(failed([{ ok: false, status: 409, error: "Conflict" }]))?.hint ?? "", /validates before it moves/);
+        assert.match(advanceFailure(failed([{ ok: false, status: 403, error: "Forbidden" }]))?.hint ?? "", /not allowed/);
+    });
+
+    it("falls back to the result's own sentence when no step says anything", () => {
+        assert.deepEqual(advanceFailure(failed([])), { status: null, message: "Could not advance the process.", hint: null });
     });
 });

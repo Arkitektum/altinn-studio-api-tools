@@ -10,6 +10,7 @@ import { useSession } from "./session";
 import { splitPastedInstanceId } from "./lib/instanceId";
 import { bytesFromBase64 } from "./lib/formats";
 import { logFromAdvance, logFromPdf } from "./lib/logResults";
+import { advanceFailure } from "./lib/processAction";
 import { withIdentity } from "./lib/formIdentity";
 import { withAppDefaults } from "./lib/payloadDefaults";
 import { identityFor } from "./lib/identity";
@@ -731,6 +732,7 @@ export function App() {
                             onAdvance={() =>
                                 advance.mutate({ language, before: { elements: instanceDataElements, at: processLabel(instanceProcess) } })
                             }
+                            failure={advance.data && advance.data.guid === instanceGuid ? advanceFailure(advance.data.result) : null}
                             outcome={shownOutcome}
                             onCheck={checkAdvance}
                             language={language}

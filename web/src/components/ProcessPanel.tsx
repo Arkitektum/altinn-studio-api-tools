@@ -1,5 +1,5 @@
 import { processLabel } from "../lib/format";
-import { advanceBody, advanceInApp, advanceLabel } from "../lib/processAction";
+import { advanceBody, advanceInApp, advanceLabel, type AdvanceFailure } from "../lib/processAction";
 import { useTarget } from "../session";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
@@ -22,6 +22,8 @@ interface ProcessPanelProps {
     busy: boolean;
     hasToken: boolean;
     error: unknown;
+    /** Why the last move on this instance was refused, or null when it went through or there has been none. */
+    failure: AdvanceFailure | null;
     /** What the last move on this instance did to its data elements, or null when there has been none. */
     outcome: AdvanceOutcome | null;
     /** Takes you back up to the Data element panel, on the first element the move touched. */
@@ -88,6 +90,7 @@ export function ProcessPanel({
     busy,
     hasToken,
     error,
+    failure,
     outcome,
     onCheck
 }: ProcessPanelProps) {
@@ -181,6 +184,21 @@ export function ProcessPanel({
                         {advanceBody(process.taskType)}
                     </p>
                 </>
+            )}
+
+            {/*
+             * A refused move comes back as an answer rather than a thrown request, so without this the
+             * button stopped spinning and nothing on the panel said why. The app's own words are quoted
+             * as they came, and the run log has the whole response.
+             */}
+            {failure && (
+                <div className="notice notice--bad above-m" role="alert">
+                    <div>
+                        Could not move out of {process.currentTask ? <strong>{process.currentTask}</strong> : "the current task"}
+                        {failure.status !== null ? ` (${failure.status})` : ""}.<div className="notice__detail">{failure.message}</div>
+                        {failure.hint && <span className="notice__why above-s">{failure.hint}</span>}
+                    </div>
+                </div>
             )}
 
             {error ? (

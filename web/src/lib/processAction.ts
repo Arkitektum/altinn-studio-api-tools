@@ -62,3 +62,39 @@ export function advanceBody(taskType: string | null | undefined): string {
     const action = actionForTaskType(taskType);
     return action ? JSON.stringify({ action }) : "{}";
 }
+
+/** Why a move failed, as the Process panel says it. */
+export interface AdvanceFailure {
+    /** The app's status for the move, or null when it never answered. */
+    status: number | null;
+    /** What the app said, its ProblemDetails `detail` or `title` where it sent one. See describeFailure on the server. */
+    message: string;
+    /** What the status usually means here, or null where it says nothing more than the message. */
+    hint: string | null;
+}
+
+const HINT_BY_STATUS: Record<number, string> = {
+    409: "The app validates before it moves, and something did not pass. The Validation panel shows what it found.",
+    403: "The test user is not allowed this action on this task."
+};
+
+/**
+ * What went wrong with a move, or null when it went through.
+ *
+ * A refused move is an answer rather than an error, so it comes back as a result with `ok: false` and
+ * not as a thrown request. The app's own words are on the step that failed: the move is one request, so there is only ever one.
+ */
+export function advanceFailure(result: {
+    ok: boolean;
+    steps: { ok: boolean; status: number | null; error?: string }[];
+    failedAt: string | null;
+}): AdvanceFailure | null {
+    if (result.ok) return null;
+    const step = result.steps.find((each) => !each.ok);
+    const status = step?.status ?? null;
+    return {
+        status,
+        message: step?.error ?? result.failedAt ?? "The move failed.",
+        hint: status === null ? null : (HINT_BY_STATUS[status] ?? null)
+    };
+}
