@@ -10,6 +10,7 @@ import { pairComparisons } from "../lib/comparisons";
 import { dataTypeKindOf } from "../lib/dataTypeGroups";
 import { validationBlockedBy } from "../lib/elementValidation";
 import { heldElement } from "../lib/heldElement";
+import { changeMarks, type AdvanceOutcome } from "../lib/advanceOutcome";
 import { CompareSection } from "./CompareSection";
 import { Dump } from "./Dump";
 import { Modal } from "./Modal";
@@ -32,6 +33,8 @@ interface FetchPanelProps {
      * Passed in because it belongs to the payload panel, which is where it is edited.
      */
     payload: DataElementInput[];
+    /** What the last process move on this instance did, so the elements it touched can say so. */
+    advanceOutcome: AdvanceOutcome | null;
 }
 
 function describeElement(element: DataElementSummary): string {
@@ -44,7 +47,7 @@ function describeElement(element: DataElementSummary): string {
     return bits.join(" · ");
 }
 
-export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }: FetchPanelProps) {
+export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload, advanceOutcome }: FetchPanelProps) {
     /** Whether the content that came back is open in a window of its own. */
     const [showing, setShowing] = useState(false);
 
@@ -65,6 +68,9 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
         process,
         metadata?.metadata.dataTypes?.find((type) => type.id === selected?.dataType)
     );
+
+    /** "new" or "changed" on what the last move touched, so finding them in the list is not a guess. */
+    const marks = useMemo(() => changeMarks(advanceOutcome), [advanceOutcome]);
 
     const element = useDataElementRead(dataGuid, selected?.lastChanged ?? null, validateBlockedBy);
 
@@ -165,7 +171,7 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload }
                             <option value="">Pick one of {dataElements.length}</option>
                             {dataElements.map((element) => (
                                 <option key={element.id} value={element.id}>
-                                    {describeElement(element)}
+                                    {marks.has(element.id) ? `${marks.get(element.id)} · ${describeElement(element)}` : describeElement(element)}
                                 </option>
                             ))}
                         </select>

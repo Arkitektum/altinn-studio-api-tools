@@ -20,6 +20,7 @@ import type { RequestLanguage } from "./lib/requestLanguage";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage, writeStored } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
+import { describeChanges, elementChanges, firstToCheck, type AdvanceOutcome } from "./lib/advanceOutcome";
 import type { PrevalidationSummary } from "./lib/chain";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
@@ -35,7 +36,15 @@ import { PdfModal, type PdfPreview } from "./components/PdfModal";
 import { ValidationPanel } from "./components/ValidationPanel";
 import { TargetPanel } from "./components/TargetPanel";
 import { TokenPanel } from "./components/TokenPanel";
-import type { DataElementInput, ExampleContent, InstanceSummary, ReadInstanceResult, SavedPayload, ValidateResult } from "./types";
+import type {
+    DataElementInput,
+    DataElementSummary,
+    ExampleContent,
+    InstanceSummary,
+    ReadInstanceResult,
+    SavedPayload,
+    ValidateResult
+} from "./types";
 import { Icon } from "./components/Icon";
 
 const EMPTY_ELEMENT: DataElementInput = { dataType: "", content: "" };
@@ -151,8 +160,38 @@ export function App() {
 
     const selectedDataType = selectedElement?.dataType ?? "";
 
-    /** Picking another data element is a different key, so nothing here has to be dropped by hand. */
-    const changeDataGuid = useCallback((next: string) => setPreferredDataGuid(next), []);
+    /**
+     * What the last process move did to the data elements, until another move replaces it. Only
+     * ever about the instance it was made on, so selecting another hides it rather than clearing it:
+     * going back to that instance before checking still has it waiting.
+     */
+    const [advanceOutcome, setAdvanceOutcome] = useState<AdvanceOutcome | null>(null);
+    const shownOutcome = advanceOutcome?.instanceGuid === instanceGuid && instanceGuid ? advanceOutcome : null;
+    /** "1 new" while there is something the move did that you have not been back to look at. */
+    const toCheck = shownOutcome && !shownOutcome.checked ? describeChanges(shownOutcome) : null;
+
+    /**
+     * Picking another data element is a different key, so nothing here has to be dropped by hand.
+     *
+     * Picking one is also going back to look, so it settles a move's follow-up the way the Check
+     * button does.
+     */
+    const changeDataGuid = useCallback((next: string) => {
+        setPreferredDataGuid(next);
+        setAdvanceOutcome((current) => (current && !current.checked ? { ...current, checked: true } : current));
+    }, []);
+
+    /**
+     * The Process panel's way back up: the first element the move touched, selected, and the panel
+     * it is in scrolled to. Focus goes to the select, so a keyboard is left where the eye is.
+     */
+    const checkAdvance = useCallback(() => {
+        const first = shownOutcome ? firstToCheck(shownOutcome) : null;
+        if (first) setPreferredDataGuid(first);
+        setAdvanceOutcome((current) => (current ? { ...current, checked: true } : current));
+        document.getElementById("panel-data-element")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById("dataGuid")?.focus({ preventScroll: true });
+    }, [shownOutcome]);
 
     /** Replaces the held preview, revoking the previous blob url so it is not leaked. */
     const showPdf = useCallback((next: PdfPreview | null) => {
@@ -413,7 +452,11 @@ export function App() {
     });
 
     const advance = useMutation({
-        mutationFn: async (asked: RequestLanguage) => {
+        /*
+         * `before` is the list the move started from, taken when the button was pressed: comparing
+         * the read afterwards against it is how the panel can say what the move did.
+         */
+        mutationFn: async ({ language: asked, before }: { language: RequestLanguage; before: { elements: DataElementSummary[]; at: string } }) => {
             const params = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid };
             // The task the instance is in, which is what names the action. Already read, so this
             // costs no extra request.
@@ -436,9 +479,29 @@ export function App() {
 
             // Named before the move, so the answer lands on the instance that was advanced rather
             // than on whichever is selected when it comes back.
-            return { result, read, key: queryKeys.instance(params.tokenId, org, app, instanceOwnerPartyId, instanceGuid) };
+            return {
+                result,
+                read,
+                before,
+                guid: params.instanceGuid,
+                key: queryKeys.instance(params.tokenId, org, app, instanceOwnerPartyId, instanceGuid)
+            };
         },
-        onSuccess: ({ result, read, key }) => {
+        // A move that fails says nothing about the data elements, so the last one's outcome goes rather than looking like this one's.
+        onMutate: () => setAdvanceOutcome(null),
+        onSuccess: ({ result, read, before, guid, key }) => {
+            if (result.ok && read?.ok) {
+                const changes = elementChanges(before.elements, read.dataElements);
+                setAdvanceOutcome({
+                    instanceGuid: guid,
+                    from: before.at,
+                    to: processLabel(read.process),
+                    ...changes,
+                    total: read.dataElements.length,
+                    // Nothing to go back for when the move touched no element.
+                    checked: describeChanges(changes) === null
+                });
+            }
             /*
              * Nothing here has to preserve which data element was selected: that is a preference
              * read against the list, so one that survived the move stays and one that did not falls
@@ -537,6 +600,7 @@ export function App() {
                     party={instanceOwnerPartyId || null}
                     instance={instanceGuid ? instanceGuid.slice(0, 8) : null}
                     dataElement={selectedDataType || null}
+                    toCheck={toCheck}
                     payload={payloadSummary}
                     prevalidation={prevalidationSummary}
                     post={{ stored: instanceDataElements.length }}
@@ -638,6 +702,7 @@ export function App() {
                             id="panel-data-element"
                             dataGuid={dataGuid}
                             onDataGuidChange={changeDataGuid}
+                            advanceOutcome={shownOutcome}
                             payload={dataElements}
                         />
 
@@ -663,7 +728,11 @@ export function App() {
                         <ProcessPanel
                             notReady={waiting.process ?? (instanceProcess ? null : "Reading the instance…")}
                             process={instanceProcess}
-                            onAdvance={() => advance.mutate(language)}
+                            onAdvance={() =>
+                                advance.mutate({ language, before: { elements: instanceDataElements, at: processLabel(instanceProcess) } })
+                            }
+                            outcome={shownOutcome}
+                            onCheck={checkAdvance}
                             language={language}
                             onLanguageChange={setLanguage}
                             busy={advance.isPending}

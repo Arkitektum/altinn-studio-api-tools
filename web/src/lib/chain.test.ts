@@ -9,6 +9,7 @@ const nothing: ChainInputs = {
     party: null,
     instance: null,
     dataElement: null,
+    toCheck: null,
     payload: { elements: 1, ready: false },
     prevalidation: { run: false, stale: false, outstanding: 0, errors: 0, warnings: 0 },
     post: { stored: 0 },
@@ -141,6 +142,18 @@ describe("requestChain", () => {
         const onInstance = { ...onApp, party: "510001", instance: "99d0632c" };
         assert.equal(step(onInstance, "Data element")?.state, "next");
         assert.equal(step({ ...onInstance, dataElement: "ET" }, "Data element")?.state, "done");
+    });
+
+    /*
+     * The step back up after Process. The panel sits above it, so the rail is what says a move has
+     * left something there to read again.
+     */
+    it("reopens the data element after a process move touched one, until you have looked", () => {
+        const looked = { ...onApp, party: "510001", instance: "99d0632c", dataElement: "ET" };
+        const moved = { ...looked, toCheck: "1 new" };
+        assert.equal(step(moved, "Data element")?.state, "next");
+        assert.equal(step(moved, "Data element")?.value, "1 new to check");
+        assert.equal(step(looked, "Data element")?.value, "ET");
     });
 
     /*

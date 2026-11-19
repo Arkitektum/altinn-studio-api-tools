@@ -93,6 +93,11 @@ export interface ChainInputs {
     instance: string | null;
     /** The data type of the selected data element. */
     dataElement: string | null;
+    /**
+     * What the last process move did to the data elements, "1 new, 1 changed", while you have not
+     * been back to look. Null when it touched none or you have. See lib/advanceOutcome.ts.
+     */
+    toCheck: string | null;
     payload: PayloadSummary;
     prevalidation: PrevalidationSummary | null;
     post: PostSummary;
@@ -256,14 +261,20 @@ export function requestChain(inputs: ChainInputs): ChainStep[] {
             reachable: hasParty && inputs.payload.ready,
             done: inputs.post.stored > 0
         },
-        // A new instance has no data elements yet, so this waits on a real one rather than on the
-        // row that stands for making one.
+        /*
+         * A new instance has no data elements yet, so this waits on a real one rather than on the
+         * row that stands for making one.
+         *
+         * A process move can add elements and write to the ones there, so it reopens this step
+         * even though it sits above Process: the rail is the one place that can say "go back up"
+         * without you having to know the move did anything.
+         */
         {
             label: "Data element",
-            value: inputs.dataElement,
+            value: inputs.toCheck ? `${inputs.toCheck} to check` : inputs.dataElement,
             anchor: "panel-data-element",
             reachable: Boolean(inputs.instance),
-            done: Boolean(inputs.dataElement)
+            done: Boolean(inputs.dataElement) && !inputs.toCheck
         },
         /*
          * A render describes an instance, so it needs one. Done means the pdf in hand still

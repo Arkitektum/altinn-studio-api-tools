@@ -1123,6 +1123,73 @@ describe("App", () => {
     });
 
     /*
+     * Moving the process on is where the app adds and writes data elements, and the panel that reads
+     * them is above Process. So after a move the Process panel says what it did, the rail reopens
+     * Data element, and the button takes you back up to the first element the move touched.
+     */
+    it("leads back to the data elements after a process move, until you have looked", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
+        const before = instanceRead(A, "ET");
+        let moved = false;
+        const after = {
+            ...before,
+            dataElements: [
+                { ...before.dataElements[0]!, lastChanged: "2026-11-19T10:00:00Z" },
+                { id: "pdf-1", dataType: "ref-data-as-pdf", contentType: "application/pdf", filename: "Skjema.pdf", size: 2048, lastChanged: null }
+            ],
+            process: { taskId: "Task_2", taskType: "signing", ended: null, currentTask: "Task_2" }
+        };
+
+        // jsdom lays nothing out, so it has no scrolling either. Where the button scrolls to is the click's to check, not this.
+        const proto = window.HTMLElement.prototype as { scrollIntoView?: () => void };
+        const scrolled: string[] = [];
+        const had = proto.scrollIntoView;
+        proto.scrollIntoView = function (this: HTMLElement) {
+            scrolled.push(this.id);
+        };
+        t.after(() => {
+            proto.scrollIntoView = had;
+        });
+
+        const { app } = await mount(t, {
+            ...boot,
+            "GET /api/instances": () => (moved ? after : before),
+            "PUT /api/instances/process/next": () => {
+                moved = true;
+                return { ok: true, steps: [], failedAt: null, instanceOwnerPartyId: "510001", instanceGuid: A, process: after.process };
+            },
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        const railState = () =>
+            [...app.container.querySelectorAll(".rail__step")]
+                .find((row) => row.querySelector(".rail__label")?.textContent === "Data element")
+                ?.className.match(/rail__step--(\w+)/)?.[1];
+        assert.equal(railState(), "done", "a read instance with an element selected is settled");
+        assert.equal(app.container.querySelector("#panel-process .notice"), null, "and there is nothing to follow up before a move");
+
+        await click(app, find(app, "#panel-process .btn--put"));
+        await app.wait(100);
+
+        const followUp = find(app, "#panel-process .notice");
+        assert.match(followUp.textContent ?? "", /Moved from Task_1 to Task_2/);
+        assert.match(followUp.textContent ?? "", /2 data elements, 1 new, 1 changed: ref-data-as-pdf \(Skjema\.pdf\), ET/);
+        assert.equal(railValue(app, "Data element"), "1 new, 1 changed to check");
+        assert.equal(railState(), "next", "the rail should send you back up");
+        assert.match(elementsListed(app), /new · ref-data-as-pdf/, "and the list should say which ones");
+        assert.match(elementsListed(app), /changed · ET/);
+
+        await click(app, findByText(app, "#panel-process button", "Check data elements"));
+        assert.equal(find<HTMLSelectElement>(app, "#dataGuid").value, "pdf-1", "the first new element should be picked");
+        assert.deepEqual(scrolled, ["panel-data-element"]);
+        assert.equal(railState(), "done", "and having looked settles the rail again");
+        assert.equal(railValue(app, "Data element"), "ref-data-as-pdf");
+    });
+
+    /*
      * A pdf data element opens in the browser's viewer rather than as a line saying it is a file, and is known by its
      * first bytes as well as its content type, since an attachment can be stored as octet-stream. Anything else that
      * is not text still says so.
