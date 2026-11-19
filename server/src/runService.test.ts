@@ -211,6 +211,89 @@ describe("sequential mode: create then upload", () => {
         assert.deepEqual(advanced, [`/instances/510001/${GUID}/process/next?lang=nn`, `/instances/510001/${GUID}/process/next`]);
     });
 
+    /*
+     * What the post left and what the move did are told apart by reading the instance in between, so
+     * the web can say what the move itself added. Only a run that advances pays for that read.
+     */
+    it("reads the instance just before advancing, and returns what it held", async () => {
+        const reads = [
+            {
+                id: `510001/${GUID}`,
+                data: [{ id: "data-1", dataType: "ET", lastChanged: "t1" }],
+                process: { started: "s", currentTask: { elementId: "Task_1", altinnTaskType: "data" } }
+            },
+            {
+                id: `510001/${GUID}`,
+                data: [
+                    { id: "data-1", dataType: "ET", lastChanged: "t2" },
+                    { id: "pdf-1", dataType: "ref-data-as-pdf" }
+                ]
+            }
+        ];
+        const routes = (): Parameters<typeof stubAltinn>[0] => [
+            ["GET applicationmetadata", () => metadata(ET_FORM)],
+            [
+                "POST /instances?instanceOwnerPartyId",
+                () => ({ status: 201, json: { id: `510001/${GUID}`, data: [{ id: "data-1", dataType: "ET" }] } })
+            ],
+            ["PUT /data/data-1", () => ({ json: {} })],
+            ["PUT /process/next", () => ({ json: { currentTask: null } })],
+            [`GET /instances/510001/${GUID}`, () => ({ json: reads.shift() })]
+        ];
+
+        const stub = stubAltinn(routes());
+        active = stub;
+        const result = await postDataToApp("test-token", { ...baseRequest, dataElements: [{ dataType: "ET", content: "{}" }], advanceProcess: true });
+
+        const names = result.steps.map((step) => step.name);
+        const at = (name: string) => names.indexOf(name);
+        assert.ok(at('Replace data element "ET"') >= 0 && at('Replace data element "ET"') < at("Read instance before advancing"), names.join(" | "));
+        assert.ok(at("Read instance before advancing") < at("Advance process to next task"), "the read sits between the upload and the move");
+        assert.deepEqual(
+            result.advanced?.dataElements.map((element) => [element.id, element.lastChanged]),
+            [["data-1", "t1"]],
+            "the elements as they were before the move, not after"
+        );
+        assert.equal(result.advanced?.process?.currentTask, "Task_1");
+    });
+
+    it("leaves a run that does not advance as it was, and goes on when the read before the move fails", async () => {
+        const quiet = stubAltinn([
+            ["GET applicationmetadata", () => metadata(ET_FORM)],
+            [
+                "POST /instances?instanceOwnerPartyId",
+                () => ({ status: 201, json: { id: `510001/${GUID}`, data: [{ id: "data-1", dataType: "ET" }] } })
+            ],
+            ["PUT /data/data-1", () => ({ json: {} })],
+            [`GET /instances/510001/${GUID}`, () => ({ json: { id: `510001/${GUID}` } })]
+        ]);
+        active = quiet;
+        const plain = await postDataToApp("test-token", { ...baseRequest, dataElements: [{ dataType: "ET", content: "{}" }] });
+        assert.equal(plain.advanced, undefined);
+        assert.equal(plain.steps.filter((step) => step.name === "Read instance before advancing").length, 0);
+        quiet.restore();
+
+        let instanceReads = 0;
+        const failing = stubAltinn([
+            ["GET applicationmetadata", () => metadata(ET_FORM)],
+            [
+                "POST /instances?instanceOwnerPartyId",
+                () => ({ status: 201, json: { id: `510001/${GUID}`, data: [{ id: "data-1", dataType: "ET" }] } })
+            ],
+            ["PUT /data/data-1", () => ({ json: {} })],
+            ["PUT /process/next", () => ({ json: { currentTask: null } })],
+            [
+                `GET /instances/510001/${GUID}`,
+                () => (++instanceReads === 1 ? { status: 500, json: { detail: "down" } } : { json: { id: `510001/${GUID}` } })
+            ]
+        ]);
+        active = failing;
+        const moved = await postDataToApp("test-token", { ...baseRequest, dataElements: [{ dataType: "ET", content: "{}" }], advanceProcess: true });
+        assert.equal(moved.ok, true, "the move still goes ahead");
+        assert.ok(failing.calls.some((call) => call.url.includes("/process/next")));
+        assert.equal(moved.advanced, undefined);
+    });
+
     it("still posts when application metadata cannot be read", async () => {
         const stub = stubAltinn([
             ["GET applicationmetadata", () => ({ status: 401, json: { detail: "nope" } })],

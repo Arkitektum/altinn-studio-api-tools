@@ -21,7 +21,7 @@ import type { RequestLanguage } from "./lib/requestLanguage";
 import { neededExamples, refKey, removePayload, restoreElements, toSavedPayload, upsertPayload } from "./lib/savedPayloads";
 import { useLocalStorage, writeStored } from "./lib/useLocalStorage";
 import { readiness } from "./lib/readiness";
-import { describeChanges, elementChanges, firstToCheck, type AdvanceOutcome } from "./lib/advanceOutcome";
+import { buildOutcome, describeChanges, firstToCheck, type AdvanceOutcome } from "./lib/advanceOutcome";
 import type { PrevalidationSummary } from "./lib/chain";
 import { Chain } from "./components/Chain";
 import { ErrorNotice } from "./components/Notice";
@@ -42,6 +42,7 @@ import type {
     DataElementSummary,
     ExampleContent,
     InstanceSummary,
+    ProcessSummary,
     ReadInstanceResult,
     SavedPayload,
     ValidateResult
@@ -457,7 +458,13 @@ export function App() {
          * `before` is the list the move started from, taken when the button was pressed: comparing
          * the read afterwards against it is how the panel can say what the move did.
          */
-        mutationFn: async ({ language: asked, before }: { language: RequestLanguage; before: { elements: DataElementSummary[]; at: string } }) => {
+        mutationFn: async ({
+            language: asked,
+            before
+        }: {
+            language: RequestLanguage;
+            before: { dataElements: DataElementSummary[]; process: ProcessSummary | null };
+        }) => {
             const params = { tokenId: activeTokenId ?? "", org, app, instanceOwnerPartyId, instanceGuid };
             // The task the instance is in, which is what names the action. Already read, so this
             // costs no extra request.
@@ -491,18 +498,7 @@ export function App() {
         // A move that fails says nothing about the data elements, so the last one's outcome goes rather than looking like this one's.
         onMutate: () => setAdvanceOutcome(null),
         onSuccess: ({ result, read, before, guid, key }) => {
-            if (result.ok && read?.ok) {
-                const changes = elementChanges(before.elements, read.dataElements);
-                setAdvanceOutcome({
-                    instanceGuid: guid,
-                    from: before.at,
-                    to: processLabel(read.process),
-                    ...changes,
-                    total: read.dataElements.length,
-                    // Nothing to go back for when the move touched no element.
-                    checked: describeChanges(changes) === null
-                });
-            }
+            if (result.ok && read?.ok) setAdvanceOutcome(buildOutcome(guid, before, read));
             /*
              * Nothing here has to preserve which data element was selected: that is a preference
              * read against the list, so one that survived the move stays and one that did not falls
@@ -694,6 +690,7 @@ export function App() {
                             language={language}
                             onLanguageChange={setLanguage}
                             prevalidation={prevalidationSummary}
+                            onAdvanced={setAdvanceOutcome}
                         />
 
                         <span className="group">Inspect</span>
@@ -729,9 +726,7 @@ export function App() {
                         <ProcessPanel
                             notReady={waiting.process ?? (instanceProcess ? null : "Reading the instance…")}
                             process={instanceProcess}
-                            onAdvance={() =>
-                                advance.mutate({ language, before: { elements: instanceDataElements, at: processLabel(instanceProcess) } })
-                            }
+                            onAdvance={() => advance.mutate({ language, before: { dataElements: instanceDataElements, process: instanceProcess } })}
                             failure={advance.data && advance.data.guid === instanceGuid ? advanceFailure(advance.data.result) : null}
                             outcome={shownOutcome}
                             onCheck={checkAdvance}

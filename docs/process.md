@@ -32,7 +32,11 @@ A successful move is followed by a `GET` of the instance, folded into the same l
 
 The data element selected before the move stays selected where it survived it, since the panels below are about that element, and otherwise the first of whatever the instance holds now is picked.
 
-The app validates before it moves, so a refusal here is usually validation talking, and it lands in the run log with the app's own reason rather than as an error that hides it. The move answers with the process it landed in, so the panel updates without another read, and a refused move leaves the task the instance is still in on screen rather than blanking it.
+The panel then says what the move did, comparing the data elements before and after: "Moved from Task_1 to Task_2. The instance holds 3 data elements, 1 new: ref-data-as-pdf". New is an element that was not there before, changed is one whose `lastChanged` moved. The Data element panel sits above Process, so **Check data elements** takes you back up to the first element the move touched, the rail's Data element row reopens with "1 new to check" until you have been there, and the select marks each touched element "new" or "changed". A move that touched nothing says so and reopens nothing.
+
+A Post run with **Sign and submit once it is posted** ticked follows up the same way. The run reads the instance just before it moves it on, so what the post itself wrote is not counted as something the move did.
+
+The app validates before it moves, so a refusal here is usually validation talking. The panel shows it under the button, the status and the app's own reason ("Could not move out of Task_1 (500)", then the ProblemDetails `detail`), with a hint for a 409 (validation did not pass) and a 403 (the test user is not allowed the action). The run log has the whole response. The move answers with the process it landed in, so the panel updates without another read, and a refused move leaves the task the instance is still in on screen rather than blanking it.
 
 An ended process hides the button, since there is nowhere left to go. Post to a new instance to walk it again.
 

@@ -1,3 +1,4 @@
+import type { AdvanceOutcome } from "../lib/advanceOutcome";
 import { usePostRun } from "../writes";
 import { postBlockers } from "../lib/postBlockers";
 import { useSession } from "../session";
@@ -20,6 +21,8 @@ interface PostPanelProps {
     onLanguageChange: (language: RequestLanguage) => void;
     /** What the service last said, or null when it is switched off. Only for the note above the button. */
     prevalidation: PrevalidationSummary | null;
+    /** What a run that advanced did to the data elements, for the Process panel to follow up on. */
+    onAdvanced: (outcome: AdvanceOutcome) => void;
 }
 
 /**
@@ -39,10 +42,11 @@ export function PostPanel({
     onAdvanceProcessChange,
     language,
     onLanguageChange,
-    prevalidation
+    prevalidation,
+    onAdvanced
 }: PostPanelProps) {
     const { org, app, tokenUsable, partyId, instanceGuid } = useSession();
-    const post = usePostRun();
+    const post = usePostRun(onAdvanced);
 
     /** What the post is still missing, all of it at once. See lib/postBlockers.ts. */
     const blockers = postBlockers({ hasToken: tokenUsable, org, app, party: partyId, elements: dataElements });

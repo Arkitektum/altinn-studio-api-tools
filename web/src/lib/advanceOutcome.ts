@@ -1,4 +1,5 @@
-import type { DataElementSummary } from "../types";
+import type { DataElementSummary, ProcessSummary } from "../types";
+import { processLabel } from "./format";
 
 /**
  * What a process move did to the instance, as the Process panel reports it and the rail follows up on.
@@ -64,4 +65,27 @@ export function changeMarks(outcome: AdvanceOutcome | null): Map<string, "new" |
     for (const element of outcome.added) marks.set(element.id, "new");
     for (const element of outcome.changed) marks.set(element.id, "changed");
     return marks;
+}
+
+/**
+ * The outcome of a move, from the instance as it stood just before it and as it was read afterwards.
+ *
+ * Shared by the Process panel's button and a Post run that advances, so the two say the same thing
+ * about the same kind of move. A move that touched no element starts out checked, since there is
+ * nothing to go back for.
+ */
+export function buildOutcome(
+    instanceGuid: string,
+    before: { dataElements: DataElementSummary[]; process: ProcessSummary | null },
+    after: { dataElements: DataElementSummary[]; process: ProcessSummary | null }
+): AdvanceOutcome {
+    const changes = elementChanges(before.dataElements, after.dataElements);
+    return {
+        instanceGuid,
+        from: processLabel(before.process),
+        to: processLabel(after.process),
+        ...changes,
+        total: after.dataElements.length,
+        checked: describeChanges(changes) === null
+    };
 }

@@ -223,6 +223,8 @@ export interface RunResult {
     instanceGuid: string | null;
     instance: unknown;
     failedAt: string | null;
+    /** The instance just before a run moved it on. Only on a run that advanced, and absent when that read failed. */
+    advanced?: { dataElements: DataElementSummary[]; process: ProcessSummary | null };
 }
 
 // ---------------------------------------------------------------- catalogue & examples

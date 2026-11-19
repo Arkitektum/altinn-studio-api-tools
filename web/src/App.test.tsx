@@ -1190,6 +1190,67 @@ describe("App", () => {
     });
 
     /*
+     * A Post run that signs and submits moves the process too, so it follows up the same way. What the
+     * post itself wrote is not the move's doing: the run read the instance just before moving it, and
+     * that is what the follow-up compares against.
+     */
+    it("follows up a Post run that advanced, counting only what the move did", async (t) => {
+        seed({
+            org: "dibk",
+            app: "et-v4",
+            partyId: "510001",
+            instanceGuid: A,
+            advanceProcess: true,
+            dataElements: [{ dataType: "ET", content: "<ettrinn />" }]
+        });
+        const before = instanceRead(A, "ET");
+        // The post rewrote the form, so its timestamp moved before the process did.
+        const posted = { ...before.dataElements[0]!, lastChanged: "2026-11-19T10:00:00Z" };
+        const after = {
+            ...before,
+            dataElements: [
+                posted,
+                { id: "pdf-1", dataType: "ref-data-as-pdf", contentType: "application/pdf", filename: "Skjema.pdf", size: 2048, lastChanged: null }
+            ],
+            process: { taskId: "Task_2", taskType: "signing", ended: null, currentTask: "Task_2" }
+        };
+        let ran = false;
+
+        const { app } = await mount(t, {
+            ...boot,
+            "POST /api/runs": () => {
+                ran = true;
+                return {
+                    ok: true,
+                    mode: "existing",
+                    steps: [],
+                    instanceOwnerPartyId: "510001",
+                    instanceGuid: A,
+                    instance: {},
+                    failedAt: null,
+                    advanced: {
+                        dataElements: [posted],
+                        process: { currentTask: "Task_1", taskType: "data", started: null, ended: null, endEvent: null }
+                    }
+                };
+            },
+            "GET /api/instances": () => (ran ? after : before),
+            "GET /api/instances/validate": emptyValidation,
+            "GET /api/instances/data-element": elementRead,
+            "GET /api/instances/data-element/validate": emptyValidation
+        });
+        await app.wait(700);
+
+        await click(app, find(app, "button.btn--fire"));
+        await app.wait(900);
+
+        const followUp = find(app, "#panel-process .notice--ok");
+        assert.match(followUp.textContent ?? "", /Moved from Task_1 to Task_2/);
+        assert.match(followUp.textContent ?? "", /2 data elements, 1 new: ref-data-as-pdf/, "the form the post wrote is not counted as changed");
+        assert.equal(railValue(app, "Data element"), "1 new to check");
+    });
+
+    /*
      * A refused move is an answer rather than a thrown request, so the panel has to say it itself. It
      * used to stop spinning and show nothing, with the reason only in the run log.
      */

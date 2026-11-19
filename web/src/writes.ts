@@ -6,6 +6,7 @@ import { useAppRead, useInstanceRead } from "./reads";
 import { useRunLog } from "./runLog";
 import { useSession } from "./session";
 import { logFromRun, logFromValidationReport } from "./lib/logResults";
+import { buildOutcome, type AdvanceOutcome } from "./lib/advanceOutcome";
 import { buildValidationRequest, sameSubmission } from "./lib/validationRequest";
 import { parseValidationReport, requirementsFrom, type Prevalidation } from "./lib/validationReport";
 import type { RequestLanguage } from "./lib/requestLanguage";
@@ -29,7 +30,7 @@ const EMPTY_TYPES: AppDataType[] = [];
  * in either follow-up must not mask a successful post, so each degrades to null with its own step
  * still in the log.
  */
-export function usePostRun() {
+export function usePostRun(onAdvanced?: (outcome: AdvanceOutcome) => void) {
     const { tokenId, org, app, partyId, instanceGuid, setInstanceGuid } = useSession();
     const { append, markSelected } = useRunLog();
     const queryClient = useQueryClient();
@@ -104,7 +105,17 @@ export function usePostRun() {
              */
             if (payload.instanceGuid) markSelected(payload.instanceGuid);
 
-            append(logFromRun(payload, await followUp(payload)));
+            const read = await followUp(payload);
+            append(logFromRun(payload, read));
+
+            /*
+             * A run that moved the process follows up the way the Process panel's button does. The
+             * run read the instance just before the move, so what the post put there is not counted
+             * as something the move did.
+             */
+            if (payload.ok && payload.advanced && payload.instanceGuid && read.instance?.ok) {
+                onAdvanced?.(buildOutcome(payload.instanceGuid, payload.advanced, read.instance));
+            }
             return payload;
         },
         onSuccess: (payload) => {

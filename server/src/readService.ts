@@ -344,6 +344,18 @@ export async function listInstances(
     };
 }
 
+/**
+ * The data elements and the process an instance body describes, the way every panel reads them.
+ * One function, so a run and a read cannot describe the same instance differently.
+ */
+export function summariseInstance(instance: unknown): { dataElements: DataElementSummary[]; process: ProcessSummary | null } {
+    const rawData = instance && typeof instance === "object" ? (instance as Record<string, unknown>)["data"] : undefined;
+    return {
+        dataElements: Array.isArray(rawData) ? rawData.map(toSummary).filter((element): element is DataElementSummary => element !== null) : [],
+        process: toProcess(instance)
+    };
+}
+
 /** GET {app}/instances/{party}/{guid} */
 export async function readInstance(token: string, request: ReadRequest): Promise<ReadInstanceResult> {
     const recorder = new StepRecorder();
@@ -352,8 +364,7 @@ export async function readInstance(token: string, request: ReadRequest): Promise
     const response = await recorder.run("Get instance", "GET", url, () => altinnFetch({ url, token }));
 
     const instance = response.ok ? response.body : null;
-    const rawData = instance && typeof instance === "object" ? (instance as Record<string, unknown>)["data"] : undefined;
-    const dataElements = Array.isArray(rawData) ? rawData.map(toSummary).filter((element): element is DataElementSummary => element !== null) : [];
+    const { dataElements, process } = summariseInstance(instance);
 
     return {
         ok: response.ok,
@@ -363,7 +374,7 @@ export async function readInstance(token: string, request: ReadRequest): Promise
         instanceGuid: request.instanceGuid,
         instance,
         dataElements,
-        process: toProcess(instance)
+        process
     };
 }
 

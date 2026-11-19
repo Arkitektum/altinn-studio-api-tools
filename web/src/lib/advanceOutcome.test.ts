@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { changeMarks, describeChanges, elementChanges, firstToCheck, type AdvanceOutcome } from "./advanceOutcome";
+import { buildOutcome, changeMarks, describeChanges, elementChanges, firstToCheck, type AdvanceOutcome } from "./advanceOutcome";
 import type { DataElementSummary } from "../types";
 
 function element(id: string, lastChanged: string | null): DataElementSummary {
@@ -73,5 +73,34 @@ describe("changeMarks", () => {
             ]
         );
         assert.equal(changeMarks(null).size, 0);
+    });
+});
+
+describe("buildOutcome", () => {
+    it("names where the move went from and to, and what it touched, against the instance just before it", () => {
+        const built = buildOutcome(
+            "g",
+            {
+                dataElements: [element("form", "t1")],
+                process: { currentTask: "Task_1", taskType: "data", started: null, ended: null, endEvent: null }
+            },
+            {
+                dataElements: [element("form", "t1"), element("pdf", "t2")],
+                process: { currentTask: "Task_2", taskType: "signing", started: null, ended: null, endEvent: null }
+            }
+        );
+        assert.equal(built.from, "Task_1");
+        assert.equal(built.to, "Task_2");
+        assert.deepEqual(
+            built.added.map((each) => each.id),
+            ["pdf"]
+        );
+        assert.equal(built.total, 2);
+        assert.equal(built.checked, false, "something to go back for");
+    });
+
+    it("starts out checked when the move touched nothing", () => {
+        const same = { dataElements: [element("form", "t1")], process: null };
+        assert.equal(buildOutcome("g", same, same).checked, true);
     });
 });

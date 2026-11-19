@@ -3,6 +3,7 @@ import { StepRecorder, type RunStep } from "./stepRecorder.js";
 import { buildMultipart, type MultipartPart } from "./multipart.js";
 import { appBaseUrl } from "./urls.js";
 import { advanceBody, taskTypeOf } from "./processAction.js";
+import { summariseInstance, type DataElementSummary, type ProcessSummary } from "./readService.js";
 import { fetchApplicationMetadata, resolveContentType, type AppDataType, type ApplicationMetadata } from "./appService.js";
 
 export type { RunStep };
@@ -50,6 +51,12 @@ export interface RunResult {
     instanceGuid: string | null;
     instance: unknown;
     failedAt: string | null;
+    /**
+     * The instance as it stood just before the run moved it on, so what the move itself did can be
+     * told apart from what the post did. Only on a run that advanced, and absent when the read
+     * before the move failed.
+     */
+    advanced?: { dataElements: DataElementSummary[]; process: ProcessSummary | null };
 }
 
 interface InstanceDataElement {
@@ -279,7 +286,17 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
         await recorder.run("Validate instance", "GET", url, () => altinnFetch({ url, token }));
     }
 
+    let advanced: RunResult["advanced"];
     if (request.advanceProcess) {
+        /*
+         * One more read, and only in a run that advances. What the post left is not what the move
+         * started from once the app has had its say, and only here is the moment in between seen.
+         * A failed read leaves the move to go ahead without it rather than stopping the run.
+         */
+        const beforeUrl = `${base}/instances/${partyId}/${guid}`;
+        const before = await recorder.run("Read instance before advancing", "GET", beforeUrl, () => altinnFetch({ url: beforeUrl, token }));
+        if (before.ok) advanced = summariseInstance(before.body);
+
         const search = request.language ? `?${new URLSearchParams({ lang: request.language })}` : "";
         const url = `${base}/instances/${partyId}/${guid}/process/next${search}`;
         // The action goes with the task the instance is in, and the instance says which that is,
@@ -309,7 +326,8 @@ export async function postDataToApp(token: string, request: RunRequest): Promise
         instanceOwnerPartyId: partyId,
         instanceGuid: guid,
         instance,
-        failedAt: null
+        failedAt: null,
+        ...(advanced ? { advanced } : {})
     };
 }
 
