@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { partyLabel } from "../lib/format";
+import { partyChoice } from "../lib/partyChoice";
 import { ErrorNotice } from "./Notice";
 import { Panel } from "./Panel";
 import type { AppMetadataResponse, AppParty, CatalogueApp } from "../types";
@@ -67,22 +67,7 @@ export function TargetPanel({
         if (entry) onPickCatalogueApp(entry);
     }
 
-    // Altinn nests subunits under their parent org, so flatten for the picker.
-    const flatParties: AppParty[] = parties.flatMap((party) => [party, ...(party.childParties ?? [])]);
-
-    /**
-     * What the party select offers. The parties the app says this token may instantiate for,
-     * plus the current value when it is not among them, which happens with a party prefilled
-     * from the token claim before the app has been read, or one the app does not list. Without
-     * that the select would show no selection, and there is no field to type it in.
-     */
-    const partyOptions: { value: string; label: string }[] = flatParties.map((entry) => ({
-        value: String(entry.partyId),
-        label: partyLabel(entry)
-    }));
-    if (instanceOwnerPartyId && !partyOptions.some((option) => option.value === instanceOwnerPartyId)) {
-        partyOptions.unshift({ value: instanceOwnerPartyId, label: `${instanceOwnerPartyId} · from the token` });
-    }
+    const { options: partyOptions, unlisted } = partyChoice(parties, instanceOwnerPartyId);
 
     return (
         <Panel
@@ -186,6 +171,12 @@ export function TargetPanel({
                         ? "Read from the app, which needs a token and an app above."
                         : "The parties this token may instantiate for, read from the app."}
                 </p>
+                {unlisted && (
+                    <div className="notice notice--warn above-s">
+                        The app does not list party {instanceOwnerPartyId} for this user, so creating an instance for it will most likely be refused
+                        with 403 Forbidden. Pick one of the listed parties, or switch to a user who may act for it.
+                    </div>
+                )}
             </div>
         </Panel>
     );

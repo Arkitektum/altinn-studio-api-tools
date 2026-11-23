@@ -598,6 +598,24 @@ describe("App", () => {
         assert.equal(findByText(app, "#panel-payload button", "Open").textContent, "Open", "nothing saved, so nothing to open");
     });
 
+    /*
+     * A party chosen for one test user stays when switching to another, and Altinn answers the post
+     * with a bare 403 when the new user may not act for it. The app's party list already says so.
+     */
+    it("warns when the chosen party is not one the app lists for this user", async (t) => {
+        seed({ org: "dibk", app: "et-v4", partyId: "500700" });
+        const parties = { ...boot, "GET /api/app/parties": [{ partyId: 510001, name: "Pengelens Partner" }] };
+
+        const { app } = await mount(t, parties);
+        await app.wait(700);
+
+        assert.match(app.container.querySelector("#panel-target .notice--warn")?.textContent ?? "", /does not list party 500700 for this user/);
+        assert.equal(find<HTMLSelectElement>(app, "#party").value, "500700", "the choice is kept, only questioned");
+
+        await choose(app, find<HTMLSelectElement>(app, "#party"), "510001");
+        assert.equal(app.container.querySelector("#panel-target .notice--warn")?.textContent ?? null, null, "a listed party needs no warning");
+    });
+
     it("drops the instance when the target moves to another app", async (t) => {
         seed({ org: "dibk", app: "et-v4", partyId: "510001", instanceGuid: A });
 
