@@ -540,9 +540,17 @@ describe("validateInstance", () => {
 });
 
 describe("validateDataElement", () => {
-    it("validates one data element and keeps its guid", async () => {
+    const OTHER_DATA_GUID = "0b3c5d7e-9f1a-4b2c-8d3e-4f5a6b7c8d9e";
+
+    it("asks for the instance's validation, which Altinn 9 kept, and keeps the data element's issues", async () => {
         const stub = stubAltinn(() => ({
-            body: JSON.stringify([ISSUES[0]]),
+            body: JSON.stringify([
+                { severity: 1, code: "required", description: "Feltet er obligatorisk.", field: "tiltakshaver", dataElementId: DATA_GUID },
+                { severity: 2, code: "advice", description: "Anbefalt felt mangler.", field: "epost", dataElementId: DATA_GUID },
+                { severity: 1, code: "required", description: "Mangler kommunenummer.", field: "eiendom", dataElementId: OTHER_DATA_GUID },
+                ISSUES[3],
+                "not-an-object"
+            ]),
             contentType: "application/json"
         }));
         active = stub;
@@ -550,16 +558,22 @@ describe("validateDataElement", () => {
         const result = await validateDataElement("test-token", { ...target, dataGuid: DATA_GUID });
 
         assert.equal(result.ok, true);
-        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/data/${DATA_GUID}/validate`);
+        // Altinn 9 answers .../data/{guid}/validate with 404.
+        assert.equal(stub.calls[0]?.url, `${APP_BASE}/instances/510001/${GUID}/validate`);
         assert.equal(result.steps[0]?.name, "Validate data element");
         assert.equal(result.dataGuid, DATA_GUID);
-        assert.deepEqual(result.counts, { errors: 1, warnings: 0, other: 0 });
+        // Another element's issue and the one naming no element are left to the instance's validation.
+        assert.deepEqual(
+            result.issues.map((issue) => issue.field),
+            ["tiltakshaver", "epost"]
+        );
+        assert.deepEqual(result.counts, { errors: 1, warnings: 1, other: 0 });
     });
 
-    it("reports an unknown data guid without throwing", async () => {
+    it("reports a failure without throwing", async () => {
         const stub = stubAltinn(() => ({
             status: 404,
-            body: JSON.stringify({ detail: "Data element not found" }),
+            body: JSON.stringify({ detail: "Not found" }),
             contentType: "application/json"
         }));
         active = stub;
@@ -567,6 +581,7 @@ describe("validateDataElement", () => {
         const result = await validateDataElement("test-token", { ...target, dataGuid: "nope" });
         assert.equal(result.ok, false);
         assert.equal(result.failedAt, "Could not validate the data element.");
+        assert.deepEqual(result.counts, { errors: 0, warnings: 0, other: 0 });
     });
 });
 

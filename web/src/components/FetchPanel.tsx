@@ -188,7 +188,8 @@ export function FetchPanel({ notReady, id, dataGuid, onDataGuidChange, payload, 
                                 <span style={{ color: "var(--warn)" }}>{validateBlockedBy}</span>
                             ) : (
                                 <>
-                                    <CallUrl method="GET" url={`${instance}/data/${dataGuid}/validate`} />
+                                    {/* Altinn 9 removed .../data/{guid}/validate, so this is the instance's, kept to this element. */}
+                                    <CallUrl method="GET" url={`${instance}/validate`} />
                                 </>
                             )}
                         </p>

@@ -722,14 +722,23 @@ export async function validateInstance(token: string, request: ReadRequest): Pro
     };
 }
 
-/** GET {app}/instances/{party}/{guid}/data/{dataGuid}/validate */
+/**
+ * GET {app}/instances/{party}/{guid}/validate, keeping the issues that name the data element.
+ *
+ * Altinn 9 removed `GET .../data/{dataGuid}/validate` and points to the instance's validation instead, which has no
+ * way to ask for one data element. Its issues carry `dataElementId`, so the data element's own are picked out here.
+ * Apps on Altinn 8 answer the same endpoint the same way.
+ */
 export async function validateDataElement(token: string, request: ReadRequest & { dataGuid: string }): Promise<ValidateResult> {
     const recorder = new StepRecorder();
-    const url = `${appBaseUrl(request.org, request.app)}/instances/${
-        request.instanceOwnerPartyId
-    }/${request.instanceGuid}/data/${request.dataGuid}/validate`;
+    const url = `${appBaseUrl(request.org, request.app)}/instances/${request.instanceOwnerPartyId}/${request.instanceGuid}/validate`;
 
     const response = await recorder.run("Validate data element", "GET", url, () => altinnFetch({ url, token }));
+    const issues = Array.isArray(response.body)
+        ? response.body.filter(
+              (issue) => issue && typeof issue === "object" && (issue as Record<string, unknown>)["dataElementId"] === request.dataGuid
+          )
+        : null;
 
     return {
         ok: response.ok,
@@ -737,6 +746,6 @@ export async function validateDataElement(token: string, request: ReadRequest & 
         failedAt: response.ok ? null : "Could not validate the data element.",
         instanceGuid: request.instanceGuid,
         dataGuid: request.dataGuid,
-        ...summariseIssues(response.ok ? response.body : null)
+        ...summariseIssues(response.ok ? issues : null)
     };
 }

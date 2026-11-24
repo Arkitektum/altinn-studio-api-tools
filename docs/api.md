@@ -31,7 +31,7 @@ The backend is usable on its own, which is useful for scripting a data load.
 | `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid`                                                                  |
 | `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                                                                      |
 | `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                                                                                   |
-| `GET`    | `/api/instances/data-element/validate` | Validate one data element. Same query plus `&dataGuid`                                                                                 |
+| `GET`    | `/api/instances/data-element/validate` | Validate one data element: the instance's validation, keeping the issues for that element. Same query plus `&dataGuid`                 |
 | `GET`    | `/api/instances/pdf-preview`           | Render the archived pdf. Same query as `/api/instances`, plus optional `taskId`, `dataElementId` and `language` (`nb`, `nn`, `en`)     |
 | `GET`    | `/api/instances/pdf-targets`           | The app's `pdf` and `subformPdf` tasks, and the subform each renders. Same query as `/api/instances`                                   |
 | `POST`   | `/api/instances/data-element/compare`  | The stored xml against `left`. Body: the query fields plus `dataGuid`, `left` and an optional `dataType` for the field types           |
