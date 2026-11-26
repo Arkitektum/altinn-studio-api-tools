@@ -112,7 +112,19 @@ It compares the app catalogue against the testmotor, which keeps its own list of
 
 Subforms are checked as well as the apps you can target. A subform app is referenced by its parent rather than given a catalogue entry of its own, because its data is posted as a data element of the parent instance, but it still needs examples. The testmotor files those per parent, so each subform is checked once under every app carrying it, and one it could not ask about is listed as not checked rather than as missing.
 
-The reply apps (a neighbour's reply to a nabovarsel, a hearing reply, and the like) are where gaps usually show up, since the testmotor holds the apps that send things out and not the replies. The one reply example on disk, `examples/forms/HoeringOgOffentligEttersynUttalelse/uttalelse.xml`, names the hearing it replies to as `{instanceOwnerPartyId}/{instanceGuid}` in `hoeringOgOffentligEttersynReferanse`, and that instance does not exist in your localtest until you point it at one you have posted.
+### Reply apps
+
+Five apps in the catalogue are replies to another app. The testmotor holds the apps that send something out and none of the replies, so a reply has example data only when there is a file on disk for it:
+
+| Sent out                | Replied to with                  | Example data                                                       |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------------ |
+| `nabovarsel-v5`         | `nabovarsel-svar-v5`             | none                                                               |
+| `varselplanoppstart-v3` | `varselplanoppstartuttalelse-v3` | none                                                               |
+| `varselplanoppstart-v4` | `varselplanoppstartuttalelse-v4` | none                                                               |
+| `hoeringettersyn-v2`    | `hoeringettersynuttalelse-v2`    | `examples/forms/HoeringOgOffentligEttersynUttalelse/uttalelse.xml` |
+| `fts-v1`                | `ts-v1`                          | none                                                               |
+
+`yarn workspace server run catalogue` shows the current state. A reply names the instance it replies to: the file on disk gives the hearing as `{instanceOwnerPartyId}/{instanceGuid}` in `hoeringOgOffentligEttersynReferanse`, so point that at a hearing you have posted in your LocalTest before posting the reply.
 
 ## What the dummies are
 
