@@ -2,9 +2,42 @@
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest, and for reading it back. Two Yarn workspaces, `server` and `web`, with a shared root that runs both.
 
-## What it shares with the other repositories
+## Related repositories
 
-Two small packages are shared with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
+Seven repositories work together. Two families of published packages, each with the applications that use them:
+
+```text
+A ──▶ B   A depends on the published package B
+A ┄┄▶ B   A calls B over HTTP while running
+
+  altinn-studio-custom-components-docs ───────────────────────────┐
+         │                                                        │
+         ▼                                                        ▼
+  altinn-studio-custom-components ─────────────────▶ altinn-studio-custom-components-utils
+     ▲          ┆
+     │          ┆ Statistics page
+     │          ▼
+  Altinn apps   altinn-studio-custom-components-api ──┬──▶ ftpb-app-catalogue    ◀──┬── altinn-studio-api-tools
+                                                      └──▶ ftpb-testmotor-client ◀──┘
+```
+
+| Repository                              | Published as                                        | Depends on                                                                 | Used by                                                                                                |
+| --------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `altinn-studio-custom-components-utils` | `@arkitektum/altinn-studio-custom-components-utils` |                                                                            | `altinn-studio-custom-components` (bundled into its `main.js`), `altinn-studio-custom-components-docs` |
+| `altinn-studio-custom-components`       | `@arkitektum/altinn-studio-custom-components`       | `altinn-studio-custom-components-utils`, `@arkitektum/client-logger`       | Altinn apps (copied into `App/wwwroot`), `altinn-studio-custom-components-docs`                        |
+| `altinn-studio-custom-components-docs`  | Not published, deployed to GitHub Pages             | `altinn-studio-custom-components`, `altinn-studio-custom-components-utils` |                                                                                                        |
+| `altinn-studio-custom-components-api`   | Not published, runs locally                         | `ftpb-app-catalogue`, `ftpb-testmotor-client`                              | The Statistics page in `altinn-studio-custom-components`, over HTTP                                    |
+| `altinn-studio-api-tools`               | Not published, runs locally                         | `ftpb-app-catalogue`, `ftpb-testmotor-client`                              |                                                                                                        |
+| `ftpb-app-catalogue`                    | `@arkitektum/ftpb-app-catalogue`                    |                                                                            | `altinn-studio-custom-components-api`, `altinn-studio-api-tools`                                       |
+| `ftpb-testmotor-client`                 | `@arkitektum/ftpb-testmotor-client`                 |                                                                            | `altinn-studio-custom-components-api`, `altinn-studio-api-tools`                                       |
+
+While running, `altinn-studio-custom-components-api` reads the Altinn apps' files from Altinn Studio and the components package's versions and files from npm, and `altinn-studio-api-tools` posts test data into Altinn apps running in LocalTest. Both read example data from the FtPB testmotor through `ftpb-testmotor-client`.
+
+Every dependency is installed from the registry, so a change that spans repositories is released in dependency order: `altinn-studio-custom-components-utils` before `altinn-studio-custom-components`, both before `altinn-studio-custom-components-docs`, and `ftpb-app-catalogue` or `ftpb-testmotor-client` before the two applications. Each consumer then takes the new version with `yarn up <package>`.
+
+## How it uses the shared packages
+
+Both packages are shared with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
 
 | Package                             | What it gives this server                                                                                                                                                       |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
