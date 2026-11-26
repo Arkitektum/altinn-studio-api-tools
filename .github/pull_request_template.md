@@ -12,7 +12,7 @@
 - [ ] `yarn typecheck`
 - [ ] `yarn lint`
 - [ ] `yarn format`
-- [ ] Behaviour that changed is documented: the relevant page under `docs/`, and the README if it is in the overview or the walkthrough
+- [ ] Behaviour that changed is documented: the relevant page under `docs/`, and the README if it is in the overview
 - [ ] A pure decision landed in `web/src/lib/` with a test, rather than inline in a component
 - [ ] A new call to Altinn goes through `altinnFetch` and, if it acts on an instance, `StepRecorder`, so it shows up in the run log
 

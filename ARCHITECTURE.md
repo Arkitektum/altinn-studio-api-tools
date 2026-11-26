@@ -154,31 +154,21 @@ Two rules go with keying on a value you are typing. The key is the **settled** v
 
 ## Conventions the UI follows
 
-**Every panel is on screen, and one you cannot use yet says what it is waiting for.** `lib/readiness.ts` decides the reason, written as the thing that is missing rather than as an instruction: "Needs an application." sits under the heading of the panel that is waiting, and the panel above it is where you get one.
+What these look like on screen is in [The interface](docs/interface.md). This is where each one lives in the code.
 
-That shows the order the tool wants things done in, and no panel appears as you type and moves everything under it. `Panel` renders the reason in place of the controls rather than beside them, so a panel that is waiting cannot be half operated.
+**A panel you cannot use yet says what it is waiting for.** `lib/readiness.ts` decides the reason, written as the thing that is missing, and `Panel` renders it in place of the controls, so a panel that is waiting cannot be half operated.
 
-**The dependencies are stated, not left to be inferred.** `lib/chain.ts` turns the current state into the chain the tool hangs off and marks each step done, next or waiting. Ten steps, one per panel in the column you work down: test user, application, party, instance, payload, prevalidation, post, data element, pdf, process. The rail down the left renders it, and each row says what its step holds as well as where it stands.
+**The steps are stated, not inferred.** `lib/chain.ts` turns the current state into ten steps, one per panel in the working column (test user, application, party, instance, payload, prevalidation, post, data element, pdf, process), and marks each done, next or waiting. Reachability is decided per step rather than down the list, since a payload can be written before a party is chosen, so more than one step can be next. The rail renders the chain.
 
-Reachability is stated per step rather than walked down the list, because the steps are not a single line. A payload can be written before a party is chosen, and reading a data element needs an instance that posting one does not. More than one step can be open at once, and the rail says both rather than picking one to call next.
-
-`lib/scrollSpy.ts` decides which step to mark as the one on screen, and `lib/useScrollSpy.ts` feeds it positions read from the DOM on each scroll. Reading them fresh rather than subscribing with an observer is what keeps it right while panels change size underneath it.
-
-What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a row scrolls to it.
-
-The work column carries a screen's worth of room below the last panel, and that is load-bearing rather than spacing. Without it the panels in the final screenful would all reach the bottom at the same instant, and the rail could never mark Pdf as the panel on screen.
+`lib/scrollSpy.ts` decides which step is on screen, and `lib/useScrollSpy.ts` feeds it positions read from the DOM on each scroll, compared against each panel's measured `scroll-margin-top`. The work column carries a screen's worth of room below the last panel so the final panels can each reach the top and be marked.
 
 **Pure decisions live in `lib/`, and `App.tsx` only wires.** Anything that can be decided from its arguments alone goes into a `lib/` module with a test: which panels show, where a loaded element goes in the payload list, what a step looks like as curl, how a content type maps to a file extension, what each api result looks like as a log entry. `App.tsx` holds state, effects and the calls.
 
-What is left there is still worth asserting, and it is asserted by rendering: `App.test.tsx` runs the whole tool in the jsdom browser `testDom.ts` sets up, against a table of `/api` routes it can hold open at will. The guards are what it is for. A debounced probe answering into a payload that has been typed in since, an instance read arriving after another instance was picked, the state that has to be dropped together with the instance it described: each of those is a rule nothing enforces, and none of them announce themselves when they stop holding.
+`App.test.tsx` asserts what is left there by rendering the whole tool in the jsdom browser `testDom.ts` sets up, against a table of `/api` routes it can hold open at will. That is how the guards are tested: a debounced probe answering into a payload that has been typed in since, an instance read arriving after another instance was picked, and the state dropped together with the instance it described.
 
-**State that describes one instance is dropped together.** The data element list, the process and the comparison are all read under one key, the instance's, so pointing the tool somewhere else drops them by moving the key rather than by clearing five things in the right order. What is left to clear by hand is the state that is nobody's answer: the validation results and the pdf. Stale is more misleading than absent.
+**State that describes one instance is dropped together.** The data element list, the process and the comparison are read under one query key, the instance's, so pointing the tool elsewhere drops them by moving the key. The validation results and the pdf are cleared by hand.
 
-**Colour encodes rather than decorates.** HTTP methods, status classes, payload element groups, severities. Everything else is grey. All colours are CSS variables in one `:root` block.
-
-Syntax colouring is the one place the palette does double duty, and it earns it by never appearing outside a code block. Its tokenizer is hand written, in `web/src/lib/highlight.ts`, for the same reason the server's xml diff is: two formats, read-only, and a highlighter library is a large dependency for that. It must return the text it was given, exactly, and a test asserts it, because what it colours is often broken on purpose: a preview truncated at 4000 characters, or half-typed XML.
-
-That extends to buttons, which are all one height: a filled one is the primary action, an outlined one in a method colour sends that kind of request, and an outlined grey one only rearranges what is already here.
+**Colour.** All colours are CSS variables in one `:root` block. Syntax colouring is done by a hand-written tokenizer in `web/src/lib/highlight.ts`, for XML and JSON only. It must return the text it was given exactly, and a test asserts it, because what it colours is often broken on purpose: a preview truncated at 4000 characters, or half-typed XML.
 
 ## Decisions worth knowing
 

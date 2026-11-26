@@ -8,41 +8,17 @@ Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so it only talks t
 
 ## Quick start
 
-You need Node 24 or later, and localtest running with apps on `local.altinn.cloud:8000` and LocalTest on `localhost:5101`.
-
-Yarn 4 is used here, managed by [Corepack](https://nodejs.org/api/corepack.html). Enable it once:
+You need Node 24 or later, Yarn 4 through [Corepack](https://nodejs.org/api/corepack.html), and localtest running with apps on `local.altinn.cloud:8000` and LocalTest on `localhost:5101`.
 
 ```bash
 corepack enable
-```
-
-The right Yarn version is then taken from the `packageManager` field in `package.json`.
-
-```bash
 yarn install
 yarn dev
 ```
 
-- UI: http://127.0.0.1:5173
-- API: http://127.0.0.1:4000/api
+The UI is on http://127.0.0.1:5173 and the API on http://127.0.0.1:4000/api. Other ports go in `server/.env`, see [Configuration](https://arkitektum.github.io/altinn-studio-api-tools/configuration/).
 
-No configuration is needed if your localtest uses the default ports. Otherwise copy `server/.env.example` to `server/.env` and adjust `ALTINN_APP_HOST` and `ALTINN_LOCALTEST_URL`. The header shows three gauges, each with a tick or a cross: the app host (ticked when the api answers), LocalTest, and the active token.
-
-## Using it
-
-The interface has three columns: a rail down the left listing each step and where it stands, the panels you work down in the middle, and the validation results and the run log on the right. Clicking a rail row scrolls to its panel, and a panel you cannot use yet says what it is waiting for.
-
-The quickest path to a full submission, where the user id is the only thing you type:
-
-1. Pick a test user and press **Get token**. The party id is filled in from the token's claim.
-2. Pick `dibk/et-v4` from **Application**, which fills in the org, the app and the main data type.
-3. Nothing to press: the app is read for you, so the data type and party pickers come from the app itself.
-4. The first payload element already holds the ET example. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
-5. **New instance** is already selected in Instances, so press **Post** in the Post panel.
-
-The instance is then read back and validated automatically, with every request in the run log. From there you can read a data element, load it into the payload editor and post it again, advance the process, render the pdf, or delete the instance.
-
-For an app the catalogue does not list, pick **Other application** and type the org and app. Everything after that is the same. If the post button is disabled, the line above it says what is missing.
+[Getting started](https://arkitektum.github.io/altinn-studio-api-tools/getting-started/) walks through a full submission, and [The interface](https://arkitektum.github.io/altinn-studio-api-tools/interface/) explains the three columns.
 
 ## What it can do
 
@@ -53,7 +29,7 @@ For an app the catalogue does not list, pick **Other application** and type the 
 | [Payload](https://arkitektum.github.io/altinn-studio-api-tools/payload/)                                                     | One card per data element, from a shipped example, a file off disk, or by hand                         |
 | [Prevalidation](https://arkitektum.github.io/altinn-studio-api-tools/payload/#prevalidate)                                   | What a refused submit would have said, asked before you send it                                        |
 | [Posting](https://arkitektum.github.io/altinn-studio-api-tools/posting/)                                                     | A new instance or an existing one, read back and validated after every post                            |
-| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, load into the payload, delete                   |
+| [Reading data back](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/)                                 | List a party's instances, read and validate, download, delete                                          |
 | [Compare with stored](https://arkitektum.github.io/altinn-studio-api-tools/reading-data-back/#comparing-with-the-stored-xml) | What the model dropped, added or rewrote when it stored your xml                                       |
 | [Process](https://arkitektum.github.io/altinn-studio-api-tools/process/)                                                     | Where the instance stands, and advancing it                                                            |
 | [Validation and the run log](https://arkitektum.github.io/altinn-studio-api-tools/validation-and-log/)                       | Issues by severity, every request with both bodies, and copy as curl                                   |
