@@ -5,15 +5,13 @@ nav_order: 3
 
 # The interface
 
-Three columns: the rail on the left, which is the chain the tool hangs off; the panels you work down in the middle, from the test user through the target app, the payload and the fetch controls; and what came back on the right, the validation results and the run log.
+Three columns: the rail on the left, the panels you work down in the middle, and what came back on the right, the validation results and the run log.
 
-The test user sits at the top of the working column, where the chain already says it comes first, rather than in a column of its own for a panel you use once at the start of a session. The width goes to the log, since that is where xml, a response body and a curl command are read.
+The test user sits at the top of the working column. The width goes to the log, since that is where xml, a response body and a curl command are read.
 
 ## The rail
 
-The tool is a wizard in the one way that matters: each step needs the one before it. A rail down the side shows the progress as well as the order, and each row has room for a label, a value and a position.
-
-Ten steps, one per panel in the column beside it, in the same order the column is in:
+The rail shows each step in order, what it holds and where it stands. Ten steps, one per panel in the column beside it, in the same order the column is in:
 
 | Step              | Says                                                             |
 | ----------------- | ---------------------------------------------------------------- |
@@ -30,25 +28,25 @@ Ten steps, one per panel in the column beside it, in the same order the column i
 
 A step with nothing in it yet says `not set`, fainter than a value, so it does not read as one.
 
-Each row carries a glyph for where it stands: a tick for done, a ring for the one you can act on, a dot for one still out of reach. The glyph says what a word would otherwise have to, which is the test for whether a glyph belongs at all, and the screen reader gets the word anyway.
+Each row carries a glyph for where it stands: a tick for done, a ring for the one you can act on, a dot for one still out of reach. The screen reader gets the word.
 
-Two more states belong to Prevalidation, the one step whose whole job is to find things wrong. Once it has answered, the row goes red with a cross where the report found errors and amber with a triangle where it only found warnings, and its value says what they were: `3 documents missing, 1 error`, `2 warnings`. The counts are the whole report, not only the documents the panel can add for you, since a row that went red for missing documents while staying quiet about four errors in the form would be answering a narrower question than it looks like it is answering. A row in either state is still a link, because the panel it leads to is where you would fix it.
+Two more states belong to Prevalidation, the one step whose whole job is to find things wrong. Once it has answered, the row goes red with a cross where the report found errors and amber with a triangle where it only found warnings, and its value says what they were: `3 documents missing, 1 error`, `2 warnings`. The counts are the whole report, not only the documents the panel can add for you. A row in either state is still a link to the panel.
 
-Neither colours before there is something to colour. **Not run** is a step still ahead of you rather than a finding, and an answer the payload has changed since describes something else, so both stay blue.
+**Not run** and a report the payload has changed since both stay blue.
 
-Each row also wears the mark of the panel it leads to, faintly, beside its label. That is the other half of the mark in the panel heading: a shape in a heading is only worth learning if the thing that takes you there wears it too. It is keyed on the panel rather than the row, so Application and Party carry the same one, both being set in Target.
+Each row also wears the mark of the panel it leads to, faintly, beside its label, the same mark as in the panel heading. Application and Party carry the same one, both being set in Target.
 
-The steps are not a single line, and the rail does not pretend they are. A payload can be written before a party is chosen, and reading a data element needs an instance that posting one does not. So reachability is stated per step, more than one can be open at once, and the rail says both rather than picking one to call next.
+The steps are not a single line. A payload can be written before a party is chosen, and reading a data element needs an instance that posting one does not. So reachability is stated per step, and more than one can be open at once.
 
-Two details are worth knowing. The instance step is settled as soon as there is a party, reading `new` when the new instance row is what is selected, because that is a choice rather than a gap: posting creates one. And the prevalidation step is left out entirely when no validation service is configured, because switched off is not a step you failed to do. `chain.test.ts` covers all of it.
+The instance step is settled as soon as there is a party, reading `new` when the new instance row is selected, since posting creates one. The prevalidation step is left out when no validation service is configured.
 
-A row you can act on is also a way to get there: clicking one scrolls to the panel it is set in. A row still out of reach stays plain text, because scrolling to a panel you cannot use yet is a worse answer than none.
+Clicking a row you can act on scrolls to the panel it is set in. A row still out of reach stays plain text.
 
-The panel you are looking at is marked as you scroll, so the rail reads as a position as well as a state: a blue bar down the row's left edge and a faint fill. A bar rather than a fill alone, since the row already carries a colour in its glyph. Blue rather than the violet it was, because violet is one of the three payload element hues and means something else, and because the row you are on is usually also the row you can act on: one colour for both says they are the same place. Application and Party are marked together, since both are set in Target, and a run of marked rows keeps only its outside corners rounded so it reads as one block rather than two answers to the same question.
+The panel you are looking at is marked as you scroll, with a blue bar down the row's left edge and a faint fill. Application and Party are marked together, since both are set in Target.
 
-The column carries a screen's worth of room below the last panel, which is load-bearing rather than spacing. Without it the panels in the last screenful all reach the bottom at the same moment, so there is no scroll position where Pdf has arrived and Process has not, and the rail jumped from Data element straight to Process. Once the columns stack, the room goes below the run log instead, which is what comes last, so it does not leave an empty screenful between Process and Validation.
+The working column carries a screen's worth of room below the last panel, so every panel can reach the top and be marked. Once the columns stack, the room goes below the run log instead.
 
-Below 1240px the three columns stack and the rail goes back to a strip across the top, since down the side it would be a column of short rows beside a column of everything else. Each step keeps its own width there, up to 180px, and the strip scrolls sideways when they do not all fit: squeezed to share the width, the steps would break inside words.
+Below 1240px the three columns stack and the rail becomes a strip across the top. Each step keeps its own width there, up to 180px, and the strip scrolls sideways when they do not all fit.
 
 Below 620px the header puts its three gauges on a second row under the tool's name. LocalTest is never cut, and the app host and the user name take an ellipsis when there is not room for all of them.
 
@@ -56,59 +54,54 @@ Below 620px the header puts its three gauges on a second row under the tool's na
 
 The working column is two runs of panels under a quiet heading each. **Post** is Payload, Prevalidation and Post: what to send, what the service makes of it, and the send. **Inspect** is Data element, Pdf and Process: what is there now. Comparing with the stored xml is not a panel of its own but the foot of Data element, since it compares the forms among the elements that panel lists. Target and Instances sit above both, because they decide what everything else acts on.
 
-Those first three are panels of their own because three things you do in order are three steps, and each gets a rail row that says where it ends.
-
-The headings are a rule and a word, not a container. They group what is already there rather than adding something to look at.
+The headings are a rule and a word, not a container.
 
 ## Every panel is on screen, and says what it is waiting for
 
-That shows the order the tool wants things done in from the first screen, and no panel appears as you type and moves everything under it.
+A panel that cannot be used yet keeps its place and its heading, drops its colour, and says the thing that is missing in place of its controls, such as "Needs an application."
 
-A panel that cannot be used yet keeps its place and its heading, drops its colour, and says the thing that is missing in place of its controls: "Needs an application." rather than "Pick an application", since the panel above it is where you would do that and an instruction would repeat what the layout already says. Rendering the reason instead of the controls is also what stops a waiting panel being half operated.
-
-Each names the first thing missing rather than its own nearest one. With no application there is no point asking for an instance, so Instances says it needs an application too.
+Each names the first thing missing rather than its own nearest one, so with no application Instances says it needs an application too.
 
 The right column takes its width whether or not it holds anything, so nothing shifts when the first run lands.
 
-A panel that acts on a selection names it in its header rather than repeating it in the body: Instances shows how many there are, Data element the instance it is reading, Process the task the instance sits in. The comparison does the same for its own section, saying how many differences it found. The rail says the same thing once for the whole tool.
+A panel that acts on a selection names it in its header rather than repeating it in the body: Instances shows how many there are, Data element the instance it is reading, Process the task the instance sits in. The comparison does the same for its own section, saying how many differences it found.
 
 Results stand on their own. An expired token leaves the request panels waiting, because you cannot act with it, but it does not hide what you already read.
 
 ## State that describes one instance is dropped together
 
-Selecting another instance, or another party, clears the validation issues, the data element list, the process state and the pdf preview in one go, because all of them described the instance you just left. Stale results are more misleading than absent ones.
+Selecting another instance, or another party, clears the validation issues, the data element list, the process state and the pdf preview in one go, because all of them described the instance you just left.
 
-Everything you chose survives a reload: org, app, party, the selected instance, the payload elements with their content and any payload you have saved by name all persist in `localStorage`. The destination is not among them, because it is not stored: a post follows the selection. Tokens do not. They live in server memory and are listed again when the page loads.
+Everything you chose survives a reload: org, app, party, the selected instance, the language, the payload elements with their content and any payload you have saved by name all persist in `localStorage`. Tokens live in server memory and are listed again when the page loads.
 
 ## When the interface itself breaks
 
 A render that throws puts a single panel on screen with the message, rather than a blank page. The stack goes to the browser console, where it can be read and copied.
 
-The reason it is more than a message is the paragraph above: what you chose is restored from `localStorage`, so if one of those values is what the interface cannot draw, reloading lands in the same place. The panel offers to throw the saved work away as well as to reload, and asks twice before it does, since that is your payload. Nothing it clears is a credential, because no token is stored in the browser.
+Since what you chose is restored from `localStorage`, a value the interface cannot draw would bring a reload back to the same place. So the panel offers **Clear the saved work and reload** as well as a reload, and asks twice before it clears, since that is your payload.
 
 ## Colour encodes rather than decorates
 
-The page, the masthead, the panel surface and the borders are one deep blue ink at different lightnesses rather than greys, since the panel hues and the accent looked faded against a grey page. The text keeps its lightness, so its contrast holds: 9:1 for muted text and 6.4:1 for faint text on a panel.
+The page, the masthead, the panel surface and the borders are one deep blue ink at different lightnesses. Muted text has a 9:1 contrast on a panel and faint text 6.4:1.
 
 - **HTTP methods**, so a long log can be scanned for the request that changed something. GET blue, POST green, PUT amber, DELETE red. The same colours appear in the "will call" URL previews and on the buttons, so a button, the preview of what it will call, and its entry in the log all read the same way. A preview is short: the app host is left out, since the header names it, LocalTest is `{localtest}`, and each guid is cut to its first eight characters, the way the rail shows them. Hovering it shows the whole URL, and the run log prints every URL in full.
 - **Status codes by class**, since 4xx is usually something about the request and 5xx is the app falling over. 2xx green, 3xx blue, 4xx amber, 5xx red.
-- **The panel itself**, one surface for all of them, a step above the page, with each panel's hue in its header band, its border and its icon. The bands are the same lightness throughout and differ only in hue, saturated enough that each panel's colour reads at a glance. The surface is a step above the page so a column of panels reads as a stack of containers rather than one field, and it is not tinted, because the cards and fields inside are translucent and would take the tint on too, so a busy panel would read as many slightly different colours. Keeping the hue to the header and border keeps the panels apart, and the part you read is the same on every one. All of them are blue to purple, because the warm half of the wheel does not work as a surface here: amber and olive read as dirty against a blue page and the one near the red reads as a warning. The nine panels fit in the hundred degrees that are left on a 13-degree grid, taken in an order that leaves 35 degrees or more between any two that are next to each other. Each one's border takes the same hue at the lightness the plain border has, with a little more saturation than the band, since a hairline needs it to read as coloured at all. A panel that is waiting drops its hue and takes a dashed border, because a tone says what a panel is for and one that is waiting is not for anything yet. Validation and the run log have no hue, since a sidebar of their own already sets them apart from the column you work down, but they have the same band, border and surface in the header's ink, so their headings line up with the column beside them.
-- **A control against the surface it is on**, sunk into it rather than cut out of it. An input, a select, a button and a list row sit on a translucent dark tint, so each one darkens the surface it is on and keeps that surface's hue. An opaque control in the page colour would be right on the page and a hole anywhere else: a near-black slab in the middle of a coloured surface. The tint is cool, like the lift that is its opposite, except under a button wearing a method's colour, where it is that method's: a POST sits on green and a DELETE on red, at a strength that still reads as a surface rather than as a filled button. GET needs nothing of its own, since the cool tint is already its blue.
-- **Payload element badges by group**, the main form in the accent blue, subforms in violet and attachments in pink. The three sit in one list, so they are spread as far apart as the four hues that mean a verdict leave room for, and none of them is one of those four. A data type the app has not been read for yet stays grey, which is not knowing rather than a fourth kind.
+- **The panel itself**, one surface for all of them, a step above the page, with each panel's hue in its header band, its border and its icon. The hues are blue to purple, on a 13-degree grid with at least 35 degrees between neighbours. A panel that is waiting drops its hue and takes a dashed border. Validation and the run log have no hue, but the same band, border and surface in the header's ink.
+- **A control against the surface it is on.** An input, a select, a button and a list row sit on a translucent dark tint, so each one darkens the surface it is on and keeps that surface's hue. Under a button wearing a method's colour the tint is that method's: a POST sits on green and a DELETE on red.
+- **Payload element badges by group**, the main form in the accent blue, subforms in violet and attachments in pink. A data type the app has not been read for yet stays grey.
 - **Which example a collapsed element was filled from**, in the accent, so loaded and hand-typed content differ at a glance.
 - **Validation counts**, amber for warnings only and red when there are errors.
 - **An element with no content**, whose summary turns amber and whose example picker gets an accent border, because that is the thing to press next.
-- **An instance's state**, for the ones only storage lists: `completed` green, `deleted` red. Both were grey words after the label, where the thing they decide is what is left to do with the instance.
-- **The step that failed** in a run, which takes a red edge like a validation error does. It is what a long run is skimmed for, and the status code at the end of the row was the only thing saying so.
+- **An instance's state**, for the ones only storage lists: `completed` green, `deleted` red.
+- **The step that failed** in a run, which takes a red edge like a validation error does.
 - **A payload with everything the task requires**, which says so on a green notice, the same shape the amber one uses to say what is missing.
+- **XML and JSON syntax**, inside code blocks only: element names blue, attribute names and keywords violet, strings green, numbers amber, comments and punctuation faint. This is the one place the palette carries a second meaning, since nothing else is coloured inside a code block.
 
-- **XML and JSON syntax**, inside code blocks only: element names blue, attribute names and keywords violet, strings green, numbers amber, comments and punctuation faint. This is the one place the palette carries a second meaning, and it can, because nothing else is coloured inside a code block: blue is GET on a button and an element name in a document, and the two never share a surface.
-
-Everything else stays grey, marked text included. Selecting takes no colour from the palette, because inside a code block every one of them already means something, and it is translucent rather than solid: the editor paints its colours on a layer behind a transparent textarea, so a solid selection is drawn in front of the text it is marking rather than behind it.
+Everything else stays grey, selected text included.
 
 Colour is never the only carrier. A method is named next to its colour, a status code is a number, a severity says "3 errors", and a failed run says "Failed". The three gauges in the header carry their state as a tick or a cross beside a name rather than as colour alone, and in words for a screen reader. The dots that only repeat something already written next to them are marked as decoration, and are not read out twice.
 
-Buttons come in four kinds, all the same height, since height is not a thing worth encoding:
+Buttons come in four kinds, all the same height:
 
 | Kind                    | Looks like                    | Means                                                                                                                                                                                                     |
 | ----------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -117,10 +110,8 @@ Buttons come in four kinds, all the same height, since height is not a thing wor
 | Throws something away   | Outlined red                  | **Delete**, **Remove**, **Clear**, **Clear history**, **Clear results**, whether or not a request leaves the machine                                                                                      |
 | Rearranges what is here | Outlined grey                 | **Copy**, **Download**, **Show content**, **Show pdf**, **Full size**, **Collapse all**, **Open**, **Save**, **Close**, **Cancel**                                                                        |
 
-So the colour answers "will this talk to Altinn, and how", which is the question worth answering before clicking in a tool whose whole purpose is making requests. Primacy wins where the two disagree: **Post** and **Prevalidate** are filled rather than green, because being the one action a panel is for says more than being a POST.
+So the colour answers "will this talk to Altinn, and how". Primacy wins where the two disagree: **Post** and **Prevalidate** are filled rather than green. Red is the one that is not about the method: it means something is thrown away, whether or not a DELETE is sent.
 
-Red is the one that is not about the method. Deleting a saved payload or a token never sent a DELETE anywhere, so the red was already saying "this throws something away" rather than naming a verb, and **Clear** and **Remove** wear it for the same reason. **Close** and **Cancel** stay grey: they give nothing up.
+Every button carries an icon beside its label, drawn in `components/Icon.tsx`. The one exception is the example reload button, which is an icon alone and names itself to a screen reader. Where the press throws the thing away it is a bin, and where the thing stays but is emptied it is a cross, which is why **Remove** and **Clear** on the same element do not match.
 
-Every button carries an icon beside its label, drawn in `components/Icon.tsx`. Never instead of the label, with one exception: the example reload button has no room for words and names itself to a screen reader. Where the press throws the thing away it is a bin, and where the thing stays but is emptied it is a cross, which is why **Remove** and **Clear** on the same element do not match.
-
-The UI is plain and dark only. System fonts with no webfonts to load, a single accent colour, hairline borders, no decoration. All colours are CSS variables in one `:root` block at the top of `styles/base.css`, so changing the theme means editing that one block. The rest of the stylesheet is split by what it styles, and `styles.css` is only the imports, kept in the order the cascade needs.
+The UI is dark only, with system fonts, a single accent colour and hairline borders. All colours are CSS variables in one `:root` block at the top of `styles/base.css`, so changing the theme means editing that one block. The rest of the stylesheet is split by what it styles, and `styles.css` is only the imports, kept in the order the cascade needs.

@@ -19,7 +19,7 @@ yarn dev
 
 That runs both workspaces with prefixed output: the api on `http://127.0.0.1:4000/api` and the UI on `http://127.0.0.1:5173`, where Vite proxies `/api` to the server.
 
-For anything beyond the UI rendering you also need Altinn Studio localtest running, with apps served on `local.altinn.cloud:8000` and LocalTest itself on `localhost:5101`. Those are the defaults; copy `server/.env.example` to `server/.env` to point elsewhere.
+For anything beyond the UI rendering you also need Altinn Studio localtest running, with apps served on `local.altinn.cloud:8000` and LocalTest itself on `localhost:5101`. Those are the defaults. Copy `server/.env.example` to `server/.env` to point elsewhere, see [Configuration](https://arkitektum.github.io/altinn-studio-api-tools/configuration/).
 
 ## The loop
 
@@ -53,9 +53,9 @@ The root holds only the scripts that drive both workspaces, plus the tools that 
 
 ## Linting
 
-oxlint, configured in `.oxlintrc.json`. One binary, no config to speak of, and it runs in under a second, which is why it is here rather than ESLint and its plugins.
+oxlint, configured in `.oxlintrc.json`: the `correctness` category as errors, plus `eslint/no-unused-vars` and `react-hooks/exhaustive-deps`.
 
-It is here for one rule. `react-hooks/exhaustive-deps` keeps the dependency lists honest: a list that leaves something out is a build failure rather than a judgement call someone has to make again. A list that leaves something out on purpose says so in a disable comment with the reason, as the one in `ExamplePicker.tsx` does.
+`react-hooks/exhaustive-deps` keeps the dependency lists honest: a list that leaves something out is a build failure rather than a judgement call someone has to make again. A list that leaves something out on purpose says so in a disable comment with the reason, as the one in `ExamplePicker.tsx` does.
 
 `react/set-state-in-effect` is off. The effects that set state are each dropping state that described something you have moved away from, which is what the comment above each says, and turning it on would mean a disable on every one of them saying the same thing. `react/preserve-manual-memoization` is off as well. It checks that the React Compiler can keep each `useMemo` and `useCallback` as written, and this project does not use the React Compiler.
 
@@ -90,8 +90,6 @@ Prettier owns it, configured in `.prettierrc`: four space indent, double quotes,
 
 `.prettierignore` keeps Prettier away from `examples/`. Those files are fixtures posted byte for byte, and reformatting the JSON and GeoJSON dummies would change the very bytes the tests assert on.
 
-`server/src/appCatalogue.ts` holds no data of its own: it narrows `@arkitektum/ftpb-app-catalogue` to the fields this server serves.
-
 ## House style
 
 **Comments say why, not what.** The code says what. A comment earns its place by explaining a decision that is not obvious from reading it: why the token is redacted before it reaches a log, why a party typed by hand survives a token switch, why multipart is written out by hand. If nothing surprising happened, no comment.
@@ -115,11 +113,11 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 **A form the testmotor has no data for.** Drop the file in `examples/forms/{dataType}/`. The directory name is the data type and the numeric prefix orders the list while being stripped from the label, so `01_Maksimumsversjon.xml` reads as "Maksimumsversjon". No restart: the directory is read per request.
 
-**An icon.** Add the paths to `PATHS` in `web/src/components/Icon.tsx` and the name to `IconName`. A 16 grid, stroked in `currentColor`, no `fill`, so it takes the colour and size of the text it sits in. There is no icon library on purpose: it would be a fourth runtime dependency for two dozen shapes, and it would bring a house style that is not this one. The rule for whether an icon belongs is the rail's: it carries something on its own, or it sits beside a label that still says the word. Never an icon alone, with the one exception of the example reload button, which has a `label` for the screen reader.
+**An icon.** Add the paths to `PATHS` in `web/src/components/Icon.tsx` and the name to `IconName`. A 16 grid, stroked in `currentColor`, no `fill`, so it takes the colour and size of the text it sits in. Icons are drawn here rather than taken from a library, which would be a fourth runtime dependency for two dozen shapes. The rule for whether an icon belongs is the rail's: it carries something on its own, or it sits beside a label that still says the word. Never an icon alone, with the one exception of the example reload button, which has a `label` for the screen reader.
 
 **A dummy attachment.** Drop it in `examples/attachments/` and list its extension in `FORMATS` in `server/src/examples.ts`, with the content types it can be posted as. The first is canonical and the rest are alternative spellings, which matters because apps declare whichever they prefer. `yarn workspace server run gaps` tells you which content types your apps declare that no dummy covers.
 
-**A known app.** Not here. The list lives in `@arkitektum/ftpb-app-catalogue`, shared with `altinn-studio-custom-components-api`; add the app there, publish, and bump the dependency. `server/src/appCatalogue.ts` only narrows the shared list to the fields this server serves. The catalogue is a convenience either way: once an app is probed, its own `applicationmetadata` takes over.
+**A known app.** Not here. The list lives in `@arkitektum/ftpb-app-catalogue`, shared with `altinn-studio-custom-components-api`. Add the app there, publish, and bump the dependency. `server/src/appCatalogue.ts` only narrows the shared list to the fields this server serves. The catalogue is a convenience either way: once an app is probed, its own `applicationmetadata` takes over.
 
 `yarn workspace server run catalogue` says when the shared list needs an app added to it. It compares the catalogue against the testmotor, which keeps its own list of the same apps, and reports three things: apps the testmotor holds that the catalogue does not name, apps the catalogue knows that have no example data from either source, and the two disagreeing about what an app's main form data type is called. The last is the one that would actually break something, since the catalogue's data type is what the payload panel offers before an app is probed and the testmotor's is the key its examples arrive under.
 
@@ -131,10 +129,10 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) first. The two conventions that decide m
 
 ## Reporting something broken
 
-There is an issue form for it, and one for a feature, under `.github/ISSUE_TEMPLATE/`. Blank issues are still on: the forms are for the common cases, not a gate.
+There is an issue form for it, and one for a feature, under `.github/ISSUE_TEMPLATE/`. Blank issues are enabled: the forms are for the common cases, not a gate.
 
 The one thing worth attaching either way is the run log entry. Click the failing step and **Copy curl** in the window it opens gives the exact request with the token left as `$TOKEN`, which is usually enough to see what happened without a screenshot.
 
 ## Opening a pull request
 
-`.github/pull_request_template.md` asks for what changed, why, and a handful of checks. Three of them are what CI runs anyway; the rest are the ones a green build cannot tell you about, such as whether a pure decision ended up in `web/src/lib/` with a test and whether the behaviour that changed is documented.
+`.github/pull_request_template.md` asks for what changed, why, and a handful of checks. Four of them are what CI runs anyway. The rest are the ones a green build cannot tell you about, such as whether a pure decision ended up in `web/src/lib/` with a test and whether the behaviour that changed is documented.

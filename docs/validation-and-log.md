@@ -11,11 +11,9 @@ The right column. Both are there from the first render, each saying what it will
 
 Its own panel, separate from the run log, holding one result per thing validated: the instance, and each data element you have validated. Results are grouped by target so several can be on screen at once, with the instance first and the data elements after it by name. Validating the same target again replaces its result rather than adding another, so what you see is always current.
 
-Every result starts folded, showing its label, its worst severity and a count. Expanded issue lists run long enough to push the run log off screen, so the headers are the default view and you open the one you want. That one fold is the only one. Open a result and every issue in it is there, worst first, each run of a severity under a line naming it: "2 errors", then the two cards, then "2 warnings".
+Every result starts folded, showing its label, its worst severity and a count, so the run log stays on screen. Open a result and every issue in it is there, worst first, each run of a severity under a line naming it: "2 errors", then the two cards, then "2 warnings".
 
-Those runs were collapsible blocks of their own once, errors open and the rest shut. It read as a box inside a box, a result already coloured by its worst severity holding a red block and an amber one, and a result whose groups were all shut held nothing but two badges. A line of text names a run just as well and adds no second thing to open. `issueGroups.test.ts` covers the grouping, which keeps issues of one severity together wherever they arrive in the list.
-
-The list is indented under the result that holds it, to the width of that result's chevron, so the two do not start at the same edge. Sharing one made the issues read as siblings of the result rather than as its contents.
+The list is indented under the result that holds it, to the width of that result's chevron.
 
 Each issue shows its code, the data type it belongs to, the description and the field path, on a card edged in the colour of its severity. The line above the run names that severity in words, since a colour says nothing to a reader who does not see it. The `dataElementId` is resolved to a data type name when the instance read is available, so an issue says `ET` rather than a guid, and the full `source` sits in the tooltip on the code.
 
@@ -31,9 +29,9 @@ A post and the read and validation that follow it share one entry, because they 
 
 ## Bodies
 
-A step is one target: click the block anywhere and the request opens in a window over the tool. The status and the timing sit with the title, so the body of the window starts with the url and gets to the bodies in a line or two, coloured the same way the payload editor is. Each body scrolls inside itself rather than the window scrolling as one, so the url stays where it was put, and each carries its **Copy** in its own top right corner rather than on a row above it, which would cost a button's height over every one of them. The copy is pinned there, clear of the body's own scrollbar, while the text moves under it. A step that made no request and carries no body is not clickable, and says so by not lighting up.
+A step is one target: click the block anywhere and the request opens in a window over the tool. The status and the timing sit with the title, so the body of the window starts with the url and gets to the bodies in a line or two, coloured the same way the payload editor is. Each body scrolls inside itself, so the url stays in view, and each carries its **Copy** pinned in its own top right corner. A step that made no request and carries no body is not clickable, and says so by not lighting up.
 
-The block itself carries no controls, since a button inside a row that is already a fold inside a fold is one control too many, and the bodies need more room than the column has. The log column takes 640px, or 42% of the window where that is more, which is still not enough for a form's XML, and widening it for the one case that needs it would cost the working column the rest of the time. The window is that width instead.
+The block itself carries no controls. The log column is 640px wide, or 40% of the window where that is more, and the window gives the bodies more room than that.
 
 A request body is coloured by the content type it went out with, so a multipart body, which is several bodies with headers between them, is left plain rather than coloured as though it were one document.
 

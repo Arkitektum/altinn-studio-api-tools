@@ -4,14 +4,14 @@ A local web tool for posting test data into Altinn 3 apps running under Altinn S
 
 ## What it shares with the other repositories
 
-Nothing to do with the custom components, which sit beside it in the same directory and solve a different problem. The one overlap is two small packages this server has in common with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
+Two small packages are shared with `altinn-studio-custom-components-api`, because both talk to the same FtPB testmotor about the same set of apps:
 
 | Package                             | What it gives this server                                                                                                                                                       |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@arkitektum/ftpb-testmotor-client` | Reading the main form and subform examples. `testmotorClient.ts` passes in this server's own `altinnFetch`, so the request timeout and the 502 envelope stay this repository's. |
 | `@arkitektum/ftpb-app-catalogue`    | The apps the target picker offers and the data types it suggests. `appCatalogue.ts` narrows it to the fields `GET /catalogue` serves.                                           |
 
-Both are published from their own repositories. Change them there rather than here; what is left in this repository is a thin wrapper in each case.
+Both are published from their own repositories. Change them there rather than here. What is in this repository is a thin wrapper in each case.
 
 ## Why there is a server at all
 
@@ -39,9 +39,9 @@ Everything the tool does to Altinn goes through `altinnClient.altinnFetch`, whic
 
 `stepRecorder.StepRecorder` wraps each call as a step: name, method, url, status, duration, request body and response body. Both the posting and the reading flows return `{ ok, steps, failedAt, … }` with the same shape, so the UI renders them with one component and does not need to know which request produced what.
 
-Two paths are not step-recorded, and both are answers to a question rather than actions on an instance: `appService`, which probes an app for its metadata and parties, and `localtestClient`, which mints a token and reads the user list. They report what they found or throw an `HttpError`, and nothing about them appears in the run log. It would be more consistent if a probe left a step behind, and it is not much work if the panels ever need it.
+Two paths are not step-recorded, and both are answers to a question rather than actions on an instance: `appService`, which probes an app for its metadata and parties, and `localtestClient`, which mints a token and reads the user list. They report what they found or throw an `HttpError`, and nothing about them appears in the run log.
 
-`sweepService` is the third, and the only one that is writing rather than asking. It posts an instance per example file and deletes it again, a hundred of each, and recording that would bury the run you were actually reading under the tool's own traffic. It is the one place the rule works against itself, and what the sweep did is the table it returns.
+`sweepService` is the third, and the only one that writes. It posts an instance per example file and deletes it again, a hundred of each, and recording that would bury the run you were reading under the tool's own traffic. What the sweep did is the table it returns.
 
 ## Failures are results, not exceptions
 
@@ -70,6 +70,8 @@ server/src
   localtestClient.ts  GetTestUserToken, and the test user list
   tokenStore.ts       in-memory token store
   multipart.ts        hand-written multipart body
+  processAction.ts    the action process/next names for each task type
+  httpError.ts        the error a route answers with a status code
   examples.ts         main forms from the testmotor, the rest from examples/ behind a traversal guard
   testmotorClient.ts  adapter over @arkitektum/ftpb-testmotor-client, using this server's own fetch
   appCatalogue.ts     the shared catalogue of known apps, narrowed to what this server serves
@@ -93,7 +95,7 @@ web/src
   writes.ts           posting the payload and prevalidating it, as hooks
   api.ts              typed calls to /api, one function per endpoint
   types.ts            the wire shapes, mirroring the server's
-  components/         one file per panel, plus CopyButton, Notice and Icon
+  components/         one file per panel, plus shared pieces such as Panel, Modal, CodeEditor, CopyButton, Notice and Icon
   lib/                every pure decision, each with a test
   testDom.ts          a jsdom browser, for the tests that have to render
   styles.css          the imports, in the order the cascade needs
@@ -103,7 +105,7 @@ web/src
 ## Where state lives
 
 - **Tokens: server memory.** A `Map` in `tokenStore.ts`, pruned when expired. Never written to disk, never sent to the browser.
-- **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid, the payload elements, the payloads saved by name and the two markers that go with them, under the `altinn-api-tools:` prefix by `useLocalStorage`. [SECURITY.md](SECURITY.md) lists all nine. Not the destination, which is derived from whether an instance is selected rather than stored. A refresh does not lose your work.
+- **Everything you typed: `localStorage`.** Org, app, party, the selected instance guid, the payload elements, the payloads saved by name and the two markers that go with them, under the `altinn-api-tools:` prefix by `useLocalStorage`. [SECURITY.md](SECURITY.md) lists them all. A refresh does not lose your work.
 - **Everything read back: the query cache.** The instance listing, the instance and its validation, the fetched data element, the comparison with the stored xml and the last prevalidation report are answers in a TanStack Query cache, keyed on what they are about. Reloading drops them, which is correct: they describe a moment.
 - **What is nobody's answer: React state.** The run log, the validation results gathered across several reads, and the pdf blob. None of them is the answer to one request: the log is a history, the results are one per target, and the blob is a rendered document rather than a response.
 
@@ -115,7 +117,7 @@ The library's defaults are inverted in `queries.ts`, because they are written fo
 
 The run log entry is written inside the `queryFn` rather than in an effect on the answer. The `queryFn` is the request: it runs once per fetch and not at all when an answer comes from the cache, which is exactly the distinction the log draws.
 
-Two rules go with keying on a value you are typing. The key is the **settled** value, debounced, so the intermediate app names you type through are never asked about at all; and the flags that say which values have settled live in the session rather than in each component, because a panel mounting mid-typing would otherwise treat a half-typed name as settled and ask about it.
+Two rules go with keying on a value you are typing. The key is the **settled** value, debounced, so the intermediate app names you type through are never asked about at all. And the flags that say which values have settled live in the session rather than in each component, because a panel mounting mid-typing would otherwise treat a half-typed name as settled and ask about it.
 
 ## Conventions the UI follows
 
@@ -129,9 +131,9 @@ Reachability is stated per step rather than walked down the list, because the st
 
 `lib/scrollSpy.ts` decides which step to mark as the one on screen, and `lib/useScrollSpy.ts` feeds it positions read from the DOM on each scroll. Reading them fresh rather than subscribing with an observer is what keeps it right while panels change size underneath it.
 
-What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a row scrolls to it. Comparing against the rail's edge instead left the two disagreeing by exactly that margin, so clicking a row marked the panel above the one it scrolled to.
+What it compares against is each panel's own `scroll-margin-top`, measured, because that is where the browser puts a panel when a row scrolls to it.
 
-The work column carries a screen's worth of room below the last panel, and that is load-bearing rather than spacing. Without it the panels in the final screenful all bottom out at the same instant: there is no scroll position where Pdf has reached the line and Process has not, so the rail went straight from Data element to Process and Pdf could never be marked at all.
+The work column carries a screen's worth of room below the last panel, and that is load-bearing rather than spacing. Without it the panels in the final screenful would all reach the bottom at the same instant, and the rail could never mark Pdf as the panel on screen.
 
 **Pure decisions live in `lib/`, and `App.tsx` only wires.** Anything that can be decided from its arguments alone goes into a `lib/` module with a test: which panels show, where a loaded element goes in the payload list, what a step looks like as curl, how a content type maps to a file extension, what each api result looks like as a log entry. `App.tsx` holds state, effects and the calls.
 
@@ -143,7 +145,7 @@ What is left there is still worth asserting, and it is asserted by rendering: `A
 
 Syntax colouring is the one place the palette does double duty, and it earns it by never appearing outside a code block. Its tokenizer is hand written, in `web/src/lib/highlight.ts`, for the same reason the server's xml diff is: two formats, read-only, and a highlighter library is a large dependency for that. It must return the text it was given, exactly, and a test asserts it, because what it colours is often broken on purpose: a preview truncated at 4000 characters, or half-typed XML.
 
-That extends to buttons, which are all one height: a filled one is the primary action, an outlined one in a method colour sends that kind of request, and an outlined grey one only rearranges what is already here. There is no size variant, because height was encoding nothing and made the same action look different in two places.
+That extends to buttons, which are all one height: a filled one is the primary action, an outlined one in a method colour sends that kind of request, and an outlined grey one only rearranges what is already here.
 
 ## Decisions worth knowing
 
@@ -151,7 +153,7 @@ That extends to buttons, which are all one height: a filled one is the primary a
 
 **The test user is written into the example data.** A DIBK submission is refused when the identity it was sent with is not the identity written in it, so an example file with someone else's company in it fails for everyone but that company. `lib/formIdentity.ts` writes the party being acted for into the one party element that is the sender, chosen from a priority list that differs by whether you are acting as yourself or for a company. `lib/identity.ts` is the one place that decides who that is, and the validation request reads it too, so the submitter and the form agree by construction.
 
-It is an edit in the text rather than a parse and a serialize. A round trip would reformat the whole document, and the whole document is what the editor shows and what the comparison with the stored xml is about; this way everything except the five values comes out byte for byte as it went in. What it costs is a small xml scanner, which is the same trade the run log's highlighter and the server's xml diff already make.
+It is an edit in the text rather than a parse and a serialize. A round trip would reformat the whole document, and the whole document is what the editor shows and what the comparison with the stored xml is about. This way everything except the five values comes out byte for byte as it went in. What it costs is a small xml scanner, which is the same trade the run log's highlighter and the server's xml diff already make.
 
 Only an element still holding an unedited example is written into, and it is written again whenever the identity changes rather than only at load: the app is read for its parties while the first example is already loading. Writing the same identity into a form it is already in changes nothing, so the effect settles after one pass.
 
@@ -175,10 +177,6 @@ Closing the window puts the pdf away rather than throwing it out, so looking at 
 
 The same holds for the instance listing. The app's `/instances/{party}/active` is the one that answers, and storage is asked separately, only when the completed ones were asked for. A refusal there costs the extra rows and nothing else, and `completedListed` says which of "none finished" and "storage would not say" the short list means.
 
-## Deliberate limits
+## Limits
 
-- Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so the tool only talks to a local Altinn. It has no knowledge of tt02 or production. There are two exceptions, neither carrying a token. `validationService.ts` posts a payload to the DIBK validation service, because that service knows what a submission requires and `applicationmetadata` does not; `VALIDATION_URL` switches it off. `testmotorClient.ts` reads the main form and subform examples from the FtPB testmotor, because it stamps their date fields afresh on every request and a file committed here would be right only on the day it was committed; `TESTMOTOR_URL` switches it off, leaving only what is on disk: the uttalelse form and the attachment dummies.
-- Token claims are decoded for display, never verified. The app does that, and it holds the key.
-- Request bodies are parsed up to 25 MB, and the file picker refuses anything over 15 MB, since base64 inflates by a third on the way there.
-- Altinn calls time out after 30 seconds, configurable with `REQUEST_TIMEOUT_MS`.
-- The run log keeps the last 25 runs.
+The request body limit, the upload limit, the Altinn timeout and the run log length are listed under [Configuration](docs/configuration.md#limits), and the token and network boundaries in [SECURITY.md](SECURITY.md).

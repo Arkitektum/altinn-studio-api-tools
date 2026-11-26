@@ -15,9 +15,7 @@ XML and JSON are coloured: element names in the accent blue, attribute names and
 
 **Full size** in the content's own top right corner opens the same editor in a window over the tool. It is the same state, so what you type there is there when you close it, and Escape or the backdrop closes it. The window carries the line that sits under the editor in the panel, how much content there is and which example it came from, above the editor the way a response body carries its type and size, so the two windows read the same way.
 
-The button sits in the corner of the content rather than on the label's line, and says "Full size" rather than "Maximize", which named a window operation instead of what you get.
-
-The colouring is a textarea with a coloured copy of its own text behind it, which keeps typing, undo, selection and the caret as the browser's rather than reimplementing an editor. Above 200,000 characters the colour is dropped and the text shown plain: the GML example alone is near a megabyte, and tokenizing that on every keystroke costs more than the colour is worth.
+The colouring is a textarea with a coloured copy of its own text behind it, so typing, undo, selection and the caret are the browser's. Above 200,000 characters the colour is dropped and the text shown plain, since tokenizing a document that size on every keystroke costs more than the colour is worth.
 
 ## Where content comes from
 
@@ -84,15 +82,13 @@ Changing the data type clears the content and content type, since both belonged 
 
 ## After upload
 
-One checkbox in the [Post](posting.md) panel, **Sign and submit once it is posted**, which calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The wording says the step rather than the action, since which task the instance lands in is the app's business and there is nothing to read it off yet. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
+One checkbox in the [Post](posting.md) panel, **Sign and submit once it is posted**, calls `PUT .../process/next` after the data is stored, naming the action for the task the instance is in. It is the same step as pressing send in the app, and it fails if validation does not pass, with the data posted either way. The same call sits on its own button in the [Process](process.md) panel, for an instance you are not posting to.
 
 ## Prevalidate
 
-A panel of its own, between Payload and [Post](posting.md), sending the payload to the DIBK validation service and putting what it answers in the run log. It is the one request this tool makes that leaves your machine, so it waits to be pressed and says where it goes.
+A panel of its own, between Payload and [Post](posting.md), sending the payload to the DIBK validation service and putting what it answers in the run log. What it answers is what a refused submit would have told you, read before the submit. The payload leaves your machine with it, so it waits to be pressed and says where it goes. Its **Language** picker sets the language the messages come back in, sent as `spraak`, and is the same choice as the pickers in Post, Process and Pdf.
 
-It is called that because of when you do it. What it answers is what a refused submit would have told you, read before the submit rather than after, which is why it sits directly above the panel that does the submitting.
-
-It is a step rather than a section because it is a thing you do between two other things you do, and the rail says so: `not run` until you press it, then what the service answered, in red where that was errors and amber where it was only warnings. The panel's notice leads with the same counts and takes its colour from the same report, through the same two functions in `chain.ts`, so the two cannot drift. Whether a required document is missing is a narrower question than a notice saying what the service made of your submission looks like it is answering, so a report with an error inside the form and four documents it only recommends is red in both places. What the panel adds is the detail under those counts: the missing documents named and addable, the recommended ones in a line, and what the report says about the form itself rather than about what is attached to it. The errors among those are read out in full whether or not a document is missing, with the rule's own sentence and where in the form it is about. Nothing there can be added from this panel, but a submission with every document attached and an empty field in the form is still one that would be refused, and "one thing about the form's own content" does not say which thing. The warnings stay a count, since they are the long half of a report the run log has all of. The panel is not rendered at all when no service is configured, and the rail leaves the step out on the same condition, because switched off is not a step you failed to do.
+The rail says `not run` until you press it, then what the service answered, in red where that was errors and amber where it was only warnings. The panel's notice leads with the same counts and takes its colour from the same report, so a report with an error inside the form is red in both places even when no document is missing. Under the counts the panel names the missing documents and lets you add them, lists the recommended ones in a line, and reads out each error about the form itself with the rule's own sentence and where in the form it is about. Warnings stay a count, and the run log has all of them. The panel is not rendered when no service is configured, and the rail leaves the step out on the same condition.
 
 It exists because `applicationmetadata` is not a reliable answer to what a submission needs. The `minCount` an app declares does not match what the validation insists on, and the service does know, so the question goes where the answer is.
 
@@ -112,13 +108,11 @@ An element with nothing in it is left out, and a payload with no main form has n
 
 ### One button, one request per form
 
-The service does not support `subForms`. It reads `formData` and ignores the rest, which we found by sending a submission with the property set and getting back a report about the main form alone: the `soknadtype` that came back named whatever was in `formData`, whatever `subForms` held. So for as long as that table above described what went out, the subforms were never looked at and the panel was showing a report about one form while saying it was about the submission.
+The service reads `formData` and ignores `subForms`, so each form goes up as a submission of its own, main form first, and the answers are merged into one report. The service recognises them: a gjennomføringsplan comes back as `GFP`, a dispensasjonssøknad as `DS`. The button is still one button and the panel still shows one result.
 
-Each form goes up as a submission of its own, main form first, and the answers are merged into one report. The service recognises them: a gjennomføringsplan comes back as `GFP`, a dispensasjonssøknad as `DS`. The button is still one button and the panel still shows one result.
+Every request carries the whole attachment list. Naming an attachment can only answer a document rule, never raise one, so a form sent bare would report documents the submission has as missing.
 
-Every request carries the whole attachment list, which was measured rather than assumed. Naming six attachments on an ET submission silenced six of its fourteen document rules, and nothing was ever added by naming one, so a form sent bare would report documents the submission has as missing. Attachments can only answer a rule, never raise one.
-
-Each message is tagged with the form it came from, and the panel names it where that is not the main form. Without it a `DS` error out of a subform is indistinguishable from one about the main form, and the panel would be naming a problem in a document it never mentions.
+Each message is tagged with the form it came from, and the panel names it where that is not the main form.
 
 A form the service refuses does not stop the rest. Its step says what happened, the report is short by whatever that form would have said, and the result is not `ok`. The panel shows that partial report in place of the last one, since the last one was about a payload that has since changed, and says above it which forms the service would not answer about. The rail adds "partial" to its counts, and a partial report that found nothing is amber rather than green, since the refused forms were never looked at. When the main form is the one refused, the report does not borrow a subform's `soknadtype`, so the panel says "this submission" rather than calling an ET submission a DS one.
 
@@ -128,10 +122,10 @@ Only a run the service answered nothing about leaves the earlier report up, mark
 
 The report is one message per rule the service has something to say about, and the ones about documents name the document. Those become the line under the button: **The validation service wants 4 more documents in this ET submission**, each named with the service's own reason under it and the checklist point beside it, and a button that adds one element per document. Each lands folded, with its data type and content type filled in, and the example picker loads the first example for it, so a full payload is a click from an incomplete one.
 
-`lib/validationReport.ts` does the reading, and four things about it are worth knowing:
+`lib/validationReport.ts` does the reading:
 
 - **A rule about a document has `Vedlegg` in its reference**, `Ettrinn.Vedlegg.Situasjonsplan`, and the last segment is the attachment type. Everything else the report says is about what is inside the form, which is no payload element, so it is counted and left to the log: **And 2 things about the form's own content**.
-- **A rule that takes any one of several documents quotes them**, so the names are read out of the prose as well as off the rule. `SnittPlanFasadeTegninger` is not something to attach; the six drawings its message lists are, and the line offers them as `TegningNyPlan or TegningNyFasade`.
+- **A rule that takes any one of several documents quotes them**, so the names are read out of the prose as well as off the rule. `SnittPlanFasadeTegninger` is not something to attach, but the six drawings its message lists are, and the line offers them as `TegningNyPlan or TegningNyFasade`.
 - **A name is matched against the data types the app declares**, and only the matches are offered, since a type the app does not have is not one you can select. A name that matches nothing is still named, and says it cannot be added here.
 - **An error is what the submission needs and a warning is what the service advises**, listed as one line of names. Adding one is your call, so it is a line rather than a list with a button.
 
@@ -143,7 +137,7 @@ The whole report goes to the run log either way, request and response, since the
 
 **Open** and **Save** in the panel header, each opening a window over the tool. A run of a form and three subforms takes a few clicks to put together, and a payload you post twice a week is worth keeping.
 
-They are two buttons rather than a section of the panel because neither is part of a payload: one is what you do before writing one, the other after finishing it. Windows rather than a fold, because opening a saved payload replaces every element in the panel behind it, and a list you are about to do that with deserves the foreground while you pick from it. **Open** counts what it holds and is disabled with nothing in it.
+Opening a saved payload replaces every element in the panel. **Open** counts what it holds and is disabled with nothing in it.
 
 **What is kept depends on where the content came from.** An element still holding an unedited example is kept as a reference to that file, `{kind, group, name}`, and nothing else. Loading the payload reads the file as it stands then, so a payload saved today posts the corrected example tomorrow. That is the common case here: the examples are the shipped test data, and a saved payload is usually a combination of them rather than a document of its own.
 

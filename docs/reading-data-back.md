@@ -7,7 +7,7 @@ nav_order: 9
 
 **Instances** is the list of what the party has, plus a **New instance** row, and what is selected there is both what a post goes to and what the rest of the tool is pointed at. Selecting one reads and validates it, which fills the panels under the **Inspect** heading: **Data element**, which holds **Compare with stored** for every form on the instance, then **Pdf** and **Process**.
 
-None of those have fields of their own. They work on whatever is selected in Instances, and each names in its header what that is. Until one is selected they are on screen saying they need an instance, rather than being left out.
+They work on whatever is selected in Instances, and each names in its header what that is. Until one is selected they say they need an instance.
 
 Every request appears in the run log alongside posts, with method, URL, status, timing, and body.
 
@@ -15,9 +15,9 @@ Every request appears in the run log alongside posts, with method, URL, status, 
 
 `GET /{org}/{app}/instances/{party}/active`, the app's own list endpoint, the one its frontend uses to offer an unfinished form back to the user. It needs a party but no guid, since finding the guid is the point of it.
 
-There is no button for it. It is one read, and the panel may as well ask for it: the listing runs once there is a token, an app and a party, debounced because the party is typed a character at a time, and attempted once per target so a party that 403s is not retried forever. **Refresh** lists again, and a post refreshes it too, since a post either makes an instance or changes one.
+The listing runs on its own once there is a token, an app and a party, debounced because the party is typed a character at a time, and attempted once per target so a party that 403s is not retried forever. **Refresh** lists again, and a post refreshes it too, since a post either makes an instance or changes one.
 
-The panel itself holds one thing, which is what a post goes to, and **Open** in its header opens the list in a window over the tool. Saved payloads work the same way, and the two are the same shape of thing: a list you visit to make one choice and then stop looking at. What the choice decides is directly under it, the **Will call** line, so the URL a post is about to use sits with the selection that decides it.
+The panel itself shows what a post goes to, and **Open** in its header opens the list in a window over the tool. Directly under the selection is the **Will call** line, the URL a post is about to use.
 
 The first row in the window is **New instance**, which is not an instance yet: with it selected, posting creates one. Under it come the party's instances, each the first eight characters of its guid, when it was last changed and by whom, newest first.
 
@@ -29,21 +29,21 @@ Altinn lists the instances whose process has not ended, so an archived one is no
 
 ### Include completed
 
-Which is only a way through if you know the guid, so the checkbox above the list is the way to all of them. It sits there, before the list and inside the same window, because what it decides is what the list holds. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· soft deleted`.
+The checkbox above the list, inside the same window, is the way to all of them. **Include completed** adds a second read, `GET {localtest}/storage/api/v1/instances?appId={org}/{app}&instanceOwner.partyId={party}`, which is the only place an instance whose process has ended is still listed. Soft deleted ones come with it, and each extra row says which it is: `· completed` or `· soft deleted`.
 
-Two reads rather than one, because the app's own list is the one that must not depend on storage. If storage is not there, or refuses the party, the active listing still stands and the panel says the rest is missing rather than letting a short list read as a party with nothing finished. What both hold is listed once, as the app described it, and everything is ordered by when it was last changed, so the instance you just archived is where you left it rather than at the bottom.
+The app's own list does not depend on storage. If storage is not there, or refuses the party, the active listing still stands and the panel says the rest is missing rather than letting a short list read as a party with nothing finished. What both hold is listed once, as the app described it, and everything is ordered by when it was last changed, so the instance you just archived is where you left it rather than at the bottom.
 
 When it refuses, the notice under the checkbox says which refusal it was rather than naming the likeliest. A 403 is this token not being allowed to act for that party, which you fix by getting one for a user who may. A 404 usually means this LocalTest does not serve the storage api at all, in which case the finished ones cannot be listed here however you are authenticated. Anything else is LocalTest rather than the request, and worth trying again. The step in the run log has what it said either way.
 
-Off by default. It is a request that often has nothing to add, and it is a view of the moment rather than something you chose, so a reload comes back to the cheaper listing.
+Off by default, and not kept across a reload.
 
-Within a session it rarely comes up, since an instance stays selected after a post even once its process ends. A listing belongs to one app and one party, so changing either drops it. A party that genuinely has no instances says so, while a failed request does not, since "none" is not something we know in that case.
+A listing belongs to one app and one party, so changing either drops it. A party that has no instances says so, while a failed request does not.
 
 ## Reading and validating, on selection
 
-`GET /{org}/{app}/instances/{party}/{guid}` and then `GET …/validate`, without a button: selecting an instance is asking to see it, and both are reads. It happens once per selection, debounced because a guid typed into **Other instance** arrives a character at a time, and a post marks its own instance as read since it already read and validated it.
+`GET /{org}/{app}/instances/{party}/{guid}` and then `GET …/validate`, run on their own when an instance is selected. It happens once per selection, debounced because a guid typed into **Other instance** arrives a character at a time, and a post marks its own instance as read since it already read and validated it.
 
-The two land as one run log entry, "Read instance", with the steps renumbered across both, the same way a post folds in its follow-ups. Two entries per click would have been noise.
+The two land as one run log entry, "Read instance", with the steps renumbered across both, the same way a post folds in its follow-ups.
 
 Besides logging the whole response, the read fills the data element select so you do not have to copy a dataGuid by hand, and fills the [Process](process.md) panel, which needs no request of its own. The validation fills the [Validation](validation-and-log.md) panel. A read that failed skips the validation, which would only fail the same way.
 
@@ -51,13 +51,13 @@ Besides logging the whole response, the read fills the data element select so yo
 
 `GET /{org}/{app}/instances/{party}/{guid}/data/{dataGuid}` for whichever element is selected. The select labels each one by data type, filename, content type, and size, and the first is preselected after reading an instance.
 
-There is no button for it either. Picking an element is asking to see it, so the read, the validation and the comparison all run on their own, the way selecting an instance reads and validates that. What holds them to one request each is the query cache: a read is keyed on what it is about, so an answer already held is not asked for again, and an answer whose key has moved on is dropped rather than written over the newer one. A value you are still typing is debounced and the key is the settled one, so the half-finished app names you type through are never asked about at all.
+Picking an element runs the read, the validation and the comparison on their own, the way selecting an instance reads and validates it. Each is asked once per element: an answer already held is not asked for again.
 
 The key is the element and what is stored under it, its `lastChanged`, so a post that rewrites an element in place is read again even though the guid never moved. **Refresh** in the panel header asks again on demand, for an element something outside the tool has changed.
 
 The request goes out with `Accept: */*`, and the two kinds of data element answer differently.
 
-A data type with `appLogic` is served through the app's model: Altinn reads the stored XML, deserialises it into the model class and returns that object, which comes back as JSON. A data type without `appLogic`, a `Valideringsrapport` for instance, is streamed as stored, so its XML arrives as XML. Asking for `application/xml` instead was tried and changes nothing, because the app registers no XML output formatter; asking for JSON would be worse, since it would stop the streamed ones coming back as stored.
+A data type with `appLogic` is served through the app's model: Altinn reads the stored XML, deserialises it into the model class and returns that object, which comes back as JSON. A data type without `appLogic`, a `Valideringsrapport` for instance, is streamed as stored, so its XML arrives as XML. Asking for `application/xml` changes nothing, because the app registers no XML output formatter.
 
 Two content types are in play, and the tool shows both: the picker labels an element with the content type Altinn has it **stored** under, from the instance's `data` array, while the log entry's **Content type** row is what the response actually carried. They differ for form data, and that is Altinn's doing rather than a setting here.
 
@@ -70,11 +70,9 @@ What came back is held, so it can be used rather than only read. **Show content*
 - For a binary element, no content and no copy: base64 on screen is the encoding rather than the file, and copying it would hand over the encoding too. The window says what it is and how big, and leaves you the download.
 - For a pdf, the browser's own viewer at 100%, in the wider window the Pdf panel uses, with **Open in new tab** beside **Download**. It is known by its content type or by the `%PDF-` it starts with, since an attachment can be stored as `application/octet-stream`. The file is held as a blob url only while the window is open.
 
-The panel keeps one button and a line saying what came back, its name, type and size. Download and a copy sat there as two buttons of their own once, which spent a row on a body that is worth reading at full size and is not readable in a column that wide.
+The panel keeps one button and a line saying what came back, its name, type and size.
 
 Picking another data element, or another instance, drops what is held instead of offering to download an element you are no longer looking at.
-
-There was a **Load into payload** button here, putting what came back into the payload editor for a round trip. It is gone: what a form data element returns is the model as JSON, not the xml that was stored, so it was never the thing you wanted to post back, and the section at the foot of this panel compares the two rather than editing one into the other. Downloading it and picking the file up as a file from disk does the same job when it is really wanted.
 
 ### Validating an element
 
@@ -84,13 +82,13 @@ A data type the app declares with no `taskId` is never blocked. Nothing was said
 
 ## Comparing with the stored xml
 
-Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. **Compare with stored** puts the two side by side and reports only the differences that mean something. It sits at the foot of the Data element panel and compares every form data element on the instance at once, the main form and each sub form, whichever element the select above is pointing at. Following the select instead would leave the last form's diff on screen when an attachment, which has nothing to compare, was picked. Attachments are left out, since a file comes back as the file it went in as.
+Reading a form data element gives the model as JSON, so what Altinn actually wrote to storage is not visible anywhere else. That matters because the model is lossy in both directions: a field it has no place for is dropped on the way in, and a value it formats its own way is rewritten, neither with any complaint. **Compare with stored** puts the two side by side and reports only the differences that mean something. It sits at the foot of the Data element panel and compares every form data element on the instance at once, the main form and each sub form, whichever element the select above is pointing at. Attachments are left out, since a file comes back as the file it went in as.
 
 The right-hand side comes from LocalTest's storage api, `GET {localtest}/storage/api/v1/instances/{party}/{guid}/data/{dataGuid}`, which serves the blob itself rather than the model. A 403 there almost always means the token may not act for that party, not that the element is missing, and the panel says so rather than leaving you to guess.
 
-The left-hand side is the xml as written, which is always a payload element of the same data type: that is where the file you are working on already is. Sub forms of one type are paired in order, the second stored one against the second payload element of that type, since a post sends them in the order the payload lists them. There was a picker offering the example files as well, and it was never used for anything else, so it is gone. With no payload element to pair with, that element's block says so and points at the example files and the file picker, which is where content for one comes from.
+The left-hand side is the xml as written, which is always a payload element of the same data type: that is where the file you are working on already is. Sub forms of one type are paired in order, the second stored one against the second payload element of that type, since a post sends them in the order the payload lists them. With no payload element to pair with, that element's block says so and points at the example files and the file picker, which is where content for one comes from.
 
-It runs on its own too, and on both of its sides: whenever the instance's elements change, whenever a post rewrites what is stored under it, and whenever the payload above is edited. Editing is why it waits longer than the other unprompted reads, 800ms rather than 500ms, and why it waits for the payload to parse at all. Half-typed xml is not a comparison waiting to happen, and asking anyway would put a failed compare in the log at every pause in typing, so the section says it is waiting instead. The browser's own `DOMParser` decides that, which is the one decision in the web app that is not in `lib/`, since node's test runner has no parser to lend it.
+It runs on its own too, and on both of its sides: whenever the instance's elements change, whenever a post rewrites what is stored under it, and whenever the payload above is edited. Because of editing it waits 800ms rather than the 500ms of the other unprompted reads, and only runs once the payload parses as xml. Until then the section says it is waiting.
 
 Differences are reported as paths, with three kinds:
 
@@ -102,7 +100,7 @@ Differences are reported as paths, with three kinds:
 
 Each row also carries the field's declared type, read from the app's own json schema at `{app}/api/jsonschema/{dataType}`, which Studio generates from the same XSD the model came from. The XSD type is preferred over the json schema one, because json schema calls a date a string and the XSD does not, and an enumeration says how many values it allows, which is often why a value was rejected.
 
-A row with no type is informative rather than incomplete: it means the schema has no entry for that path, which for a dropped field is exactly why it was dropped. Nothing is guessed, and a schema that will not load costs the types and not the comparison. `schemaTypes.test.ts` covers the resolution, including `$ref` into `$defs`, repeating groups through `items`, attributes however the schema spells them, and a schema that offers a choice, where picking a branch would be a guess.
+A row with no type means the schema has no entry for that path, which for a dropped field is why it was dropped. A schema that will not load costs the types and not the comparison.
 
 So `/ettrinn/eiendom/festenr dropped` with no type says the model has no such field at all, and `/ettrinn/dato changed 2026-09-09 → 2026-09-09T00:00:00 date` says the model reformatted a date. A whole subtree that went missing is reported once at its root rather than leaf by leaf, and repeated siblings are told apart by position, `/ettrinn/part[2]/navn`.
 
@@ -112,7 +110,7 @@ So `/ettrinn/eiendom/festenr dropped` with no type says the model has no such fi
 
 Both keep their title on screen and the reason for them behind **More**, beside the title rather than in it, so opening the reason never ticks the box.
 
-The run log names them apart for the same reason, as "1, plus 2 altinnRowId", so the entry does not read as three problems when the panel is showing one.
+The run log names them apart, as "1, plus 2 altinnRowId", so the entry does not read as three problems when the panel is showing one.
 
 ### The same thing over everything at once
 
@@ -130,15 +128,15 @@ yarn workspace server run diff -- 1001 dibk/varselplanoppstart-v3
 yarn workspace server run diff -- 1001 dibk/et-v4 --keep
 ```
 
-Both run `sweepService.ts`, so there is one walk rather than one each. The script's first argument is the LocalTest user id, defaulting to 1001; the window uses the token you already have. The party is the token's own either way, which is the one it is certainly allowed to post as.
+Both run `sweepService.ts`, so there is one walk rather than one each. The script's first argument is the LocalTest user id, defaulting to 1001, and the window uses the token you already have. The party is the token's own either way, which is the one it is certainly allowed to post as.
 
 Each instance is hard deleted once it has been compared, because a sweep that leaves a hundred instances behind is worse than no sweep. **Keep the instances** in the window, or `--keep` on the script, leaves them, for when a difference needs looking at in the panel afterwards.
 
 The summary counts four outcomes: identical, row ids only, differs, and could not. Only the third is a finding, and each one lists up to five differences with their paths and types. The window sorts the findings to the top for that reason, so a sweep of a hundred files opens on the handful worth reading. An app the catalogue names but localtest does not serve is listed separately rather than counted as a failure, the same way the content type sweep does it.
 
-None of it reaches the run log. Every other write in this tool is recorded there, on the rule that a write you cannot see defeats the point of the tool, and the sweep is the one place that rule works against itself: a hundred posts and a hundred deletes would bury the run you were actually reading. What the sweep did is the table it returns.
+None of it reaches the run log, where a hundred posts and a hundred deletes would bury the run you were reading. What the sweep did is the table it returns.
 
-What it ignores is everything that carries no meaning: whitespace, the xml declaration, comments, self-closing versus longhand empty elements, attribute order and namespace prefixes. Two documents that differ only in those ways are reported as identical, which is the point: the noise is what made this cumbersome by hand. `xmlDiff.test.ts` pins all of it, and `compareService.test.ts` covers the storage read.
+What it ignores is everything that carries no meaning: whitespace, the xml declaration, comments, self-closing versus longhand empty elements, attribute order and namespace prefixes. Two documents that differ only in those ways are reported as identical.
 
 ## Validate a data element
 
@@ -148,11 +146,11 @@ The verdict summarises them by severity, for example "1 error, 1 warning, 1 othe
 
 ## Pdf
 
-`GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, the pdf the app would archive. Altinn calls it the receipt pdf, and the panel does not, because some of the forms are themselves called receipts and the word would mean two things a line apart. It is the quickest way to see what the form data turns into without walking the process to the end.
+`GET /{org}/{app}/instances/{party}/{guid}/pdf/preview`, the pdf the app would archive (Altinn calls it the receipt pdf). It is the quickest way to see what the form data turns into without walking the process to the end.
 
-It has a panel of its own, last, because it is a different kind of action: everything above it reads data, and this renders a document from it. It is also the one read that is still a button, since rendering a pdf on every selection would be wasteful.
+It is the one read that waits for a button, since rendering a pdf on every selection would be wasteful.
 
-The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer, so nothing is written to disk and no viewer library is bundled. It opens in a window over the tool rather than in a panel below it: it is something you look at and dismiss, not something you work in. That window is a native `<dialog>`, so Escape closes it, the backdrop dims what is behind, and focus stays inside without any of that being written by hand. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
+The pdf arrives base64 encoded, is turned into a blob in the browser and shown in the browser's own pdf viewer in a window over the tool, so nothing is written to disk. Escape closes it. Clicking the backdrop closes it too, and **Open in new tab** gives you the browser's full viewer with print and save.
 
 ### The main form, a subform, and the language
 
@@ -160,9 +158,9 @@ Without a task the app renders the task the instance is in, which in these apps 
 
 `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview?taskId=PdfSubform&dataElementId={element}&language=nn`
 
-Which tasks there are is asked of the app, not kept in the catalogue. `GET /{org}/{app}/instances/{party}/{guid}/process` lists every task with its type. Which subform a `subformPdf` task renders takes two more reads: `GET /{org}/{app}/api/layoutsets` finds the task's layout set, and `GET /{org}/{app}/api/layouts/{set}` finds the hidden `Subform` component Altinn 8 requires there, whose `layoutSet` names the subform's own set and so its data type. The task's own set is not gone by, because it does not reliably say: et-v4's set for `PdfSubform` is on `ET`, the main form. Where the layouts cannot be read, that set's data type is used only if it is a subform's. An app set up the Altinn 9 way (`subformUiFolder`) has neither, since the task has no layout set and which subform it renders is only in the process definition, which the app does not serve. So a task still unplaced is asked for a preview without a subform element, `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview?taskId={task}`, which the app refuses before rendering anything with `400 dataElementId must be the id of a data element of type {dataType}`, and the data type is read from that. The step shows in the log as a refusal, marked as intended. It depends on the wording of that message, so a change to it leaves the task without buttons rather than with wrong ones, and each such request counts against the app's preview rate limit (20 a minute by default, shared by every instance). A task that cannot be placed any of these ways gets no buttons, since a button sending the wrong element to a task is one the app refuses. It is all asked once per app, through the first instance that reads, because every instance of an app answers the same. Until the app has answered, or where it has no such tasks, the panel is the single button it always was.
+Which tasks there are is asked of the app, not kept in the catalogue. `GET /{org}/{app}/instances/{party}/{guid}/process` lists every task with its type. Which subform a `subformPdf` task renders takes two more reads: `GET /{org}/{app}/api/layoutsets` finds the task's layout set, and `GET /{org}/{app}/api/layouts/{set}` finds the hidden `Subform` component Altinn 8 requires there, whose `layoutSet` names the subform's own set and so its data type. The task's own set is not gone by, because it does not reliably say: et-v4's set for `PdfSubform` is on `ET`, the main form. Where the layouts cannot be read, that set's data type is used only if it is a subform's. An app set up the Altinn 9 way (`subformUiFolder`) has neither, since the task has no layout set and which subform it renders is only in the process definition, which the app does not serve. So a task still unplaced is asked for a preview without a subform element, `GET /{org}/{app}/instances/{party}/{guid}/pdf/preview?taskId={task}`, which the app refuses before rendering anything with `400 dataElementId must be the id of a data element of type {dataType}`, and the data type is read from that. The step shows in the log as a refusal, marked as intended. It depends on the wording of that message, so a change to it leaves the task without buttons rather than with wrong ones, and each such request counts against the app's preview rate limit (20 a minute by default, shared by every instance). A task that cannot be placed any of these ways gets no buttons, since a button sending the wrong element to a task is one the app refuses. It is all asked once per app, through the first instance that reads, because every instance of an app answers the same. Until the app has answered, or where it has no such tasks, the panel has only the whole-instance button.
 
-**Language** is Bokmål, Nynorsk or English, sent on every render, the whole instance included, and kept between sessions. Each button's url is its title, so hovering one shows the query it sends.
+**Language** is Bokmål, Nynorsk or English, sent as `language` on every render, the whole instance included, and kept between sessions. It is the same choice as the pickers in Prevalidation, Post and Process. Each button's url is its title, so hovering one shows the query it sends.
 
 One preview is held at a time. Rendering again replaces it and revokes the previous blob url, a failed render clears it rather than leaving a stale pdf looking current, and selecting another instance clears it along with that instance's validation results.
 
@@ -182,7 +180,7 @@ What the buttons offer is the whole of that, said out loud:
 | A current render        | **Show pdf**, **Render again**        | nothing has changed since it was rendered |
 | One that is out of date | **Render pdf**, **Show the last one** | the instance has changed since            |
 
-It says which case it is in rather than quietly not making a request, because a tool whose whole point is the run log should not have an action that sometimes logs nothing without explaining itself. **Show pdf** is grey rather than GET blue for the same reason: it does not talk to Altinn.
+**Show pdf** is grey rather than GET blue because it does not talk to Altinn.
 
 An instance that cannot be fingerprinted counts as out of date rather than current, since not knowing whether a document is stale is the same as knowing it might be. The rail's **Pdf** step reads the same answer, so the row and the button cannot disagree.
 
@@ -190,13 +188,13 @@ An instance that cannot be fingerprinted counts as out of date rather than curre
 
 Every row in the instance window has a delete, for clearing up after a test run. It calls `DELETE /{org}/{app}/instances/{party}/{guid}?hard=true` for that row, not for whatever is selected.
 
-It is always the hard one: the instance is removed rather than marked deleted. There was a checkbox for the choice, and the soft side of it earned its space nowhere: everything this tool can reach is local test data, and an instance marked deleted stays in storage, where **Include completed** keeps finding it and listing it as `· soft deleted`. The api still takes `hard=false` for a caller that wants it, see [API](api.md).
+It is always the hard one: the instance is removed rather than marked deleted. The api takes `hard=false` for a soft delete, see [API](api.md).
 
-Which is why a row already marked `· soft deleted` still has a delete, and why the badge says soft rather than just deleted. Altinn has only marked it, which is why storage keeps handing it back, and the hard delete is the only thing that clears it. The badge said `deleted` for a while, beside a Delete button, which read as a button that did nothing. The button is the one that does the same thing on every row, so it is the badge that had to be accurate.
+A row marked `· soft deleted` has a delete too: Altinn has only marked that instance, storage keeps listing it, and the hard delete is what clears it.
 
 Where **Include completed** has turned up a pile of soft deleted ones, there is a **Clear n soft deleted** above the list rather than n rows to work down two clicks at a time. It asks twice like the row deletes do, with the count in both labels so the stakes are in the button rather than in a dialog.
 
-Only the soft deleted ones. A completed instance is a test run somebody finished and may want to look at, and that line lives in `lib/instanceCleanup.ts` with a test rather than inline, because widening it by one character would sweep those away with the litter and nothing else in the tool would notice. It is one `DELETE` after another rather than all at once, against a localtest usually on the same machine, and the whole clear is one run log entry holding a step per instance: forty entries would push everything else out of a log that keeps twenty five, and what it would push out is the run you were deleting after. Any that refuse stay in the list, since they are still there to try again on.
+Only the soft deleted ones, never a completed instance. It is one `DELETE` after another, and the whole clear is one run log entry holding a step per instance. Any that refuse stay in the list.
 
 Delete asks twice. The first click arms that row's button, which then reads **Confirm delete**. One row is armed at a time, and a listing that changed underneath drops a pending confirmation, so a second click never lands on an instance you did not mean. A refusal from Altinn, a locked instance or a party you may not act for, lands in the run log with the app's own reason.
 

@@ -17,7 +17,9 @@ The button says what the move does to the form rather than what it does to the p
 
 Underneath it is one call, `PUT .../instances/{party}/{guid}/process/next`, the same one the post flow's checkbox makes.
 
-The body names the action for the task the instance sits in, so a signing task is advanced with `{"action":"sign"}` and a data task with `{"action":"write"}`. Altinn authorises `process/next` against that action, which is what the app's policy is written against, so naming it means an app that grants only the specific action gets a body it recognises, and the log then shows which action was asked for rather than an empty object that says nothing. The panel prints the body under the URL, so you can see what is about to be sent.
+The body names the action for the task the instance sits in, so a signing task is advanced with `{"action":"sign"}` and a data task with `{"action":"write"}`. Altinn authorises `process/next` against that action. The panel prints the body under the URL, so you can see what is about to be sent.
+
+The **Language** picker sends `lang` with the call, so a pdf the task ends in is rendered in that language rather than the profile's. It is the same choice as the pickers in Prevalidation, Post and Pdf.
 
 | Task type      | Action    | Button          |
 | -------------- | --------- | --------------- |
@@ -28,11 +30,11 @@ The body names the action for the task the instance sits in, so a signing task i
 
 The task type comes from the process the tool has already read, so naming the action costs no extra request. A task type not in the table, `feedback` among them since the app advances those itself, sends `{}` instead: naming an action the policy does not grant is a 403, where saying nothing lets Altinn pick the one it would have picked anyway.
 
-A successful move is followed by a `GET` of the instance, folded into the same log entry the way a post folds in its follow-ups. Advancing changes more than the task: an app can add data elements on the way out of one, a generated pdf among them, and the panels below would otherwise be showing the list from before the move. The read is the later of the two answers, so the task it reports is the one shown. A read that fails leaves the advance standing, with its own step in the log.
+A successful move is followed by a `GET` of the instance, folded into the same log entry the way a post folds in its follow-ups, since an app can add data elements on the way out of a task, a generated pdf among them. The task that read reports is the one shown. A read that fails leaves the advance standing, with its own step in the log.
 
-The data element selected before the move stays selected where it survived it, since the panels below are about that element, and otherwise the first of whatever the instance holds now is picked.
+The data element selected before the move stays selected where it survived it, and otherwise the first of whatever the instance holds now is picked.
 
-The panel then says what the move did, comparing the data elements before and after: "Moved from Task_1 to Task_2. The instance holds 3 data elements, 1 new: ref-data-as-pdf". New is an element that was not there before, changed is one whose `lastChanged` moved. The Data element panel sits above Process, so **Check data elements** takes you back up to the first element the move touched, the rail's Data element row reopens with "1 new to check" until you have been there, and the select marks each touched element "new" or "changed". A move that touched nothing says so and reopens nothing.
+The panel then says what the move did, comparing the data elements before and after: "Moved from Task_1 to Task_2. The instance holds 3 data elements, 1 new: ref-data-as-pdf". New is an element that was not there before, changed is one whose `lastChanged` moved. **Check data elements** takes you back up to the first element the move touched, the rail's Data element row reopens with "1 new to check" until you have been there, and the select marks each touched element "new" or "changed". A move that touched nothing says so and reopens nothing.
 
 A Post run with **Sign and submit once it is posted** ticked follows up the same way. The run reads the instance just before it moves it on, so what the post itself wrote is not counted as something the move did.
 

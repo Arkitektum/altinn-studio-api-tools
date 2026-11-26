@@ -5,17 +5,15 @@ nav_order: 5
 
 # Target
 
-The panel appears once there is a token, since reading the app takes one and without it there is nothing to fill the pickers with.
+The panel waits for a token, since reading the app takes one.
 
 Enter an org and app and the tool reads the app itself. `/api/v1/applicationmetadata` fills the data type picker, and `/api/v1/parties?allowedToInstantiateFilter=true` fills the party picker with subunits flattened, so you do not have to guess a party id that would return 403.
 
-There is no button for it. Both are reads, and `allowedToInstantiateFilter=true` filters the list of parties rather than instantiating anything, so nothing is created and there is nothing to decide: it happens once there is a token and a target. The badge in the panel header says how many data types came back.
+Both reads happen on their own once there is a token and a target. `allowedToInstantiateFilter=true` only filters the list of parties, so nothing is created. The badge in the panel header says how many data types came back.
 
 The read is debounced, because org and app are typed a character at a time and `et-v4` would otherwise be five requests. It is attempted once per token and target, so an app that is not running does not get retried forever. A failure shows the app's own reason with a **Try again** next to it, which is what you want when the app was simply not up yet.
 
 A result belongs to one org and app, so changing either drops it and reads the new target instead.
-
-There is deliberately no link to the app root here. Altinn instantiates from it, so opening it left a new empty instance behind every time, which is rarely what anyone wanted from a link called "open app". The api still reports the app's url as `appUrl` on `/api/app/metadata` for a caller that wants it.
 
 ## Application
 
@@ -29,14 +27,10 @@ Whether the fields are showing is worked out rather than remembered, so an app t
 
 A select, since everything below depends on it: what the instance list asks about, and who a new instance belongs to.
 
-It offers the parties the app says this token may instantiate for, with subunits flattened out of Altinn's nesting, so a party that would return 403 is not on the list. There is no field to type one into. The party prefilled from the token's `urn:altinn:partyid` claim is offered too, marked as coming from the token, because it is not always among the instantiable ones and the select would otherwise show no selection at all.
+It offers the parties the app says this token may instantiate for, with subunits flattened out of Altinn's nesting, so a party that would return 403 is not on the list. The party prefilled from the token's `urn:altinn:partyid` claim is offered too, marked as coming from the token, because it is not always among the instantiable ones and the select would otherwise show no selection at all.
 
 Choosing a party drops the selected instance, since it belonged to the previous one.
 
 ## Where a post goes
 
-Not here. Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, one of the party's instances, or **Other instance** for one the list does not hold. The **Will call** line lives there too, under the selection that decides it, and shows the URL either way.
-
-## Instance template
-
-Not offered here. Altinn takes a `dueBefore` and a `visibleAfter` when an instance is created, and the api still accepts those and anything else Altinn allows through `instanceTemplate` on `/api/runs`, see [API](api.md). The UI had two fields for them and they earned their space: a deadline and a visibility date are not what a test run is usually about, and a `visibleAfter` in the future hides the instance you just made, including from the listing in this tool.
+Posting follows whatever is selected in [Instances](reading-data-back.md#instances), directly below: its **New instance** row, one of the party's instances, or **Other instance** for one the list does not hold. The **Will call** line lives there too, under the selection that decides it, and shows the URL either way.

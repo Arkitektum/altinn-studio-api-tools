@@ -27,7 +27,7 @@ yarn dev
 
 No configuration is needed if your localtest uses the default ports. Otherwise copy `server/.env.example` to `server/.env` and adjust, see [Configuration](configuration.md).
 
-The header shows a status dot for the app host, for whether LocalTest is answering, and for the active token. If LocalTest is not answering, the Test user panel says so and names the URL it tried.
+The header shows three gauges, each with a tick or a cross: the app host (ticked when the api answers), LocalTest, and the active token. If LocalTest is not answering, the Test user panel says so and names the URL it tried.
 
 ## The quickest path to a full submission
 
@@ -35,7 +35,7 @@ The user id is the only thing you type:
 
 1. Pick a test user and press **Get token**. The party id is filled in from the token's claim.
 2. Pick `dibk/et-v4` from **Application**, which fills in the org, the app and the main data type.
-3. The app is read for you, so the data type picker and the party picker now come from the app itself.
+3. The app is read for you, so the data type picker and the party picker come from the app itself.
 4. The first payload element already holds the ET example, loaded when the data type was set. Press **+ Add data element**, choose the Gjennomføringsplan subform, and its example loads too.
 5. **New instance** is selected in Instances, so press **Post**.
 
@@ -50,15 +50,4 @@ What you get back is the instance, read and validated automatically, with every 
 
 ## Scripts
 
-| Command                          |                                                               |
-| -------------------------------- | ------------------------------------------------------------- |
-| `yarn dev`                       | Both servers with prefixed output                             |
-| `yarn test`                      | Server and web tests, stubbed Altinn, no network              |
-| `yarn typecheck`                 | Both workspaces                                               |
-| `yarn build`                     | Compile the server and bundle the UI                          |
-| `yarn format`                    | Format everything with Prettier                               |
-| `yarn format:check`              | Fail if anything is unformatted, for CI                       |
-| `yarn workspace server run gaps` | Which content types your apps declare that have no dummy      |
-| `yarn workspace server run diff` | Posts every example and reports what each app's model changed |
-
-For the development loop in more detail, see [CONTRIBUTING.md](https://github.com/Arkitektum/altinn-studio-api-tools/blob/main/CONTRIBUTING.md).
+The scripts, the tests and the development loop are described in [CONTRIBUTING.md](https://github.com/Arkitektum/altinn-studio-api-tools/blob/main/CONTRIBUTING.md).

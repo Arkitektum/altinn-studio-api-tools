@@ -21,13 +21,11 @@ The lookup is best effort and never blocks a token: an organisation has no such 
 
 LocalTest itself. It has no documented endpoint for its users, so the server tries the json one some versions serve at `/Home/GetTestUsers` and otherwise reads the option list off the front page it already renders, which is where those names are shown anyway. Whichever it was is stated under the picker, since a scraped list deserves to say so.
 
-The page read is deliberately narrow: only a `<select>` whose `id` or `name` says it holds users or profiles, which on LocalTest is `UserSelect`. Reading every numeric option value off the page instead picked up the `AuthenticationLevel` dropdown and offered "Nivå 0" through "Nivå 4" as people. A select the parser does not recognise yields nothing at all, which leaves the fallback pair and the typed id rather than five levels pretending to be users.
+The page read takes only a `<select>` whose `id` or `name` says it holds users or profiles, which on LocalTest is `UserSelect`. A select the parser does not recognise yields nothing, which leaves the fallback pair and the typed id.
 
 LocalTest's picker offers a user and a party together: an `<optgroup label="Sophie Salt">` holding one option per party she can act for, each valued `1337.501337`, which is user id then party id. Only the user id is taken, since that is what a token is minted for, so several parties for one person collapse to one entry, labelled with the group's plain name rather than the option's "Sophie Salt (Person)".
 
-The party is not read off the page because there are two better sources already: the token's own claim, and the app's parties endpoint once it is probed, which is authoritative about what the token may act for.
-
-Razor writes the Norwegian vowels as entities like `&#xE5;`, so labels are decoded, and `&amp;` last of all, which keeps a literal `&#xE5;` in a name from being decoded twice.
+The party comes from the token's own claim and from the app's parties endpoint, not from the page.
 
 Where LocalTest offers nothing, the two we work with are offered instead, Pengelens Partner (1001) and Sophie Salt (1337). Either way **Other user id** takes any id by hand, which is the path that depends on no discovery at all: LocalTest mints a token for any user it knows, listed or not.
 
@@ -35,13 +33,11 @@ Where LocalTest offers nothing, the two we work with are offered instead, Pengel
 
 The remaining validity counts down live. **Renew** on the token card fetches another token for the same user and activates it, so an expiry mid-session costs a click rather than a trip back through the picker. It takes the accent colour once the token has expired, since that is then the thing to press.
 
-The spent token is deleted rather than left to fill the list with dead tokens for the same person, the same replacing that Get token does, and a token the server has already pruned is treated as the same outcome. Only a LocalTest token offers this, since a pasted one cannot be minted again.
+The spent token is deleted rather than left to fill the list with dead tokens for the same person, the same replacing that Get token does, and a token the server has already pruned is treated as the same outcome. Only a LocalTest token offers this.
 
-## Pasting a token
+## Pasted tokens
 
-Not in the interface. There was a **Paste** tab beside **LocalTest**, and a switch between two ways of doing the same thing is worth its space only if both get used: minting one is a click, and every token this tool wants is one LocalTest will mint.
-
-`POST /api/tokens/raw` still takes one, for a script or a token obtained some other way, see [API](api.md). It is decoded for its claims and expiry and stored like any other, and gets the same profile lookup, since a pasted LocalTest token is the common case and it is the only way to learn who it acts as. The bearer goes to the configured LocalTest, which is where the rest of the tool sends it too. A token stored that way appears in the picker like any other, and only lacks **Renew**, since it cannot be minted again.
+`POST /api/tokens/raw` stores a token you already have, for a script or a token obtained some other way, see [API](api.md). It is decoded for its claims and expiry, gets the same profile lookup, and appears in the picker like any other. It has no **Renew**, since it cannot be minted again.
 
 ## Token handling
 

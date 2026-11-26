@@ -2,7 +2,7 @@
 
 A local web tool for posting test data into Altinn 3 apps running under Altinn Studio localtest. It fetches a test user token from LocalTest, targets an org and app, posts one or more data elements, and shows the full request and response log for every call it made. It reads data back as well, so an instance can be inspected, validated, previewed as a pdf, edited and reposted, or deleted.
 
-Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so it only talks to a local Altinn. It has no knowledge of tt02 or production. Two calls go elsewhere, both hosted, both carrying no token: the DIBK validation service, which answers what a submission requires, and the FtPB testmotor, which serves the main form and subform examples. They can be switched off with `VALIDATION_URL` and `TESTMOTOR_URL`.
+Every Altinn call is addressed relative to `ALTINN_APP_HOST`, so it only talks to a local Altinn, never tt02 or production. Two calls go elsewhere, both hosted, both carrying no token: the DIBK validation service, which answers what a submission requires, and the FtPB testmotor, which serves the main form and subform examples. They can be switched off with `VALIDATION_URL` and `TESTMOTOR_URL`.
 
 **[Documentation](https://arkitektum.github.io/altinn-studio-api-tools/)** for everything in detail. This page is the overview.
 
@@ -26,13 +26,11 @@ yarn dev
 - UI: http://127.0.0.1:5173
 - API: http://127.0.0.1:4000/api
 
-No configuration is needed if your localtest uses the default ports. Otherwise copy `server/.env.example` to `server/.env` and adjust `ALTINN_APP_HOST` and `ALTINN_LOCALTEST_URL`. The header shows a status dot for the app host, for whether LocalTest is answering, and for the active token.
+No configuration is needed if your localtest uses the default ports. Otherwise copy `server/.env.example` to `server/.env` and adjust `ALTINN_APP_HOST` and `ALTINN_LOCALTEST_URL`. The header shows three gauges, each with a tick or a cross: the app host (ticked when the api answers), LocalTest, and the active token.
 
 ## Using it
 
-The interface has three columns: a rail down the left showing the chain the tool hangs off, the panels you work down in the middle, and what came back on the right, the validation results and the run log.
-
-The tool is a wizard in the one way that matters, each step needing the one before it, so the rail names every step and says where each stands: what it holds, whether it is settled, and whether you can act on it yet. Clicking a row scrolls to the panel that sets it. Every panel is on screen from the first render, and one you cannot use yet says what it is waiting for rather than being left out, so the order is visible before you have done anything.
+The interface has three columns: a rail down the left listing each step and where it stands, the panels you work down in the middle, and the validation results and the run log on the right. Clicking a rail row scrolls to its panel, and a panel you cannot use yet says what it is waiting for.
 
 The quickest path to a full submission, where the user id is the only thing you type:
 
@@ -71,12 +69,13 @@ Main form and subform examples come from the FtPB testmotor, which keeps the mai
 | `yarn test`                           | Server and web tests, stubbed Altinn, no network              |
 | `yarn typecheck`                      | Both workspaces                                               |
 | `yarn build`                          | Compile the server and bundle the UI                          |
+| `yarn lint`                           | oxlint                                                        |
 | `yarn format`                         | Format everything with Prettier                               |
 | `yarn workspace server run gaps`      | Which content types your apps declare that have no dummy      |
 | `yarn workspace server run diff`      | Posts every example and reports what each app's model changed |
 | `yarn workspace server run catalogue` | Where the catalogue and the testmotor have drifted apart      |
 
-`yarn dev` is how you run the tool. `yarn build` is a check, and the fourth thing CI does: it compiles the server and bundles the UI to prove both still build. Nothing serves `web/dist`, and `yarn start` runs the api alone. This is a local dev tool, so there is no deployment for the bundle to be part of.
+`yarn dev` is how you run the tool. `yarn build` only checks that the server compiles and the UI bundles. Nothing serves `web/dist`, and `yarn start` runs the api alone.
 
 ## Working on it
 

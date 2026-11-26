@@ -7,24 +7,24 @@ nav_order: 8
 
 ## Where a post goes
 
-There is no destination setting. What a post does follows from what is selected in [Instances](reading-data-back.md#instances):
+What a post does follows from what is selected in [Instances](reading-data-back.md#instances):
 
 | Selected             | Calls                                                                                                |
 | -------------------- | ---------------------------------------------------------------------------------------------------- |
 | **New instance**     | a single multipart `POST /{org}/{app}/instances` with an `instance` part plus one part per data type |
 | An existing instance | `POST /{org}/{app}/instances/{party}/{guid}/data?dataType={type}` per data element                   |
 
-One selection decides both, so the two cannot disagree: the list carries a **New instance** row at the top, and picking an instance means adding to it.
+The list carries a **New instance** row at the top, and picking an instance means adding to it.
 
 The post button says which of the two it will do, and the **Will call** line in Instances, under the selection that decides it, shows the URL.
 
-**Post** is a panel of its own, the last of the three under the **Post** heading: [Payload](payload.md) is what to send, [Prevalidation](payload.md#prevalidate) is what the service makes of it, and this is the send. Each is a step of its own, so the rail has a row for each and says where one ends and the next begins.
+**Post** is a panel of its own, the last of the three under the **Post** heading: [Payload](payload.md) is what to send, [Prevalidation](payload.md#prevalidate) is what the service makes of it, and this is the send.
 
 A payload that has not been prevalidated says so above the button, and so does one that has changed since it was, because this is the button the prevalidation would have saved you pressing.
 
 After a post the new instance becomes the selected one, so it is what the Data element, Process and validation panels now point at, and another post would add data to it. Pick **New instance** again to make a second one.
 
-The api also takes `mode: "sequential"`, which creates the instance and then posts each data element in its own request. The interface does not offer it, since it stores the same thing as multipart with a longer log. `/api/runs` accepts it, see [API](api.md).
+`/api/runs` also takes `mode: "sequential"`, which creates the instance and then posts each data element in its own request, see [API](api.md).
 
 ## What happens after every post
 
@@ -32,7 +32,7 @@ Every post is followed automatically by `GET .../instances/{party}/{guid}` and `
 
 The data element select is filled in at the same time, so validating or reading a single element afterwards needs no extra click. A post that fails skips both follow-ups, since there is no instance to read.
 
-**Sign and submit once it is posted** is the one option that applies to any run, calling `PUT .../process/next` to submit the step, with the action for the task the instance is in, read off the instance itself. See [Process](process.md#advancing). It runs after the data is stored, and after validation when both are asked for.
+**Sign and submit once it is posted** is the one option that applies to any run, calling `PUT .../process/next` to submit the step, with the action for the task the instance is in, read off the instance itself. See [Process](process.md#advancing). It runs after the data is stored, and after validation when both are asked for. The **Language** picker beside it, enabled while the box is ticked, is sent with that call as `lang`, so a pdf the task ends in is rendered in it. It is the same choice as the pickers in Prevalidation, Process and Pdf.
 
 ## Max count behaviour
 
@@ -43,7 +43,7 @@ POST /dibk/et-v4/instances?instanceOwnerPartyId=510001     instance already has 
 POST /dibk/et-v4/instances/510001/{guid}/data?dataType=ET  400, max count reached
 ```
 
-The tool detects the existing element and sends `PUT .../data/{dataElementId}` instead. When this happens the run log says "Replace" rather than "Add". This is what makes posting to an instance that already has its form work: a `maxCount: 1` data type has one element from the moment the instance is created, so a post to it is a change to that element rather than a second one Altinn would refuse.
+The tool detects the existing element and sends `PUT .../data/{dataElementId}` instead. When this happens the run log says "Replace" rather than "Add".
 
 ## When the post button is disabled
 

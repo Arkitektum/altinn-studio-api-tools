@@ -17,7 +17,7 @@ Tokens are the sensitive thing here, so they are handled deliberately:
 - **Expired tokens are pruned.** Listing or storing a token drops any that have expired, and `requireToken` refuses an expired one with a 410 rather than forwarding it.
 - **Never logged.** `altinnFetch` reports the headers each request went out with, because the run log's copy-as-curl needs them, and it replaces the authorization value with the literal `Bearer $TOKEN` before returning it. A copied curl command is one `TOKEN=…` away from working and carries no credential. `altinnClient.test.ts` holds that in place, including on the path where the request never got through.
 
-Claims are decoded, never verified. `jwt.ts` says so at the top. The signature is checked by the app that receives the token, which is the party that holds the key; verifying it here would prove nothing about what Altinn will accept.
+Claims are decoded, never verified. `jwt.ts` says so at the top. The signature is checked by the app that receives the token, which is the party that holds the key. Verifying it here would prove nothing about what Altinn will accept.
 
 ## What the browser stores
 
@@ -30,13 +30,13 @@ Claims are decoded, never verified. `jwt.ts` says so at the top. The signature i
 | `partyAutoFilledFrom` | Which party the tool filled in from a token claim, so a typed one is not undone |
 | `instanceGuid`        | The selected instance                                                           |
 | `advanceProcess`      | Whether a post also advances the process                                        |
-| `pdfLanguage`         | Which language the pdf is rendered in                                           |
+| `pdfLanguage`         | The language the app and the validation service are asked to answer in          |
 | `dataElements`        | **The payload elements including their content**                                |
 | `savedPayloads`       | **Payloads kept for later, by name**                                            |
 
-The last two are the ones worth thinking about, because whatever you paste into an editor card stays on disk in your browser profile until you clear it, and saving a payload keeps a second copy of it under a name. Loading an example also writes the test user's own number and name into the form data, which is a LocalTest identity rather than a real one, and it lands in the same place. A saved payload holds only a reference for an element that is still an unedited example, but an edited one keeps its text. The destination is not stored: a post follows the selection rather than a setting of its own.
+The last two are the ones worth thinking about, because whatever you paste into an editor card stays on disk in your browser profile until you clear it, and saving a payload keeps a second copy of it under a name. Loading an example also writes the test user's own number and name into the form data, which is a LocalTest identity rather than a real one, and it lands in the same place. A saved payload holds only a reference for an element that is still an unedited example, but an edited one keeps its text.
 
-The tool is for test data. Do not paste real personal data into it, and if you already have, clear the payload elements and any saved payload holding them, or the site data. The screen that appears when the interface crashes offers to clear all eight, which is the same thing as clearing the site data for this origin.
+The tool is for test data. Do not paste real personal data into it, and if you already have, clear the payload elements and any saved payload holding them, or the site data. The screen that appears when the interface crashes offers to clear every key under the prefix.
 
 No token, and no id of a token, is stored in the browser. The token list is fetched from the server again on load.
 
@@ -62,7 +62,7 @@ Binding loopback does not keep out a web page in your own browser. A page can po
 
 ## Destructive operations
 
-The tool can delete instances, and it deletes them outright: **the instance is removed and it cannot be undone**. Soft deletion, which marks an instance and leaves it in storage, is only on the api. What made the choice pointless is what the tool can reach, which is local test data on your own machine, and what soft deletion left behind, which is a row the completed listing keeps finding. Delete asks twice, with the instance named in the confirmation.
+The interface deletes instances outright: **the instance is removed and it cannot be undone**. Soft deletion, which marks an instance and leaves it in storage, is available through the api with `hard=false`. Delete asks twice before it sends anything.
 
 Advancing a process is not reversible either. It submits the current task.
 

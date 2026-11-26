@@ -7,36 +7,36 @@ nav_order: 12
 
 The backend is usable on its own, which is useful for scripting a data load.
 
-| Method   | Path                                   | Notes                                                                                                                                  |
-| -------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/api/health`                          |                                                                                                                                        |
-| `GET`    | `/api/config`                          | Resolved `appHost`, `localtestUrl`, `validationUrl`, `testmotorUrl` and `exampleDataDir`                                               |
-| `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                                                                                         |
-| `GET`    | `/api/localtest/users`                 | Its test users, with `source` naming where the list came from                                                                          |
-| `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms                                                                             |
-| `GET`    | `/api/examples`                        | `?app=an-v2`. Example files grouped by data type. The app decides whose main form examples are listed                                  |
-| `GET`    | `/api/examples/file`                   | `?kind=form\|subform\|attachment&group=AN&name=maksimum_ansvarserklaering_direkte_V2.xml&app=an-v2`                                    |
-| `POST`   | `/api/sweep`                           | Starts the sweep and answers at once. 409 while one is running                                                                         |
-| `GET`    | `/api/sweep`                           | How it is going, or how it went. Never 404: not having run is a state                                                                  |
-| `DELETE` | `/api/sweep`                           | Asks it to stop after the file it is on                                                                                                |
-| `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                                                                           |
-| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have. Not used by the interface                                                           |
-| `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                                                                                    |
-| `DELETE` | `/api/tokens/:id`                      |                                                                                                                                        |
-| `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                                                                                     |
-| `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                                                                                     |
-| `POST`   | `/api/runs`                            | The orchestrator, described below                                                                                                      |
-| `POST`   | `/api/validation-report`               | Prevalidate a submission with the DIBK validation service at `VALIDATION_URL`. Each form goes up on its own and the answers are merged |
-| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`, plus `&includeCompleted=true` for the finished ones                 |
-| `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid`                                                                  |
-| `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                                                                      |
-| `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                                                                                   |
-| `GET`    | `/api/instances/data-element/validate` | Validate one data element: the instance's validation, keeping the issues for that element. Same query plus `&dataGuid`                 |
-| `GET`    | `/api/instances/pdf-preview`           | Render the archived pdf. Same query as `/api/instances`, plus optional `taskId`, `dataElementId` and `language` (`nb`, `nn`, `en`)     |
-| `GET`    | `/api/instances/pdf-targets`           | The app's `pdf` and `subformPdf` tasks, and the subform each renders. Same query as `/api/instances`                                   |
-| `POST`   | `/api/instances/data-element/compare`  | The stored xml against `left`. Body: the query fields plus `dataGuid`, `left` and an optional `dataType` for the field types           |
-| `DELETE` | `/api/instances`                       | Delete an instance. Same query plus `&hard=true` to remove it, which is what the interface sends                                       |
-| `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query, plus an optional `taskType`                                       |
+| Method   | Path                                   | Notes                                                                                                                                                                                     |
+| -------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/health`                          |                                                                                                                                                                                           |
+| `GET`    | `/api/config`                          | Resolved `appHost`, `localtestUrl`, `validationUrl`, `testmotorUrl` and `exampleDataDir`                                                                                                  |
+| `GET`    | `/api/localtest/status`                | Whether LocalTest is reachable                                                                                                                                                            |
+| `GET`    | `/api/localtest/users`                 | Its test users, with `source` naming where the list came from                                                                                                                             |
+| `GET`    | `/api/catalogue`                       | Known org and app pairs with their data types and subforms                                                                                                                                |
+| `GET`    | `/api/examples`                        | `?app=an-v2`. Example files grouped by data type. The app decides whose main form examples are listed                                                                                     |
+| `GET`    | `/api/examples/file`                   | `?kind=form\|subform\|attachment&group=AN&name=maksimum_ansvarserklaering_direkte_V2.xml&app=an-v2`                                                                                       |
+| `POST`   | `/api/sweep`                           | Starts the sweep and answers at once. Body: `tokenId`, `instanceOwnerPartyId`, optional `targets` (org and app pairs, empty for the whole catalogue) and `keep`. 409 while one is running |
+| `GET`    | `/api/sweep`                           | How it is going, or how it went. Never 404: not having run is a state                                                                                                                     |
+| `DELETE` | `/api/sweep`                           | Asks it to stop after the file it is on                                                                                                                                                   |
+| `POST`   | `/api/tokens/test-user`                | Takes `{userId}` and calls `/Home/GetTestUserToken/{userId}`                                                                                                                              |
+| `POST`   | `/api/tokens/raw`                      | Takes `{token}` to store a token you already have                                                                                                                                         |
+| `GET`    | `/api/tokens`                          | Claims only, never the bearer token                                                                                                                                                       |
+| `DELETE` | `/api/tokens/:id`                      |                                                                                                                                                                                           |
+| `GET`    | `/api/app/metadata`                    | `?tokenId&org&app`                                                                                                                                                                        |
+| `GET`    | `/api/app/parties`                     | `?tokenId&org&app`                                                                                                                                                                        |
+| `POST`   | `/api/runs`                            | The orchestrator, described below                                                                                                                                                         |
+| `POST`   | `/api/validation-report`               | Prevalidate a submission with the DIBK validation service at `VALIDATION_URL`. Each form goes up on its own and the answers are merged. An optional `language` is sent as `spraak`        |
+| `GET`    | `/api/instances/active`                | List a party's instances. `?tokenId&org&app&instanceOwnerPartyId`, plus `&includeCompleted=true` for the finished ones                                                                    |
+| `GET`    | `/api/instances`                       | Get an instance. `?tokenId&org&app&instanceOwnerPartyId&instanceGuid`                                                                                                                     |
+| `GET`    | `/api/instances/data-element`          | Get one data element. Same query plus `&dataGuid`                                                                                                                                         |
+| `GET`    | `/api/instances/validate`              | Validate an instance. Same query as `/api/instances`                                                                                                                                      |
+| `GET`    | `/api/instances/data-element/validate` | Validate one data element: the instance's validation, keeping the issues for that element. Same query plus `&dataGuid`                                                                    |
+| `GET`    | `/api/instances/pdf-preview`           | Render the archived pdf. Same query as `/api/instances`, plus optional `taskId`, `dataElementId` and `language` (`nb`, `nn`, `en`)                                                        |
+| `GET`    | `/api/instances/pdf-targets`           | The app's `pdf` and `subformPdf` tasks, and the subform each renders. Same query as `/api/instances`                                                                                      |
+| `POST`   | `/api/instances/data-element/compare`  | The stored xml against `left`. Body: the query fields plus `dataGuid`, `left` and an optional `dataType` for the field types                                                              |
+| `DELETE` | `/api/instances`                       | Delete an instance. Same query plus `&hard=true` to remove it, which is what the interface sends                                                                                          |
+| `PUT`    | `/api/instances/process/next`          | Advance an existing instance. Same body as `/api/instances`'s query, plus optional `taskType` and `language`                                                                              |
 
 ## Scripting a data load
 
@@ -71,11 +71,11 @@ curl -s localhost:4000/api/runs -H 'content-type: application/json' -d "{
 
 A data element takes `dataType` and `content`, plus optionally `encoding` (`utf8` or `base64`), `contentType` and `filename`. Base64 content is decoded before the request goes to Altinn, and `filename` becomes the data element's `Content-Disposition` name, which only attachments want.
 
-`instanceTemplate` is merged into the instance body when creating one, so anything Altinn accepts there can be set, `dueBefore` and `visibleAfter` included. The UI offers none of it, deliberately, so this is the only way to reach it. `validate` and `advanceProcess` are booleans that add a validation call and a `process/next` call after the upload. A run that advances also reads the instance just before the move and returns what it held as `advanced: { dataElements, process }`, so a client can tell what the move did from what the post did. `advanced` is absent on a run that does not advance, and when that read fails, which does not stop the move.
+`instanceTemplate` is merged into the instance body when creating one, so anything Altinn accepts there can be set, `dueBefore` and `visibleAfter` included. Only the api sets it. `validate` and `advanceProcess` are booleans that add a validation call and a `process/next` call after the upload, and `language` (`nb`, `nn` or `en`) is sent with `process/next` as `lang`. A run that advances also reads the instance just before the move and returns what it held as `advanced: { dataElements, process }`, so a client can tell what the move did from what the post did. `advanced` is absent on a run that does not advance, and when that read fails, which does not stop the move.
 
 ## Advancing the process
 
-`PUT /api/instances/process/next` takes an optional `taskType`, the Altinn `altinnTaskType` of the task the instance sits in. It decides the action the request names, so `"taskType": "signing"` sends `{"action":"sign"}` to Altinn. Leaving it out sends `{}` and lets Altinn choose. The `advanceProcess` flag on a run needs nothing from the caller: the run reads the task type off the instance it just posted to. See [Process](process.md#advancing) for the mapping.
+`PUT /api/instances/process/next` takes an optional `taskType`, the Altinn `altinnTaskType` of the task the instance sits in. It decides the action the request names, so `"taskType": "signing"` sends `{"action":"sign"}` to Altinn. Leaving it out sends `{}` and lets Altinn choose. An optional `language` is sent to the app as `lang`, in place of the profile's language. The `advanceProcess` flag on a run needs nothing from the caller: the run reads the task type off the instance it just posted to. See [Process](process.md#advancing) for the mapping.
 
 ## Failures are results
 
